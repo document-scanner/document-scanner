@@ -15,29 +15,24 @@
 package richtercloud.document.scanner.gui;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Properties;
 import java.util.Scanner;
 import javax.swing.DefaultListModel;
-import org.apache.commons.lang.StringUtils;
+import richtercloud.document.scanner.gui.conf.TesseractOCREngineConf;
 import richtercloud.document.scanner.gui.engineconf.OCREngineConfPanel;
-import richtercloud.document.scanner.ocr.OCREngine;
 import richtercloud.document.scanner.ocr.TesseractOCREngine;
 
 /**
  *
  * @author richter
  */
-public class TesseractOCREngineConfPanel extends OCREngineConfPanel {
+public class TesseractOCREngineConfPanel extends OCREngineConfPanel<TesseractOCREngineConf> {
     private static final long serialVersionUID = 1L;
-    private TesseractOCREngine oCREngine;
-    private String tesseract = TesseractOCREngine.TESSERACT_DEFAULT;
-    private final DefaultListModel languageListModel = new DefaultListModel();
-    private List<String> selectedLanguages = new LinkedList<>();
-    private final static String CONF_KEY_LANGUAGES = "languages";
+    private final DefaultListModel<String> languageListModel = new DefaultListModel<>();
+    private final TesseractOCREngineConf conf;
 
     /**
      * Creates new form TesseractOCREngineConfPanel
@@ -45,9 +40,14 @@ public class TesseractOCREngineConfPanel extends OCREngineConfPanel {
      * @throws java.lang.InterruptedException
      */
     public TesseractOCREngineConfPanel() throws IOException, InterruptedException {
+        this(new TesseractOCREngineConf());
+    }
+
+    public TesseractOCREngineConfPanel(TesseractOCREngineConf conf) throws IOException, InterruptedException {
         this.initComponents();
-        TesseractOCREngine.checkTesseractAvailableExceptions(this.tesseract);
-        ProcessBuilder tesseractProcessBuilder = new ProcessBuilder(this.tesseract, "--list-langs");
+        this.conf = conf;
+        TesseractOCREngine.checkTesseractAvailableExceptions(this.conf.getTesseract());
+        ProcessBuilder tesseractProcessBuilder = new ProcessBuilder(this.conf.getTesseract(), "--list-langs");
         Process tesseractProcess = tesseractProcessBuilder.redirectOutput(ProcessBuilder.Redirect.PIPE).start();
         int tesseractProcessReturnCode = tesseractProcess.waitFor();
         if(tesseractProcessReturnCode != 0) {
@@ -55,50 +55,42 @@ public class TesseractOCREngineConfPanel extends OCREngineConfPanel {
         }
         //tesseract --list-langs prints to stderr, reported as https://bugs.launchpad.net/ubuntu/+source/tesseract/+bug/1481015
         Scanner tesseractProcessOutputScanner = new Scanner(tesseractProcess.getErrorStream());
+        List<String> langs = new LinkedList<>();
         while(tesseractProcessOutputScanner.hasNextLine()) {
             String lang = tesseractProcessOutputScanner.nextLine();
             if(!lang.startsWith("List of available languages")) {
-                this.languageListModel.addElement(lang);
+                langs.add(lang);
             }
         }
+        langs.sort(String.CASE_INSENSITIVE_ORDER);
+        for(String lang : langs) {
+            this.languageListModel.addElement(lang);
+        }
+        List<Integer> selectedLanguageIndices = new ArrayList<>();
+        for(String selectedLanguage : conf.getSelectedLanguages()) {
+            int index = this.languageListModel.indexOf(selectedLanguage);
+            selectedLanguageIndices.add(index);
+        }
+        int[] selectedLanguageIndicesArray = new int[selectedLanguageIndices.size()];
+        for(int i =0; i<selectedLanguageIndices.size(); i++) {
+            selectedLanguageIndicesArray[i] = selectedLanguageIndices.get(i);
+        }
+        this.languageList.setSelectedIndices(selectedLanguageIndicesArray);
     }
-    
-    public TesseractOCREngineConfPanel(String tesseract) throws IOException, InterruptedException {
-        this();
-        this.tesseract = tesseract;
-    }
-    
+
     /**
      * returns a {@code String} representing a language code which is guaranteed
      * to be compatible with {@code tesseract} when passed with {@code -l}
      * option
-     * @return 
+     * @return
      */
     public List<String> getSelectedLanguages() {
-        return Collections.unmodifiableList(this.selectedLanguages);
+        return Collections.unmodifiableList(this.conf.getSelectedLanguages());
     }
 
     @Override
-    public OCREngine getOCREngine() {
-        return this.oCREngine;
-    }
-
-    @Override
-    public void save(Properties conf) {
-        this.selectedLanguages = this.languageList.getSelectedValuesList();
-        if(this.oCREngine == null) {
-            this.oCREngine = new TesseractOCREngine(this.selectedLanguages);
-        }else {
-            this.oCREngine.setLanguages(this.selectedLanguages);
-        }
-        conf.setProperty(CONF_KEY_LANGUAGES, StringUtils.join(this.selectedLanguages, ";"));
-    }
-
-    @Override
-    public void load(Properties conf) {
-        String languages = conf.getProperty(CONF_KEY_LANGUAGES);
-        List<String> selectedLanguages = new LinkedList<>(Arrays.asList(StringUtils.split(languages, ";")));
-        this.selectedLanguages = selectedLanguages;
+    public TesseractOCREngineConf getOCREngineConf() {
+        return this.conf;
     }
 
     /**
@@ -112,7 +104,7 @@ public class TesseractOCREngineConfPanel extends OCREngineConfPanel {
 
         languageLabel = new javax.swing.JLabel();
         jScrollPane1 = new javax.swing.JScrollPane();
-        languageList = new javax.swing.JList();
+        languageList = new javax.swing.JList<String>();
 
         languageLabel.setText("Language");
 
@@ -147,6 +139,16 @@ public class TesseractOCREngineConfPanel extends OCREngineConfPanel {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JLabel languageLabel;
-    private javax.swing.JList languageList;
+    private javax.swing.JList<String> languageList;
     // End of variables declaration//GEN-END:variables
+
+    @Override
+    public void save() {
+        this.conf.setSelectedLanguages(this.languageList.getSelectedValuesList());
+    }
+
+    @Override
+    public void cancel() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }

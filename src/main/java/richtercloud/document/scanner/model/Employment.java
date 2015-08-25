@@ -97,5 +97,5 @@ public class Employment implements Serializable {
     public void setEnd(Date end) {
         this.theEnd = end;
     }
-    
+
 }

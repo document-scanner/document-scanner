@@ -26,7 +26,7 @@ public class Tess4JOCREngine implements OCREngine {
     @Override
     public String recognizeImage(BufferedImage image) {
         throw new UnsupportedOperationException("Not supported yet. Figure out maven dependencies");
-        
+
 //        Tesseract instance = Tesseract.getInstance();  // JNA Interface Mapping
 //        // Tesseract1 instance = new Tesseract1(); // JNA Direct Mapping
 //
@@ -37,5 +37,5 @@ public class Tess4JOCREngine implements OCREngine {
 //            System.err.println(e.getMessage());
 //        }
     }
-    
+
 }

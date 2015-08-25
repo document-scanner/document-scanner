@@ -31,5 +31,5 @@ public class Leaflet extends AbstractDocument {
     public Leaflet(Date date, Date receptionDate, Location originalLocation, boolean originalLost, Long id, Company contact) {
         super(date, receptionDate, originalLocation, originalLost, id, contact);
     }
-    
+
 }

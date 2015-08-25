@@ -14,6 +14,8 @@
  */
 package richtercloud.document.scanner.gui;
 
+import java.awt.Dimension;
+import java.awt.Rectangle;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -24,6 +26,8 @@ import java.util.Set;
 import javax.imageio.ImageIO;
 import javax.persistence.EntityManager;
 import javax.swing.JComponent;
+import javax.swing.Scrollable;
+import javax.swing.SwingConstants;
 import org.apache.commons.math4.stat.descriptive.DescriptiveStatistics;
 import richtercloud.document.scanner.ocr.OCREngine;
 import richtercloud.document.scanner.setter.ValueSetter;
@@ -41,7 +45,7 @@ public class DocumentTab extends javax.swing.JPanel {
     private DocumentForm documentForm;
     private OCRSelectComponent oCRSelectComponent;
     private OCREngine oCREngine;
-    
+
     public DocumentTab(String title, OCRSelectComponent oCRSelectComponent, OCREngine oCREngine, Set<Class<?>> entityClasses, EntityManager entityManager) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         this.title = title;
         this.oCRSelectComponent = oCRSelectComponent;
@@ -90,23 +94,23 @@ public class DocumentTab extends javax.swing.JPanel {
         imageScrollPane.getViewport().setView(oCRSelectComponent);
         this.splitPane.setRightComponent(this.documentForm);
     }
-    
-    public DocumentTab(String title, 
-            OCRSelectComponent oCRSelectComponent, 
-            OCREngine oCREngine, 
-            Set<Class<?>> entityClasses, Map<Class<?>, Class<? extends JComponent>> classMapping, 
-            Map<Class<? extends JComponent>, ValueRetriever<?,?>> valueRetrieverMapping, 
-            Map<Class<? extends JComponent>, ValueSetter<?>> valueSetterMapping, 
-            EntityManager entityManager, 
-            OCRResultPanelRetriever oCRResultPanelRetriever, 
+
+    public DocumentTab(String title,
+            OCRSelectComponent oCRSelectComponent,
+            OCREngine oCREngine,
+            Set<Class<?>> entityClasses, Map<Class<?>, Class<? extends JComponent>> classMapping,
+            Map<Class<? extends JComponent>, ValueRetriever<?,?>> valueRetrieverMapping,
+            Map<Class<? extends JComponent>, ValueSetter<?>> valueSetterMapping,
+            EntityManager entityManager,
+            OCRResultPanelRetriever oCRResultPanelRetriever,
             ScanResultPanelRetriever scanResultPanelRetriever) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         this(title, oCRSelectComponent, oCREngine, entityClasses, entityManager);
-        this.documentForm = new DocumentForm(entityClasses, 
-                classMapping, 
-                valueRetrieverMapping, 
-                valueSetterMapping, 
-                entityManager, 
-                oCRResultPanelRetriever, 
+        this.documentForm = new DocumentForm(entityClasses,
+                classMapping,
+                valueRetrieverMapping,
+                valueSetterMapping,
+                entityManager,
+                oCRResultPanelRetriever,
                 scanResultPanelRetriever);
     }
 
@@ -168,4 +172,5 @@ public class DocumentTab extends javax.swing.JPanel {
     private javax.swing.JScrollPane imageScrollPane;
     private javax.swing.JSplitPane splitPane;
     // End of variables declaration//GEN-END:variables
+
 }

@@ -20,6 +20,6 @@ package richtercloud.document.scanner.storage;
  */
 public interface Storage {
     void store(Object object);
-    
+
     <T> T retrieve(Long id, Class<T> clazz);
 }

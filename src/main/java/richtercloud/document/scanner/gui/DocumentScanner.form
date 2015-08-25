@@ -334,6 +334,9 @@
               <Connection code="oCREngineComboBoxModel" type="code"/>
             </Property>
           </Properties>
+          <AuxValues>
+            <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;Class&lt;? extends OCREngineConf&lt;?&gt;&gt;&gt;"/>
+          </AuxValues>
         </Component>
         <Component class="javax.swing.JLabel" name="oCRDialogEngineLabel">
           <Properties>
@@ -451,6 +454,9 @@
           <Events>
             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="storageCreateDialogTypeComboBoxActionPerformed"/>
           </Events>
+          <AuxValues>
+            <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;Class&lt;? extends StorageConf&lt;?&gt;&gt;&gt;"/>
+          </AuxValues>
         </Component>
         <Component class="javax.swing.JLabel" name="storageCreateDialogTypeLabel">
           <Properties>
@@ -585,6 +591,9 @@
                   <Connection code="storageListModel" type="code"/>
                 </Property>
               </Properties>
+              <AuxValues>
+                <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;StorageConf&lt;?&gt;&gt;"/>
+              </AuxValues>
             </Component>
           </SubComponents>
         </Container>

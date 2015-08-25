@@ -45,7 +45,7 @@ public class TesseractOCREngine implements OCREngine {
         }
         this.languages = languages;
     }
-    
+
     public TesseractOCREngine(String tesseractCmd, List<String> languages) {
         this(languages);
         this.tesseract = tesseractCmd;
@@ -58,7 +58,7 @@ public class TesseractOCREngine implements OCREngine {
     public List<String> getLanguages() {
         return Collections.unmodifiableList(this.languages);
     }
-    
+
     /**
      * checks whether the specified {@code tesseract} command is available and
      * accessible/executable
@@ -69,7 +69,7 @@ public class TesseractOCREngine implements OCREngine {
     public static void checkTesseractAvailable(String tesseract) throws IOException,InterruptedException {
         new ProcessBuilder(tesseract).start().waitFor();
     }
-    
+
     public static void checkTesseractAvailableExceptions(String tesseract) {
         try {
             checkTesseractAvailable(tesseract);
@@ -79,7 +79,7 @@ public class TesseractOCREngine implements OCREngine {
             throw new RuntimeException(String.format("An unexpected exception occured during the search of the tesseract binary '%s' because the process has been interrupted (see nested exception for details)", tesseract), ex);
         }
     }
-    
+
     @Override
     public String recognizeImage(BufferedImage image) {
         checkTesseractAvailableExceptions(this.tesseract);
@@ -106,5 +106,5 @@ public class TesseractOCREngine implements OCREngine {
             throw new RuntimeException(ex);
         }
     }
-    
+
 }

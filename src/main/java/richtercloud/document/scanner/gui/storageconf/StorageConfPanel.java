@@ -14,20 +14,26 @@
  */
 package richtercloud.document.scanner.gui.storageconf;
 
-import java.util.Properties;
 import javax.swing.JPanel;
-import richtercloud.document.scanner.storage.Storage;
+import richtercloud.document.scanner.gui.conf.StorageConf;
 
 /**
  *
  * @author richter
+ * @param <C> the type of the {@link StorageConf} to use for saving and loading
  */
-public abstract class StorageConfPanel extends JPanel {
+/*
+internal implementation notes:
+- in order to be usable as panel StorageConfPanel needs to expose save and
+cancel methods because buttons can not be included in the panel itself in order
+to provide sane GUI elements
+*/
+public abstract class StorageConfPanel<C extends StorageConf<?>> extends JPanel {
     private static final long serialVersionUID = 1L;
-    
-    public abstract Storage getStorage();
-    
-    public abstract void save(Properties conf);
-    
-    public abstract void load(Properties conf);
+
+    public abstract C getStorageConf();
+
+    public abstract void save();
+
+    public abstract void cancel();
 }

@@ -24,7 +24,7 @@ public abstract class PersistenceStorage implements Storage {
 
     /**
      * a wrapper around {@link EntityManager#persist(java.lang.Object) }
-     * @param object 
+     * @param object
      */
     @Override
     public void store(Object object) {
@@ -36,18 +36,18 @@ public abstract class PersistenceStorage implements Storage {
      * @param <T>
      * @param id
      * @param clazz
-     * @return 
+     * @return
      */
     @Override
     public <T> T retrieve(Long id, Class<T> clazz) {
         T retValue = this.retrieveEntityManager().find(clazz, id);
         return retValue;
     }
-    
+
     /**
      * get the {@link EntityManager} used for persistent storage
-     * @return 
+     * @return
      */
     protected abstract EntityManager retrieveEntityManager();
-    
+
 }

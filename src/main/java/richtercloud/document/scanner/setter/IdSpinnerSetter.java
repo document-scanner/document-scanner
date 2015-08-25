@@ -34,5 +34,5 @@ public class IdSpinnerSetter implements ValueSetter<IdPanel>{
     public void setValue(String value, IdPanel comp) {
         comp.getIdSpinner().setValue(value);
     }
-    
+
 }

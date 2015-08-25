@@ -132,5 +132,5 @@ public class FinanceAccount implements Serializable {
     public void setPayments(List<Payment> payments) {
         this.payments = payments;
     }
-    
+
 }

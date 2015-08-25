@@ -16,16 +16,19 @@ package richtercloud.document.scanner.gui;
 
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import javax.swing.JPanel;
+import javax.swing.Scrollable;
+import javax.swing.SwingConstants;
 
 /**
  * Arranges multiple (or one) image in different selection panel and handles
  * selection on them for OCR.
- * 
+ *
  * No cross image selection are supported. Starting a selection on one panel
  * removes the selection on another.
  * @author richter
@@ -36,23 +39,24 @@ internal implementation notes:
 argument have the same erasure, provide List<OCRSelectPanel> because often
 action methods of OCRSelectPanel are adjusted by callers
 */
-public class OCRSelectComponent extends JPanel {
+public class OCRSelectComponent extends JPanel implements Scrollable {
     private static final long serialVersionUID = 1L;
     /**
      * The pages of which the drawing area ought to be composed
      */
     private List<OCRSelectPanel> imagePanels = new LinkedList<>();
     private OCRSelectPanel selectedPanel = null;
-        
+    private int maxUnitIncrement = 100;
+
     protected OCRSelectComponent() {
     }
-    
+
     public OCRSelectComponent(OCRSelectPanel panel) {
         this();
         this.imagePanels.add(panel);
     }
-    
-    
+
+
     public OCRSelectComponent(List<OCRSelectPanel> panels) {
         this();
         int preferredWidth = 0, preferredHeight = 0;
@@ -71,7 +75,7 @@ public class OCRSelectComponent extends JPanel {
     public List<OCRSelectPanel> getImagePanels() {
         return Collections.unmodifiableList(this.imagePanels);
     }
-    
+
     public BufferedImage getSelection() {
         for(OCRSelectPanel panel : this.imagePanels) {
             if(panel.getDragStart() != null && panel.getDragEnd() != null) {
@@ -101,5 +105,54 @@ public class OCRSelectComponent extends JPanel {
                 }
             }
         }
+    }
+
+    @Override
+    public Dimension getPreferredScrollableViewportSize() {
+        return this.getPreferredSize(); //as suggested by
+            //https://docs.oracle.com/javase/8/docs/api/javax/swing/Scrollable.html
+    }
+
+    @Override
+    public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+        //Get the current position.
+        int currentPosition = 0;
+        if (orientation == SwingConstants.HORIZONTAL) {
+            currentPosition = visibleRect.x;
+        } else {
+            currentPosition = visibleRect.y;
+        }
+
+        //Return the number of pixels between currentPosition
+        //and the nearest tick mark in the indicated direction.
+        if (direction < 0) {
+            int newPosition = currentPosition -
+                             (currentPosition / maxUnitIncrement)
+                              * maxUnitIncrement;
+            return (newPosition == 0) ? maxUnitIncrement : newPosition;
+        } else {
+            return ((currentPosition / maxUnitIncrement) + 1)
+                     * maxUnitIncrement
+                     - currentPosition;
+        }
+    }
+
+    @Override
+    public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+        if (orientation == SwingConstants.HORIZONTAL) {
+            return visibleRect.width - maxUnitIncrement;
+        } else {
+            return visibleRect.height - maxUnitIncrement;
+        }
+    }
+
+    @Override
+    public boolean getScrollableTracksViewportWidth() {
+        return false;
+    }
+
+    @Override
+    public boolean getScrollableTracksViewportHeight() {
+        return false;
     }
 }

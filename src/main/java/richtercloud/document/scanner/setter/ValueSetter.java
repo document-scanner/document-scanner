@@ -23,6 +23,6 @@ import javax.swing.JComponent;
  * @param <C>
  */
 public interface ValueSetter<C extends JComponent> {
-    
+
     void setValue(String value, C comp);
 }

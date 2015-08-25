@@ -41,11 +41,11 @@ public class MessagePanelEntry extends javax.swing.JPanel {
      * to add two or maybe three components, otherwise the result might look
      * weird. For more components consider using
      * {@link #init(javax.swing.JPanel) }.
-     * @param comps 
+     * @param comps
      */
     public void init(JComponent... comps) {
         this.init0(comps);
-    }        
+    }
 
     private void init0(JComponent... comps) {
         for(JComponent comp : comps) {
@@ -55,7 +55,7 @@ public class MessagePanelEntry extends javax.swing.JPanel {
 
     /**
      * add {@code messagePanel} to the message panel entry
-     * @param messagePanel 
+     * @param messagePanel
      */
     public void init(JPanel messagePanel) {
         this.init0(messagePanel);

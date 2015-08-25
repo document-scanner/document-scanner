@@ -22,7 +22,7 @@ import javax.swing.JTextField;
  */
 public class TextFieldSetter implements ValueSetter<JTextField> {
     private final static TextFieldSetter INSTANCE = new TextFieldSetter();
-    
+
     public static TextFieldSetter getInstance() {
         return INSTANCE;
     }
@@ -34,5 +34,5 @@ public class TextFieldSetter implements ValueSetter<JTextField> {
     public void setValue(String value, JTextField comp) {
         comp.setText(value);
     }
-    
+
 }

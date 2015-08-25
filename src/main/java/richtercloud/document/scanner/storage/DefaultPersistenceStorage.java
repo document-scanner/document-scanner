@@ -38,7 +38,7 @@ public class DefaultPersistenceStorage extends PersistenceStorage {
     protected EntityManager retrieveEntityManager() {
         return this.entityManager;
     }
-    
+
     public void recreateEntityManager(EntityManagerFactory entityManagerFactory, String connectionURL, String username, String password) {
         Map<String, String> properties = new HashMap<>(3);
         properties.put("javax.persistence.jdbc.url", connectionURL);

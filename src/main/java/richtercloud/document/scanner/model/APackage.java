@@ -50,7 +50,7 @@ public class APackage implements Serializable {
     @Temporal(TemporalType.TIMESTAMP)
     private Date theDate;
     /**
-     * the date and time (timestamp) of the delivery (by the sender) (time is 
+     * the date and time (timestamp) of the delivery (by the sender) (time is
      * optional, but will be persisted when specified)
      */
     @Temporal(TemporalType.TIMESTAMP)

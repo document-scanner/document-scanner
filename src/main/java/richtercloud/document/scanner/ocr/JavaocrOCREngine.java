@@ -39,5 +39,5 @@ public class JavaocrOCREngine implements OCREngine {
         LOGGER.debug("OCR result: {}", text);
         return text;
     }
-    
+
 }

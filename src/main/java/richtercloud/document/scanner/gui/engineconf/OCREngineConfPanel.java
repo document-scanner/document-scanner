@@ -14,43 +14,38 @@
  */
 package richtercloud.document.scanner.gui.engineconf;
 
-import java.util.Properties;
 import javax.swing.JPanel;
+import richtercloud.document.scanner.gui.conf.OCREngineConf;
 import richtercloud.document.scanner.ocr.OCREngine;
 
 /**
  * allows management of (eventually completely) different configuration
  * directives and control of different types of {@link OCREngine}s.
- * 
+ *
  * Changes only need to be retained if {@link #save() } has been invoked,
  * otherwise the changes can be discarded or kept.
  * @author richter
+ * @param <C> the type of the managed OCR engine configuration
  */
 /*
 internal implementation notes:
 - needs to be an abstract class extending JPanel in order to be able to work
 with instances (adding to container and components - there's no interface in the
 JComponent hierarchy)
+- in order to be usable as panel OCREngineConfPanel needs to expose save and
+cancel methods because buttons can not be included in the panel itself in order
+to provide sane GUI elements
 */
-public abstract class OCREngineConfPanel extends JPanel {
+public abstract class OCREngineConfPanel<C extends OCREngineConf<?>> extends JPanel {
     private static final long serialVersionUID = 1L;
-    
+
     /**
      * get the instance of {@link OCREngine} this panel manages
-     * @return 
+     * @return
      */
-    public abstract OCREngine getOCREngine();
-    
-    /**
-     * write the current changes from the panel's components to its properties
-     * where they can be retrieved reliably
-     * @param conf
-     */
-    public abstract void save(Properties conf);
-    
-    /**
-     * 
-     * @param conf 
-     */
-    public abstract void load(Properties conf);
+    public abstract C getOCREngineConf();
+
+    public abstract void save();
+
+    public abstract void cancel();
 }

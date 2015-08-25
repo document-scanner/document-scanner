@@ -22,7 +22,7 @@ import javax.swing.JSpinner;
  */
 public class SpinnerSetter implements ValueSetter<JSpinner> {
     private final static SpinnerSetter INSTANCE = new SpinnerSetter();
-    
+
     public static SpinnerSetter getInstance() {
         return INSTANCE;
     }
@@ -34,5 +34,5 @@ public class SpinnerSetter implements ValueSetter<JSpinner> {
     public void setValue(String value, JSpinner comp) {
         comp.setValue(value);
     }
-    
+
 }

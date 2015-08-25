@@ -19,6 +19,6 @@ package richtercloud.document.scanner.gui;
  * @author richter
  */
 public interface OCRSelectPanelSelectionListener {
-    
+
     void selectionChanged();
 }

@@ -41,7 +41,7 @@ public class OCRSelectPanel extends JPanel implements MouseListener, MouseMotion
         this.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));
         this.init0();
     }
-    
+
     private void init0() {
         this.addMouseListener(this);
         this.addMouseMotionListener(this);
@@ -50,17 +50,17 @@ public class OCRSelectPanel extends JPanel implements MouseListener, MouseMotion
     public BufferedImage getImage() {
         return this.image;
     }
-    
+
     public void unselect() {
         this.dragStart = null;
         this.dragStart = null;
         this.repaint();
     }
-    
+
     public void addSelectionListener(OCRSelectPanelSelectionListener listener) {
         this.selectionListeners.add(listener);
     }
-    
+
     public void removeSelectionListener(OCRSelectPanelSelectionListener listener) {
         this.selectionListeners.remove(listener);
     }
@@ -80,7 +80,7 @@ public class OCRSelectPanel extends JPanel implements MouseListener, MouseMotion
             listener.selectionChanged();
         }
     }
-        
+
     /**
      * one single click should remove the OCR frame
      * @param evt
@@ -112,32 +112,32 @@ public class OCRSelectPanel extends JPanel implements MouseListener, MouseMotion
     @Override
     public void mouseMoved(MouseEvent e) {
     }
-    
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         g.drawImage(this.image, 0, 0, this);
         if(this.getDragStart() != null && this.getDragEnd() != null) {
-            g.drawRect(this.dragSelectionX(), 
+            g.drawRect(this.dragSelectionX(),
                     this.dragSelectionY(),
                     this.dragSelectionWidth(), //width
                     this.dragSeletionHeight() //height
             );
         }
     }
-    
+
     public int dragSelectionX() {
         return Math.min(this.getDragStart().x, this.getDragEnd().x);
     }
-    
+
     public int dragSelectionY() {
         return Math.min(this.getDragStart().y, this.getDragEnd().y);
     }
-    
+
     public int dragSelectionWidth() {
         return Math.max(this.getDragEnd().x, this.getDragStart().x)-Math.min(this.getDragEnd().x, this.getDragStart().x);
     }
-    
+
     public int dragSeletionHeight() {
         return Math.max(this.getDragEnd().y, this.getDragStart().y)-Math.min(this.getDragEnd().y, this.getDragStart().y);
     }
@@ -169,5 +169,5 @@ public class OCRSelectPanel extends JPanel implements MouseListener, MouseMotion
     protected void setDragEnd(Point dragEnd) {
         this.dragEnd = dragEnd;
     }
-    
+
 }

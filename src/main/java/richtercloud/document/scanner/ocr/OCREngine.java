@@ -21,7 +21,7 @@ import java.awt.image.BufferedImage;
  * @author richter
  */
 public interface OCREngine {
-    
+
     /**
      * recognizes the characters of {@code image}
      * @param image

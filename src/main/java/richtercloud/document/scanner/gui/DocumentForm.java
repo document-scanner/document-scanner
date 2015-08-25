@@ -75,21 +75,27 @@ public class DocumentForm extends javax.swing.JPanel {
     private DocumentForm() {
         this.initComponents();
     }
-    
-    public DocumentForm(Set<Class<?>> entityClasses, 
-            EntityManager entityManager, 
-            final OCRResultPanelRetriever oCRResultPanelRetriever, 
+
+    public DocumentForm(Set<Class<?>> entityClasses,
+            EntityManager entityManager,
+            final OCRResultPanelRetriever oCRResultPanelRetriever,
             final ScanResultPanelRetriever scanResultPanelRetriever) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-        this(entityClasses, 
-                ReflectionFormBuilder.CLASS_MAPPING_DEFAULT, 
-                ReflectionFormBuilder.VALUE_RETRIEVER_MAPPING_DEFAULT, 
+        this(entityClasses,
+                ReflectionFormBuilder.CLASS_MAPPING_DEFAULT,
+                ReflectionFormBuilder.VALUE_RETRIEVER_MAPPING_DEFAULT,
                 DocumentForm.VALUE_SETTER_DEFAULT,
-                entityManager, 
-                oCRResultPanelRetriever, 
+                entityManager,
+                oCRResultPanelRetriever,
                 scanResultPanelRetriever);
     }
-    
-    public DocumentForm(Set<Class<?>> entityClasses, Map<Class<?>, Class<? extends JComponent>> classMapping, Map<Class<? extends JComponent>, ValueRetriever<?, ?>> valueRetrieverMapping, Map<Class<? extends JComponent>, ValueSetter<?>> valueSetterMapping, EntityManager entityManager, final OCRResultPanelRetriever oCRResultPanelRetriever, final ScanResultPanelRetriever scanResultPanelRetriever) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+
+    public DocumentForm(Set<Class<?>> entityClasses,
+            Map<Class<?>, Class<? extends JComponent>> classMapping,
+            Map<Class<? extends JComponent>, ValueRetriever<?, ?>> valueRetrieverMapping,
+            Map<Class<? extends JComponent>, ValueSetter<?>> valueSetterMapping,
+            EntityManager entityManager,
+            final OCRResultPanelRetriever oCRResultPanelRetriever,
+            final ScanResultPanelRetriever scanResultPanelRetriever) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         this.initComponents();
         List<Pair<Class<? extends Annotation>, Callable<? extends JComponent>>> annotationMapping = new LinkedList<>();
         annotationMapping.add(new ImmutablePair<Class<? extends Annotation>, Callable<? extends JComponent>>(OCRResult.class, new Callable<OCRResultPanel>() {
@@ -108,12 +114,12 @@ public class DocumentForm extends javax.swing.JPanel {
         ReflectionFormBuilder<?> reflectionFormBuilder = new JPAReflectionFormBuilder<>(classMapping, valueRetrieverMapping, entityManager, annotationMapping);
         this.init0(entityClasses, reflectionFormBuilder, valueSetterMapping);
     }
-    
-    private void init0(Set<Class<?>> entityClasses, ReflectionFormBuilder reflectionFormBuilder, Map<Class<? extends JComponent>, ValueSetter<?>> valueSetterMapping) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+
+    private void init0(Set<Class<?>> entityClasses, ReflectionFormBuilder reflectionFormBuilder,
+            Map<Class<? extends JComponent>, ValueSetter<?>> valueSetterMapping) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         for(Class<?> entityClass : entityClasses) {
             ReflectionFormPanel reflectionFormPanel = reflectionFormBuilder.transform(entityClass);
-            JScrollPane reflectionFormPanelScrollPane = new JScrollPane(reflectionFormPanel);
-            this.entityCreationTabbedPane.add(entityClass.getSimpleName(), reflectionFormPanelScrollPane);
+            this.entityCreationTabbedPane.add(entityClass.getSimpleName(), reflectionFormPanel);
             List<Field> relevantFields = reflectionFormBuilder.retrieveRelevantFields(entityClass);
             JMenu entityClassMenu = new JMenu(entityClass.getSimpleName());
             for(Field relevantField : relevantFields) {
@@ -126,7 +132,7 @@ public class DocumentForm extends javax.swing.JPanel {
         this.entityCreationTabbedPane.validate();
         this.validate();
     }
-    
+
     private class FieldActionListener implements ActionListener {
         private final Field field;
         private final ReflectionFormPanel<?> reflectionFormPanel;
@@ -149,7 +155,7 @@ public class DocumentForm extends javax.swing.JPanel {
                 //@TODO: handle feedback
             }
         }
-        
+
     }
 
     public JTextArea getoCRResultTextArea() {
@@ -232,7 +238,7 @@ public class DocumentForm extends javax.swing.JPanel {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(splitPane, javax.swing.GroupLayout.DEFAULT_SIZE, 273, Short.MAX_VALUE)
+                .addComponent(splitPane, javax.swing.GroupLayout.DEFAULT_SIZE, 396, Short.MAX_VALUE)
                 .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents

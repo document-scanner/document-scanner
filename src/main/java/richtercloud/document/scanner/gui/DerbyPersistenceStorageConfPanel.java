@@ -14,63 +14,29 @@
  */
 package richtercloud.document.scanner.gui;
 
-import java.util.Properties;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import richtercloud.document.scanner.gui.conf.DerbyPersistenceStorageConf;
 import richtercloud.document.scanner.gui.storageconf.StorageConfPanel;
-import richtercloud.document.scanner.storage.DefaultPersistenceStorage;
 
 /**
  *
  * @author richter
  */
-public class DerbyPersistenceStorageConfPanel extends StorageConfPanel {
+public class DerbyPersistenceStorageConfPanel extends StorageConfPanel<DerbyPersistenceStorageConf> {
     private static final long serialVersionUID = 1L;
-    private DefaultPersistenceStorage storage;
-    private final static String CONF_KEY_CONNECTION_URL = "storage-derby-persistence-connection-url";
-    private final static String CONF_KEY_USERNAME = "storage-derby-persistence-username";
-    private final static String CONF_KEY_PASSWORD = "storage-derby-persistence-password";
-    private final static String CONF_KEY_STORAGE_PARENT_DIR = "storage-derby-persistence-parent-dir";
-    private final static String CONF_KEY_STORAGE_DATABASE_DIR_NAME = "storage-derby-persistence-database-dir-name";
-    private EntityManagerFactory entityManagerFactory;
-    private EntityManager entityManager;
+    private final DerbyPersistenceStorageConf storageConf = new DerbyPersistenceStorageConf();
 
     /**
      * Creates new form DerbyStorageConfPanel
      */
-    private DerbyPersistenceStorageConfPanel() {
+    public DerbyPersistenceStorageConfPanel() {
         this.initComponents();
     }
-    
-    public DerbyPersistenceStorageConfPanel(EntityManager entityManager, EntityManagerFactory entityManagerFactory) {
-        this();
-        this.storage = new DefaultPersistenceStorage(entityManager);
-        this.entityManagerFactory = entityManagerFactory;
-        this.entityManager = entityManager;
-    }
 
     @Override
-    public DefaultPersistenceStorage getStorage() {
-        return this.storage;
-    }
-
-    @Override
-    public void save(Properties conf) {
-        String connectionURL = this.connectionURLTextField.getText();
-        String username = this.usernameTextField.getText();
-        String password = new String(this.passwordPasswordField.getPassword());
-        this.storage.recreateEntityManager(this.entityManagerFactory, connectionURL, username, password);
-    }
-
-    @Override
-    public void load(Properties conf) {
-        String connectionURL = conf.getProperty(CONF_KEY_CONNECTION_URL);
-        String username = conf.getProperty(CONF_KEY_USERNAME);
-        String password = conf.getProperty(CONF_KEY_PASSWORD);
-        String parentDir = conf.getProperty(CONF_KEY_STORAGE_PARENT_DIR);
-        String databaseDirName = conf.getProperty(CONF_KEY_STORAGE_DATABASE_DIR_NAME);
-        this.storage = new DefaultPersistenceStorage(this.entityManager);
-        this.storage.recreateEntityManager(this.entityManagerFactory, connectionURL, username, password);
+    public DerbyPersistenceStorageConf getStorageConf() {
+        return this.storageConf;
     }
 
     /**
@@ -101,7 +67,7 @@ public class DerbyPersistenceStorageConfPanel extends StorageConfPanel {
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+            .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(connectionURLLabel)
@@ -142,4 +108,16 @@ public class DerbyPersistenceStorageConfPanel extends StorageConfPanel {
     private javax.swing.JLabel usernameLabel;
     private javax.swing.JTextField usernameTextField;
     // End of variables declaration//GEN-END:variables
+
+    @Override
+    public void save() {
+        this.storageConf.setConnectionURL(this.connectionURLTextField.getText());
+        this.storageConf.setUsername(this.usernameTextField.getText());
+        this.storageConf.setPassword(new String(this.passwordPasswordField.getPassword()));
+    }
+
+    @Override
+    public void cancel() {
+        //do nothing
+    }
 }
