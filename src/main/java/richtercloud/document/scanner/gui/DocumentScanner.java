@@ -19,6 +19,8 @@ import au.com.southsky.jfreesane.SaneDevice;
 import au.com.southsky.jfreesane.SaneException;
 import au.com.southsky.jfreesane.SaneOption;
 import au.com.southsky.jfreesane.SaneSession;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
 import com.orientechnologies.orient.core.exception.ODatabaseException;
 import com.orientechnologies.orient.core.exception.OSecurityAccessException;
@@ -167,6 +169,30 @@ public class DocumentScanner extends javax.swing.JFrame {
     private Connection conn;
     private final static int EXIT_SUCCESS = 0;
     private DocumentScannerConf conf;
+    private boolean debug = false;
+    DocumentScannerCommandParser cmd = new DocumentScannerCommandParser();
+    private final static String PROPERTY_KEY_DEBUG = "document.scanner.debug";
+
+    /**
+     * Parses the command line and evaluates system properties. Command line
+     * arguments superseed properties.
+     */
+    private void parseArguments() {
+        if(cmd.isDebug() != null) {
+            this.debug = cmd.isDebug();
+        }else {
+            String debugProp = System.getProperty(PROPERTY_KEY_DEBUG);
+            if(debugProp != null) {
+                this.debug = Boolean.valueOf(debugProp);
+            }
+        }
+
+        if(debug) {
+            LoggerContext loggerContext = (LoggerContext)LoggerFactory.getILoggerFactory();
+            ch.qos.logback.classic.Logger rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
+            rootLogger.setLevel(Level.DEBUG);
+        }
+    }
 
     /**
      * expected {@code conf} to be filled from configuration file
@@ -276,6 +302,7 @@ public class DocumentScanner extends javax.swing.JFrame {
      * Creates new form OrientdbDocumentScanner
      */
     public DocumentScanner() {
+        parseArguments();
         assert HOME_DIR.exists();
         if(!CONFIG_DIR.exists()) {
             CONFIG_DIR.mkdir();

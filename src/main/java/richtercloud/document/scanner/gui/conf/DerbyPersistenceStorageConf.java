@@ -1,7 +1,16 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package richtercloud.document.scanner.gui.conf;
 
@@ -15,7 +24,7 @@ import richtercloud.document.scanner.storage.DefaultPersistenceStorage;
  */
 public class DerbyPersistenceStorageConf implements Serializable, StorageConf<DefaultPersistenceStorage> {
     private static final long serialVersionUID = 1L;
-    private static DefaultPersistenceStorage INSTANCE;
+    private static DefaultPersistenceStorage instance;
     private final static String CONNECTION_URL_DEFAULT = "localhost";
     private final static String USERNAME_DEFAULT = "";
     private final static String PASSWORD_DEFAULT = "";
@@ -102,9 +111,9 @@ public class DerbyPersistenceStorageConf implements Serializable, StorageConf<De
 
     @Override
     public DefaultPersistenceStorage getStorage() {
-        if(INSTANCE == null) {
-            INSTANCE = new DefaultPersistenceStorage(DocumentScanner.ENTITY_MANAGER_FACTORY.createEntityManager());
+        if(instance == null) {
+            instance = new DefaultPersistenceStorage(DocumentScanner.ENTITY_MANAGER_FACTORY.createEntityManager());
         }
-        return INSTANCE;
+        return instance;
     }
 }

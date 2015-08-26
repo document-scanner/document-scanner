@@ -12,15 +12,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.gui.conf;
+package richtercloud.document.scanner.gui;
 
-import richtercloud.document.scanner.storage.Storage;
+import com.beust.jcommander.Parameter;
 
 /**
- * Both a data container and factory for instance of {@code S}.
+ * helper class to ease parsing of arguments
+ *
  * @author richter
- * @param <S> the type of the storage managed by this configuration
  */
-public interface StorageConf<S extends Storage> {
-    S getStorage();
+public class DocumentScannerCommandParser {
+
+    @Parameter(names= {"-d", "--debug"}, description= "Print extra debugging statements") private Boolean debug = null;
+
+    public Boolean isDebug() {
+        return debug;
+    }
+
+    protected void setDebug(Boolean debug) {
+        this.debug = debug;
+    }
 }
