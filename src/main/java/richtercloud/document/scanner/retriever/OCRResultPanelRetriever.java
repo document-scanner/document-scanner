@@ -12,39 +12,29 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.model;
+package richtercloud.document.scanner.retriever;
 
-import javax.persistence.Entity;
+import richtercloud.document.scanner.components.OCRResultPanel;
+import richtercloud.reflection.form.builder.retriever.ValueRetriever;
 
 /**
  *
  * @author richter
  */
-@Entity
-public class Location extends Identifiable {
-    private static final long serialVersionUID = 1L;
-    private String description;
+public class OCRResultPanelRetriever implements ValueRetriever<String, OCRResultPanel> {
+    private final static OCRResultPanelRetriever INSTANCE = new OCRResultPanelRetriever();
 
-    protected Location() {
+    public static OCRResultPanelRetriever getInstance() {
+        return INSTANCE;
     }
 
-    public Location(Long id, String description) {
-        super(id);
-        this.description = description;
+    protected OCRResultPanelRetriever() {
     }
 
-    /**
-     * @return the description
-     */
-    public String getDescription() {
-        return this.description;
-    }
-
-    /**
-     * @param description the description to set
-     */
-    public void setDescription(String description) {
-        this.description = description;
+    @Override
+    public String retrieve(OCRResultPanel comp) {
+        String retValue = comp.retrieveText();
+        return retValue;
     }
 
 }

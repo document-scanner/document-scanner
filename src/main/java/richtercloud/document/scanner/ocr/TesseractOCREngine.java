@@ -24,6 +24,7 @@ import javax.imageio.ImageIO;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.gui.TesseractNotFoundException;
 
 /**
  * A {@link OCREngine} which uses tesseract in inter-process communication
@@ -63,26 +64,46 @@ public class TesseractOCREngine implements OCREngine {
      * checks whether the specified {@code tesseract} command is available and
      * accessible/executable
      * @param tesseract the command to check
+     * @return the {@link IOException} which is presumed to have cause the
+     * absence of the tesseact binary {@code tesseract}
      * @throws InterruptedException if an {@code InterruptedException} occurs during {@link Runtime#exec(java.lang.String) }
-     * @throws IOException causing the binary to be presumed unavailable
      */
-    public static void checkTesseractAvailable(String tesseract) throws IOException,InterruptedException {
-        new ProcessBuilder(tesseract).start().waitFor();
+    /*
+    internal implementation notes:
+    - returns the exception which is presumed to indicate the absense of the
+    binary. This allows to examine the exception by callers and eventually to
+    distinguish
+    IOExceptions which are proof of absense of the binary and unrelated
+    IOExceptions which might be thrown and need to be handled by caller
+    */
+    public static IOException checkTesseractAvailable(String tesseract) throws InterruptedException {
+        try {
+            new ProcessBuilder(tesseract).start().waitFor();
+            return null;
+        }catch(IOException ex) {
+            return ex;
+        }
     }
 
-    public static void checkTesseractAvailableExceptions(String tesseract) {
+    public static void checkTesseractAvailableExceptions(String tesseract) throws TesseractNotFoundException {
+        IOException exception;
         try {
-            checkTesseractAvailable(tesseract);
-        }catch(IOException ex) {
-            throw new IllegalStateException(String.format("The tesseract binary '%s' isn't available or inaccessible (see nested exception for details)", tesseract), ex);
+            exception = checkTesseractAvailable(tesseract);
         } catch (InterruptedException ex) {
             throw new RuntimeException(String.format("An unexpected exception occured during the search of the tesseract binary '%s' because the process has been interrupted (see nested exception for details)", tesseract), ex);
+        }
+        if(exception != null) {
+            throw new TesseractNotFoundException(tesseract, exception);
         }
     }
 
     @Override
     public String recognizeImage(BufferedImage image) {
-        checkTesseractAvailableExceptions(this.tesseract);
+        try {
+            checkTesseractAvailableExceptions(this.tesseract);
+        }catch(TesseractNotFoundException ex) {
+            throw new RuntimeException("tesseract not available (see nested exception for details)", ex);
+        }
         LOGGER.debug("tesseract binary '{}' found and executable", this.tesseract);
         Iterator<String> languagesItr = this.languages.iterator();
         String lanuguageString = languagesItr.next();

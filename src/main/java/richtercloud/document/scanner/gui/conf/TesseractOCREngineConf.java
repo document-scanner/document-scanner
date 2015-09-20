@@ -42,7 +42,7 @@ public class TesseractOCREngineConf implements Serializable, OCREngineConf<Tesse
      * @return the selectedLanguages
      */
     public List<String> getSelectedLanguages() {
-        return selectedLanguages;
+        return Collections.unmodifiableList(this.selectedLanguages);
     }
 
     /**
@@ -55,13 +55,13 @@ public class TesseractOCREngineConf implements Serializable, OCREngineConf<Tesse
     @Override
     public TesseractOCREngine getOCREngine() {
         if(instance == null) {
-            instance = new TesseractOCREngine(selectedLanguages);
+            instance = new TesseractOCREngine(this.selectedLanguages);
         }
         return instance;
     }
 
     public String getTesseract() {
-        return tesseract;
+        return this.tesseract;
     }
 
     public void setTesseract(String tesseract) {

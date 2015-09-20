@@ -14,15 +14,14 @@
  */
 package richtercloud.document.scanner.model;
 
-import java.io.Serializable;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import javax.persistence.Entity;
-import javax.persistence.Id;
 import javax.persistence.ManyToMany;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.validation.constraints.NotNull;
 
 /**
  *
@@ -33,27 +32,21 @@ internal implementation notes:
 - name prefixed with A in order to avoid collision with java.lang.Package
 */
 @Entity
-public class APackage implements Serializable {
+public class APackage extends CommunicationItem {
     private static final long serialVersionUID = 1L;
-    @Id
-    private Long id;
     /**
      * the date and time (timestamp) of the reception (time is optional, but
      * will be persisted when specified)
      */
     @Temporal(TemporalType.TIMESTAMP)
+    @NotNull
     private Date reception;
-    /**
-     * the date and time (timestamp) on the package (e.g. the sending time)
-     * (time is optional, but will be persisted when specified)
-     */
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date theDate;
     /**
      * the date and time (timestamp) of the delivery (by the sender) (time is
      * optional, but will be persisted when specified)
      */
     @Temporal(TemporalType.TIMESTAMP)
+    @NotNull
     private Date delivery;
     @ManyToMany
     private List<Shipping> shippings;
@@ -61,25 +54,10 @@ public class APackage implements Serializable {
     protected APackage() {
     }
 
-    public APackage(Long id, Date reception, Date date, Date delivery) {
-        this.id = id;
+    public APackage(Long id, Company sender, Company receiver, Date reception, Date theDate, Date delivery) {
+        super(id, sender, receiver, theDate);
         this.reception = reception;
-        this.theDate = date;
         this.delivery = delivery;
-    }
-
-    /**
-     * @return the id
-     */
-    public Long getId() {
-        return this.id;
-    }
-
-    /**
-     * @param id the id to set
-     */
-    public void setId(Long id) {
-        this.id = id;
     }
 
     /**
@@ -94,20 +72,6 @@ public class APackage implements Serializable {
      */
     public void setReception(Date reception) {
         this.reception = reception;
-    }
-
-    /**
-     * @return the theDate
-     */
-    public Date getTheDate() {
-        return this.theDate;
-    }
-
-    /**
-     * @param theDate the theDate to set
-     */
-    public void setTheDate(Date theDate) {
-        this.theDate = theDate;
     }
 
     /**

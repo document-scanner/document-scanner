@@ -19,8 +19,9 @@ import java.util.Date;
 import java.util.List;
 import javax.persistence.Entity;
 import javax.persistence.ManyToMany;
-import richtercloud.reflection.form.builder.components.annotations.OCRResult;
-import richtercloud.reflection.form.builder.components.annotations.ScanResult;
+import javax.validation.constraints.NotNull;
+import richtercloud.document.scanner.components.annotations.OCRResult;
+import richtercloud.document.scanner.components.annotations.ScanResult;
 
 /**
  *
@@ -30,6 +31,10 @@ import richtercloud.reflection.form.builder.components.annotations.ScanResult;
 public class Document extends AbstractDocument {
     private static final long serialVersionUID = 1L;
     private String comment;
+    /**
+     * a name for the document or a few words describing the context
+     */
+    @NotNull
     private String identifier;
     @ScanResult
     private byte[] scanData;
@@ -41,8 +46,8 @@ public class Document extends AbstractDocument {
     protected Document() {
     }
 
-    public Document(String comment, String identifier, byte[] scanData, String scanOCRText, List<Payment> payments, Date date, Date receptionDate, Location originalLocation, boolean originalLost, Long id, Company contact) {
-        super(date, receptionDate, originalLocation, originalLost, id, contact);
+    public Document(String comment, String identifier, byte[] scanData, String scanOCRText, List<Payment> payments, Date date, Date receptionDate, Location originalLocation, boolean originalLost, Long id, Company sender, Company recipient) {
+        super(date, receptionDate, originalLocation, originalLost, id, sender, recipient);
         this.comment = comment;
         this.identifier = identifier;
         this.scanData = scanData;

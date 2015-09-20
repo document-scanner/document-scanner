@@ -14,24 +14,21 @@
  */
 package richtercloud.document.scanner.model;
 
-import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
+import javax.validation.constraints.NotNull;
 
 /**
  *
  * @author richter
  */
 @Entity
-public class Company implements Serializable {
+public class Company extends Identifiable {
     private static final long serialVersionUID = 1L;
-    @Id
-    private Long id;
+    @NotNull
     private String name;
     @ElementCollection
     private List<String> allNames;
@@ -39,7 +36,7 @@ public class Company implements Serializable {
      * Multiple contacts can have the same address (shared office) and a contact
      * can have multiple addresses.
      */
-    @ManyToMany
+    @ElementCollection
     private List<Address> addresses;
     /**
      * One {@code Company} can have multiple email addresses, but it's very
@@ -47,34 +44,22 @@ public class Company implements Serializable {
      */
     @OneToMany
     private List<EmailAddress> emails;
+    @OneToMany
+    private List<FinanceAccount> accounts;
 
     protected Company() {
     }
 
     public Company(Long id, String name, List<String> allNames, List<Address> addresses, List<EmailAddress> emails) {
-        this.id = id;
+        super(id);
         this.name = name;
         this.allNames = allNames;
         this.addresses = addresses;
         this.emails = emails;
     }
 
-    /**
-     * @return the id
-     */
-    public Long getId() {
-        return this.id;
-    }
-
-    /**
-     * @param id the id to set
-     */
-    public void setId(Long id) {
-        this.id = id;
-    }
-
     public String getName() {
-        return name;
+        return this.name;
     }
 
     public void setName(String name) {
@@ -121,5 +106,19 @@ public class Company implements Serializable {
      */
     public void setEmails(List<EmailAddress> emails) {
         this.emails = emails;
+    }
+
+    /**
+     * @return the accounts
+     */
+    public List<FinanceAccount> getAccounts() {
+        return Collections.unmodifiableList(this.accounts);
+    }
+
+    /**
+     * @param accounts the accounts to set
+     */
+    public void setAccounts(List<FinanceAccount> accounts) {
+        this.accounts = accounts;
     }
 }

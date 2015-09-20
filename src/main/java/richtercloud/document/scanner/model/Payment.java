@@ -14,34 +14,61 @@
  */
 package richtercloud.document.scanner.model;
 
-import java.io.Serializable;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import javax.persistence.Entity;
-import javax.persistence.Id;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.validation.constraints.NotNull;
 
 /**
  *
  * @author richter
  */
 @Entity
-public class Payment implements Serializable {
+public class Payment extends Identifiable {
     private static final long serialVersionUID = 1L;
-    @Id
-    private Long id;
     @OneToOne
+    @NotNull
     private FinanceAccount account;
+    @NotNull
     private float amount;
+    /**
+     * The exact date and time of (the transfer) of the payment.
+     */
+    /*
+    internal implementation notes:
+    - an exact timestamp avoids the need for a further property to distinct
+    multiple payments from the same sender to the same recipient with the same
+    amount
+    */
     @Temporal(TemporalType.TIMESTAMP)
+    @NotNull
     private Date theDate;
+    /**
+     * The sender to the payment.
+     */
+    /*
+    internal implementation notes:
+    - it doesn't make sense to describe payments between Companys because they
+    can have multiple FinanceAccounts
+    */
     @OneToOne
+    @NotNull
     private FinanceAccount sender;
+    /**
+     * The recipient of the payment.
+     */
+    /*
+    internal implementation notes:
+    - it doesn't make sense to describe payments between Companys because they
+    can have multiple FinanceAccounts
+    */
     @OneToOne
+    @NotNull
     private FinanceAccount recipient;
     /**
      * where the payment is associated in
@@ -53,26 +80,12 @@ public class Payment implements Serializable {
     }
 
     public Payment(Long id, FinanceAccount account, float amount, Date date, FinanceAccount sender, FinanceAccount recipient) {
-        this.id = id;
+        super(id);
         this.account = account;
         this.amount = amount;
         this.theDate = date;
         this.sender = sender;
         this.recipient = recipient;
-    }
-
-    /**
-     * @return the id
-     */
-    public Long getId() {
-        return this.id;
-    }
-
-    /**
-     * @param id the id to set
-     */
-    public void setId(Long id) {
-        this.id = id;
     }
 
     /**
@@ -106,15 +119,15 @@ public class Payment implements Serializable {
     /**
      * @return the theDate
      */
-    public Date getDate() {
+    public Date getTheDate() {
         return this.theDate;
     }
 
     /**
-     * @param date the theDate to set
+     * @param theDate the theDate to set
      */
-    public void setDate(Date date) {
-        this.theDate = date;
+    public void setTheDate(Date theDate) {
+        this.theDate = theDate;
     }
 
     /**

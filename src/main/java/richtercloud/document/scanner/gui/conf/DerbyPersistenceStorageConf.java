@@ -43,7 +43,7 @@ public class DerbyPersistenceStorageConf implements Serializable, StorageConf<De
      * @return the username
      */
     public String getUsername() {
-        return username;
+        return this.username;
     }
 
     /**
@@ -57,7 +57,7 @@ public class DerbyPersistenceStorageConf implements Serializable, StorageConf<De
      * @return the password
      */
     public String getPassword() {
-        return password;
+        return this.password;
     }
 
     /**
@@ -71,7 +71,7 @@ public class DerbyPersistenceStorageConf implements Serializable, StorageConf<De
      * @return the storageParentDir
      */
     public String getStorageParentDir() {
-        return storageParentDir;
+        return this.storageParentDir;
     }
 
     /**
@@ -85,7 +85,7 @@ public class DerbyPersistenceStorageConf implements Serializable, StorageConf<De
      * @return the databaseDirName
      */
     public String getDatabaseDirName() {
-        return databaseDirName;
+        return this.databaseDirName;
     }
 
     /**
@@ -99,7 +99,7 @@ public class DerbyPersistenceStorageConf implements Serializable, StorageConf<De
      * @return the connectionURL
      */
     public String getConnectionURL() {
-        return connectionURL;
+        return this.connectionURL;
     }
 
     /**

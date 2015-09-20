@@ -19,6 +19,7 @@ import java.util.Date;
 import java.util.List;
 import javax.persistence.Basic;
 import javax.persistence.Entity;
+import javax.validation.constraints.NotNull;
 
 /**
  *
@@ -27,15 +28,17 @@ import javax.persistence.Entity;
 @Entity
 public class Bill extends Document {
     private static final long serialVersionUID = 1L;
+    @NotNull
     private float amount;
-    @Basic(optional = true)
+    @Basic
+    @NotNull
     private Currency currency;
 
     protected Bill() {
     }
 
-    public Bill(float amount, Currency currency, String comment, String identifier, byte[] scanData, String scanOCRText, List<Payment> payments, Date date, Date receptionDate, Location originalLocation, boolean originalLost, Long id, Company contact) {
-        super(comment, identifier, scanData, scanOCRText, payments, date, receptionDate, originalLocation, originalLost, id, contact);
+    public Bill(float amount, Currency currency, String comment, String identifier, byte[] scanData, String scanOCRText, List<Payment> payments, Date date, Date receptionDate, Location originalLocation, boolean originalLost, Long id, Company sender, Company recipient) {
+        super(comment, identifier, scanData, scanOCRText, payments, date, receptionDate, originalLocation, originalLost, id, sender, recipient);
         this.amount = amount;
         this.currency = currency;
     }

@@ -12,39 +12,29 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.model;
+package richtercloud.document.scanner.model.validator;
 
-import javax.persistence.Entity;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import java.lang.annotation.Target;
+import javax.validation.Constraint;
+import javax.validation.Payload;
 
 /**
  *
  * @author richter
  */
-@Entity
-public class Location extends Identifiable {
-    private static final long serialVersionUID = 1L;
-    private String description;
+@Target( { ElementType.TYPE })
+@Retention(RUNTIME)
+@Constraint(validatedBy = FinanceAccountValidator.class)
+@Documented
+public @interface ValidFinanceAccount {
 
-    protected Location() {
-    }
+    String message() default FinanceAccountValidator.MESSAGE_DEFAULT;
 
-    public Location(Long id, String description) {
-        super(id);
-        this.description = description;
-    }
+    Class<?>[] groups() default {};
 
-    /**
-     * @return the description
-     */
-    public String getDescription() {
-        return this.description;
-    }
-
-    /**
-     * @param description the description to set
-     */
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
+    Class<? extends Payload>[] payload() default {};
 }

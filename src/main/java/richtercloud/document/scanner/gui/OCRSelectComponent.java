@@ -127,12 +127,12 @@ public class OCRSelectComponent extends JPanel implements Scrollable {
         //and the nearest tick mark in the indicated direction.
         if (direction < 0) {
             int newPosition = currentPosition -
-                             (currentPosition / maxUnitIncrement)
-                              * maxUnitIncrement;
-            return (newPosition == 0) ? maxUnitIncrement : newPosition;
+                             (currentPosition / this.maxUnitIncrement)
+                              * this.maxUnitIncrement;
+            return (newPosition == 0) ? this.maxUnitIncrement : newPosition;
         } else {
-            return ((currentPosition / maxUnitIncrement) + 1)
-                     * maxUnitIncrement
+            return ((currentPosition / this.maxUnitIncrement) + 1)
+                     * this.maxUnitIncrement
                      - currentPosition;
         }
     }
@@ -140,9 +140,9 @@ public class OCRSelectComponent extends JPanel implements Scrollable {
     @Override
     public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
         if (orientation == SwingConstants.HORIZONTAL) {
-            return visibleRect.width - maxUnitIncrement;
+            return visibleRect.width - this.maxUnitIncrement;
         } else {
-            return visibleRect.height - maxUnitIncrement;
+            return visibleRect.height - this.maxUnitIncrement;
         }
     }
 

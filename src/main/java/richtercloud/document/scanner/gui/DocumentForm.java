@@ -20,35 +20,24 @@ import java.awt.event.MouseEvent;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
-import java.util.LinkedList;
+import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import javax.persistence.EntityManager;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
-import javax.swing.JScrollPane;
-import javax.swing.JSpinner;
 import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import richtercloud.document.scanner.setter.IdSpinnerSetter;
-import richtercloud.document.scanner.setter.SpinnerSetter;
-import richtercloud.document.scanner.setter.TextFieldSetter;
+import richtercloud.document.scanner.components.OCRResultPanelFetcher;
+import richtercloud.document.scanner.components.ScanResultPanelFetcher;
 import richtercloud.document.scanner.setter.ValueSetter;
+import richtercloud.reflection.form.builder.ClassAnnotationHandler;
+import richtercloud.reflection.form.builder.FieldAnnotationHandler;
+import richtercloud.reflection.form.builder.FieldHandler;
 import richtercloud.reflection.form.builder.ReflectionFormBuilder;
 import richtercloud.reflection.form.builder.ReflectionFormPanel;
-import richtercloud.reflection.form.builder.components.OCRResultPanel;
-import richtercloud.reflection.form.builder.components.OCRResultPanelRetriever;
-import richtercloud.reflection.form.builder.components.ScanResultPanel;
-import richtercloud.reflection.form.builder.components.ScanResultPanelRetriever;
-import richtercloud.reflection.form.builder.components.annotations.OCRResult;
-import richtercloud.reflection.form.builder.components.annotations.ScanResult;
-import richtercloud.reflection.form.builder.jpa.IdPanel;
 import richtercloud.reflection.form.builder.jpa.JPAReflectionFormBuilder;
 import richtercloud.reflection.form.builder.retriever.ValueRetriever;
 
@@ -58,16 +47,6 @@ import richtercloud.reflection.form.builder.retriever.ValueRetriever;
  */
 public class DocumentForm extends javax.swing.JPanel {
     private static final long serialVersionUID = 1L;
-    private final static Map<Class<? extends JComponent>, ValueSetter<?>> VALUE_SETTER_DEFAULT;
-    static {
-        Map<Class<? extends JComponent>, ValueSetter<?>>  valueSetter0 = new HashMap<>();
-        valueSetter0.put(JTextField.class, TextFieldSetter.getInstance());
-        valueSetter0.put(JSpinner.class, SpinnerSetter.getInstance());
-        valueSetter0.put(IdPanel.class, IdSpinnerSetter.getInstance());
-        VALUE_SETTER_DEFAULT = valueSetter0;
-    }
-    private OCRResultPanelRetriever oCRResultPanelRetriever;
-    private ScanResultPanelRetriever scanResultPanelRetriever;
 
     /**
      * Creates new form DocumentForm
@@ -78,40 +57,40 @@ public class DocumentForm extends javax.swing.JPanel {
 
     public DocumentForm(Set<Class<?>> entityClasses,
             EntityManager entityManager,
-            final OCRResultPanelRetriever oCRResultPanelRetriever,
-            final ScanResultPanelRetriever scanResultPanelRetriever) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+            List<Pair<Class<? extends Annotation>,FieldAnnotationHandler>> fieldAnnotationMapping,
+            List<Pair<Class<? extends Annotation>,ClassAnnotationHandler>> classAnnotationMapping,
+            final OCRResultPanelFetcher oCRResultPanelRetriever,
+            final ScanResultPanelFetcher scanResultPanelRetriever) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         this(entityClasses,
                 ReflectionFormBuilder.CLASS_MAPPING_DEFAULT,
-                ReflectionFormBuilder.VALUE_RETRIEVER_MAPPING_DEFAULT,
-                DocumentForm.VALUE_SETTER_DEFAULT,
+                ReflectionFormBuilder.PRIMITIVE_MAPPING_DEFAULT,
+                JPAReflectionFormBuilder.VALUE_RETRIEVER_MAPPING_JPA_DEFAULT,
+                DocumentScanner.VALUE_SETTER_MAPPING_DEFAULT,
                 entityManager,
+                fieldAnnotationMapping,
+                classAnnotationMapping,
                 oCRResultPanelRetriever,
                 scanResultPanelRetriever);
     }
 
     public DocumentForm(Set<Class<?>> entityClasses,
-            Map<Class<?>, Class<? extends JComponent>> classMapping,
+            Map<Type, FieldHandler> classMapping,
+            Map<Class<?>, Class<? extends JComponent>> primitiveMapping,
             Map<Class<? extends JComponent>, ValueRetriever<?, ?>> valueRetrieverMapping,
             Map<Class<? extends JComponent>, ValueSetter<?>> valueSetterMapping,
             EntityManager entityManager,
-            final OCRResultPanelRetriever oCRResultPanelRetriever,
-            final ScanResultPanelRetriever scanResultPanelRetriever) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+            List<Pair<Class<? extends Annotation>,FieldAnnotationHandler>> fieldAnnotationMapping,
+            List<Pair<Class<? extends Annotation>,ClassAnnotationHandler>> classAnnotationMapping,
+            final OCRResultPanelFetcher oCRResultPanelRetriever,
+            final ScanResultPanelFetcher scanResultPanelRetriever) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         this.initComponents();
-        List<Pair<Class<? extends Annotation>, Callable<? extends JComponent>>> annotationMapping = new LinkedList<>();
-        annotationMapping.add(new ImmutablePair<Class<? extends Annotation>, Callable<? extends JComponent>>(OCRResult.class, new Callable<OCRResultPanel>() {
-            @Override
-            public OCRResultPanel call() throws Exception {
-                return new OCRResultPanel(oCRResultPanelRetriever);
-            }
-        }));
-        annotationMapping.add(new ImmutablePair<Class<? extends Annotation>, Callable<? extends JComponent>>(ScanResult.class, new Callable<ScanResultPanel>() {
-
-            @Override
-            public ScanResultPanel call() throws Exception {
-                return new ScanResultPanel(scanResultPanelRetriever);
-            }
-        }));
-        ReflectionFormBuilder<?> reflectionFormBuilder = new JPAReflectionFormBuilder<>(classMapping, valueRetrieverMapping, entityManager, annotationMapping);
+        ReflectionFormBuilder reflectionFormBuilder = new JPAReflectionFormBuilder(classMapping,
+                primitiveMapping,
+                valueRetrieverMapping,
+                entityManager,
+                fieldAnnotationMapping,
+                classAnnotationMapping,
+                DocumentScanner.generateApplicationWindowTitle("Persistence failure"));
         this.init0(entityClasses, reflectionFormBuilder, valueSetterMapping);
     }
 
@@ -135,7 +114,7 @@ public class DocumentForm extends javax.swing.JPanel {
 
     private class FieldActionListener implements ActionListener {
         private final Field field;
-        private final ReflectionFormPanel<?> reflectionFormPanel;
+        private final ReflectionFormPanel reflectionFormPanel;
         private final Map<Class<? extends JComponent>, ValueSetter<?>> valueSetterMapping;
 
         FieldActionListener(ReflectionFormPanel reflectionFormPanel, Field field, Map<Class<? extends JComponent>, ValueSetter<?>> valueSetterMapping) {

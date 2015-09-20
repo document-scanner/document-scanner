@@ -15,18 +15,22 @@
 package richtercloud.document.scanner.model;
 
 import java.io.Serializable;
-import javax.persistence.Entity;
-import javax.persistence.Id;
+import javax.persistence.Embeddable;
 
 /**
  *
  * @author richter
  */
-@Entity
+/*
+internal implementation notes:
+- in order to allow arbitrary vague addresses (e.g. only the city if other
+information isn't known), the class has to be an embeddable (otherwise updates
+would destroy data if two Companys intially share that same vague address
+entity)
+*/
+@Embeddable
 public class Address implements Serializable {
     private static final long serialVersionUID = 1L;
-    @Id
-    private Long id;
     private String street;
     private String number;
     private String region;
@@ -37,21 +41,12 @@ public class Address implements Serializable {
     protected Address() {
     }
 
-    public Address(Long id, String street, String number, String region, String city, String country) {
-        this.id = id;
+    public Address(String street, String number, String region, String city, String country) {
         this.street = street;
         this.number = number;
         this.region = region;
         this.city = city;
         this.country = country;
-    }
-
-    public Long getId() {
-        return this.id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     /**

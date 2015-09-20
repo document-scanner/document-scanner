@@ -14,48 +14,39 @@
  */
 package richtercloud.document.scanner.model;
 
-import java.io.Serializable;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
-import javax.persistence.Id;
 import javax.persistence.ManyToOne;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+import javax.validation.constraints.NotNull;
 
 /**
  *
  * @author richter
  */
 @Entity
-public class TransportTicket implements Serializable {
+public class TransportTicket extends Identifiable {
     private static final long serialVersionUID = 1L;
-    @Id
-    private Long id;
     @ManyToOne
     private Company transportCompany;
     @ElementCollection
     private List<String> waypoints;
+    @NotNull
+    @Temporal(TemporalType.DATE)
+    private Date theDate;
 
     protected TransportTicket() {
     }
 
-    public TransportTicket(Company transportCompany, List<String> waypoints) {
+    public TransportTicket(Long id, Company transportCompany, List<String> waypoints, Date theDate) {
+        super(id);
         this.transportCompany = transportCompany;
         this.waypoints = waypoints;
-    }
-
-    /**
-     * @return the id
-     */
-    public Long getId() {
-        return this.id;
-    }
-
-    /**
-     * @param id the id to set
-     */
-    public void setId(Long id) {
-        this.id = id;
+        this.theDate = theDate;
     }
 
     /**
@@ -84,5 +75,19 @@ public class TransportTicket implements Serializable {
      */
     public void setWaypoints(List<String> waypoints) {
         this.waypoints = waypoints;
+    }
+
+    /**
+     * @return the theDate
+     */
+    public Date getTheDate() {
+        return this.theDate;
+    }
+
+    /**
+     * @param theDate the theDate to set
+     */
+    public void setTheDate(Date theDate) {
+        this.theDate = theDate;
     }
 }

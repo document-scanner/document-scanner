@@ -20,14 +20,14 @@ import richtercloud.reflection.form.builder.jpa.IdPanel;
  *
  * @author richter
  */
-public class IdSpinnerSetter implements ValueSetter<IdPanel>{
-    private final static IdSpinnerSetter INSTANCE = new IdSpinnerSetter();
+public class IdPanelSetter implements ValueSetter<IdPanel>{
+    private final static IdPanelSetter INSTANCE = new IdPanelSetter();
 
-    public static IdSpinnerSetter getInstance() {
+    public static IdPanelSetter getInstance() {
         return INSTANCE;
     }
 
-    protected IdSpinnerSetter() {
+    protected IdPanelSetter() {
     }
 
     @Override

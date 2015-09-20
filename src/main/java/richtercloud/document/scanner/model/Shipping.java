@@ -15,9 +15,11 @@
 package richtercloud.document.scanner.model;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import javax.persistence.Entity;
 import javax.persistence.ManyToMany;
+import javax.validation.constraints.Size;
 
 /**
  *
@@ -27,13 +29,14 @@ import javax.persistence.ManyToMany;
 public class Shipping extends CommunicationItem {
     private static final long serialVersionUID = 1L;
     @ManyToMany(mappedBy = "shippings")
+    @Size(min = 1) //otherwise creating a shipping doesn't make sense
     private List<APackage> packages;
 
     protected Shipping() {
     }
 
-    public Shipping(List<APackage> packages, Long id, Company contact) {
-        super(id, contact);
+    public Shipping(List<APackage> packages, Long id, Company sender, Company recipient, Date theDate, Date received) {
+        super(id, sender, recipient, theDate);
         this.packages = packages;
     }
 

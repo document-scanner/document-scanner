@@ -12,39 +12,27 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.model;
+package richtercloud.document.scanner.model.validator;
 
-import javax.persistence.Entity;
+import javax.validation.ConstraintValidator;
+import javax.validation.ConstraintValidatorContext;
+import richtercloud.document.scanner.model.Person;
 
 /**
  *
  * @author richter
  */
-@Entity
-public class Location extends Identifiable {
-    private static final long serialVersionUID = 1L;
-    private String description;
+public class PersonValidator implements ConstraintValidator<ValidPerson, Person> {
+    public static final String MESSAGE_DEFAULT = "Not a valid person (specify at least one firstname or one lastname)";
 
-    protected Location() {
+    @Override
+    public void initialize(ValidPerson constraintAnnotation) {
+        //do nothing
     }
 
-    public Location(Long id, String description) {
-        super(id);
-        this.description = description;
-    }
-
-    /**
-     * @return the description
-     */
-    public String getDescription() {
-        return this.description;
-    }
-
-    /**
-     * @param description the description to set
-     */
-    public void setDescription(String description) {
-        this.description = description;
+    @Override
+    public boolean isValid(Person value, ConstraintValidatorContext context) {
+        return value.getFirstnames().size() > 0 || value.getLastnames().size() > 0;
     }
 
 }

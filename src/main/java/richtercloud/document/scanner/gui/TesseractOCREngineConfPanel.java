@@ -38,12 +38,13 @@ public class TesseractOCREngineConfPanel extends OCREngineConfPanel<TesseractOCR
      * Creates new form TesseractOCREngineConfPanel
      * @throws java.io.IOException
      * @throws java.lang.InterruptedException
+     * @throws richtercloud.document.scanner.gui.TesseractNotFoundException
      */
-    public TesseractOCREngineConfPanel() throws IOException, InterruptedException {
+    public TesseractOCREngineConfPanel() throws IOException, InterruptedException, TesseractNotFoundException {
         this(new TesseractOCREngineConf());
     }
 
-    public TesseractOCREngineConfPanel(TesseractOCREngineConf conf) throws IOException, InterruptedException {
+    public TesseractOCREngineConfPanel(TesseractOCREngineConf conf) throws IOException, InterruptedException, TesseractNotFoundException {
         this.initComponents();
         this.conf = conf;
         TesseractOCREngine.checkTesseractAvailableExceptions(this.conf.getTesseract());
@@ -62,7 +63,7 @@ public class TesseractOCREngineConfPanel extends OCREngineConfPanel<TesseractOCR
                 langs.add(lang);
             }
         }
-        langs.sort(String.CASE_INSENSITIVE_ORDER);
+        Collections.sort(langs, String.CASE_INSENSITIVE_ORDER);
         for(String lang : langs) {
             this.languageListModel.addElement(lang);
         }

@@ -19,6 +19,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.validation.constraints.NotNull;
 
 /**
  *
@@ -28,26 +29,31 @@ import javax.persistence.TemporalType;
 public abstract class AbstractDocument extends CommunicationItem {
     private static final long serialVersionUID = 1L;
     /**
-     * the date and time (timestamp) of the actual reception
+     * The date and time (timestamp) of the actual reception.
      */
     @Temporal(TemporalType.TIMESTAMP)
+    @NotNull
     private Date received;
     /**
-     * the data and time (timestamp) of the reception indicated on the document
+     * Where the document can be found. {@code null} indicates that the location
+     * of the original is unknown (default).
      */
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date receptionDate;
     @ManyToOne
-    private Location originalLocation;
-    private boolean originalLost;
+    private Location originalLocation = null;
+    /**
+     * Whether the original is definitely lost. The original location might be
+     * unknown, but the original not definitely lost. In this case the
+     * {@code originalLocation} is {@code null} and {@code originalLost} is
+     * {@code false}.
+     */
+    private boolean originalLost = false;
 
     protected AbstractDocument() {
     }
 
-    public AbstractDocument(Date received, Date receptionDate, Location originalLocation, boolean originalLost, Long id, Company contact) {
-        super(id, contact);
+    public AbstractDocument(Date received, Date theDate, Location originalLocation, boolean originalLost, Long id, Company sender, Company recipient) {
+        super(id, sender, recipient, theDate);
         this.received = received;
-        this.receptionDate = receptionDate;
         this.originalLocation = originalLocation;
         this.originalLost = originalLost;
     }
@@ -64,20 +70,6 @@ public abstract class AbstractDocument extends CommunicationItem {
      */
     public void setReceived(Date date) {
         this.received = date;
-    }
-
-    /**
-     * @return the receptionDate
-     */
-    public Date getReceptionDate() {
-        return this.receptionDate;
-    }
-
-    /**
-     * @param receptionDate the receptionDate to set
-     */
-    public void setReceptionDate(Date receptionDate) {
-        this.receptionDate = receptionDate;
     }
 
     /**

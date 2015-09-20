@@ -14,22 +14,22 @@
  */
 package richtercloud.document.scanner.model;
 
-import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
-import javax.persistence.Id;
+import javax.validation.constraints.NotNull;
+import richtercloud.document.scanner.model.validator.ValidEmailAddress;
 
 /**
  *
  * @author richter
  */
 @Entity
-public class EmailAddress implements Serializable {
+public class EmailAddress extends Identifiable {
     private static final long serialVersionUID = 1L;
-    @Id
-    private Long id;
+    @NotNull
+    @ValidEmailAddress
     private String address;
     @ElementCollection
     private List<String> pgpKeyIds;
@@ -38,23 +38,9 @@ public class EmailAddress implements Serializable {
     }
 
     public EmailAddress(Long id, String address, List<String> pgpKeyIds) {
-        this.id = id;
+        super(id);
         this.address = address;
         this.pgpKeyIds = pgpKeyIds;
-    }
-
-    /**
-     * @return the id
-     */
-    public Long getId() {
-        return this.id;
-    }
-
-    /**
-     * @param id the id to set
-     */
-    public void setId(Long id) {
-        this.id = id;
     }
 
     /**

@@ -77,5 +77,10 @@
             Whitespace required before ')' and after ')' 
             <property name="option" value="space"/>
         </module>  -->
+        <module name="Regexp">
+            <property name="format" value="[ \t]+$"/>
+            <property name="illegalPattern" value="true"/>
+            <property name="message" value="Trailing whitespace"/>
+        </module>
     </module>
 </module>

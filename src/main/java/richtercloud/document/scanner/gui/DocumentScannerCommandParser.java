@@ -26,7 +26,7 @@ public class DocumentScannerCommandParser {
     @Parameter(names= {"-d", "--debug"}, description= "Print extra debugging statements") private Boolean debug = null;
 
     public Boolean isDebug() {
-        return debug;
+        return this.debug;
     }
 
     protected void setDebug(Boolean debug) {

@@ -14,23 +14,33 @@
  */
 package richtercloud.document.scanner.model;
 
-import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import javax.persistence.Entity;
-import javax.persistence.Id;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.validation.constraints.NotNull;
+import richtercloud.document.scanner.model.validator.ValidFinanceAccount;
 
 /**
- *
+ * Represents a financial account which either has the {@code iban} property
+ * set or the {@code blz} and {@code number} property (representing the german
+ * BLZ and account number). The entity id is generated based on either.
  * @author richter
  */
 @Entity
-public class FinanceAccount implements Serializable {
+@ValidFinanceAccount
+public class FinanceAccount extends Identifiable {
     private static final long serialVersionUID = 1L;
-    @Id
-    private Long id;
+    @ManyToOne
+    @NotNull
+    private Company owner;
+    /**
+     * Can be {@code null} if the BIC isn't necessary for the transfer for the
+     * user.
+     */
     private String bic;
+    @NotNull
     private String iban;
     private String blz;
     private String number;
@@ -40,27 +50,14 @@ public class FinanceAccount implements Serializable {
     protected FinanceAccount() {
     }
 
-    public FinanceAccount(Long id, String bic, String iban, String blz, String number, List<Payment> payments) {
-        this.id = id;
+    public FinanceAccount(Long id, String bic, String iban, String blz, String number, List<Payment> payments, Company owner) {
+        super(id);
         this.bic = bic;
         this.iban = iban;
         this.blz = blz;
         this.number = number;
         this.payments = payments;
-    }
-
-    /**
-     * @return the id
-     */
-    public Long getId() {
-        return this.id;
-    }
-
-    /**
-     * @param id the id to set
-     */
-    public void setId(Long id) {
-        this.id = id;
+        this.owner = owner;
     }
 
     /**
@@ -131,6 +128,20 @@ public class FinanceAccount implements Serializable {
      */
     public void setPayments(List<Payment> payments) {
         this.payments = payments;
+    }
+
+    /**
+     * @return the owner
+     */
+    public Company getOwner() {
+        return this.owner;
+    }
+
+    /**
+     * @param owner the owner to set
+     */
+    public void setOwner(Company owner) {
+        this.owner = owner;
     }
 
 }

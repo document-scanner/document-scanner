@@ -31,18 +31,21 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -51,6 +54,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.imageio.ImageIO;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
@@ -59,9 +63,12 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListModel;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JSpinner;
+import javax.swing.JTextField;
 import javax.swing.MutableComboBoxModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -69,11 +76,19 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.math4.stat.descriptive.DescriptiveStatistics;
 import org.apache.derby.jdbc.EmbeddedDriver;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.components.OCRResultPanel;
+import richtercloud.document.scanner.components.OCRResultPanelFetcher;
+import richtercloud.document.scanner.components.ScanResultPanelFetcher;
+import richtercloud.document.scanner.components.annotations.OCRResult;
+import richtercloud.document.scanner.components.annotations.ScanResult;
 import richtercloud.document.scanner.gui.conf.DerbyPersistenceStorageConf;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.gui.conf.OCREngineConf;
@@ -82,7 +97,6 @@ import richtercloud.document.scanner.gui.conf.TesseractOCREngineConf;
 import richtercloud.document.scanner.gui.engineconf.OCREngineConfPanel;
 import richtercloud.document.scanner.gui.storageconf.StorageConfPanel;
 import richtercloud.document.scanner.model.APackage;
-import richtercloud.document.scanner.model.Address;
 import richtercloud.document.scanner.model.Bill;
 import richtercloud.document.scanner.model.Company;
 import richtercloud.document.scanner.model.Document;
@@ -96,6 +110,18 @@ import richtercloud.document.scanner.model.Shipping;
 import richtercloud.document.scanner.model.TelephoneCall;
 import richtercloud.document.scanner.model.TransportTicket;
 import richtercloud.document.scanner.ocr.OCREngine;
+import richtercloud.document.scanner.retriever.OCRResultPanelRetriever;
+import richtercloud.document.scanner.setter.IdPanelSetter;
+import richtercloud.document.scanner.setter.SpinnerSetter;
+import richtercloud.document.scanner.setter.TextFieldSetter;
+import richtercloud.document.scanner.setter.ValueSetter;
+import richtercloud.reflection.form.builder.ClassAnnotationHandler;
+import richtercloud.reflection.form.builder.FieldAnnotationHandler;
+import richtercloud.reflection.form.builder.FieldHandler;
+import richtercloud.reflection.form.builder.ReflectionFormPanel;
+import richtercloud.reflection.form.builder.jpa.IdPanel;
+import richtercloud.reflection.form.builder.jpa.JPAReflectionFormBuilder;
+import richtercloud.reflection.form.builder.retriever.ValueRetriever;
 
 /**
  * <h2>Status bar</h2>
@@ -149,8 +175,7 @@ public class DocumentScanner extends javax.swing.JFrame {
     private Map<Class<? extends StorageConf<?>>, StorageConfPanel<?>> storageConfPanelMap = new HashMap<>();
     private DefaultListModel<StorageConf<?>> storageListModel = new DefaultListModel<>();
     private final static Set<Class<?>> ENTITY_CLASSES = Collections.unmodifiableSet(new HashSet<Class<?>>(
-            Arrays.asList(Address.class,
-            Bill.class,
+            Arrays.asList(Bill.class,
             Company.class,
             Document.class,
             EmailAddress.class,
@@ -170,16 +195,44 @@ public class DocumentScanner extends javax.swing.JFrame {
     private final static int EXIT_SUCCESS = 0;
     private DocumentScannerConf conf;
     private boolean debug = false;
-    DocumentScannerCommandParser cmd = new DocumentScannerCommandParser();
+    private DocumentScannerCommandParser cmd = new DocumentScannerCommandParser();
     private final static String PROPERTY_KEY_DEBUG = "document.scanner.debug";
+    public final static Map<java.lang.reflect.Type, FieldHandler> CLASS_MAPPING_DEFAULT;
+    static {
+        Map<java.lang.reflect.Type, FieldHandler> classMappingDefault = new HashMap<>(JPAReflectionFormBuilder.CLASS_MAPPING_DEFAULT);
+        CLASS_MAPPING_DEFAULT = Collections.unmodifiableMap(classMappingDefault);
+    }
+    public final static Map<Class<?>, Class<? extends JComponent>> PRIMITIVE_MAPPING_DEFAULT;
+    static {
+        Map<Class<?>, Class<? extends JComponent>> primitiveMappingDefault = new HashMap<>(JPAReflectionFormBuilder.PRIMITIVE_MAPPING_DEFAULT);
+        PRIMITIVE_MAPPING_DEFAULT = Collections.unmodifiableMap(primitiveMappingDefault);
+    }
+    public final static Map<Class<? extends JComponent>, ValueRetriever<?,?>> VALUE_RETRIEVER_MAPPING_DEFAULT;
+    static {
+        Map<Class<? extends JComponent>, ValueRetriever<?,?>> valueRetrieverMappingDefault = new HashMap<>(JPAReflectionFormBuilder.VALUE_RETRIEVER_MAPPING_JPA_DEFAULT);
+        valueRetrieverMappingDefault.put(OCRResultPanel.class, OCRResultPanelRetriever.getInstance());
+        VALUE_RETRIEVER_MAPPING_DEFAULT = valueRetrieverMappingDefault;
+    }
+    public final static Map<Class<? extends JComponent>, ValueSetter<?>> VALUE_SETTER_MAPPING_DEFAULT;
+    static {
+        Map<Class<? extends JComponent>, ValueSetter<?>>  valueSetterMappingDefault = new HashMap<>();
+        valueSetterMappingDefault.put(JTextField.class, TextFieldSetter.getInstance());
+        valueSetterMappingDefault.put(JSpinner.class, SpinnerSetter.getInstance());
+        valueSetterMappingDefault.put(IdPanel.class, IdPanelSetter.getInstance());
+        VALUE_SETTER_MAPPING_DEFAULT = valueSetterMappingDefault;
+    }
+
+    public static String generateApplicationWindowTitle(String title) {
+        return String.format("%s - %s %s", title, APP_NAME, APP_VERSION);
+    }
 
     /**
      * Parses the command line and evaluates system properties. Command line
      * arguments superseed properties.
      */
     private void parseArguments() {
-        if(cmd.isDebug() != null) {
-            this.debug = cmd.isDebug();
+        if(this.cmd.isDebug() != null) {
+            this.debug = this.cmd.isDebug();
         }else {
             String debugProp = System.getProperty(PROPERTY_KEY_DEBUG);
             if(debugProp != null) {
@@ -187,7 +240,7 @@ public class DocumentScanner extends javax.swing.JFrame {
             }
         }
 
-        if(debug) {
+        if(this.debug) {
             LoggerContext loggerContext = (LoggerContext)LoggerFactory.getILoggerFactory();
             ch.qos.logback.classic.Logger rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
             rootLogger.setLevel(Level.DEBUG);
@@ -200,15 +253,15 @@ public class DocumentScanner extends javax.swing.JFrame {
     private void loadProperties() {
         XMLDecoder xMLDecoder;
         try {
-            xMLDecoder = new XMLDecoder(new FileInputStream(configFile));
+            xMLDecoder = new XMLDecoder(new FileInputStream(this.configFile));
         } catch (FileNotFoundException ex) {
             throw new RuntimeException(ex);
         }
         this.conf = (DocumentScannerConf) xMLDecoder.readObject();
         try {
-            InetAddress address = InetAddress.getByName(conf.getScannerSaneAddress());
+            InetAddress address = InetAddress.getByName(this.conf.getScannerSaneAddress());
             this.scannerDialogSaneSession = SaneSession.withRemoteSane(address);
-            this.device = this.scannerDialogSaneSession.getDevice(conf.getScannerName());
+            this.device = this.scannerDialogSaneSession.getDevice(this.conf.getScannerName());
         }catch(IOException ex) {
             this.handleException(ex);
         }
@@ -272,8 +325,8 @@ public class DocumentScanner extends javax.swing.JFrame {
         }
         if(this.conf != null) {
             try {
-                try (XMLEncoder xMLEncoder = new XMLEncoder(new FileOutputStream(configFile))) {
-                    xMLEncoder.writeObject(conf);
+                try (XMLEncoder xMLEncoder = new XMLEncoder(new FileOutputStream(this.configFile))) {
+                    xMLEncoder.writeObject(this.conf);
                     xMLEncoder.flush();
                 }
             } catch (FileNotFoundException ex) {
@@ -300,9 +353,10 @@ public class DocumentScanner extends javax.swing.JFrame {
 
     /**
      * Creates new form OrientdbDocumentScanner
+     * @throws richtercloud.document.scanner.gui.TesseractNotFoundException
      */
-    public DocumentScanner() {
-        parseArguments();
+    public DocumentScanner() throws TesseractNotFoundException {
+        this.parseArguments();
         assert HOME_DIR.exists();
         if(!CONFIG_DIR.exists()) {
             CONFIG_DIR.mkdir();
@@ -483,7 +537,7 @@ public class DocumentScanner extends javax.swing.JFrame {
             }
         });
 
-        scannerDialog.setTitle(String.format("Select scanner - %s %s", APP_NAME, APP_VERSION));
+        scannerDialog.setTitle(DocumentScanner.generateApplicationWindowTitle("Select scanner"));
         scannerDialog.setModal(true);
 
         scannerDialogAddressTextField.setText(SCANNER_ADDRESS_DEFAULT);
@@ -563,7 +617,7 @@ public class DocumentScanner extends javax.swing.JFrame {
                 .addContainerGap())
         );
 
-        databaseDialog.setTitle(String.format("Connect to database - %s %s", APP_NAME, APP_VERSION));
+        databaseDialog.setTitle(DocumentScanner.generateApplicationWindowTitle("Connect to database"));
         databaseDialog.setModal(true);
         databaseDialog.addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowClosed(java.awt.event.WindowEvent evt) {
@@ -1037,10 +1091,7 @@ public class DocumentScanner extends javax.swing.JFrame {
             this.connectDatabase();
             this.databaseDialog.setVisible(false);
         } catch(ODatabaseException | OSecurityAccessException ex) {
-            String message = ex.getMessage();
-            if(ex.getCause() != null) {
-                message = String.format("%s (caused by '%s')", message, ex.getCause().getMessage());
-            }
+            String message = ReflectionFormPanel.generateExceptionMessage(ex);
             this.databaseConnectionFailureLabel.setText(String.format("<html>The connection to the specified database with the specified credentials failed with the following error: %s</html>", message));
         }
     }//GEN-LAST:event_databaseConnectButtonActionPerformed
@@ -1090,9 +1141,9 @@ public class DocumentScanner extends javax.swing.JFrame {
 
     private void storageCreateDialogSaveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_storageCreateDialogSaveButtonActionPerformed
         Class<? extends StorageConf<?>> clazz = this.storageCreateDialogTypeComboBox.getItemAt(this.storageCreateDialogTypeComboBox.getSelectedIndex());
-        StorageConfPanel<?> responsibleStorageConfPanel = storageConfPanelMap.get(clazz);
+        StorageConfPanel<?> responsibleStorageConfPanel = this.storageConfPanelMap.get(clazz);
         StorageConf<?> createdStorageConf = responsibleStorageConfPanel.getStorageConf();
-        storageListModel.addElement(createdStorageConf);
+        this.storageListModel.addElement(createdStorageConf);
         this.conf.setStorageConf(createdStorageConf);
     }//GEN-LAST:event_storageCreateDialogSaveButtonActionPerformed
 
@@ -1153,7 +1204,21 @@ public class DocumentScanner extends javax.swing.JFrame {
                 //a warning in form of a dialog has been given
                 return;
             }
-            DocumentTab documentTab = new DocumentTab(selectedFile.getName(), oCRSelectComponent, oCREngine, DocumentScanner.ENTITY_CLASSES, this.entityManager);
+            OCRResultPanelFetcher oCRResultPanelFetcher = new DocumentTabOCRResultPanelFetcher(oCRSelectComponent, oCREngine);
+            ScanResultPanelFetcher scanResultPanelFetcher = new DocumentTabScanResultPanelFetcher(oCRSelectComponent);
+            List<Pair<Class<? extends Annotation>, FieldAnnotationHandler>> fieldAnnotationMapping = new LinkedList<>(JPAReflectionFormBuilder.JPA_FIELD_ANNOTATION_MAPPING_DEFAULT);
+            fieldAnnotationMapping.add(new ImmutablePair<Class<? extends Annotation>, FieldAnnotationHandler>(OCRResult.class, new OCRResultFieldAnnotationHandler(oCRResultPanelFetcher)));
+            fieldAnnotationMapping.add(new ImmutablePair<Class<? extends Annotation>, FieldAnnotationHandler>(ScanResult.class, new ScanResultFieldAnnotationHandler(scanResultPanelFetcher)));
+            List<Pair<Class<? extends Annotation>, ClassAnnotationHandler>> classAnnotationMapping = new LinkedList<>(JPAReflectionFormBuilder.CLASS_ANNOTATION_MAPPING_DEFAULT);
+            DocumentTab documentTab = new DocumentTab(selectedFile.getName(),
+                    oCRSelectComponent,
+                    oCREngine,
+                    DocumentScanner.ENTITY_CLASSES,
+                    this.entityManager,
+                    fieldAnnotationMapping,
+                    classAnnotationMapping,
+                    oCRResultPanelFetcher,
+                    scanResultPanelFetcher);
             this.mainTabbedPane.add(selectedFile.getName(), documentTab);
             this.validate();
         }catch(HeadlessException | IOException | IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException | InvocationTargetException ex) {
@@ -1259,13 +1324,27 @@ public class DocumentScanner extends javax.swing.JFrame {
                     }
                 }
             };
-            OCRSelectComponent oCRSelectPanel = new OCRSelectComponent(panel);
+            OCRSelectComponent oCRSelectComponent = new OCRSelectComponent(panel);
             OCREngine oCREngine = this.retrieveOCREninge();
             if(oCREngine == null) {
                 //a warning in form of a dialog has been given
                 return;
             }
-            DocumentTab newTab = new DocumentTab(UNSAVED_NAME, oCRSelectPanel, oCREngine, ENTITY_CLASSES, entityManager);
+            OCRResultPanelFetcher oCRResultPanelFetcher = new DocumentTabOCRResultPanelFetcher(oCRSelectComponent, oCREngine);
+            ScanResultPanelFetcher scanResultPanelFetcher = new DocumentTabScanResultPanelFetcher(oCRSelectComponent);
+            List<Pair<Class<? extends Annotation>, FieldAnnotationHandler>> fieldAnnotationMapping = new LinkedList<>(JPAReflectionFormBuilder.JPA_FIELD_ANNOTATION_MAPPING_DEFAULT);
+            fieldAnnotationMapping.add(new ImmutablePair<Class<? extends Annotation>, FieldAnnotationHandler>(OCRResult.class, new OCRResultFieldAnnotationHandler(oCRResultPanelFetcher)));
+            fieldAnnotationMapping.add(new ImmutablePair<Class<? extends Annotation>, FieldAnnotationHandler>(ScanResult.class, new ScanResultFieldAnnotationHandler(scanResultPanelFetcher)));
+            List<Pair<Class<? extends Annotation>, ClassAnnotationHandler>> classAnnotationMapping = new LinkedList<>(JPAReflectionFormBuilder.CLASS_ANNOTATION_MAPPING_DEFAULT);
+            DocumentTab newTab = new DocumentTab(UNSAVED_NAME,
+                    oCRSelectComponent,
+                    oCREngine,
+                    ENTITY_CLASSES,
+                    this.entityManager,
+                    fieldAnnotationMapping,
+                    classAnnotationMapping,
+                    oCRResultPanelFetcher,
+                    scanResultPanelFetcher);
             this.mainTabbedPane.add(UNSAVED_NAME, newTab);
             this.invalidate();
         } catch (SaneException | IOException | IllegalAccessException | IllegalArgumentException | IllegalStateException | InstantiationException | NoSuchMethodException | InvocationTargetException ex) {
@@ -1313,7 +1392,7 @@ public class DocumentScanner extends javax.swing.JFrame {
 
     private OCREngine retrieveOCREninge() {
         if(this.conf.getoCREngineConf() == null) {
-            JOptionPane.showMessageDialog(this, "OCREngine isn't set up", String.format("Warning - %s %s", APP_NAME, APP_VERSION), JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "OCREngine isn't set up", DocumentScanner.generateApplicationWindowTitle("Warning"), JOptionPane.ERROR_MESSAGE);
             return null;
         }
         return this.conf.getoCREngineConf().getOCREngine();
@@ -1347,9 +1426,68 @@ public class DocumentScanner extends javax.swing.JFrame {
         java.awt.EventQueue.invokeLater(new Runnable() {
             @Override
             public void run() {
-                new DocumentScanner().setVisible(true);
+                try {
+                    new DocumentScanner().setVisible(true);
+                } catch (TesseractNotFoundException ex) {
+                    JOptionPane.showConfirmDialog(null, "The tesseract binary isn't available. Install it on your system and make sure it's executable (in doubt check if tesseract runs on the console)", generateApplicationWindowTitle("tesserate binary missing"), JOptionPane.OK_OPTION, JOptionPane.ERROR_MESSAGE);
+                }
             }
         });
+    }
+
+    private class DocumentTabOCRResultPanelFetcher implements OCRResultPanelFetcher {
+        private final List<Double> stringBufferLengths = new ArrayList<>();
+        private final OCRSelectComponent oCRSelectComponent;
+        private final OCREngine oCREngine;
+
+        DocumentTabOCRResultPanelFetcher(OCRSelectComponent oCRSelectComponent, OCREngine oCREngine) {
+            this.oCRSelectComponent = oCRSelectComponent;
+            this.oCREngine = oCREngine;
+        }
+
+        @Override
+        public String fetch() {
+            //estimate the initial StringBuilder size based on the median
+            //of all prior OCR results (string length) (and 1000 initially)
+            int stringBufferLengh;
+            if (this.stringBufferLengths.isEmpty()) {
+                stringBufferLengh = 1_000;
+            } else {
+                DescriptiveStatistics descriptiveStatistics = new DescriptiveStatistics(this.stringBufferLengths.toArray(new Double[this.stringBufferLengths.size()]));
+                stringBufferLengh = ((int) descriptiveStatistics.getPercentile(.5)) + 1;
+            }
+            this.stringBufferLengths.add((double) stringBufferLengh);
+            StringBuilder retValueBuilder = new StringBuilder(stringBufferLengh);
+            for (OCRSelectPanel imagePanel : this.oCRSelectComponent.getImagePanels()) {
+                String oCRResult = this.oCREngine.recognizeImage(imagePanel.getImage());
+                retValueBuilder.append(oCRResult);
+            }
+            String retValue = retValueBuilder.toString();
+            return retValue;
+        }
+    }
+
+    private class DocumentTabScanResultPanelFetcher implements ScanResultPanelFetcher {
+        private final OCRSelectComponent oCRSelectComponent;
+
+        DocumentTabScanResultPanelFetcher(OCRSelectComponent oCRSelectComponent) {
+            this.oCRSelectComponent = oCRSelectComponent;
+        }
+
+        @Override
+        public byte[] fetch() {
+            ByteArrayOutputStream retValueStream = new ByteArrayOutputStream();
+            for (OCRSelectPanel imagePanel : this.oCRSelectComponent.getImagePanels()) {
+                try {
+                    if (!ImageIO.write(imagePanel.getImage(), "png", retValueStream)) {
+                        throw new IllegalStateException("writing image data to output stream failed");
+                    }
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+            return retValueStream.toByteArray();
+        }
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

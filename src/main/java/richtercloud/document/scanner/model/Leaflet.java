@@ -28,8 +28,8 @@ public class Leaflet extends AbstractDocument {
     protected Leaflet() {
     }
 
-    public Leaflet(Date date, Date receptionDate, Location originalLocation, boolean originalLost, Long id, Company contact) {
-        super(date, receptionDate, originalLocation, originalLost, id, contact);
+    public Leaflet(Date date, Date receptionDate, Location originalLocation, boolean originalLost, Long id, Company sender, Company recipient) {
+        super(date, receptionDate, originalLocation, originalLost, id, sender, recipient);
     }
 
 }

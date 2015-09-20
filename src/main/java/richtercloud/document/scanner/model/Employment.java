@@ -14,46 +14,38 @@
  */
 package richtercloud.document.scanner.model;
 
-import java.io.Serializable;
 import java.util.Date;
 import javax.persistence.Entity;
-import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.validation.constraints.NotNull;
 
 /**
  *
  * @author richter
  */
 @Entity
-public class Employment implements Serializable {
+public class Employment extends Identifiable {
     private static final long serialVersionUID = 1L;
-    @Id
-    private Long id;
     @ManyToOne
+    @NotNull
     private Company company;
     @Temporal(TemporalType.TIMESTAMP)
+    @NotNull
     private Date theStart;
     @Temporal(TemporalType.TIMESTAMP)
+    @NotNull
     private Date theEnd;
 
     protected Employment() {
     }
 
     public Employment(Long id, Company company, Date start, Date end) {
-        this.id = id;
+        super(id);
         this.company = company;
         this.theStart = start;
         this.theEnd = end;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Long getId() {
-        return id;
     }
 
     /**
@@ -73,29 +65,29 @@ public class Employment implements Serializable {
     /**
      * @return the theStart
      */
-    public Date getStart() {
+    public Date getTheStart() {
         return this.theStart;
     }
 
     /**
-     * @param start the theStart to set
+     * @param theStart the theStart to set
      */
-    public void setStart(Date start) {
-        this.theStart = start;
+    public void setTheStart(Date theStart) {
+        this.theStart = theStart;
     }
 
     /**
      * @return the theEnd
      */
-    public Date getEnd() {
+    public Date getTheEnd() {
         return this.theEnd;
     }
 
     /**
-     * @param end the theEnd to set
+     * @param theEnd the theEnd to set
      */
-    public void setEnd(Date end) {
-        this.theEnd = end;
+    public void setTheEnd(Date theEnd) {
+        this.theEnd = theEnd;
     }
 
 }

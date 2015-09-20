@@ -15,7 +15,8 @@
 package richtercloud.document.scanner.gui.conf;
 
 import java.io.Serializable;
-import richtercloud.document.scanner.storage.Storage;
+import java.util.Currency;
+import richtercloud.document.scanner.model.Bill;
 
 /**
  *
@@ -26,10 +27,16 @@ public class DocumentScannerConf implements Serializable {
     private final static String SCANNER_SANE_ADDRESS_DEFAULT = "localhost";
     private final static StorageConf<?> STORAGE_CONF_DEFAULT = new DerbyPersistenceStorageConf();
     private final static OCREngineConf<?> OCR_ENGINE_CONF_DEFAULT = new TesseractOCREngineConf();
+    private static final Currency DEFAULT_CURRENCY_DEFAULT = Currency.getInstance("EUR");
     private String scannerName;
     private String scannerSaneAddress = SCANNER_SANE_ADDRESS_DEFAULT;
     private StorageConf<?> storageConf = STORAGE_CONF_DEFAULT;
     private OCREngineConf<?> oCREngineConf = OCR_ENGINE_CONF_DEFAULT;
+    /**
+     * The currency initially displayed in data entry components (e.g. for
+     * {@link Bill}).
+     */
+    private Currency defaultCurrency = DEFAULT_CURRENCY_DEFAULT;
 
     public DocumentScannerConf() {
     }
@@ -38,7 +45,7 @@ public class DocumentScannerConf implements Serializable {
      * @return the scannerName
      */
     public String getScannerName() {
-        return scannerName;
+        return this.scannerName;
     }
 
     /**
@@ -52,7 +59,7 @@ public class DocumentScannerConf implements Serializable {
      * @return the scannerSaneAddress
      */
     public String getScannerSaneAddress() {
-        return scannerSaneAddress;
+        return this.scannerSaneAddress;
     }
 
     /**
@@ -66,7 +73,7 @@ public class DocumentScannerConf implements Serializable {
      * @return the oCREngineConf
      */
     public OCREngineConf<?> getoCREngineConf() {
-        return oCREngineConf;
+        return this.oCREngineConf;
     }
 
     /**
@@ -80,7 +87,7 @@ public class DocumentScannerConf implements Serializable {
      * @return the storageConf
      */
     public StorageConf<?> getStorageConf() {
-        return storageConf;
+        return this.storageConf;
     }
 
     /**
@@ -88,5 +95,19 @@ public class DocumentScannerConf implements Serializable {
      */
     public void setStorageConf(StorageConf<?> storageConf) {
         this.storageConf = storageConf;
+    }
+
+    /**
+     * @return the defaultCurrency
+     */
+    public Currency getDefaultCurrency() {
+        return this.defaultCurrency;
+    }
+
+    /**
+     * @param defaultCurrency the defaultCurrency to set
+     */
+    public void setDefaultCurrency(Currency defaultCurrency) {
+        this.defaultCurrency = defaultCurrency;
     }
 }

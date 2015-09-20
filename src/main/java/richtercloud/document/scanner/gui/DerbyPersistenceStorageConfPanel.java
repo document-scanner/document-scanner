@@ -14,8 +14,6 @@
  */
 package richtercloud.document.scanner.gui;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
 import richtercloud.document.scanner.gui.conf.DerbyPersistenceStorageConf;
 import richtercloud.document.scanner.gui.storageconf.StorageConfPanel;
 

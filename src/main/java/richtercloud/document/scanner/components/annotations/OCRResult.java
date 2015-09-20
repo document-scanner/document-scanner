@@ -12,39 +12,21 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.model;
+package richtercloud.document.scanner.components.annotations;
 
-import javax.persistence.Entity;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- *
+ * Used to annotate {@code String} entity fields which store OCR results of
+ * scans to indicate special handling in form components.
+ * @see ScanResult
  * @author richter
  */
-@Entity
-public class Location extends Identifiable {
-    private static final long serialVersionUID = 1L;
-    private String description;
-
-    protected Location() {
-    }
-
-    public Location(Long id, String description) {
-        super(id);
-        this.description = description;
-    }
-
-    /**
-     * @return the description
-     */
-    public String getDescription() {
-        return this.description;
-    }
-
-    /**
-     * @param description the description to set
-     */
-    public void setDescription(String description) {
-        this.description = description;
-    }
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.FIELD)
+public @interface OCRResult {
 
 }

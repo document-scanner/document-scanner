@@ -14,37 +14,40 @@
  */
 package richtercloud.document.scanner.model;
 
-import javax.persistence.Entity;
+import java.util.Collections;
+import java.util.List;
+import javax.persistence.ManyToMany;
+import javax.validation.constraints.Size;
 
 /**
  *
  * @author richter
  */
-@Entity
-public class Location extends Identifiable {
+public class Transport extends Identifiable {
     private static final long serialVersionUID = 1L;
-    private String description;
+    @ManyToMany
+    @Size(min = 1) //otherwise creating a Transport doesn't make sense
+    private List<TransportTicket> tickets;
 
-    protected Location() {
+    protected Transport() {
     }
 
-    public Location(Long id, String description) {
+    public Transport(Long id, List<TransportTicket> tickets) {
         super(id);
-        this.description = description;
+        this.tickets = tickets;
     }
 
     /**
-     * @return the description
+     * @return the tickets
      */
-    public String getDescription() {
-        return this.description;
+    public List<TransportTicket> getTickets() {
+        return Collections.unmodifiableList(this.tickets);
     }
 
     /**
-     * @param description the description to set
+     * @param tickets the tickets to set
      */
-    public void setDescription(String description) {
-        this.description = description;
+    public void setTickets(List<TransportTicket> tickets) {
+        this.tickets = tickets;
     }
-
 }

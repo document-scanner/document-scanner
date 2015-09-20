@@ -18,6 +18,7 @@ import java.util.Date;
 import javax.persistence.Entity;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.validation.constraints.NotNull;
 
 /**
  *
@@ -27,33 +28,17 @@ import javax.persistence.TemporalType;
 public class TelephoneCall extends CommunicationItem {
     private static final long serialVersionUID = 1L;
     @Temporal(TemporalType.TIMESTAMP)
-    private Date theBegin;
-    @Temporal(TemporalType.TIMESTAMP)
+    @NotNull
     private Date theEnd;
     private String transcription;
 
     protected TelephoneCall() {
     }
 
-    public TelephoneCall(Date begin, Date end, String transcription, Long id, Company contact) {
-        super(id, contact);
-        this.theBegin = begin;
+    public TelephoneCall(Date begin, Date end, String transcription, Long id, Company sender, Company recipient) {
+        super(id, sender, recipient, begin);
         this.theEnd = end;
         this.transcription = transcription;
-    }
-
-    /**
-     * @return the theBegin
-     */
-    public Date getTheBegin() {
-        return this.theBegin;
-    }
-
-    /**
-     * @param theBegin the theBegin to set
-     */
-    public void setTheBegin(Date theBegin) {
-        this.theBegin = theBegin;
     }
 
     /**

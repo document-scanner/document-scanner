@@ -15,21 +15,24 @@
 package richtercloud.document.scanner.model;
 
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import richtercloud.document.scanner.model.validator.ValidPerson;
 
 /**
  *
  * @author richter
  */
 @Entity
+@ValidPerson
 public class Person extends Company {
     private static final long serialVersionUID = 1L;
     @ElementCollection
-    private List<String> firstnames;
+    private List<String> firstnames = new LinkedList<>();
     @ElementCollection
-    private List<String> lastnames;
+    private List<String> lastnames = new LinkedList<>();
 
     protected Person() {
     }
