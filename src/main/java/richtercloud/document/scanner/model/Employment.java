@@ -15,7 +15,9 @@
 package richtercloud.document.scanner.model;
 
 import java.util.Date;
+import javax.persistence.Basic;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.ManyToOne;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -28,14 +30,16 @@ import javax.validation.constraints.NotNull;
 @Entity
 public class Employment extends Identifiable {
     private static final long serialVersionUID = 1L;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @NotNull
     private Company company;
     @Temporal(TemporalType.TIMESTAMP)
     @NotNull
+    @Basic(fetch = FetchType.EAGER)
     private Date theStart;
     @Temporal(TemporalType.TIMESTAMP)
     @NotNull
+    @Basic(fetch = FetchType.EAGER)
     private Date theEnd;
 
     protected Employment() {

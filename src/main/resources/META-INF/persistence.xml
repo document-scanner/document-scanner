@@ -17,12 +17,15 @@
     <class>richtercloud.document.scanner.model.SimpleLocation</class>
     <class>richtercloud.document.scanner.model.TelephoneCall</class>
     <class>richtercloud.document.scanner.model.TransportTicket</class>
+    <class>richtercloud.document.scanner.model.Location</class>
+    <class>richtercloud.document.scanner.model.Transport</class>
     <properties>
       <property name="javax.persistence.jdbc.url" value="jdbc:derby:/home/richter/.document-scanner/databases"/>
       <property name="javax.persistence.jdbc.user" value=""/>
       <property name="javax.persistence.jdbc.driver" value="org.apache.derby.jdbc.EmbeddedDriver"/>
       <property name="javax.persistence.jdbc.password" value=""/>
       <property name="hibernate.cache.provider_class" value="org.hibernate.cache.NoCacheProvider"/>
+      <property name="javax.persistence.schema-generation.database.action" value="create"/>
     </properties>
   </persistence-unit>
 </persistence>

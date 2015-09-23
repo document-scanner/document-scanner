@@ -19,6 +19,7 @@ import java.util.Date;
 import java.util.List;
 import javax.persistence.Basic;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.validation.constraints.NotNull;
 
 /**
@@ -29,8 +30,9 @@ import javax.validation.constraints.NotNull;
 public class Bill extends Document {
     private static final long serialVersionUID = 1L;
     @NotNull
+    @Basic(fetch = FetchType.EAGER)
     private float amount;
-    @Basic
+    @Basic(fetch = FetchType.EAGER)
     @NotNull
     private Currency currency;
 

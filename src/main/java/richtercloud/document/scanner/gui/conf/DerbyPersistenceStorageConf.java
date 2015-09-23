@@ -15,6 +15,7 @@
 package richtercloud.document.scanner.gui.conf;
 
 import java.io.Serializable;
+import javax.persistence.EntityManager;
 import richtercloud.document.scanner.gui.DocumentScanner;
 import richtercloud.document.scanner.storage.DefaultPersistenceStorage;
 
@@ -35,8 +36,13 @@ public class DerbyPersistenceStorageConf implements Serializable, StorageConf<De
     private String password = PASSWORD_DEFAULT;
     private String storageParentDir = STORAGE_PARENT_DIR_DEFAULT;
     private String databaseDirName = DATABASE_DIR_NAME_DEFAULT;
+    private EntityManager entityManager;
 
-    public DerbyPersistenceStorageConf() {
+    protected DerbyPersistenceStorageConf() {
+    }
+
+    public DerbyPersistenceStorageConf(EntityManager entityManager) {
+        this.entityManager = entityManager;
     }
 
     /**
@@ -112,7 +118,7 @@ public class DerbyPersistenceStorageConf implements Serializable, StorageConf<De
     @Override
     public DefaultPersistenceStorage getStorage() {
         if(instance == null) {
-            instance = new DefaultPersistenceStorage(DocumentScanner.ENTITY_MANAGER_FACTORY.createEntityManager());
+            instance = new DefaultPersistenceStorage(this.entityManager);
         }
         return instance;
     }

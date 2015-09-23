@@ -16,8 +16,10 @@ package richtercloud.document.scanner.model;
 
 import java.util.Collections;
 import java.util.List;
+import javax.persistence.Basic;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.OneToMany;
 import javax.validation.constraints.NotNull;
 
@@ -29,22 +31,23 @@ import javax.validation.constraints.NotNull;
 public class Company extends Identifiable {
     private static final long serialVersionUID = 1L;
     @NotNull
+    @Basic(fetch = FetchType.EAGER)
     private String name;
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     private List<String> allNames;
     /**
      * Multiple contacts can have the same address (shared office) and a contact
      * can have multiple addresses.
      */
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     private List<Address> addresses;
     /**
      * One {@code Company} can have multiple email addresses, but it's very
      * unlikely that two contacts share the same email address.
      */
-    @OneToMany
+    @OneToMany(fetch = FetchType.EAGER)
     private List<EmailAddress> emails;
-    @OneToMany
+    @OneToMany(fetch = FetchType.EAGER)
     private List<FinanceAccount> accounts;
 
     protected Company() {

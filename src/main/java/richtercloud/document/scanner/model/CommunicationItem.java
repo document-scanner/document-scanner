@@ -15,6 +15,8 @@
 package richtercloud.document.scanner.model;
 
 import java.util.Date;
+import javax.persistence.Basic;
+import javax.persistence.FetchType;
 import javax.persistence.ManyToOne;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Temporal;
@@ -28,10 +30,10 @@ import javax.validation.constraints.NotNull;
 @MappedSuperclass
 public abstract class CommunicationItem extends Identifiable {
     private static final long serialVersionUID = 1L;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @NotNull
     private Company sender;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @NotNull
     private Company recipient;
     /**
@@ -39,6 +41,7 @@ public abstract class CommunicationItem extends Identifiable {
      */
     @Temporal(TemporalType.TIMESTAMP)
     @NotNull
+    @Basic(fetch = FetchType.EAGER)
     private Date theDate;
 
     protected CommunicationItem() {

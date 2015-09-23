@@ -16,7 +16,9 @@ package richtercloud.document.scanner.model;
 
 import java.util.Collections;
 import java.util.List;
+import javax.persistence.Basic;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.validation.constraints.NotNull;
@@ -34,17 +36,22 @@ public class FinanceAccount extends Identifiable {
     private static final long serialVersionUID = 1L;
     @ManyToOne
     @NotNull
+    @Basic(fetch = FetchType.EAGER)
     private Company owner;
     /**
      * Can be {@code null} if the BIC isn't necessary for the transfer for the
      * user.
      */
+    @Basic(fetch = FetchType.EAGER)
     private String bic;
     @NotNull
+    @Basic(fetch = FetchType.EAGER)
     private String iban;
+    @Basic(fetch = FetchType.EAGER)
     private String blz;
+    @Basic(fetch = FetchType.EAGER)
     private String number;
-    @OneToMany
+    @OneToMany(fetch = FetchType.EAGER)
     private List<Payment> payments;
 
     protected FinanceAccount() {

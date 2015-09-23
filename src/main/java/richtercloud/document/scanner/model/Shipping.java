@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.ManyToMany;
 import javax.validation.constraints.Size;
 
@@ -28,7 +29,7 @@ import javax.validation.constraints.Size;
 @Entity
 public class Shipping extends CommunicationItem {
     private static final long serialVersionUID = 1L;
-    @ManyToMany(mappedBy = "shippings")
+    @ManyToMany(mappedBy = "shippings", fetch = FetchType.EAGER)
     @Size(min = 1) //otherwise creating a shipping doesn't make sense
     private List<APackage> packages;
 

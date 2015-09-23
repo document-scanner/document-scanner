@@ -16,8 +16,10 @@ package richtercloud.document.scanner.model;
 
 import java.util.Collections;
 import java.util.List;
+import javax.persistence.Basic;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.validation.constraints.NotNull;
 import richtercloud.document.scanner.model.validator.ValidEmailAddress;
 
@@ -30,8 +32,9 @@ public class EmailAddress extends Identifiable {
     private static final long serialVersionUID = 1L;
     @NotNull
     @ValidEmailAddress
+    @Basic(fetch = FetchType.EAGER)
     private String address;
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     private List<String> pgpKeyIds;
 
     protected EmailAddress() {

@@ -17,8 +17,10 @@ package richtercloud.document.scanner.model;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import javax.persistence.Basic;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.ManyToOne;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -31,12 +33,13 @@ import javax.validation.constraints.NotNull;
 @Entity
 public class TransportTicket extends Identifiable {
     private static final long serialVersionUID = 1L;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     private Company transportCompany;
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     private List<String> waypoints;
     @NotNull
     @Temporal(TemporalType.DATE)
+    @Basic(fetch = FetchType.EAGER)
     private Date theDate;
 
     protected TransportTicket() {

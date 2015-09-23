@@ -16,6 +16,8 @@ package richtercloud.document.scanner.model;
 
 import java.util.Collections;
 import java.util.List;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.ManyToMany;
 import javax.validation.constraints.Size;
 
@@ -23,9 +25,10 @@ import javax.validation.constraints.Size;
  *
  * @author richter
  */
+@Entity
 public class Transport extends Identifiable {
     private static final long serialVersionUID = 1L;
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     @Size(min = 1) //otherwise creating a Transport doesn't make sense
     private List<TransportTicket> tickets;
 

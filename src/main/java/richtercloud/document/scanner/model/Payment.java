@@ -17,7 +17,9 @@ package richtercloud.document.scanner.model;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import javax.persistence.Basic;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Temporal;
@@ -31,10 +33,11 @@ import javax.validation.constraints.NotNull;
 @Entity
 public class Payment extends Identifiable {
     private static final long serialVersionUID = 1L;
-    @OneToOne
+    @OneToOne(fetch = FetchType.EAGER)
     @NotNull
     private FinanceAccount account;
     @NotNull
+    @Basic(fetch = FetchType.EAGER)
     private float amount;
     /**
      * The exact date and time of (the transfer) of the payment.

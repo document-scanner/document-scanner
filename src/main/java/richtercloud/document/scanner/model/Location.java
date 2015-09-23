@@ -14,7 +14,9 @@
  */
 package richtercloud.document.scanner.model;
 
+import javax.persistence.Basic;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 
 /**
  *
@@ -23,6 +25,7 @@ import javax.persistence.Entity;
 @Entity
 public class Location extends Identifiable {
     private static final long serialVersionUID = 1L;
+    @Basic(fetch = FetchType.EAGER)
     private String description;
 
     protected Location() {

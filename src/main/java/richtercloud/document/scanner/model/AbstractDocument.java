@@ -15,6 +15,8 @@
 package richtercloud.document.scanner.model;
 
 import java.util.Date;
+import javax.persistence.Basic;
+import javax.persistence.FetchType;
 import javax.persistence.ManyToOne;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Temporal;
@@ -33,12 +35,13 @@ public abstract class AbstractDocument extends CommunicationItem {
      */
     @Temporal(TemporalType.TIMESTAMP)
     @NotNull
+    @Basic(fetch = FetchType.EAGER)
     private Date received;
     /**
      * Where the document can be found. {@code null} indicates that the location
      * of the original is unknown (default).
      */
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     private Location originalLocation = null;
     /**
      * Whether the original is definitely lost. The original location might be
@@ -46,6 +49,7 @@ public abstract class AbstractDocument extends CommunicationItem {
      * {@code originalLocation} is {@code null} and {@code originalLost} is
      * {@code false}.
      */
+    @Basic(fetch = FetchType.EAGER)
     private boolean originalLost = false;
 
     protected AbstractDocument() {

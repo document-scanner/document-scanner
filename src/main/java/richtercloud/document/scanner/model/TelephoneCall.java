@@ -15,7 +15,9 @@
 package richtercloud.document.scanner.model;
 
 import java.util.Date;
+import javax.persistence.Basic;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
@@ -29,7 +31,9 @@ public class TelephoneCall extends CommunicationItem {
     private static final long serialVersionUID = 1L;
     @Temporal(TemporalType.TIMESTAMP)
     @NotNull
+    @Basic(fetch = FetchType.EAGER)
     private Date theEnd;
+    @Basic(fetch = FetchType.EAGER)
     private String transcription;
 
     protected TelephoneCall() {

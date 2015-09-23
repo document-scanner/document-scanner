@@ -21,6 +21,7 @@ import au.com.southsky.jfreesane.SaneOption;
 import au.com.southsky.jfreesane.SaneSession;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
+import com.google.common.reflect.TypeToken;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
 import com.orientechnologies.orient.core.exception.ODatabaseException;
 import com.orientechnologies.orient.core.exception.OSecurityAccessException;
@@ -55,8 +56,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.imageio.ImageIO;
+import javax.persistence.Entity;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.Id;
 import javax.persistence.Persistence;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultComboBoxModel;
@@ -104,10 +107,12 @@ import richtercloud.document.scanner.model.EmailAddress;
 import richtercloud.document.scanner.model.Employment;
 import richtercloud.document.scanner.model.FinanceAccount;
 import richtercloud.document.scanner.model.Leaflet;
+import richtercloud.document.scanner.model.Location;
 import richtercloud.document.scanner.model.Payment;
 import richtercloud.document.scanner.model.Person;
 import richtercloud.document.scanner.model.Shipping;
 import richtercloud.document.scanner.model.TelephoneCall;
+import richtercloud.document.scanner.model.Transport;
 import richtercloud.document.scanner.model.TransportTicket;
 import richtercloud.document.scanner.ocr.OCREngine;
 import richtercloud.document.scanner.retriever.OCRResultPanelRetriever;
@@ -115,12 +120,16 @@ import richtercloud.document.scanner.setter.IdPanelSetter;
 import richtercloud.document.scanner.setter.SpinnerSetter;
 import richtercloud.document.scanner.setter.TextFieldSetter;
 import richtercloud.document.scanner.setter.ValueSetter;
+import richtercloud.reflection.form.builder.AnyType;
 import richtercloud.reflection.form.builder.ClassAnnotationHandler;
 import richtercloud.reflection.form.builder.FieldAnnotationHandler;
 import richtercloud.reflection.form.builder.FieldHandler;
 import richtercloud.reflection.form.builder.ReflectionFormPanel;
-import richtercloud.reflection.form.builder.jpa.IdPanel;
+import richtercloud.reflection.form.builder.jpa.EntityClassAnnotationHandler;
+import richtercloud.reflection.form.builder.jpa.IdFieldAnnoationHandler;
 import richtercloud.reflection.form.builder.jpa.JPAReflectionFormBuilder;
+import richtercloud.reflection.form.builder.jpa.QueryEntityListFieldHandler;
+import richtercloud.reflection.form.builder.jpa.panels.LongIdPanel;
 import richtercloud.reflection.form.builder.retriever.ValueRetriever;
 
 /**
@@ -175,21 +184,27 @@ public class DocumentScanner extends javax.swing.JFrame {
     private Map<Class<? extends StorageConf<?>>, StorageConfPanel<?>> storageConfPanelMap = new HashMap<>();
     private DefaultListModel<StorageConf<?>> storageListModel = new DefaultListModel<>();
     private final static Set<Class<?>> ENTITY_CLASSES = Collections.unmodifiableSet(new HashSet<Class<?>>(
-            Arrays.asList(Bill.class,
-            Company.class,
-            Document.class,
-            EmailAddress.class,
-            Employment.class,
-            FinanceAccount.class,
-            Leaflet.class,
-            APackage.class,
-            Payment.class,
-            Person.class,
-            Shipping.class,
-            TelephoneCall.class,
-            TransportTicket.class)));
+            Arrays.asList(APackage.class,
+                    Bill.class,
+                    Company.class,
+                    Document.class,
+                    EmailAddress.class,
+                    Employment.class,
+                    FinanceAccount.class,
+                    Leaflet.class,
+                    Location.class,
+                    Payment.class,
+                    Person.class,
+                    Shipping.class,
+                    TelephoneCall.class,
+                    Transport.class,
+                    TransportTicket.class)));
     public static final String DATABASE_DIR_NAME_DEFAULT = "databases";
-    public static final EntityManagerFactory ENTITY_MANAGER_FACTORY = Persistence.createEntityManagerFactory("richtercloud_document-scanner_jar_1.0-SNAPSHOTPU");
+    /*
+    internal implementation notes:
+    - connection and EntityManagerFactory should both be either static or dynamic (due to the fact that there might be support for multiple instances at some point make it dynamic
+    */
+    private EntityManagerFactory entityManagerFactory;
     private EntityManager entityManager;
     private Connection conn;
     private final static int EXIT_SUCCESS = 0;
@@ -197,19 +212,19 @@ public class DocumentScanner extends javax.swing.JFrame {
     private boolean debug = false;
     private DocumentScannerCommandParser cmd = new DocumentScannerCommandParser();
     private final static String PROPERTY_KEY_DEBUG = "document.scanner.debug";
-    public final static Map<java.lang.reflect.Type, FieldHandler> CLASS_MAPPING_DEFAULT;
+    public final static Map<java.lang.reflect.Type, FieldHandler<?>> CLASS_MAPPING_DEFAULT;
     static {
-        Map<java.lang.reflect.Type, FieldHandler> classMappingDefault = new HashMap<>(JPAReflectionFormBuilder.CLASS_MAPPING_DEFAULT);
+        Map<java.lang.reflect.Type, FieldHandler<?>> classMappingDefault = new HashMap<>(JPAReflectionFormBuilder.CLASS_MAPPING_DEFAULT);
         CLASS_MAPPING_DEFAULT = Collections.unmodifiableMap(classMappingDefault);
     }
-    public final static Map<Class<?>, Class<? extends JComponent>> PRIMITIVE_MAPPING_DEFAULT;
+    public final static Map<Class<?>, FieldHandler<?>> PRIMITIVE_MAPPING_DEFAULT;
     static {
-        Map<Class<?>, Class<? extends JComponent>> primitiveMappingDefault = new HashMap<>(JPAReflectionFormBuilder.PRIMITIVE_MAPPING_DEFAULT);
+        Map<Class<?>, FieldHandler<?>> primitiveMappingDefault = new HashMap<>(JPAReflectionFormBuilder.PRIMITIVE_MAPPING_DEFAULT);
         PRIMITIVE_MAPPING_DEFAULT = Collections.unmodifiableMap(primitiveMappingDefault);
     }
     public final static Map<Class<? extends JComponent>, ValueRetriever<?,?>> VALUE_RETRIEVER_MAPPING_DEFAULT;
     static {
-        Map<Class<? extends JComponent>, ValueRetriever<?,?>> valueRetrieverMappingDefault = new HashMap<>(JPAReflectionFormBuilder.VALUE_RETRIEVER_MAPPING_JPA_DEFAULT);
+        Map<Class<? extends JComponent>, ValueRetriever<?,?>> valueRetrieverMappingDefault = new HashMap<>(JPAReflectionFormBuilder.VALUE_RETRIEVER_MAPPING_DEFAULT_JPA);
         valueRetrieverMappingDefault.put(OCRResultPanel.class, OCRResultPanelRetriever.getInstance());
         VALUE_RETRIEVER_MAPPING_DEFAULT = valueRetrieverMappingDefault;
     }
@@ -218,9 +233,10 @@ public class DocumentScanner extends javax.swing.JFrame {
         Map<Class<? extends JComponent>, ValueSetter<?>>  valueSetterMappingDefault = new HashMap<>();
         valueSetterMappingDefault.put(JTextField.class, TextFieldSetter.getInstance());
         valueSetterMappingDefault.put(JSpinner.class, SpinnerSetter.getInstance());
-        valueSetterMappingDefault.put(IdPanel.class, IdPanelSetter.getInstance());
+        valueSetterMappingDefault.put(LongIdPanel.class, IdPanelSetter.getInstance());
         VALUE_SETTER_MAPPING_DEFAULT = valueSetterMappingDefault;
     }
+    private Map<java.lang.reflect.Type, FieldHandler<?>> classMapping = new HashMap<>(CLASS_MAPPING_DEFAULT);
 
     public static String generateApplicationWindowTitle(String title) {
         return String.format("%s - %s %s", title, APP_NAME, APP_VERSION);
@@ -362,15 +378,18 @@ public class DocumentScanner extends javax.swing.JFrame {
             CONFIG_DIR.mkdir();
             LOGGER.info("created inexisting configuration directory '{}'", CONFIG_DIR_NAME);
         }
-
+        this.entityManagerFactory = Persistence.createEntityManagerFactory("richtercloud_document-scanner_jar_1.0-SNAPSHOTPU");
         Class<?> driver = EmbeddedDriver.class;
         try {
             driver.newInstance();
             this.conn = DriverManager.getConnection(String.format("%s;create=%s", DERBY_CONNECTION_URL, !DATABASE_DIR.exists()));
-            this.entityManager = ENTITY_MANAGER_FACTORY.createEntityManager();
+            this.entityManager = entityManagerFactory.createEntityManager();
         } catch (InstantiationException | IllegalAccessException | SQLException ex) {
             throw new RuntimeException(ex);
         }
+
+        //after entity manager creation
+        this.classMapping.put(new TypeToken<List<AnyType>>() {}.getType(), new QueryEntityListFieldHandler(entityManager));
 
         this.initComponents();
 
@@ -427,7 +446,7 @@ public class DocumentScanner extends javax.swing.JFrame {
 
         this.storageCreateDialogTypeComboBoxModel.addElement(DerbyPersistenceStorageConf.class);
         DerbyPersistenceStorageConfPanel derbyStorageConfPanel;
-        derbyStorageConfPanel = new DerbyPersistenceStorageConfPanel(); //@TODO: replace with classpath annotation discovery
+        derbyStorageConfPanel = new DerbyPersistenceStorageConfPanel(entityManager); //@TODO: replace with classpath annotation discovery
         this.storageConfPanelMap.put(DerbyPersistenceStorageConf.class, derbyStorageConfPanel);
         this.storageCreateDialogTypeComboBox.addItemListener(new ItemListener() {
             @Override
@@ -1204,21 +1223,8 @@ public class DocumentScanner extends javax.swing.JFrame {
                 //a warning in form of a dialog has been given
                 return;
             }
-            OCRResultPanelFetcher oCRResultPanelFetcher = new DocumentTabOCRResultPanelFetcher(oCRSelectComponent, oCREngine);
-            ScanResultPanelFetcher scanResultPanelFetcher = new DocumentTabScanResultPanelFetcher(oCRSelectComponent);
-            List<Pair<Class<? extends Annotation>, FieldAnnotationHandler>> fieldAnnotationMapping = new LinkedList<>(JPAReflectionFormBuilder.JPA_FIELD_ANNOTATION_MAPPING_DEFAULT);
-            fieldAnnotationMapping.add(new ImmutablePair<Class<? extends Annotation>, FieldAnnotationHandler>(OCRResult.class, new OCRResultFieldAnnotationHandler(oCRResultPanelFetcher)));
-            fieldAnnotationMapping.add(new ImmutablePair<Class<? extends Annotation>, FieldAnnotationHandler>(ScanResult.class, new ScanResultFieldAnnotationHandler(scanResultPanelFetcher)));
-            List<Pair<Class<? extends Annotation>, ClassAnnotationHandler>> classAnnotationMapping = new LinkedList<>(JPAReflectionFormBuilder.CLASS_ANNOTATION_MAPPING_DEFAULT);
-            DocumentTab documentTab = new DocumentTab(selectedFile.getName(),
-                    oCRSelectComponent,
-                    oCREngine,
-                    DocumentScanner.ENTITY_CLASSES,
-                    this.entityManager,
-                    fieldAnnotationMapping,
-                    classAnnotationMapping,
-                    oCRResultPanelFetcher,
-                    scanResultPanelFetcher);
+            DocumentTab documentTab = generateDocumentTab(oCRSelectComponent,
+                    oCREngine);
             this.mainTabbedPane.add(selectedFile.getName(), documentTab);
             this.validate();
         }catch(HeadlessException | IOException | IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException | InvocationTargetException ex) {
@@ -1330,21 +1336,8 @@ public class DocumentScanner extends javax.swing.JFrame {
                 //a warning in form of a dialog has been given
                 return;
             }
-            OCRResultPanelFetcher oCRResultPanelFetcher = new DocumentTabOCRResultPanelFetcher(oCRSelectComponent, oCREngine);
-            ScanResultPanelFetcher scanResultPanelFetcher = new DocumentTabScanResultPanelFetcher(oCRSelectComponent);
-            List<Pair<Class<? extends Annotation>, FieldAnnotationHandler>> fieldAnnotationMapping = new LinkedList<>(JPAReflectionFormBuilder.JPA_FIELD_ANNOTATION_MAPPING_DEFAULT);
-            fieldAnnotationMapping.add(new ImmutablePair<Class<? extends Annotation>, FieldAnnotationHandler>(OCRResult.class, new OCRResultFieldAnnotationHandler(oCRResultPanelFetcher)));
-            fieldAnnotationMapping.add(new ImmutablePair<Class<? extends Annotation>, FieldAnnotationHandler>(ScanResult.class, new ScanResultFieldAnnotationHandler(scanResultPanelFetcher)));
-            List<Pair<Class<? extends Annotation>, ClassAnnotationHandler>> classAnnotationMapping = new LinkedList<>(JPAReflectionFormBuilder.CLASS_ANNOTATION_MAPPING_DEFAULT);
-            DocumentTab newTab = new DocumentTab(UNSAVED_NAME,
-                    oCRSelectComponent,
-                    oCREngine,
-                    ENTITY_CLASSES,
-                    this.entityManager,
-                    fieldAnnotationMapping,
-                    classAnnotationMapping,
-                    oCRResultPanelFetcher,
-                    scanResultPanelFetcher);
+            DocumentTab newTab = generateDocumentTab(oCRSelectComponent,
+                    oCREngine);
             this.mainTabbedPane.add(UNSAVED_NAME, newTab);
             this.invalidate();
         } catch (SaneException | IOException | IllegalAccessException | IllegalArgumentException | IllegalStateException | InstantiationException | NoSuchMethodException | InvocationTargetException ex) {
@@ -1358,6 +1351,28 @@ public class DocumentScanner extends javax.swing.JFrame {
                 }
             }
         }
+    }
+
+    private DocumentTab generateDocumentTab(OCRSelectComponent oCRSelectComponent,
+            OCREngine oCREngine) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+        OCRResultPanelFetcher oCRResultPanelFetcher = new DocumentTabOCRResultPanelFetcher(oCRSelectComponent, oCREngine);
+        ScanResultPanelFetcher scanResultPanelFetcher = new DocumentTabScanResultPanelFetcher(oCRSelectComponent);
+        List<Pair<Class<? extends Annotation>, FieldAnnotationHandler>> fieldAnnotationMapping = new LinkedList<>(JPAReflectionFormBuilder.FIELD_ANNOTATION_MAPPING_DEFAULT_JPA);
+        fieldAnnotationMapping.add(new ImmutablePair<Class<? extends Annotation>, FieldAnnotationHandler>(OCRResult.class, new OCRResultFieldAnnotationHandler(oCRResultPanelFetcher)));
+        fieldAnnotationMapping.add(new ImmutablePair<Class<? extends Annotation>, FieldAnnotationHandler>(ScanResult.class, new ScanResultFieldAnnotationHandler(scanResultPanelFetcher)));
+        fieldAnnotationMapping.add(new ImmutablePair<Class<? extends Annotation>, FieldAnnotationHandler>(Id.class, new IdFieldAnnoationHandler(EntityIdGenerator.getInstance(), DocumentScanner.generateApplicationWindowTitle("persistence failure"))));
+        List<Pair<Class<? extends Annotation>, ClassAnnotationHandler<?>>> classAnnotationMapping = new LinkedList<>(JPAReflectionFormBuilder.CLASS_ANNOTATION_MAPPING_DEFAULT);
+        classAnnotationMapping.add(new ImmutablePair<Class<? extends Annotation>, ClassAnnotationHandler<?>>(Entity.class, new EntityClassAnnotationHandler(entityManager)));
+        DocumentTab retValue = new DocumentTab(UNSAVED_NAME,
+                    oCRSelectComponent,
+                    oCREngine,
+                    ENTITY_CLASSES,
+                    this.entityManager,
+                    fieldAnnotationMapping,
+                    classAnnotationMapping,
+                    oCRResultPanelFetcher,
+                    scanResultPanelFetcher);
+        return retValue;
     }
 
     private void handleOCRSelection() {

@@ -17,7 +17,11 @@ package richtercloud.document.scanner.model;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import javax.persistence.Basic;
+import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.Lob;
 import javax.persistence.ManyToMany;
 import javax.validation.constraints.NotNull;
 import richtercloud.document.scanner.components.annotations.OCRResult;
@@ -35,12 +39,22 @@ public class Document extends AbstractDocument {
      * a name for the document or a few words describing the context
      */
     @NotNull
+    @Basic(fetch = FetchType.EAGER)
     private String identifier;
     @ScanResult
+    @Basic(fetch = FetchType.LAZY) //fetch lazy as long as no issue occur
+            //because this might quickly create performance impacts
+    @Lob
     private byte[] scanData;
     @OCRResult
+    @Basic(fetch = FetchType.LAZY)//fetch lazy as long as no issue occur
+            //because this might quickly create performance impacts
+    @Lob
+    @Column(length = 1048576) //2^20; the column length needs to be set in order
+    //to avoid a truncation error where any type (VARCHAR, CLOB, etc.) is cut to
+    //length 255 which is the default
     private String scanOCRText;
-    @ManyToMany(mappedBy = "documents")
+    @ManyToMany(mappedBy = "documents", fetch = FetchType.EAGER)
     private List<Payment> payments;
 
     protected Document() {

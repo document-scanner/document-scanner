@@ -14,6 +14,10 @@
  */
 package richtercloud.document.scanner.gui;
 
+import javax.persistence.EntityManager;
+import javax.swing.JLabel;
+import javax.swing.JPasswordField;
+import javax.swing.JTextField;
 import richtercloud.document.scanner.gui.conf.DerbyPersistenceStorageConf;
 import richtercloud.document.scanner.gui.storageconf.StorageConfPanel;
 
@@ -23,13 +27,20 @@ import richtercloud.document.scanner.gui.storageconf.StorageConfPanel;
  */
 public class DerbyPersistenceStorageConfPanel extends StorageConfPanel<DerbyPersistenceStorageConf> {
     private static final long serialVersionUID = 1L;
-    private final DerbyPersistenceStorageConf storageConf = new DerbyPersistenceStorageConf();
+    private EntityManager entityManager;
+    private DerbyPersistenceStorageConf storageConf;
 
     /**
      * Creates new form DerbyStorageConfPanel
      */
-    public DerbyPersistenceStorageConfPanel() {
+    protected DerbyPersistenceStorageConfPanel() {
         this.initComponents();
+    }
+
+    public DerbyPersistenceStorageConfPanel(EntityManager entityManager) {
+        this();
+        this.entityManager = entityManager;
+        this.storageConf =  new DerbyPersistenceStorageConf(entityManager);
     }
 
     @Override

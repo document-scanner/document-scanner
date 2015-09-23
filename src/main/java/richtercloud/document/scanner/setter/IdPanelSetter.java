@@ -14,13 +14,13 @@
  */
 package richtercloud.document.scanner.setter;
 
-import richtercloud.reflection.form.builder.jpa.IdPanel;
+import richtercloud.reflection.form.builder.jpa.panels.LongIdPanel;
 
 /**
  *
  * @author richter
  */
-public class IdPanelSetter implements ValueSetter<IdPanel>{
+public class IdPanelSetter implements ValueSetter<LongIdPanel>{
     private final static IdPanelSetter INSTANCE = new IdPanelSetter();
 
     public static IdPanelSetter getInstance() {
@@ -31,7 +31,7 @@ public class IdPanelSetter implements ValueSetter<IdPanel>{
     }
 
     @Override
-    public void setValue(String value, IdPanel comp) {
+    public void setValue(String value, LongIdPanel comp) {
         comp.getIdSpinner().setValue(value);
     }
 

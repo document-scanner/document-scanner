@@ -19,6 +19,7 @@ import java.util.LinkedList;
 import java.util.List;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import richtercloud.document.scanner.model.validator.ValidPerson;
 
 /**
@@ -29,9 +30,9 @@ import richtercloud.document.scanner.model.validator.ValidPerson;
 @ValidPerson
 public class Person extends Company {
     private static final long serialVersionUID = 1L;
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     private List<String> firstnames = new LinkedList<>();
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     private List<String> lastnames = new LinkedList<>();
 
     protected Person() {

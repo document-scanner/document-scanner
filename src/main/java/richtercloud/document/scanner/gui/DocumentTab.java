@@ -50,7 +50,7 @@ public class DocumentTab extends javax.swing.JPanel {
             Set<Class<?>> entityClasses,
             EntityManager entityManager,
             List<Pair<Class<? extends Annotation>,FieldAnnotationHandler>> fieldAnnotationMapping,
-            List<Pair<Class<? extends Annotation>,ClassAnnotationHandler>> classAnnotationMapping,
+            List<Pair<Class<? extends Annotation>,ClassAnnotationHandler<?>>> classAnnotationMapping,
             OCRResultPanelFetcher oCRResultPanelFetcher,
             ScanResultPanelFetcher scanResultPanelFetcher) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         this(title,
@@ -72,13 +72,13 @@ public class DocumentTab extends javax.swing.JPanel {
             OCRSelectComponent oCRSelectComponent,
             OCREngine oCREngine,
             Set<Class<?>> entityClasses,
-            Map<Type, FieldHandler> classMapping,
-            Map<Class<?>, Class<? extends JComponent>> primitiveMapping,
+            Map<Type, FieldHandler<?>> classMapping,
+            Map<Class<?>, FieldHandler<?>> primitiveMapping,
             Map<Class<? extends JComponent>, ValueRetriever<?, ?>> valueRetrieverMapping,
             Map<Class<? extends JComponent>, ValueSetter<?>> valueSetterMapping,
             EntityManager entityManager,
             List<Pair<Class<? extends Annotation>,FieldAnnotationHandler>> fieldAnnotationMapping,
-            List<Pair<Class<? extends Annotation>,ClassAnnotationHandler>> classAnnotationMapping,
+            List<Pair<Class<? extends Annotation>,ClassAnnotationHandler<?>>> classAnnotationMapping,
             OCRResultPanelFetcher oCRResultPanelFetcher,
             ScanResultPanelFetcher scanResultPanelFetcher) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         this.title = title;

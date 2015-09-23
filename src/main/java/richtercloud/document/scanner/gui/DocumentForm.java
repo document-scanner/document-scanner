@@ -28,6 +28,7 @@ import javax.persistence.EntityManager;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import org.apache.commons.lang3.tuple.Pair;
 import richtercloud.document.scanner.components.OCRResultPanelFetcher;
@@ -58,13 +59,13 @@ public class DocumentForm extends javax.swing.JPanel {
     public DocumentForm(Set<Class<?>> entityClasses,
             EntityManager entityManager,
             List<Pair<Class<? extends Annotation>,FieldAnnotationHandler>> fieldAnnotationMapping,
-            List<Pair<Class<? extends Annotation>,ClassAnnotationHandler>> classAnnotationMapping,
+            List<Pair<Class<? extends Annotation>,ClassAnnotationHandler<?>>> classAnnotationMapping,
             final OCRResultPanelFetcher oCRResultPanelRetriever,
             final ScanResultPanelFetcher scanResultPanelRetriever) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         this(entityClasses,
-                ReflectionFormBuilder.CLASS_MAPPING_DEFAULT,
-                ReflectionFormBuilder.PRIMITIVE_MAPPING_DEFAULT,
-                JPAReflectionFormBuilder.VALUE_RETRIEVER_MAPPING_JPA_DEFAULT,
+                DocumentScanner.CLASS_MAPPING_DEFAULT,
+                DocumentScanner.PRIMITIVE_MAPPING_DEFAULT,
+                DocumentScanner.VALUE_RETRIEVER_MAPPING_DEFAULT,
                 DocumentScanner.VALUE_SETTER_MAPPING_DEFAULT,
                 entityManager,
                 fieldAnnotationMapping,
@@ -74,13 +75,13 @@ public class DocumentForm extends javax.swing.JPanel {
     }
 
     public DocumentForm(Set<Class<?>> entityClasses,
-            Map<Type, FieldHandler> classMapping,
-            Map<Class<?>, Class<? extends JComponent>> primitiveMapping,
+            Map<Type, FieldHandler<?>> classMapping,
+            Map<Class<?>, FieldHandler<?>> primitiveMapping,
             Map<Class<? extends JComponent>, ValueRetriever<?, ?>> valueRetrieverMapping,
             Map<Class<? extends JComponent>, ValueSetter<?>> valueSetterMapping,
             EntityManager entityManager,
             List<Pair<Class<? extends Annotation>,FieldAnnotationHandler>> fieldAnnotationMapping,
-            List<Pair<Class<? extends Annotation>,ClassAnnotationHandler>> classAnnotationMapping,
+            List<Pair<Class<? extends Annotation>,ClassAnnotationHandler<?>>> classAnnotationMapping,
             final OCRResultPanelFetcher oCRResultPanelRetriever,
             final ScanResultPanelFetcher scanResultPanelRetriever) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         this.initComponents();
@@ -98,7 +99,7 @@ public class DocumentForm extends javax.swing.JPanel {
             Map<Class<? extends JComponent>, ValueSetter<?>> valueSetterMapping) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         for(Class<?> entityClass : entityClasses) {
             ReflectionFormPanel reflectionFormPanel = reflectionFormBuilder.transform(entityClass);
-            this.entityCreationTabbedPane.add(entityClass.getSimpleName(), reflectionFormPanel);
+            this.entityCreationTabbedPane.add(entityClass.getSimpleName(), new JScrollPane(reflectionFormPanel));
             List<Field> relevantFields = reflectionFormBuilder.retrieveRelevantFields(entityClass);
             JMenu entityClassMenu = new JMenu(entityClass.getSimpleName());
             for(Field relevantField : relevantFields) {

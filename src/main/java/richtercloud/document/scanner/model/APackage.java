@@ -17,7 +17,9 @@ package richtercloud.document.scanner.model;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import javax.persistence.Basic;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.ManyToMany;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -40,6 +42,7 @@ public class APackage extends CommunicationItem {
      */
     @Temporal(TemporalType.TIMESTAMP)
     @NotNull
+    @Basic(fetch = FetchType.EAGER)
     private Date reception;
     /**
      * the date and time (timestamp) of the delivery (by the sender) (time is
@@ -47,8 +50,9 @@ public class APackage extends CommunicationItem {
      */
     @Temporal(TemporalType.TIMESTAMP)
     @NotNull
+    @Basic(fetch = FetchType.EAGER)
     private Date delivery;
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     private List<Shipping> shippings;
 
     protected APackage() {
