@@ -14,6 +14,9 @@
  */
 package richtercloud.document.scanner.components;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  *
  * @author richter
@@ -21,6 +24,7 @@ package richtercloud.document.scanner.components;
 public class OCRResultPanel extends javax.swing.JPanel {
     private static final long serialVersionUID = 1L;
     private OCRResultPanelFetcher retriever;
+    private Set<OCRResultPanelUpdateListener> updateListeners = new HashSet<>();
 
     /**
      * Creates new form OCRResultPanel
@@ -29,13 +33,22 @@ public class OCRResultPanel extends javax.swing.JPanel {
         this.initComponents();
     }
 
-    public OCRResultPanel(OCRResultPanelFetcher retriever) {
+    public OCRResultPanel(OCRResultPanelFetcher retriever, String initialValue) {
         this();
         this.retriever = retriever;
+        this.oCRResultTextArea.setText(initialValue);
     }
 
     public String retrieveText() {
         return oCRResultTextArea.getText();
+    }
+
+    public void addUpdateListener(OCRResultPanelUpdateListener updateListener) {
+        this.updateListeners.add(updateListener);
+    }
+
+    public void removeUpdateListener(OCRResultPanelUpdateListener updateListener) {
+        this.updateListeners.remove(updateListener);
     }
 
     /**

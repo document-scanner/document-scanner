@@ -14,17 +14,24 @@
  */
 package richtercloud.document.scanner.gui;
 
+import java.lang.reflect.Type;
+import java.util.Collections;
+import java.util.Set;
 import javax.swing.JComponent;
-import richtercloud.reflection.form.builder.FieldAnnotationHandler;
-import richtercloud.reflection.form.builder.ReflectionFormBuilder;
+import richtercloud.document.scanner.components.OCRResultFieldUpdateEvent;
 import richtercloud.document.scanner.components.OCRResultPanel;
 import richtercloud.document.scanner.components.OCRResultPanelFetcher;
+import richtercloud.document.scanner.components.OCRResultPanelUpdateEvent;
+import richtercloud.document.scanner.components.OCRResultPanelUpdateListener;
+import richtercloud.reflection.form.builder.FieldAnnotationHandler;
+import richtercloud.reflection.form.builder.FieldUpdateListener;
+import richtercloud.reflection.form.builder.ReflectionFormBuilder;
 
 /**
  *
  * @author richter
  */
-public class OCRResultFieldAnnotationHandler implements FieldAnnotationHandler {
+public class OCRResultFieldAnnotationHandler implements FieldAnnotationHandler<String, OCRResultFieldUpdateEvent> {
     private final OCRResultPanelFetcher oCRResultPanelFetcher;
 
     public OCRResultFieldAnnotationHandler(OCRResultPanelFetcher oCRResultPanelFetcher) {
@@ -32,8 +39,22 @@ public class OCRResultFieldAnnotationHandler implements FieldAnnotationHandler {
     }
 
     @Override
-    public JComponent handle(Class<?> clazz, Object entity, ReflectionFormBuilder reflectionFormBuilder) {
-        return new OCRResultPanel(oCRResultPanelFetcher);
+    public JComponent handle(Type fieldClass,
+            String fieldValue,
+            Object entity,
+            final FieldUpdateListener<OCRResultFieldUpdateEvent> fieldUpdateListener,
+            ReflectionFormBuilder reflectionFormBuilder) {
+        if(fieldClass == null) {
+            throw new IllegalArgumentException("fieldClass mustn't be null");
+        }
+        OCRResultPanel retValue = new OCRResultPanel(oCRResultPanelFetcher, fieldValue);
+        retValue.addUpdateListener(new OCRResultPanelUpdateListener() {
+            @Override
+            public void onUpdate(OCRResultPanelUpdateEvent event) {
+                fieldUpdateListener.onUpdate(new OCRResultFieldUpdateEvent(event.getNewValue()));
+            }
+        });
+        return retValue;
     }
 
 }

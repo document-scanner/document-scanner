@@ -14,6 +14,9 @@
  */
 package richtercloud.document.scanner.components;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  *
  * @author richter
@@ -23,6 +26,7 @@ public class ScanResultPanel extends javax.swing.JPanel {
     private ScanResultPanelFetcher retriever;
     private byte[] scanData;
     private final static String LABEL_DEFAULT_TEXT = "No data scanned";
+    private Set<ScanResultPanelUpdateListener> updateListener = new HashSet<>();
 
     /**
      * Creates new form ScanResultPanel
@@ -31,9 +35,27 @@ public class ScanResultPanel extends javax.swing.JPanel {
         this.initComponents();
     }
 
-    public ScanResultPanel(ScanResultPanelFetcher retriever) {
+    public ScanResultPanel(ScanResultPanelFetcher retriever, byte[] initialValue) {
         this();
         this.retriever = retriever;
+        this.scanData = initialValue;
+        handleScanDataUpdate();
+    }
+
+    public void addUpdateListerner(ScanResultPanelUpdateListener updateListener) {
+        this.updateListener.add(updateListener);
+    }
+
+    public void removeUpdateListener(ScanResultPanelUpdateListener updateListener) {
+        this.updateListener.remove(updateListener);
+    }
+
+    private void handleScanDataUpdate() {
+        if(this.scanData != null) {
+            this.scanResultLabel.setText(String.format("%d bytes of data scanned", this.scanData.length));
+        }else {
+            this.scanResultLabel.setText(LABEL_DEFAULT_TEXT);
+        }
     }
 
     /**
@@ -92,14 +114,19 @@ public class ScanResultPanel extends javax.swing.JPanel {
 
     private void scanResultScanButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_scanResultScanButtonActionPerformed
         this.scanData = this.retriever.fetch();
-        this.scanResultLabel.setText(String.format("%d bytes of data scanned", this.scanData.length));
+        for(ScanResultPanelUpdateListener updateListener : this.updateListener) {
+            updateListener.onUpdate(new ScanResultPanelUpdateEvent(scanData));
+        }
+        handleScanDataUpdate();
     }//GEN-LAST:event_scanResultScanButtonActionPerformed
 
     private void scanResultDeleteButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_scanResultDeleteButtonActionPerformed
         this.scanData = null;
-        this.scanResultLabel.setText(LABEL_DEFAULT_TEXT);
+        for(ScanResultPanelUpdateListener updateListener : this.updateListener) {
+            updateListener.onUpdate(new ScanResultPanelUpdateEvent(scanData));
+        }
+        handleScanDataUpdate();
     }//GEN-LAST:event_scanResultDeleteButtonActionPerformed
-
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton scanResultDeleteButton;

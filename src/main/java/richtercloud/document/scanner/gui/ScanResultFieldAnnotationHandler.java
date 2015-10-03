@@ -14,17 +14,24 @@
  */
 package richtercloud.document.scanner.gui;
 
+import java.lang.reflect.Type;
+import java.util.Collections;
+import java.util.Set;
 import javax.swing.JComponent;
+import richtercloud.document.scanner.components.ScanResultFieldUpdateEvent;
 import richtercloud.document.scanner.components.ScanResultPanel;
 import richtercloud.document.scanner.components.ScanResultPanelFetcher;
+import richtercloud.document.scanner.components.ScanResultPanelUpdateEvent;
+import richtercloud.document.scanner.components.ScanResultPanelUpdateListener;
 import richtercloud.reflection.form.builder.FieldAnnotationHandler;
+import richtercloud.reflection.form.builder.FieldUpdateListener;
 import richtercloud.reflection.form.builder.ReflectionFormBuilder;
 
 /**
  *
  * @author richter
  */
-public class ScanResultFieldAnnotationHandler implements FieldAnnotationHandler {
+public class ScanResultFieldAnnotationHandler implements FieldAnnotationHandler<byte[], ScanResultFieldUpdateEvent> {
     private final ScanResultPanelFetcher scanResultPanelFetcher;
 
     public ScanResultFieldAnnotationHandler(ScanResultPanelFetcher scanResultPanelFetcher) {
@@ -32,8 +39,22 @@ public class ScanResultFieldAnnotationHandler implements FieldAnnotationHandler 
     }
 
     @Override
-    public JComponent handle(Class<?> clazz, Object entity, ReflectionFormBuilder reflectionFormBuilder) {
-        return new ScanResultPanel(scanResultPanelFetcher);
+    public JComponent handle(Type fieldClass,
+            byte[] fieldValue,
+            Object entity,
+            final FieldUpdateListener<ScanResultFieldUpdateEvent> fieldUpdateListener,
+            ReflectionFormBuilder reflectionFormBuilder) {
+        if(fieldClass == null) {
+            throw new IllegalArgumentException("fieldClass mustn't be null");
+        }
+        ScanResultPanel retValue = new ScanResultPanel(scanResultPanelFetcher, fieldValue);
+        retValue.addUpdateListerner(new ScanResultPanelUpdateListener() {
+            @Override
+            public void onUpdate(ScanResultPanelUpdateEvent event) {
+                fieldUpdateListener.onUpdate(new ScanResultFieldUpdateEvent(event.getNewValue()));
+            }
+        });
+        return retValue;
     }
 
 }

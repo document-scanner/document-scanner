@@ -56,6 +56,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.imageio.ImageIO;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -124,11 +125,13 @@ import richtercloud.reflection.form.builder.AnyType;
 import richtercloud.reflection.form.builder.ClassAnnotationHandler;
 import richtercloud.reflection.form.builder.FieldAnnotationHandler;
 import richtercloud.reflection.form.builder.FieldHandler;
+import richtercloud.reflection.form.builder.FieldUpdateEvent;
 import richtercloud.reflection.form.builder.ReflectionFormPanel;
+import richtercloud.reflection.form.builder.jpa.ElementCollectionFieldAnnotationHandler;
 import richtercloud.reflection.form.builder.jpa.EntityClassAnnotationHandler;
 import richtercloud.reflection.form.builder.jpa.IdFieldAnnoationHandler;
+import richtercloud.reflection.form.builder.jpa.JPAEntityListFieldHandler;
 import richtercloud.reflection.form.builder.jpa.JPAReflectionFormBuilder;
-import richtercloud.reflection.form.builder.jpa.QueryEntityListFieldHandler;
 import richtercloud.reflection.form.builder.jpa.panels.LongIdPanel;
 import richtercloud.reflection.form.builder.retriever.ValueRetriever;
 
@@ -151,8 +154,8 @@ public class DocumentScanner extends javax.swing.JFrame {
     private static final int ORIENTDB_PORT_DEFAULT = 2_424;
     private static final String CONNECTION_URL_EXAMPLE = "remote:localhost/GratefulDeadConcerts";
     private static final String CONNECTION_URL_TOOLTIP_TEXT = String.format("[mode]:[path] (where mode is one of <b>remote</b>, <b>plocal</b> or <b>??</b> and path is in the form [IP or hostname]/[database name], e.g. %s)", CONNECTION_URL_EXAMPLE);
-    private static final String APP_NAME = "Document scanner";
-    private static final String APP_VERSION = "1.0";
+    public static final String APP_NAME = "Document scanner";
+    public static final String APP_VERSION = "1.0";
     private static final String UNSAVED_NAME = "unsaved";
     private static final String SCANNER_ADDRESS_DEFAULT = "localhost";
     private SaneDevice device;
@@ -212,14 +215,14 @@ public class DocumentScanner extends javax.swing.JFrame {
     private boolean debug = false;
     private DocumentScannerCommandParser cmd = new DocumentScannerCommandParser();
     private final static String PROPERTY_KEY_DEBUG = "document.scanner.debug";
-    public final static Map<java.lang.reflect.Type, FieldHandler<?>> CLASS_MAPPING_DEFAULT;
+    public final static Map<java.lang.reflect.Type, FieldHandler<?,?>> CLASS_MAPPING_DEFAULT;
     static {
-        Map<java.lang.reflect.Type, FieldHandler<?>> classMappingDefault = new HashMap<>(JPAReflectionFormBuilder.CLASS_MAPPING_DEFAULT);
+        Map<java.lang.reflect.Type, FieldHandler<?,?>> classMappingDefault = new HashMap<>(JPAReflectionFormBuilder.CLASS_MAPPING_DEFAULT);
         CLASS_MAPPING_DEFAULT = Collections.unmodifiableMap(classMappingDefault);
     }
-    public final static Map<Class<?>, FieldHandler<?>> PRIMITIVE_MAPPING_DEFAULT;
+    public final static Map<Class<?>, FieldHandler<?,?>> PRIMITIVE_MAPPING_DEFAULT;
     static {
-        Map<Class<?>, FieldHandler<?>> primitiveMappingDefault = new HashMap<>(JPAReflectionFormBuilder.PRIMITIVE_MAPPING_DEFAULT);
+        Map<Class<?>, FieldHandler<?,?>> primitiveMappingDefault = new HashMap<>(JPAReflectionFormBuilder.PRIMITIVE_MAPPING_DEFAULT);
         PRIMITIVE_MAPPING_DEFAULT = Collections.unmodifiableMap(primitiveMappingDefault);
     }
     public final static Map<Class<? extends JComponent>, ValueRetriever<?,?>> VALUE_RETRIEVER_MAPPING_DEFAULT;
@@ -236,11 +239,7 @@ public class DocumentScanner extends javax.swing.JFrame {
         valueSetterMappingDefault.put(LongIdPanel.class, IdPanelSetter.getInstance());
         VALUE_SETTER_MAPPING_DEFAULT = valueSetterMappingDefault;
     }
-    private Map<java.lang.reflect.Type, FieldHandler<?>> classMapping = new HashMap<>(CLASS_MAPPING_DEFAULT);
-
-    public static String generateApplicationWindowTitle(String title) {
-        return String.format("%s - %s %s", title, APP_NAME, APP_VERSION);
-    }
+    private Map<java.lang.reflect.Type, FieldHandler<?,?>> classMapping = new HashMap<>(CLASS_MAPPING_DEFAULT);
 
     /**
      * Parses the command line and evaluates system properties. Command line
@@ -379,7 +378,9 @@ public class DocumentScanner extends javax.swing.JFrame {
             LOGGER.info("created inexisting configuration directory '{}'", CONFIG_DIR_NAME);
         }
         this.entityManagerFactory = Persistence.createEntityManagerFactory("richtercloud_document-scanner_jar_1.0-SNAPSHOTPU");
-        Class<?> driver = EmbeddedDriver.class;
+        Class<?> driver = EmbeddedDriver.class; //this declaration facilitates
+        //dependency management with an IDE with maven support and doesn't cause
+        //any harm
         try {
             driver.newInstance();
             this.conn = DriverManager.getConnection(String.format("%s;create=%s", DERBY_CONNECTION_URL, !DATABASE_DIR.exists()));
@@ -389,7 +390,7 @@ public class DocumentScanner extends javax.swing.JFrame {
         }
 
         //after entity manager creation
-        this.classMapping.put(new TypeToken<List<AnyType>>() {}.getType(), new QueryEntityListFieldHandler(entityManager));
+        this.classMapping.put(new TypeToken<List<AnyType>>() {}.getType(), new JPAEntityListFieldHandler(entityManager));
 
         this.initComponents();
 
@@ -556,7 +557,7 @@ public class DocumentScanner extends javax.swing.JFrame {
             }
         });
 
-        scannerDialog.setTitle(DocumentScanner.generateApplicationWindowTitle("Select scanner"));
+        scannerDialog.setTitle(ReflectionFormPanel.generateApplicationWindowTitle("Select scanner", APP_NAME, APP_VERSION));
         scannerDialog.setModal(true);
 
         scannerDialogAddressTextField.setText(SCANNER_ADDRESS_DEFAULT);
@@ -636,7 +637,7 @@ public class DocumentScanner extends javax.swing.JFrame {
                 .addContainerGap())
         );
 
-        databaseDialog.setTitle(DocumentScanner.generateApplicationWindowTitle("Connect to database"));
+        databaseDialog.setTitle(ReflectionFormPanel.generateApplicationWindowTitle("Connect to database", APP_NAME, APP_VERSION));
         databaseDialog.setModal(true);
         databaseDialog.addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowClosed(java.awt.event.WindowEvent evt) {
@@ -1360,18 +1361,27 @@ public class DocumentScanner extends javax.swing.JFrame {
         List<Pair<Class<? extends Annotation>, FieldAnnotationHandler>> fieldAnnotationMapping = new LinkedList<>(JPAReflectionFormBuilder.FIELD_ANNOTATION_MAPPING_DEFAULT_JPA);
         fieldAnnotationMapping.add(new ImmutablePair<Class<? extends Annotation>, FieldAnnotationHandler>(OCRResult.class, new OCRResultFieldAnnotationHandler(oCRResultPanelFetcher)));
         fieldAnnotationMapping.add(new ImmutablePair<Class<? extends Annotation>, FieldAnnotationHandler>(ScanResult.class, new ScanResultFieldAnnotationHandler(scanResultPanelFetcher)));
-        fieldAnnotationMapping.add(new ImmutablePair<Class<? extends Annotation>, FieldAnnotationHandler>(Id.class, new IdFieldAnnoationHandler(EntityIdGenerator.getInstance(), DocumentScanner.generateApplicationWindowTitle("persistence failure"))));
-        List<Pair<Class<? extends Annotation>, ClassAnnotationHandler<?>>> classAnnotationMapping = new LinkedList<>(JPAReflectionFormBuilder.CLASS_ANNOTATION_MAPPING_DEFAULT);
-        classAnnotationMapping.add(new ImmutablePair<Class<? extends Annotation>, ClassAnnotationHandler<?>>(Entity.class, new EntityClassAnnotationHandler(entityManager)));
+        fieldAnnotationMapping.add(new ImmutablePair<Class<? extends Annotation>, FieldAnnotationHandler>(Id.class, new IdFieldAnnoationHandler(EntityIdGenerator.getInstance(), ReflectionFormPanel.generateApplicationWindowTitle("persistence failure", APP_NAME, APP_VERSION))));
+        List<Pair<Class<? extends Annotation>, ClassAnnotationHandler<Object,FieldUpdateEvent<Object>>>> classAnnotationMapping = new LinkedList<>(JPAReflectionFormBuilder.CLASS_ANNOTATION_MAPPING_DEFAULT);
+        classAnnotationMapping.add(new ImmutablePair<Class<? extends Annotation>, ClassAnnotationHandler<Object,FieldUpdateEvent<Object>>>(Entity.class,
+                new EntityClassAnnotationHandler(entityManager)));
         DocumentTab retValue = new DocumentTab(UNSAVED_NAME,
-                    oCRSelectComponent,
-                    oCREngine,
-                    ENTITY_CLASSES,
-                    this.entityManager,
-                    fieldAnnotationMapping,
-                    classAnnotationMapping,
-                    oCRResultPanelFetcher,
-                    scanResultPanelFetcher);
+                oCRSelectComponent,
+                oCREngine,
+                ENTITY_CLASSES,
+                Document.class,
+                this.classMapping,
+                PRIMITIVE_MAPPING_DEFAULT,
+                VALUE_RETRIEVER_MAPPING_DEFAULT,
+                VALUE_SETTER_MAPPING_DEFAULT,
+                entityManager,
+                fieldAnnotationMapping,
+                classAnnotationMapping,
+                oCRResultPanelFetcher,
+                scanResultPanelFetcher,
+                new HashSet<java.lang.reflect.Type>(),
+                new HashSet<java.lang.reflect.Type>(),
+                new HashSet<java.lang.reflect.Type>());
         return retValue;
     }
 
@@ -1407,7 +1417,10 @@ public class DocumentScanner extends javax.swing.JFrame {
 
     private OCREngine retrieveOCREninge() {
         if(this.conf.getoCREngineConf() == null) {
-            JOptionPane.showMessageDialog(this, "OCREngine isn't set up", DocumentScanner.generateApplicationWindowTitle("Warning"), JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, //parent
+                    "OCREngine isn't set up",
+                    ReflectionFormPanel.generateApplicationWindowTitle("Warning", APP_NAME, APP_VERSION),
+                    JOptionPane.ERROR_MESSAGE);
             return null;
         }
         return this.conf.getoCREngineConf().getOCREngine();
@@ -1444,7 +1457,11 @@ public class DocumentScanner extends javax.swing.JFrame {
                 try {
                     new DocumentScanner().setVisible(true);
                 } catch (TesseractNotFoundException ex) {
-                    JOptionPane.showConfirmDialog(null, "The tesseract binary isn't available. Install it on your system and make sure it's executable (in doubt check if tesseract runs on the console)", generateApplicationWindowTitle("tesserate binary missing"), JOptionPane.OK_OPTION, JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showConfirmDialog(null, //parent
+                            "The tesseract binary isn't available. Install it on your system and make sure it's executable (in doubt check if tesseract runs on the console)",
+                            ReflectionFormPanel.generateApplicationWindowTitle("tesserate binary missing", APP_NAME, APP_VERSION),
+                            JOptionPane.OK_OPTION,
+                            JOptionPane.ERROR_MESSAGE);
                 }
             }
         });

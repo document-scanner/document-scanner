@@ -30,6 +30,7 @@ import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.reflection.form.builder.ClassAnnotationHandler;
 import richtercloud.reflection.form.builder.FieldAnnotationHandler;
 import richtercloud.reflection.form.builder.FieldHandler;
+import richtercloud.reflection.form.builder.FieldUpdateEvent;
 import richtercloud.reflection.form.builder.retriever.ValueRetriever;
 
 /**
@@ -48,15 +49,20 @@ public class DocumentTab extends javax.swing.JPanel {
             OCRSelectComponent oCRSelectComponent,
             OCREngine oCREngine,
             Set<Class<?>> entityClasses,
+            Class<?> primaryClassSelection,
             EntityManager entityManager,
             List<Pair<Class<? extends Annotation>,FieldAnnotationHandler>> fieldAnnotationMapping,
-            List<Pair<Class<? extends Annotation>,ClassAnnotationHandler<?>>> classAnnotationMapping,
+            List<Pair<Class<? extends Annotation>,ClassAnnotationHandler<Object,FieldUpdateEvent<Object>>>> classAnnotationMapping,
             OCRResultPanelFetcher oCRResultPanelFetcher,
-            ScanResultPanelFetcher scanResultPanelFetcher) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+            ScanResultPanelFetcher scanResultPanelFetcher,
+            Set<Type> ignoresFieldAnnotationMapping,
+            Set<Type> ignoresClassAnnotationMapping,
+            Set<Type> ignoresPrimitiveMapping) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         this(title,
                 oCRSelectComponent,
                 oCREngine,
                 entityClasses,
+                primaryClassSelection,
                 DocumentScanner.CLASS_MAPPING_DEFAULT,
                 DocumentScanner.PRIMITIVE_MAPPING_DEFAULT,
                 DocumentScanner.VALUE_RETRIEVER_MAPPING_DEFAULT,
@@ -65,35 +71,50 @@ public class DocumentTab extends javax.swing.JPanel {
                 fieldAnnotationMapping,
                 classAnnotationMapping,
                 oCRResultPanelFetcher,
-                scanResultPanelFetcher);
+                scanResultPanelFetcher,
+                ignoresFieldAnnotationMapping,
+                ignoresClassAnnotationMapping,
+                ignoresPrimitiveMapping);
     }
 
     public DocumentTab(String title,
             OCRSelectComponent oCRSelectComponent,
             OCREngine oCREngine,
             Set<Class<?>> entityClasses,
-            Map<Type, FieldHandler<?>> classMapping,
-            Map<Class<?>, FieldHandler<?>> primitiveMapping,
+            Class<?> primaryClassSelection,
+            Map<Type, FieldHandler<?,?>> classMapping,
+            Map<Class<?>, FieldHandler<?,?>> primitiveMapping,
             Map<Class<? extends JComponent>, ValueRetriever<?, ?>> valueRetrieverMapping,
             Map<Class<? extends JComponent>, ValueSetter<?>> valueSetterMapping,
             EntityManager entityManager,
             List<Pair<Class<? extends Annotation>,FieldAnnotationHandler>> fieldAnnotationMapping,
-            List<Pair<Class<? extends Annotation>,ClassAnnotationHandler<?>>> classAnnotationMapping,
+            List<Pair<Class<? extends Annotation>,ClassAnnotationHandler<Object,FieldUpdateEvent<Object>>>> classAnnotationMapping,
             OCRResultPanelFetcher oCRResultPanelFetcher,
-            ScanResultPanelFetcher scanResultPanelFetcher) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+            ScanResultPanelFetcher scanResultPanelFetcher,
+            Set<Type> ignoresFieldAnnotationMapping,
+            Set<Type> ignoresClassAnnotationMapping,
+            Set<Type> ignoresPrimitiveMapping) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         this.title = title;
         this.oCRSelectComponent = oCRSelectComponent;
         this.oCREngine = oCREngine;
         this.documentForm = new DocumentForm(entityClasses,
+                primaryClassSelection,
                 classMapping,
                 primitiveMapping,
                 valueRetrieverMapping,
                 valueSetterMapping,
                 entityManager,
-                fieldAnnotationMapping, classAnnotationMapping, oCRResultPanelFetcher, scanResultPanelFetcher);
+                fieldAnnotationMapping,
+                classAnnotationMapping,
+                oCRResultPanelFetcher,
+                scanResultPanelFetcher,
+                ignoresFieldAnnotationMapping,
+                ignoresClassAnnotationMapping,
+                ignoresPrimitiveMapping);
         this.initComponents();
         this.imageScrollPane.getViewport().setView(oCRSelectComponent);
         this.splitPane.setRightComponent(this.documentForm);
+        this.splitPane.validate();
     }
 
     /**
