@@ -28,4 +28,15 @@ public interface OCREngine {
      * @return the recognized characters
      */
     String recognizeImage(BufferedImage image);
+
+    /**
+     * Allows cancelation of a (potentially time taking) {@link #recognizeImage(java.awt.image.BufferedImage) } from
+     * another thread.
+     */
+    /*
+    internal implementation notes:
+    - canceling from the same thread doesn't make sense because recognizeImage must
+    return first and it return when it's completed only
+    */
+    void cancelRecognizeImage();
 }

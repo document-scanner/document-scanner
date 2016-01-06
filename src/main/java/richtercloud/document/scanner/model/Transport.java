@@ -20,6 +20,9 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.ManyToMany;
 import javax.validation.constraints.Size;
+import javax.validation.groups.Default;
+import richtercloud.reflection.form.builder.FieldInfo;
+import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
 
 /**
  *
@@ -29,7 +32,8 @@ import javax.validation.constraints.Size;
 public class Transport extends Identifiable {
     private static final long serialVersionUID = 1L;
     @ManyToMany(fetch = FetchType.EAGER)
-    @Size(min = 1) //otherwise creating a Transport doesn't make sense
+    @Size(min = 1, groups = {Default.class, IdGenerationValidation.class}) //otherwise creating a Transport doesn't make sense; used for id generation
+    @FieldInfo(name = "Tickets", description = "A list of tickets which make up this transport")
     private List<TransportTicket> tickets;
 
     protected Transport() {

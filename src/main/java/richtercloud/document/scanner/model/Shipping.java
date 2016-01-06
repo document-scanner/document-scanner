@@ -21,6 +21,7 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.ManyToMany;
 import javax.validation.constraints.Size;
+import richtercloud.reflection.form.builder.FieldInfo;
 
 /**
  *
@@ -31,6 +32,7 @@ public class Shipping extends CommunicationItem {
     private static final long serialVersionUID = 1L;
     @ManyToMany(mappedBy = "shippings", fetch = FetchType.EAGER)
     @Size(min = 1) //otherwise creating a shipping doesn't make sense
+    @FieldInfo(name = "Packages", description = "A list of packages which make this shipping")
     private List<APackage> packages;
 
     protected Shipping() {

@@ -19,12 +19,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import richtercloud.document.scanner.ocr.OCREngineConfInfo;
 import richtercloud.document.scanner.ocr.TesseractOCREngine;
 
 /**
  *
  * @author richter
  */
+@OCREngineConfInfo(name = "Tesseract OCR")
 public class TesseractOCREngineConf implements Serializable, OCREngineConf<TesseractOCREngine> {
     private static final long serialVersionUID = 1L;
     private static TesseractOCREngine instance;

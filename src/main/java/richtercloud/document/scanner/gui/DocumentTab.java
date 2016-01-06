@@ -28,10 +28,12 @@ import richtercloud.document.scanner.components.ScanResultPanelFetcher;
 import richtercloud.document.scanner.ocr.OCREngine;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.reflection.form.builder.ClassAnnotationHandler;
-import richtercloud.reflection.form.builder.FieldAnnotationHandler;
-import richtercloud.reflection.form.builder.FieldHandler;
-import richtercloud.reflection.form.builder.FieldUpdateEvent;
-import richtercloud.reflection.form.builder.retriever.ValueRetriever;
+import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
+import richtercloud.reflection.form.builder.fieldhandler.FieldUpdateEvent;
+import richtercloud.reflection.form.builder.components.AmountMoneyCurrencyStorage;
+import richtercloud.reflection.form.builder.components.AmountMoneyUsageStatisticsStorage;
+import richtercloud.reflection.form.builder.fieldhandler.FieldAnnotationHandler;
+import richtercloud.reflection.form.builder.message.MessageHandler;
 
 /**
  *
@@ -50,31 +52,30 @@ public class DocumentTab extends javax.swing.JPanel {
             OCREngine oCREngine,
             Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
+            FieldHandler fieldHandler,
             EntityManager entityManager,
             List<Pair<Class<? extends Annotation>,FieldAnnotationHandler>> fieldAnnotationMapping,
             List<Pair<Class<? extends Annotation>,ClassAnnotationHandler<Object,FieldUpdateEvent<Object>>>> classAnnotationMapping,
             OCRResultPanelFetcher oCRResultPanelFetcher,
             ScanResultPanelFetcher scanResultPanelFetcher,
-            Set<Type> ignoresFieldAnnotationMapping,
-            Set<Type> ignoresClassAnnotationMapping,
-            Set<Type> ignoresPrimitiveMapping) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+            AmountMoneyUsageStatisticsStorage amountMoneyUsageStatisticsStorage,
+            AmountMoneyCurrencyStorage amountMoneyAdditionalCurrencyStorage,
+            MessageHandler messageHandler) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         this(title,
                 oCRSelectComponent,
                 oCREngine,
                 entityClasses,
                 primaryClassSelection,
-                DocumentScanner.CLASS_MAPPING_DEFAULT,
-                DocumentScanner.PRIMITIVE_MAPPING_DEFAULT,
-                DocumentScanner.VALUE_RETRIEVER_MAPPING_DEFAULT,
+                fieldHandler,
                 DocumentScanner.VALUE_SETTER_MAPPING_DEFAULT,
                 entityManager,
                 fieldAnnotationMapping,
                 classAnnotationMapping,
                 oCRResultPanelFetcher,
                 scanResultPanelFetcher,
-                ignoresFieldAnnotationMapping,
-                ignoresClassAnnotationMapping,
-                ignoresPrimitiveMapping);
+                amountMoneyUsageStatisticsStorage,
+                amountMoneyAdditionalCurrencyStorage,
+                messageHandler);
     }
 
     public DocumentTab(String title,
@@ -82,35 +83,29 @@ public class DocumentTab extends javax.swing.JPanel {
             OCREngine oCREngine,
             Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
-            Map<Type, FieldHandler<?,?>> classMapping,
-            Map<Class<?>, FieldHandler<?,?>> primitiveMapping,
-            Map<Class<? extends JComponent>, ValueRetriever<?, ?>> valueRetrieverMapping,
+            FieldHandler fieldHandler,
             Map<Class<? extends JComponent>, ValueSetter<?>> valueSetterMapping,
             EntityManager entityManager,
             List<Pair<Class<? extends Annotation>,FieldAnnotationHandler>> fieldAnnotationMapping,
             List<Pair<Class<? extends Annotation>,ClassAnnotationHandler<Object,FieldUpdateEvent<Object>>>> classAnnotationMapping,
             OCRResultPanelFetcher oCRResultPanelFetcher,
             ScanResultPanelFetcher scanResultPanelFetcher,
-            Set<Type> ignoresFieldAnnotationMapping,
-            Set<Type> ignoresClassAnnotationMapping,
-            Set<Type> ignoresPrimitiveMapping) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+            AmountMoneyUsageStatisticsStorage amountMoneyUsageStatisticsStorage,
+            AmountMoneyCurrencyStorage amountMoneyAdditionalCurrencyStorage,
+            MessageHandler messageHandler) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         this.title = title;
         this.oCRSelectComponent = oCRSelectComponent;
         this.oCREngine = oCREngine;
         this.documentForm = new DocumentForm(entityClasses,
                 primaryClassSelection,
-                classMapping,
-                primitiveMapping,
-                valueRetrieverMapping,
+                fieldHandler,
                 valueSetterMapping,
                 entityManager,
-                fieldAnnotationMapping,
-                classAnnotationMapping,
                 oCRResultPanelFetcher,
                 scanResultPanelFetcher,
-                ignoresFieldAnnotationMapping,
-                ignoresClassAnnotationMapping,
-                ignoresPrimitiveMapping);
+                amountMoneyUsageStatisticsStorage,
+                amountMoneyAdditionalCurrencyStorage,
+                messageHandler);
         this.initComponents();
         this.imageScrollPane.getViewport().setView(oCRSelectComponent);
         this.splitPane.setRightComponent(this.documentForm);

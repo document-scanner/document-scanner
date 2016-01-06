@@ -22,6 +22,9 @@ import javax.persistence.MappedSuperclass;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
+import javax.validation.groups.Default;
+import richtercloud.reflection.form.builder.FieldInfo;
+import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
 
 /**
  *
@@ -31,17 +34,20 @@ import javax.validation.constraints.NotNull;
 public abstract class CommunicationItem extends Identifiable {
     private static final long serialVersionUID = 1L;
     @ManyToOne(fetch = FetchType.EAGER)
-    @NotNull
+    @NotNull(groups = {Default.class, IdGenerationValidation.class})
+    @FieldInfo(name = "Sender", description = "A reference to the sender")
     private Company sender;
     @ManyToOne(fetch = FetchType.EAGER)
-    @NotNull
+    @NotNull(groups = {Default.class, IdGenerationValidation.class})
+    @FieldInfo(name = "Recipient", description = "A reference to the recipient")
     private Company recipient;
     /**
      * The data and time (timestamp) indicated on the document.
      */
     @Temporal(TemporalType.TIMESTAMP)
-    @NotNull
+    @NotNull(groups = {Default.class, IdGenerationValidation.class})
     @Basic(fetch = FetchType.EAGER)
+    @FieldInfo(name = "Date", description = "The date indicated on the document")
     private Date theDate;
 
     protected CommunicationItem() {

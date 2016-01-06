@@ -20,7 +20,7 @@ import javax.persistence.EntityManager;
  *
  * @author richter
  */
-public abstract class PersistenceStorage implements Storage {
+public abstract class PersistenceStorage implements Storage<Object> {
 
     /**
      * a wrapper around {@link EntityManager#persist(java.lang.Object) }
@@ -33,14 +33,13 @@ public abstract class PersistenceStorage implements Storage {
 
     /**
      * a wrapper around {@link EntityManager#find(java.lang.Class, java.lang.Object) }
-     * @param <T>
      * @param id
      * @param clazz
      * @return
      */
     @Override
-    public <T> T retrieve(Long id, Class<T> clazz) {
-        T retValue = this.retrieveEntityManager().find(clazz, id);
+    public Object retrieve(Long id, Class<? extends Object> clazz) {
+        Object retValue = this.retrieveEntityManager().find(clazz, id);
         return retValue;
     }
 

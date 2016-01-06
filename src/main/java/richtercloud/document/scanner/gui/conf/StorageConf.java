@@ -22,5 +22,18 @@ import richtercloud.document.scanner.storage.Storage;
  * @param <S> the type of the storage managed by this configuration
  */
 public interface StorageConf<S extends Storage> {
+
+    /**
+     * The managed instance of {@link Storage}.
+     * @return
+     */
     S getStorage();
+
+    /**
+     * Validates the storage configuration (e.g. a database could validate the
+     * current database scheme against a persisted one and offer a migration
+     * guide if changes were detected).
+     * @throws richtercloud.document.scanner.gui.conf.StorageConfInitializationException
+     */
+    void validate() throws StorageConfInitializationException;
 }

@@ -18,13 +18,22 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import javax.persistence.Basic;
+import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+import javax.validation.groups.Default;
+import richtercloud.document.scanner.components.annotations.OCRResult;
+import richtercloud.document.scanner.components.annotations.ScanResult;
+import richtercloud.document.scanner.model.validator.NoEmptyEntriesList;
+import richtercloud.reflection.form.builder.FieldInfo;
+import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
 
 /**
  *
@@ -33,14 +42,38 @@ import javax.validation.constraints.NotNull;
 @Entity
 public class TransportTicket extends Identifiable {
     private static final long serialVersionUID = 1L;
+    @NotNull(groups = {Default.class, IdGenerationValidation.class}) //used for
+            //id generation
     @ManyToOne(fetch = FetchType.EAGER)
+    @FieldInfo(name = "Transport company", description = "A reference to the transport company (in form of contact information)")
     private Company transportCompany;
+    @Size(min=1, groups = {Default.class, IdGenerationValidation.class})
+            //otherwise creation of TransportTicket doesn't make sense; used for
+            //id generation
+//    @NoEmptyEntriesList(groups = {Default.class, IdGenerationValidation.class})
     @ElementCollection(fetch = FetchType.EAGER)
+    @FieldInfo(name = "Waypoints", description = "A list of waypoints of the ticket (stations, cities, coordinates")
     private List<String> waypoints;
-    @NotNull
+    @NotNull(groups = {Default.class, IdGenerationValidation.class})
     @Temporal(TemporalType.DATE)
     @Basic(fetch = FetchType.EAGER)
+    @FieldInfo(name = "Date", description="The date of ticket (begin of the journey")
     private Date theDate;
+    @ScanResult
+    @Basic(fetch = FetchType.LAZY) //fetch lazy as long as no issue occur
+            //because this might quickly create performance impacts
+    @Lob
+    @FieldInfo(name = "Scan data", description = "The binary data of the scan")
+    private byte[] scanData;
+    @OCRResult
+    @Basic(fetch = FetchType.LAZY)//fetch lazy as long as no issue occur
+            //because this might quickly create performance impacts
+    @Lob
+    @Column(length = 1048576) //2^20; the column length needs to be set in order
+    //to avoid a truncation error where any type (VARCHAR, CLOB, etc.) is cut to
+    //length 255 which is the default
+    @FieldInfo(name= "Scan OCR text", description = "The text which has been retrieved by OCR")
+    private String scanOCRText;
 
     protected TransportTicket() {
     }
@@ -92,5 +125,21 @@ public class TransportTicket extends Identifiable {
      */
     public void setTheDate(Date theDate) {
         this.theDate = theDate;
+    }
+
+    public void setScanOCRText(String scanOCRText) {
+        this.scanOCRText = scanOCRText;
+    }
+
+    public String getScanOCRText() {
+        return scanOCRText;
+    }
+
+    public void setScanData(byte[] scanData) {
+        this.scanData = scanData;
+    }
+
+    public byte[] getScanData() {
+        return scanData;
     }
 }

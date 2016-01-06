@@ -12,23 +12,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.components;
-
-import richtercloud.reflection.form.builder.FieldUpdateEvent;
 
 /**
- *
- * @author richter
+ * <h1>Validation</h1>
+ * Validation is separated into groups in order to allow validation before id
+ * generation (where all fields used for id generation need to be validated) and
+ * entity validation before saving. Due to the fact that often entities only
+ * use a small subset of properties id generation validation group is set to the
+ * non-default group (see <a href="https://docs.oracle.com/javaee/6/tutorial/doc/gkagv.html">Grouping Constraints of the The Java EE 6 Tutorial</a> for details) {@link IdValidation}.
  */
-public class ScanResultFieldUpdateEvent implements FieldUpdateEvent<byte[]> {
-    private byte[] newValue;
-
-    public ScanResultFieldUpdateEvent(byte[] newValue) {
-        this.newValue = newValue;
-    }
-
-    @Override
-    public byte[] getNewValue() {
-        return newValue;
-    }
-}
+package richtercloud.document.scanner.model;

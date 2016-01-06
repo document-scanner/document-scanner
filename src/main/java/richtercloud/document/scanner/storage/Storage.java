@@ -17,9 +17,10 @@ package richtercloud.document.scanner.storage;
 /**
  *
  * @author richter
+ * @param <T>
  */
-public interface Storage {
-    void store(Object object);
+public interface Storage<T> {
+    void store(Object object) throws StorageException;
 
-    <T> T retrieve(Long id, Class<T> clazz);
+    T retrieve(Long id, Class<? extends T> clazz) throws StorageException;
 }

@@ -14,44 +14,48 @@
  */
 package richtercloud.document.scanner.gui;
 
-import java.lang.reflect.Type;
-import java.util.Collections;
-import java.util.Set;
+import java.lang.reflect.Field;
 import javax.swing.JComponent;
-import richtercloud.document.scanner.components.OCRResultFieldUpdateEvent;
 import richtercloud.document.scanner.components.OCRResultPanel;
 import richtercloud.document.scanner.components.OCRResultPanelFetcher;
 import richtercloud.document.scanner.components.OCRResultPanelUpdateEvent;
 import richtercloud.document.scanner.components.OCRResultPanelUpdateListener;
-import richtercloud.reflection.form.builder.FieldAnnotationHandler;
-import richtercloud.reflection.form.builder.FieldUpdateListener;
+import richtercloud.reflection.form.builder.fieldhandler.FieldAnnotationHandler;
+import richtercloud.reflection.form.builder.fieldhandler.FieldUpdateEvent;
+import richtercloud.reflection.form.builder.fieldhandler.FieldUpdateListener;
 import richtercloud.reflection.form.builder.ReflectionFormBuilder;
+import richtercloud.reflection.form.builder.message.MessageHandler;
 
 /**
  *
  * @author richter
  */
-public class OCRResultFieldAnnotationHandler implements FieldAnnotationHandler<String, OCRResultFieldUpdateEvent> {
+public class OCRResultFieldAnnotationHandler implements FieldAnnotationHandler<String, FieldUpdateEvent<String>, ReflectionFormBuilder> {
     private final OCRResultPanelFetcher oCRResultPanelFetcher;
+    private final MessageHandler messageHandler;
 
-    public OCRResultFieldAnnotationHandler(OCRResultPanelFetcher oCRResultPanelFetcher) {
+    public OCRResultFieldAnnotationHandler(OCRResultPanelFetcher oCRResultPanelFetcher,
+            MessageHandler messageHandler) {
         this.oCRResultPanelFetcher = oCRResultPanelFetcher;
+        this.messageHandler = messageHandler;
     }
 
     @Override
-    public JComponent handle(Type fieldClass,
-            String fieldValue,
-            Object entity,
-            final FieldUpdateListener<OCRResultFieldUpdateEvent> fieldUpdateListener,
-            ReflectionFormBuilder reflectionFormBuilder) {
-        if(fieldClass == null) {
-            throw new IllegalArgumentException("fieldClass mustn't be null");
+    public JComponent handle(Field field,
+            Object instance,
+            final FieldUpdateListener<FieldUpdateEvent<String>> fieldUpdateListener,
+            ReflectionFormBuilder reflectionFormBuilder) throws IllegalAccessException {
+        if(field == null) {
+            throw new IllegalArgumentException("field mustn't be null");
         }
-        OCRResultPanel retValue = new OCRResultPanel(oCRResultPanelFetcher, fieldValue);
+        String fieldValue = (String) field.get(instance);
+        OCRResultPanel retValue = new OCRResultPanel(oCRResultPanelFetcher,
+                fieldValue,
+                messageHandler);
         retValue.addUpdateListener(new OCRResultPanelUpdateListener() {
             @Override
             public void onUpdate(OCRResultPanelUpdateEvent event) {
-                fieldUpdateListener.onUpdate(new OCRResultFieldUpdateEvent(event.getNewValue()));
+                fieldUpdateListener.onUpdate(new FieldUpdateEvent<>(event.getNewValue()));
             }
         });
         return retValue;

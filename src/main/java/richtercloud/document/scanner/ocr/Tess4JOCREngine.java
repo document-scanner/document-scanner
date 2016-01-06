@@ -38,4 +38,9 @@ public class Tess4JOCREngine implements OCREngine {
 //        }
     }
 
+    @Override
+    public void cancelRecognizeImage() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
 }

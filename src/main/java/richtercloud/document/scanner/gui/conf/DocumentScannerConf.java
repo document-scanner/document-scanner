@@ -14,9 +14,15 @@
  */
 package richtercloud.document.scanner.gui.conf;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Currency;
+import java.util.HashSet;
+import java.util.Set;
+import javax.persistence.EntityManager;
 import richtercloud.document.scanner.model.Bill;
+import richtercloud.reflection.form.builder.message.MessageHandler;
 
 /**
  *
@@ -25,20 +31,87 @@ import richtercloud.document.scanner.model.Bill;
 public class DocumentScannerConf implements Serializable {
     private static final long serialVersionUID = 1L;
     private final static String SCANNER_SANE_ADDRESS_DEFAULT = "localhost";
-    private final static StorageConf<?> STORAGE_CONF_DEFAULT = new DerbyPersistenceStorageConf();
     private final static OCREngineConf<?> OCR_ENGINE_CONF_DEFAULT = new TesseractOCREngineConf();
     private static final Currency DEFAULT_CURRENCY_DEFAULT = Currency.getInstance("EUR");
+    private final static boolean AUTO_GENERATE_IDS_DEFAULT = true;
+    private static Set<StorageConf<?>> generateAvailableStorageConfsDefault(EntityManager entityManager,
+            MessageHandler messageHandler,
+            Set<Class<?>> entityClasses,
+            File xMLStorageFile) throws IOException {
+        Set<StorageConf<?>> availableStorageConfs = new HashSet<>();
+        availableStorageConfs.add(new DerbyPersistenceStorageConf(entityManager,
+                messageHandler,
+                entityClasses));
+        availableStorageConfs.add(new XMLStorageConf(xMLStorageFile));
+        return availableStorageConfs;
+    }
     private String scannerName;
     private String scannerSaneAddress = SCANNER_SANE_ADDRESS_DEFAULT;
-    private StorageConf<?> storageConf = STORAGE_CONF_DEFAULT;
+    /**
+     * The selected storage configuration.
+     *
+     * @see #availableStorageConfs
+     */
+    private StorageConf<?> storageConf;
+    /**
+     * Available storage configurations (including all changes done to them).
+     *
+     * @see #storageConf
+     */
+    private Set<StorageConf<?>> availableStorageConfs = new HashSet<>();
     private OCREngineConf<?> oCREngineConf = OCR_ENGINE_CONF_DEFAULT;
     /**
      * The currency initially displayed in data entry components (e.g. for
      * {@link Bill}).
      */
     private Currency defaultCurrency = DEFAULT_CURRENCY_DEFAULT;
+    /**
+     * A flag indicating that the IDs are generated automatically if the save
+     * button is pressed (without the id generation button of the id panel
+     * being pressed)
+     */
+    private boolean autoGenerateIDs;
 
-    public DocumentScannerConf() {
+    protected DocumentScannerConf() {
+    }
+
+    public DocumentScannerConf(EntityManager entityManager,
+            MessageHandler messageHandler,
+            Set<Class<?>> entityClasses,
+            File xMLStorageFile) throws IOException {
+        this(new DerbyPersistenceStorageConf(entityManager, messageHandler, entityClasses),
+                generateAvailableStorageConfsDefault(entityManager,
+                        messageHandler,
+                        entityClasses,
+                        xMLStorageFile),
+                AUTO_GENERATE_IDS_DEFAULT);
+    }
+    
+    public DocumentScannerConf(StorageConf storageConf,
+            Set<StorageConf<?>> availableStorageConfs,
+            boolean autoGenerateIDs) {
+        this.storageConf = storageConf;
+        this.availableStorageConfs = availableStorageConfs;
+        this.autoGenerateIDs = autoGenerateIDs;
+    }
+    
+    public DocumentScannerConf(DocumentScannerConf documentScannerConf) {
+        this(documentScannerConf.getStorageConf(),
+                documentScannerConf.getAvailableStorageConfs(),
+                documentScannerConf.isAutoGenerateIDs());
+    }
+    
+    public void updateFrom(DocumentScannerConf documentScannerConf) {
+        if(documentScannerConf == null) {
+            throw new IllegalArgumentException("documentScannerConf mustn't be null");
+        }
+        this.setScannerName(documentScannerConf.getScannerName());
+        this.setScannerSaneAddress(documentScannerConf.getScannerSaneAddress());
+        this.setoCREngineConf(documentScannerConf.getoCREngineConf());
+        this.setStorageConf(documentScannerConf.getStorageConf());
+        this.setAvailableStorageConfs(documentScannerConf.getAvailableStorageConfs());
+        this.setDefaultCurrency(documentScannerConf.getDefaultCurrency());
+        this.setAutoGenerateIDs(documentScannerConf.isAutoGenerateIDs());
     }
 
     /**
@@ -109,5 +182,21 @@ public class DocumentScannerConf implements Serializable {
      */
     public void setDefaultCurrency(Currency defaultCurrency) {
         this.defaultCurrency = defaultCurrency;
+    }
+
+    public void setAvailableStorageConfs(Set<StorageConf<?>> availableStorageConfs) {
+        this.availableStorageConfs = availableStorageConfs;
+    }
+
+    public Set<StorageConf<?>> getAvailableStorageConfs() {
+        return availableStorageConfs;
+    }
+
+    public void setAutoGenerateIDs(boolean autoGenerateIDs) {
+        this.autoGenerateIDs = autoGenerateIDs;
+    }
+
+    public boolean isAutoGenerateIDs() {
+        return autoGenerateIDs;
     }
 }

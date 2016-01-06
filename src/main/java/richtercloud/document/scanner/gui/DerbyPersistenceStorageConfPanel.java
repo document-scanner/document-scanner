@@ -14,12 +14,13 @@
  */
 package richtercloud.document.scanner.gui;
 
+import java.io.IOException;
+import java.util.Set;
 import javax.persistence.EntityManager;
-import javax.swing.JLabel;
-import javax.swing.JPasswordField;
-import javax.swing.JTextField;
 import richtercloud.document.scanner.gui.conf.DerbyPersistenceStorageConf;
+import richtercloud.document.scanner.gui.conf.StorageConfInitializationException;
 import richtercloud.document.scanner.gui.storageconf.StorageConfPanel;
+import richtercloud.reflection.form.builder.message.MessageHandler;
 
 /**
  *
@@ -37,10 +38,11 @@ public class DerbyPersistenceStorageConfPanel extends StorageConfPanel<DerbyPers
         this.initComponents();
     }
 
-    public DerbyPersistenceStorageConfPanel(EntityManager entityManager) {
+    public DerbyPersistenceStorageConfPanel(EntityManager entityManager, MessageHandler messageHandler, Set<Class<?>> entityClasses) throws StorageConfInitializationException, IOException {
         this();
         this.entityManager = entityManager;
-        this.storageConf =  new DerbyPersistenceStorageConf(entityManager);
+        this.storageConf =  new DerbyPersistenceStorageConf(entityManager, messageHandler, entityClasses);
+        this.storageConf.validate();
     }
 
     @Override

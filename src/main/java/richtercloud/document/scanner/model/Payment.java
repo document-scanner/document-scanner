@@ -25,6 +25,11 @@ import javax.persistence.OneToOne;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
+import javax.validation.groups.Default;
+import org.jscience.economics.money.Money;
+import org.jscience.physics.amount.Amount;
+import richtercloud.reflection.form.builder.FieldInfo;
+import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
 
 /**
  *
@@ -35,10 +40,12 @@ public class Payment extends Identifiable {
     private static final long serialVersionUID = 1L;
     @OneToOne(fetch = FetchType.EAGER)
     @NotNull
+    @FieldInfo(name = "Account", description = "The account which has been used to send or receive this payment")
     private FinanceAccount account;
     @NotNull
     @Basic(fetch = FetchType.EAGER)
-    private float amount;
+    @FieldInfo(name = "Amount", description = "The amount and currency of the payment")
+    private Amount<Money> amount;
     /**
      * The exact date and time of (the transfer) of the payment.
      */
@@ -49,7 +56,8 @@ public class Payment extends Identifiable {
     amount
     */
     @Temporal(TemporalType.TIMESTAMP)
-    @NotNull
+    @NotNull(groups = {Default.class, IdGenerationValidation.class})
+    @FieldInfo(name = "Date", description = "The date of the payment")
     private Date theDate;
     /**
      * The sender to the payment.
@@ -60,7 +68,8 @@ public class Payment extends Identifiable {
     can have multiple FinanceAccounts
     */
     @OneToOne
-    @NotNull
+    @NotNull(groups = {Default.class, IdGenerationValidation.class})
+    @FieldInfo(name = "Sender", description = "The account from which the payment has been sent")
     private FinanceAccount sender;
     /**
      * The recipient of the payment.
@@ -71,18 +80,20 @@ public class Payment extends Identifiable {
     can have multiple FinanceAccounts
     */
     @OneToOne
-    @NotNull
+    @NotNull(groups = {Default.class, IdGenerationValidation.class})
+    @FieldInfo(name = "Recipient", description = "The account to which the payment has been sent")
     private FinanceAccount recipient;
     /**
      * where the payment is associated in
      */
     @ManyToMany
+    @FieldInfo(name = "Documents", description = "A list of associated documents")
     private List<Document> documents;
 
     protected Payment() {
     }
 
-    public Payment(Long id, FinanceAccount account, float amount, Date date, FinanceAccount sender, FinanceAccount recipient) {
+    public Payment(Long id, FinanceAccount account, Amount<Money> amount, Date date, FinanceAccount sender, FinanceAccount recipient) {
         super(id);
         this.account = account;
         this.amount = amount;
@@ -108,14 +119,14 @@ public class Payment extends Identifiable {
     /**
      * @return the amount
      */
-    public float getAmount() {
+    public Amount<Money> getAmount() {
         return this.amount;
     }
 
     /**
      * @param amount the amount to set
      */
-    public void setAmount(float amount) {
+    public void setAmount(Amount<Money> amount) {
         this.amount = amount;
     }
 

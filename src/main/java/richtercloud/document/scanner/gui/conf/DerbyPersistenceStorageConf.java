@@ -14,35 +14,107 @@
  */
 package richtercloud.document.scanner.gui.conf;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import javax.persistence.EntityManager;
 import richtercloud.document.scanner.gui.DocumentScanner;
-import richtercloud.document.scanner.storage.DefaultPersistenceStorage;
+import richtercloud.document.scanner.storage.DerbyPersistenceStorage;
+import richtercloud.reflection.form.builder.message.MessageHandler;
 
 /**
  *
  * @author richter
  */
-public class DerbyPersistenceStorageConf implements Serializable, StorageConf<DefaultPersistenceStorage> {
+public class DerbyPersistenceStorageConf implements Serializable, StorageConf<DerbyPersistenceStorage> {
     private static final long serialVersionUID = 1L;
-    private static DefaultPersistenceStorage instance;
+    private static DerbyPersistenceStorage instance;
     private final static String CONNECTION_URL_DEFAULT = "localhost";
     private final static String USERNAME_DEFAULT = "";
     private final static String PASSWORD_DEFAULT = "";
-    private final static String STORAGE_PARENT_DIR_DEFAULT = "";
+    private final static String STORAGE_PARENT_DIR_PATH_DEFAULT = "."; //the empty string causes directories created with contructor with parent argument to be subdirectories of /
     private final static String DATABASE_DIR_NAME_DEFAULT = DocumentScanner.DATABASE_DIR_NAME_DEFAULT;
+    private final static String LAST_SCHEME_STORAGE_FILE_NAME = "last-scheme.xml";
+    private final static File STORAGE_PARENT_DIR_DEFAULT = new File(STORAGE_PARENT_DIR_PATH_DEFAULT);
+    /**
+     * Generates a checksum to track changes to {@code clazz} from the hash codes of declared fields and methods (tracking both might cause redundancies, but increases safety of getting all changes of database relevant properties).
+     *
+     * This could be used to generate {@code serialVersionUID}, but shouldn't be necessary.
+     *
+     * Doesn't care about constructors since they have no influence on database schemes.
+     *
+     * @param clazz
+     * @return
+     */
+    public static long generateSchemeChecksum(Class<?> clazz) {
+        long retValue = 0L;
+        for(Field field : clazz.getDeclaredFields()) {
+            retValue += field.hashCode();
+        }
+        for(Method method : clazz.getDeclaredMethods()) {
+            retValue += method.hashCode();
+        }
+        return retValue;
+    }
+
+    private static Map<Class<?>, Long> generateSchemeChecksumMap(Set<Class<?>> classes) {
+        Map<Class<?>, Long> retValue = new HashMap<>();
+        for(Class<?> clazz: classes) {
+            long checksum = generateSchemeChecksum(clazz);
+            retValue.put(clazz, checksum);
+        }
+        return retValue;
+    }
+
     private String connectionURL = CONNECTION_URL_DEFAULT;
     private String username = USERNAME_DEFAULT;
     private String password = PASSWORD_DEFAULT;
-    private String storageParentDir = STORAGE_PARENT_DIR_DEFAULT;
+    private String storageParentDirPath = STORAGE_PARENT_DIR_PATH_DEFAULT;
     private String databaseDirName = DATABASE_DIR_NAME_DEFAULT;
     private EntityManager entityManager;
+    private File lastSchemeStorageFile;
+    private MessageHandler messageHandler;
+    private Set<Class<?>> entityClasses;
 
     protected DerbyPersistenceStorageConf() {
     }
 
-    public DerbyPersistenceStorageConf(EntityManager entityManager) {
+    protected DerbyPersistenceStorageConf(File lastSchemeStorageFile) {
+        super();
+        this.lastSchemeStorageFile = lastSchemeStorageFile;
+    }
+
+    public DerbyPersistenceStorageConf(EntityManager entityManager,
+            MessageHandler messageHandler,
+            Set<Class<?>> entityClasses) throws FileNotFoundException, IOException {
+        this(entityManager, messageHandler, entityClasses, new File(STORAGE_PARENT_DIR_DEFAULT, LAST_SCHEME_STORAGE_FILE_NAME));
+    }
+
+    public DerbyPersistenceStorageConf(EntityManager entityManager,
+            MessageHandler messageHandler,
+            Set<Class<?>> entityClasses,
+            File lastSchemeStorageFile) throws FileNotFoundException, IOException {
+        if(!lastSchemeStorageFile.exists()) {
+            try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream(lastSchemeStorageFile))) {
+                Map<Class<?>, Long> checksumMap = generateSchemeChecksumMap(entityClasses);
+                objectOutputStream.writeObject(checksumMap);
+                objectOutputStream.flush();
+            }
+        }
+        this.lastSchemeStorageFile = lastSchemeStorageFile;
         this.entityManager = entityManager;
+        this.messageHandler = messageHandler;
+        this.entityClasses = entityClasses;
     }
 
     /**
@@ -74,17 +146,17 @@ public class DerbyPersistenceStorageConf implements Serializable, StorageConf<De
     }
 
     /**
-     * @return the storageParentDir
+     * @return the storageParentDirPath
      */
-    public String getStorageParentDir() {
-        return this.storageParentDir;
+    public String getStorageParentDirPath() {
+        return this.storageParentDirPath;
     }
 
     /**
-     * @param storageParentDir the storageParentDir to set
+     * @param storageParentDirPath the storageParentDirPath to set
      */
-    public void setStorageParentDir(String storageParentDir) {
-        this.storageParentDir = storageParentDir;
+    public void setStorageParentDirPath(String storageParentDirPath) {
+        this.storageParentDirPath = storageParentDirPath;
     }
 
     /**
@@ -116,10 +188,36 @@ public class DerbyPersistenceStorageConf implements Serializable, StorageConf<De
     }
 
     @Override
-    public DefaultPersistenceStorage getStorage() {
+    public DerbyPersistenceStorage getStorage() {
         if(instance == null) {
-            instance = new DefaultPersistenceStorage(this.entityManager);
+            instance = new DerbyPersistenceStorage(this.entityManager);
         }
         return instance;
+    }
+
+    /**
+     * Retrieves a persisted version of the database scheme (stored in
+     * {@code lastSchemeStorageFile} and fails the validation if it doesn't
+     * match with the current set of classes.
+     */
+    /*
+    internal implementation notes:
+    - Metamodel implementations don't reliably implement `equals` (e.g. `org.hibernate.jpa.internal.metamodel.Metamodel` doesn't
+    - java.lang.reflect.Field can't be serialized with `ObjectOutputStream` (fails with `java.io.NotSerializableException: java.lang.reflect.Field`) -> use version field, e.g. `serialVersionUID`
+    obsolete internal implementation notes:
+    - Metamodel can't be serialized with XMLEncoder because implementations don't guarantee to be persistable with it (needs a default constructor and also hibernate's MetamodelImpl doesn't provide one) -> ObjectOutputStream and ObjectInputStream
+    */
+    @Override
+    public void validate() throws StorageConfInitializationException {
+        try {
+            ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(lastSchemeStorageFile));
+            Map<Class<?>, Long> checksumMapOld = (Map<Class<?>, Long>) objectInputStream.readObject();
+            Map<Class<?>, Long> checksumMap = generateSchemeChecksumMap(entityClasses);
+            if(!checksumMap.equals(checksumMapOld)) {
+                throw new StorageConfInitializationException(String.format("The sum of checksum of class fields and methods doesn't match with the persisted map in '%s'", this.lastSchemeStorageFile.getAbsolutePath()));
+            }
+        } catch (IOException | ClassNotFoundException ex) {
+            throw new StorageConfInitializationException(ex);
+        }
     }
 }

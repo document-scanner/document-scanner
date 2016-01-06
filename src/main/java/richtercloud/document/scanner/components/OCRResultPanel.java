@@ -16,6 +16,7 @@ package richtercloud.document.scanner.components;
 
 import java.util.HashSet;
 import java.util.Set;
+import richtercloud.reflection.form.builder.message.MessageHandler;
 
 /**
  *
@@ -24,7 +25,13 @@ import java.util.Set;
 public class OCRResultPanel extends javax.swing.JPanel {
     private static final long serialVersionUID = 1L;
     private OCRResultPanelFetcher retriever;
-    private Set<OCRResultPanelUpdateListener> updateListeners = new HashSet<>();
+    private final Set<OCRResultPanelUpdateListener> updateListeners = new HashSet<>();
+    /**
+     * Whether the OCR recognition process can be canceled with a dialog control
+     * (modal dialog is displayed while the process is in progress)
+     */
+    private boolean cancelable = true;
+    private MessageHandler messageHandler;
 
     /**
      * Creates new form OCRResultPanel
@@ -33,10 +40,23 @@ public class OCRResultPanel extends javax.swing.JPanel {
         this.initComponents();
     }
 
-    public OCRResultPanel(OCRResultPanelFetcher retriever, String initialValue) {
+    public OCRResultPanel(OCRResultPanelFetcher retriever,
+            String initialValue,
+            MessageHandler messageHandler) {
+        this(retriever,
+                initialValue,
+                true,
+                messageHandler);
+    }
+
+    public OCRResultPanel(OCRResultPanelFetcher retriever,
+            String initialValue,
+            boolean cancelable,
+            MessageHandler messageHandler) {
         this();
         this.retriever = retriever;
         this.oCRResultTextArea.setText(initialValue);
+        this.cancelable = cancelable;
     }
 
     public String retrieveText() {
@@ -51,6 +71,10 @@ public class OCRResultPanel extends javax.swing.JPanel {
         this.updateListeners.remove(updateListener);
     }
 
+    public boolean isCancelable() {
+        return cancelable;
+    }
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -61,7 +85,7 @@ public class OCRResultPanel extends javax.swing.JPanel {
     private void initComponents() {
 
         oCRResultButton = new javax.swing.JButton();
-        jScrollPane1 = new javax.swing.JScrollPane();
+        oCRResultTextAreaScrollPane = new javax.swing.JScrollPane();
         oCRResultTextArea = new javax.swing.JTextArea();
 
         oCRResultButton.setText("OCR recognition");
@@ -73,27 +97,26 @@ public class OCRResultPanel extends javax.swing.JPanel {
 
         oCRResultTextArea.setColumns(20);
         oCRResultTextArea.setRows(5);
-        jScrollPane1.setViewportView(oCRResultTextArea);
+        oCRResultTextAreaScrollPane.setViewportView(oCRResultTextArea);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
+                .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(286, 286, 286)
-                        .addComponent(oCRResultButton))
-                    .addGroup(layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 399, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(oCRResultTextAreaScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 414, Short.MAX_VALUE)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addGap(0, 0, Short.MAX_VALUE)
+                        .addComponent(oCRResultButton)))
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 257, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(oCRResultTextAreaScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 282, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(oCRResultButton)
                 .addContainerGap())
@@ -101,14 +124,26 @@ public class OCRResultPanel extends javax.swing.JPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void oCRResultButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_oCRResultButtonActionPerformed
-        String oCRResult = this.retriever.fetch();
-        this.oCRResultTextArea.setText(oCRResult);
+        String oCRResult;
+        if(!cancelable) {
+            oCRResult = this.retriever.fetch();
+        }else {
+            oCRResult = new OCRResultPanelProgressDialog(null, //parent
+                    retriever,
+                    messageHandler
+            ).processOCR();
+        }
+        if(oCRResult != null) {
+            //might be null if fetch has been canceled (this check is
+            //unnecessary for non-cancelable processing, but don't care
+            this.oCRResultTextArea.setText(oCRResult);
+        }
     }//GEN-LAST:event_oCRResultButtonActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JButton oCRResultButton;
     private javax.swing.JTextArea oCRResultTextArea;
+    private javax.swing.JScrollPane oCRResultTextAreaScrollPane;
     // End of variables declaration//GEN-END:variables
 }

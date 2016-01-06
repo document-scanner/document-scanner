@@ -24,6 +24,8 @@ import java.util.List;
 import javax.swing.JPanel;
 import javax.swing.Scrollable;
 import javax.swing.SwingConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Arranges multiple (or one) image in different selection panel and handles
@@ -41,6 +43,7 @@ action methods of OCRSelectPanel are adjusted by callers
 */
 public class OCRSelectComponent extends JPanel implements Scrollable {
     private static final long serialVersionUID = 1L;
+    private final static Logger LOGGER = LoggerFactory.getLogger(OCRSelectComponent.class);
     /**
      * The pages of which the drawing area ought to be composed
      */
@@ -55,7 +58,6 @@ public class OCRSelectComponent extends JPanel implements Scrollable {
         this();
         this.imagePanels.add(panel);
     }
-
 
     public OCRSelectComponent(List<OCRSelectPanel> panels) {
         this();
@@ -76,35 +78,33 @@ public class OCRSelectComponent extends JPanel implements Scrollable {
         return Collections.unmodifiableList(this.imagePanels);
     }
 
+    /**
+     *
+     * @return the selected image or {@code null} if all image panels contain selections with width or height <= 0
+     */
     public BufferedImage getSelection() {
         for(OCRSelectPanel panel : this.imagePanels) {
             if(panel.getDragStart() != null && panel.getDragEnd() != null) {
+                int width = panel.dragSelectionWidth();
+                if(width <= 0) {
+                    //avoid java.awt.image.RasterFormatException: negative or zero height
+                    LOGGER.debug(String.format("skipping selection with width %d <= 0", width));
+                    continue;
+                }
+                int height = panel.dragSeletionHeight();
+                if(height <= 0) {
+                    //avoid java.awt.image.RasterFormatException: negative or zero height
+                    LOGGER.debug(String.format("skipping selection with height %d <= 0", height));
+                    continue;
+                }
                 BufferedImage imageSelection = panel.getImage().getSubimage(panel.dragSelectionX(),
                         panel.dragSelectionY(),
-                        panel.dragSelectionWidth(),
-                        panel.dragSeletionHeight());
+                        width,
+                        height);
                 return imageSelection;
             }
         }
         return null;
-    }
-
-    private class PanelSelectionListener implements OCRSelectPanelSelectionListener {
-        private final OCRSelectPanel panel;
-
-        PanelSelectionListener(OCRSelectPanel panel) {
-            this.panel = panel;
-        }
-
-        @Override
-        public void selectionChanged() {
-            OCRSelectComponent.this.selectedPanel = this.panel;
-            for(OCRSelectPanel panel0: OCRSelectComponent.this.imagePanels) {
-                if(!panel0.equals(OCRSelectComponent.this.selectedPanel)) {
-                    panel0.unselect();
-                }
-            }
-        }
     }
 
     @Override
@@ -154,5 +154,23 @@ public class OCRSelectComponent extends JPanel implements Scrollable {
     @Override
     public boolean getScrollableTracksViewportHeight() {
         return false;
+    }
+
+    private class PanelSelectionListener implements OCRSelectPanelSelectionListener {
+        private final OCRSelectPanel panel;
+
+        PanelSelectionListener(OCRSelectPanel panel) {
+            this.panel = panel;
+        }
+
+        @Override
+        public void selectionChanged() {
+            OCRSelectComponent.this.selectedPanel = this.panel;
+            for(OCRSelectPanel panel0: OCRSelectComponent.this.imagePanels) {
+                if(!panel0.equals(OCRSelectComponent.this.selectedPanel)) {
+                    panel0.unselect();
+                }
+            }
+        }
     }
 }

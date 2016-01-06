@@ -40,4 +40,9 @@ public class JavaocrOCREngine implements OCREngine {
         return text;
     }
 
+    @Override
+    public void cancelRecognizeImage() {
+        throw new UnsupportedOperationException("Not supported yet. Figure out how to recognize in parts (e.g. rows or x*y pixel areas) to allow cancelation");
+    }
+
 }

@@ -22,6 +22,7 @@ import javax.persistence.MappedSuperclass;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
+import richtercloud.reflection.form.builder.FieldInfo;
 
 /**
  *
@@ -36,12 +37,14 @@ public abstract class AbstractDocument extends CommunicationItem {
     @Temporal(TemporalType.TIMESTAMP)
     @NotNull
     @Basic(fetch = FetchType.EAGER)
-    private Date received;
+    @FieldInfo(name = "Received", description = "The date of the reception")
+    private Date receptionDate;
     /**
      * Where the document can be found. {@code null} indicates that the location
      * of the original is unknown (default).
      */
     @ManyToOne(fetch = FetchType.EAGER)
+    @FieldInfo(name = "Original location", description = "A pointer to the location of the original document")
     private Location originalLocation = null;
     /**
      * Whether the original is definitely lost. The original location might be
@@ -50,30 +53,31 @@ public abstract class AbstractDocument extends CommunicationItem {
      * {@code false}.
      */
     @Basic(fetch = FetchType.EAGER)
+    @FieldInfo(name = "Original lost", description = "A flag indicating the that the original is lost")
     private boolean originalLost = false;
 
     protected AbstractDocument() {
     }
 
-    public AbstractDocument(Date received, Date theDate, Location originalLocation, boolean originalLost, Long id, Company sender, Company recipient) {
+    public AbstractDocument(Date receptionDate, Date theDate, Location originalLocation, boolean originalLost, Long id, Company sender, Company recipient) {
         super(id, sender, recipient, theDate);
-        this.received = received;
+        this.receptionDate = receptionDate;
         this.originalLocation = originalLocation;
         this.originalLost = originalLost;
     }
 
     /**
-     * @return the received
+     * @return the receptionDate
      */
-    public Date getReceived() {
-        return this.received;
+    public Date getReceptionDate() {
+        return this.receptionDate;
     }
 
     /**
-     * @param date the received to set
+     * @param date the receptionDate to set
      */
-    public void setReceived(Date date) {
-        this.received = date;
+    public void setReceptionDate(Date date) {
+        this.receptionDate = date;
     }
 
     /**

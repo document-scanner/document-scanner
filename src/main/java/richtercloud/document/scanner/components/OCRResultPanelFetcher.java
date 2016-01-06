@@ -18,6 +18,33 @@ package richtercloud.document.scanner.components;
  *
  * @author richter
  */
+/*
+internal implementation notes:
+- Don't use a built-in cancelable Future or FutureTask because it's unclear how
+it handles resources like started OS processes -> implement manually with
+return values or exceptions (use exceptions only if necessary, i.e. if return
+value null is needed for something else)
+*/
 public interface OCRResultPanelFetcher {
+
+    /**
+     * Fetches the result
+     * @return the OCR result or {@code null} if {@link #fetch() } has been
+     * canceled with {@link #cancelFetch() }
+     */
     String fetch();
+
+    /**
+     * Allows cancelation of a (potentially time taking) {@link #fetch() } from
+     * another thread.
+     *
+     * @throws UnsupportedOperationException if the
+     * {@code OCRResultPanelFetcher} doesn't support cancelation
+     */
+    /*
+    internal implementation notes:
+    - canceling from the same thread doesn't make sense because fetch must
+    return first and it return when it's completed only
+    */
+    void cancelFetch() throws UnsupportedOperationException;
 }

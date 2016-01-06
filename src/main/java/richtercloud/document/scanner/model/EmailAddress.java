@@ -21,7 +21,10 @@ import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.validation.constraints.NotNull;
+import javax.validation.groups.Default;
 import richtercloud.document.scanner.model.validator.ValidEmailAddress;
+import richtercloud.reflection.form.builder.FieldInfo;
+import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
 
 /**
  *
@@ -30,11 +33,13 @@ import richtercloud.document.scanner.model.validator.ValidEmailAddress;
 @Entity
 public class EmailAddress extends Identifiable {
     private static final long serialVersionUID = 1L;
-    @NotNull
+    @NotNull(groups = {Default.class, IdGenerationValidation.class})
     @ValidEmailAddress
     @Basic(fetch = FetchType.EAGER)
+    @FieldInfo(name = "Address", description = "The email address")
     private String address;
     @ElementCollection(fetch = FetchType.EAGER)
+    @FieldInfo(name = "PGP key IDs", description = "A list of PGP key IDs")
     private List<String> pgpKeyIds;
 
     protected EmailAddress() {

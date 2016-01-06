@@ -12,29 +12,29 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.retriever;
+package richtercloud.document.scanner.ocr;
 
-import richtercloud.document.scanner.components.OCRResultPanel;
-import richtercloud.reflection.form.builder.retriever.ValueRetriever;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
+ * A possibility to provide static information about an {@link OCREngineConf} used where instances can't be created easily.
+ *
+ * Note: Annotating classes implementing {@link OCREngine} doesn't have an effect.
  *
  * @author richter
  */
-public class OCRResultPanelRetriever implements ValueRetriever<String, OCRResultPanel> {
-    private final static OCRResultPanelRetriever INSTANCE = new OCRResultPanelRetriever();
+@Documented
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.TYPE})
+public @interface OCREngineConfInfo {
 
-    public static OCRResultPanelRetriever getInstance() {
-        return INSTANCE;
-    }
-
-    protected OCRResultPanelRetriever() {
-    }
-
-    @Override
-    public String retrieve(OCRResultPanel comp) {
-        String retValue = comp.retrieveText();
-        return retValue;
-    }
-
+    /**
+     * A name more convenient than the class name.
+     * @return
+     */
+    String name() default "";
 }

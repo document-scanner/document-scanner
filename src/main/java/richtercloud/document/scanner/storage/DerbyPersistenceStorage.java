@@ -25,12 +25,12 @@ import org.slf4j.LoggerFactory;
  *
  * @author richter
  */
-public class DefaultPersistenceStorage extends PersistenceStorage {
+public class DerbyPersistenceStorage extends PersistenceStorage {
     private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(PersistenceStorage.class);
     private Connection conn;
     private EntityManager entityManager;
 
-    public DefaultPersistenceStorage(EntityManager entityManager) {
+    public DerbyPersistenceStorage(EntityManager entityManager) {
         this.entityManager = entityManager;
     }
 

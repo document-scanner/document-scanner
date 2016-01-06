@@ -21,6 +21,7 @@ import javax.persistence.FetchType;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
+import richtercloud.reflection.form.builder.FieldInfo;
 
 /**
  *
@@ -32,8 +33,10 @@ public class TelephoneCall extends CommunicationItem {
     @Temporal(TemporalType.TIMESTAMP)
     @NotNull
     @Basic(fetch = FetchType.EAGER)
+    @FieldInfo(name = "End", description="The date and time of the end of the call")
     private Date theEnd;
     @Basic(fetch = FetchType.EAGER)
+    @FieldInfo(name = "Transcription", description = "The transcription of the call")
     private String transcription;
 
     protected TelephoneCall() {

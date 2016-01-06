@@ -17,6 +17,10 @@ package richtercloud.document.scanner.model;
 import javax.persistence.Basic;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.validation.constraints.NotNull;
+import javax.validation.groups.Default;
+import richtercloud.reflection.form.builder.FieldInfo;
+import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
 
 /**
  *
@@ -25,7 +29,10 @@ import javax.persistence.FetchType;
 @Entity
 public class Location extends Identifiable {
     private static final long serialVersionUID = 1L;
+    @NotNull(groups = {Default.class, IdGenerationValidation.class}) //used for
+            //id generation
     @Basic(fetch = FetchType.EAGER)
+    @FieldInfo(name = "Description", description = "A description of the location identifying the location uniquely")
     private String description;
 
     protected Location() {

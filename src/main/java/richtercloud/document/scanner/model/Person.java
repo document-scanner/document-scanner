@@ -20,19 +20,27 @@ import java.util.List;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.validation.groups.Default;
+import richtercloud.document.scanner.model.validator.NoEmptyEntriesList;
 import richtercloud.document.scanner.model.validator.ValidPerson;
+import richtercloud.reflection.form.builder.FieldInfo;
+import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
 
 /**
  *
  * @author richter
  */
 @Entity
-@ValidPerson
+@ValidPerson(groups = {Default.class, IdGenerationValidation.class})
 public class Person extends Company {
     private static final long serialVersionUID = 1L;
     @ElementCollection(fetch = FetchType.EAGER)
+    @FieldInfo(name = "Firstnames", description = "All firstnames of the contact")
+    @NoEmptyEntriesList
     private List<String> firstnames = new LinkedList<>();
     @ElementCollection(fetch = FetchType.EAGER)
+    @FieldInfo(name = "Lastnames", description = "All lastnames of the contact")
+    @NoEmptyEntriesList
     private List<String> lastnames = new LinkedList<>();
 
     protected Person() {

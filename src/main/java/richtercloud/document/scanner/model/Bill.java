@@ -14,13 +14,15 @@
  */
 package richtercloud.document.scanner.model;
 
-import java.util.Currency;
 import java.util.Date;
 import java.util.List;
 import javax.persistence.Basic;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.validation.constraints.NotNull;
+import org.jscience.economics.money.Money;
+import org.jscience.physics.amount.Amount;
+import richtercloud.reflection.form.builder.FieldInfo;
 
 /**
  *
@@ -31,45 +33,28 @@ public class Bill extends Document {
     private static final long serialVersionUID = 1L;
     @NotNull
     @Basic(fetch = FetchType.EAGER)
-    private float amount;
-    @Basic(fetch = FetchType.EAGER)
-    @NotNull
-    private Currency currency;
+    @FieldInfo(name = "Amount", description = "The amount and currency of the bill")
+    private Amount<Money> amount;
 
     protected Bill() {
     }
 
-    public Bill(float amount, Currency currency, String comment, String identifier, byte[] scanData, String scanOCRText, List<Payment> payments, Date date, Date receptionDate, Location originalLocation, boolean originalLost, Long id, Company sender, Company recipient) {
+    public Bill(Amount<Money> amount, String comment, String identifier, byte[] scanData, String scanOCRText, List<Payment> payments, Date date, Date receptionDate, Location originalLocation, boolean originalLost, Long id, Company sender, Company recipient) {
         super(comment, identifier, scanData, scanOCRText, payments, date, receptionDate, originalLocation, originalLost, id, sender, recipient);
         this.amount = amount;
-        this.currency = currency;
     }
 
     /**
      * @return the amount
      */
-    public float getAmount() {
+    public Amount<Money> getAmount() {
         return this.amount;
     }
 
     /**
      * @param amount the amount to set
      */
-    public void setAmount(float amount) {
+    public void setAmount(Amount<Money> amount) {
         this.amount = amount;
-    }
-
-    /**
-     * @return the currency
-     */
-    public Currency getCurrency() {
-        return this.currency;
-    }
-
-    /**
-     * @param currency the currency to set
-     */
-    public void setCurrency(Currency currency) {
-        this.currency = currency;
     }
 }

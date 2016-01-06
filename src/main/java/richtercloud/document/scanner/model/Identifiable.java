@@ -18,6 +18,7 @@ import java.io.Serializable;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 import javax.validation.constraints.NotNull;
+import richtercloud.reflection.form.builder.FieldInfo;
 
 /**
  * A superclass for all entities which allows management of {@link Id} annotated
@@ -44,6 +45,7 @@ public abstract class Identifiable implements Serializable {
     private static final long serialVersionUID = 1L;
     @Id
     @NotNull
+    @FieldInfo(name = "ID", description = "The unique ID used for storage in the database (automatic and save generation is supported by components)")
     private Long id;
 
     protected Identifiable() {

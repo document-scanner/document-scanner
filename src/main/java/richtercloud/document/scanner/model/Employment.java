@@ -22,6 +22,9 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
+import javax.validation.groups.Default;
+import richtercloud.reflection.form.builder.FieldInfo;
+import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
 
 /**
  *
@@ -31,24 +34,27 @@ import javax.validation.constraints.NotNull;
 public class Employment extends Identifiable {
     private static final long serialVersionUID = 1L;
     @ManyToOne(fetch = FetchType.EAGER)
-    @NotNull
+    @NotNull(groups = {Default.class, IdGenerationValidation.class})
+    @FieldInfo(name = "Company", description = "The company where the employment took place")
     private Company company;
     @Temporal(TemporalType.TIMESTAMP)
-    @NotNull
+    @NotNull(groups = {Default.class, IdGenerationValidation.class})
     @Basic(fetch = FetchType.EAGER)
-    private Date theStart;
+    @FieldInfo(name = "Begin", description = "The date of the beginning of the employment")
+    private Date theBegin;
     @Temporal(TemporalType.TIMESTAMP)
-    @NotNull
+    @NotNull(groups = {Default.class, IdGenerationValidation.class})
     @Basic(fetch = FetchType.EAGER)
+    @FieldInfo(name = "End", description = "The date of the end of the employment")
     private Date theEnd;
 
     protected Employment() {
     }
 
-    public Employment(Long id, Company company, Date start, Date end) {
+    public Employment(Long id, Company company, Date begin, Date end) {
         super(id);
         this.company = company;
-        this.theStart = start;
+        this.theBegin = begin;
         this.theEnd = end;
     }
 
@@ -67,17 +73,17 @@ public class Employment extends Identifiable {
     }
 
     /**
-     * @return the theStart
+     * @return the theBegin
      */
-    public Date getTheStart() {
-        return this.theStart;
+    public Date getTheBegin() {
+        return this.theBegin;
     }
 
     /**
-     * @param theStart the theStart to set
+     * @param theBegin the theBegin to set
      */
-    public void setTheStart(Date theStart) {
-        this.theStart = theStart;
+    public void setTheBegin(Date theBegin) {
+        this.theBegin = theBegin;
     }
 
     /**

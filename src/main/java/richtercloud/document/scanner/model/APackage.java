@@ -24,6 +24,8 @@ import javax.persistence.ManyToMany;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
+import richtercloud.reflection.form.builder.ClassInfo;
+import richtercloud.reflection.form.builder.FieldInfo;
 
 /**
  *
@@ -34,62 +36,66 @@ internal implementation notes:
 - name prefixed with A in order to avoid collision with java.lang.Package
 */
 @Entity
+@ClassInfo(name="Package")
 public class APackage extends CommunicationItem {
     private static final long serialVersionUID = 1L;
     /**
-     * the date and time (timestamp) of the reception (time is optional, but
-     * will be persisted when specified)
+     * the date and time (timestamp) of the receptionDate (time is optional, but
+ will be persisted when specified)
      */
     @Temporal(TemporalType.TIMESTAMP)
     @NotNull
     @Basic(fetch = FetchType.EAGER)
-    private Date reception;
+    @FieldInfo(name = "Reception", description = "The date of the reception (not necessarily the date of the reception)")
+    private Date receptionDate;
     /**
-     * the date and time (timestamp) of the delivery (by the sender) (time is
-     * optional, but will be persisted when specified)
+     * the date and time (timestamp) of the deliveryDate (by the deliveryDate service)
+ (time is optional, but will be persisted when specified)
      */
     @Temporal(TemporalType.TIMESTAMP)
     @NotNull
     @Basic(fetch = FetchType.EAGER)
-    private Date delivery;
+    @FieldInfo(name = "Delivery", description = "The date of the delivery as specified by the delivery service")
+    private Date deliveryDate;
     @ManyToMany(fetch = FetchType.EAGER)
+    @FieldInfo(name = "Shippings", description = "A list of separate shippings")
     private List<Shipping> shippings;
 
     protected APackage() {
     }
 
-    public APackage(Long id, Company sender, Company receiver, Date reception, Date theDate, Date delivery) {
+    public APackage(Long id, Company sender, Company receiver, Date receptionDate, Date theDate, Date deliveryDate) {
         super(id, sender, receiver, theDate);
-        this.reception = reception;
-        this.delivery = delivery;
+        this.receptionDate = receptionDate;
+        this.deliveryDate = deliveryDate;
     }
 
     /**
-     * @return the reception
+     * @return the receptionDate
      */
-    public Date getReception() {
-        return this.reception;
+    public Date getReceptionDate() {
+        return this.receptionDate;
     }
 
     /**
-     * @param reception the reception to set
+     * @param receptionDate the receptionDate to set
      */
-    public void setReception(Date reception) {
-        this.reception = reception;
+    public void setReceptionDate(Date receptionDate) {
+        this.receptionDate = receptionDate;
     }
 
     /**
-     * @return the delivery
+     * @return the deliveryDate
      */
-    public Date getDelivery() {
-        return this.delivery;
+    public Date getDeliveryDate() {
+        return this.deliveryDate;
     }
 
     /**
-     * @param delivery the delivery to set
+     * @param deliveryDate the deliveryDate to set
      */
-    public void setDelivery(Date delivery) {
-        this.delivery = delivery;
+    public void setDeliveryDate(Date deliveryDate) {
+        this.deliveryDate = deliveryDate;
     }
 
     public List<Shipping> getShippings() {

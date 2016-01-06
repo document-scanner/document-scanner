@@ -22,6 +22,11 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.OneToMany;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+import javax.validation.groups.Default;
+import richtercloud.document.scanner.model.validator.NoEmptyEntriesList;
+import richtercloud.reflection.form.builder.FieldInfo;
+import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
 
 /**
  *
@@ -30,24 +35,37 @@ import javax.validation.constraints.NotNull;
 @Entity
 public class Company extends Identifiable {
     private static final long serialVersionUID = 1L;
-    @NotNull
+    @FieldInfo(name = "Name", description = "A unique name for the contact "
+            + "excluding all extra names which ought to be specified in the "
+            + "complete name list")
+    @NotNull(groups = {Default.class, IdGenerationValidation.class})
+    @Size(min = 1)
     @Basic(fetch = FetchType.EAGER)
     private String name;
+    @FieldInfo(name = "Complete name list", description = "A list of all names "
+            + "associated with this contact")
     @ElementCollection(fetch = FetchType.EAGER)
+    @NoEmptyEntriesList
     private List<String> allNames;
-    /**
-     * Multiple contacts can have the same address (shared office) and a contact
-     * can have multiple addresses.
-     */
+    @FieldInfo(name = "Addresses", description = "Multiple contacts can have "
+            + "the same address (shared office) and a contact can have multiple "
+            + "addresses.")
     @ElementCollection(fetch = FetchType.EAGER)
+    @NoEmptyEntriesList
     private List<Address> addresses;
-    /**
-     * One {@code Company} can have multiple email addresses, but it's very
-     * unlikely that two contacts share the same email address.
-     */
+    @FieldInfo(name = "Email addresses", description = "One company can have "
+            + "multiple email addresses.")
     @OneToMany(fetch = FetchType.EAGER)
+    /*
+    internal implementation notes:
+    - It's very unlikely that two contacts share the same email address.
+    */
+    @NoEmptyEntriesList
     private List<EmailAddress> emails;
+    @FieldInfo(name = "Finance accounts", description = "A list of finance "
+            + "accounts owned by the contact or somehow associated with it.")
     @OneToMany(fetch = FetchType.EAGER)
+    @NoEmptyEntriesList
     private List<FinanceAccount> accounts;
 
     protected Company() {

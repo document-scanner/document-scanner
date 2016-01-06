@@ -14,24 +14,23 @@
  */
 package richtercloud.document.scanner.gui;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Type;
-import java.util.Collections;
-import java.util.Set;
 import javax.swing.JComponent;
-import richtercloud.document.scanner.components.ScanResultFieldUpdateEvent;
 import richtercloud.document.scanner.components.ScanResultPanel;
 import richtercloud.document.scanner.components.ScanResultPanelFetcher;
 import richtercloud.document.scanner.components.ScanResultPanelUpdateEvent;
 import richtercloud.document.scanner.components.ScanResultPanelUpdateListener;
-import richtercloud.reflection.form.builder.FieldAnnotationHandler;
-import richtercloud.reflection.form.builder.FieldUpdateListener;
+import richtercloud.reflection.form.builder.fieldhandler.FieldAnnotationHandler;
+import richtercloud.reflection.form.builder.fieldhandler.FieldUpdateEvent;
+import richtercloud.reflection.form.builder.fieldhandler.FieldUpdateListener;
 import richtercloud.reflection.form.builder.ReflectionFormBuilder;
 
 /**
  *
  * @author richter
  */
-public class ScanResultFieldAnnotationHandler implements FieldAnnotationHandler<byte[], ScanResultFieldUpdateEvent> {
+public class ScanResultFieldAnnotationHandler implements FieldAnnotationHandler<byte[], FieldUpdateEvent<byte[]>, ReflectionFormBuilder> {
     private final ScanResultPanelFetcher scanResultPanelFetcher;
 
     public ScanResultFieldAnnotationHandler(ScanResultPanelFetcher scanResultPanelFetcher) {
@@ -39,19 +38,19 @@ public class ScanResultFieldAnnotationHandler implements FieldAnnotationHandler<
     }
 
     @Override
-    public JComponent handle(Type fieldClass,
-            byte[] fieldValue,
-            Object entity,
-            final FieldUpdateListener<ScanResultFieldUpdateEvent> fieldUpdateListener,
-            ReflectionFormBuilder reflectionFormBuilder) {
-        if(fieldClass == null) {
+    public JComponent handle(Field field,
+            Object instance,
+            final FieldUpdateListener<FieldUpdateEvent<byte[]>> fieldUpdateListener,
+            ReflectionFormBuilder reflectionFormBuilder) throws IllegalAccessException {
+        if(field == null) {
             throw new IllegalArgumentException("fieldClass mustn't be null");
         }
+        byte[] fieldValue = (byte[]) field.get(instance);
         ScanResultPanel retValue = new ScanResultPanel(scanResultPanelFetcher, fieldValue);
         retValue.addUpdateListerner(new ScanResultPanelUpdateListener() {
             @Override
             public void onUpdate(ScanResultPanelUpdateEvent event) {
-                fieldUpdateListener.onUpdate(new ScanResultFieldUpdateEvent(event.getNewValue()));
+                fieldUpdateListener.onUpdate(new FieldUpdateEvent<>(event.getNewValue()));
             }
         });
         return retValue;

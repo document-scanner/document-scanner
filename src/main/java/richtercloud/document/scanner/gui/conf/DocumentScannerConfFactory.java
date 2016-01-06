@@ -12,18 +12,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.components;
+package richtercloud.document.scanner.gui.conf;
 
-import richtercloud.reflection.form.builder.FieldUpdateEvent;
-import richtercloud.reflection.form.builder.StringFieldUpdateEvent;
+import java.io.File;
+import java.io.IOException;
+import java.util.Set;
+import javax.persistence.EntityManager;
+import richtercloud.reflection.form.builder.message.MessageHandler;
 
 /**
  *
  * @author richter
  */
-public class OCRResultFieldUpdateEvent extends StringFieldUpdateEvent implements FieldUpdateEvent<String> {
+public class DocumentScannerConfFactory {
 
-    public OCRResultFieldUpdateEvent(String newValue) {
-        super(newValue);
+    public DocumentScannerConf create(EntityManager entityManager,
+            MessageHandler messageHandler,
+            Set<Class<?>> entityClasses,
+            File xMLStorageFile) throws IOException {
+        return new DocumentScannerConf(entityManager, messageHandler, entityClasses, xMLStorageFile);
     }
 }

@@ -46,10 +46,14 @@ public class EntityIdGenerator extends SequentialIdGenerator {
     }
 
     /**
-     * Calls custom id generation methods on entity classes or delegates to id
-     * generation as performed by {@link SequentialIdGenerator}.
+     * Generates ids for {@link CommunicationItem}, {@link EmailAddress},
+     * {@link Employment}, {@link FinanceAccount}, {@link Company},
+     * {@link Person}, {@link Location}, {@link Payment}, {@link Transport} and
+     * {@link TransportTicket}.
      *
      * @param instance
+     * @throws IllegalArgumentException if {@code instance} is not of the types
+     * listed above
      * @return
      */
     @Override
@@ -57,7 +61,9 @@ public class EntityIdGenerator extends SequentialIdGenerator {
         long retValue;
         if (instance instanceof CommunicationItem) {
             CommunicationItem communicationItem = (CommunicationItem) instance;
-            retValue = communicationItem.getSender().hashCode() * communicationItem.getRecipient().hashCode() * communicationItem.getTheDate().hashCode();
+            retValue = communicationItem.getSender().hashCode()
+                    * communicationItem.getRecipient().hashCode()
+                    * communicationItem.getTheDate().hashCode();
             if (instance instanceof Document) {
                 Document document = (Document) instance;
                 retValue *= document.getIdentifier().hashCode();
@@ -67,29 +73,40 @@ public class EntityIdGenerator extends SequentialIdGenerator {
             retValue = emailAddress.getAddress().hashCode();
         } else if (instance instanceof Employment) {
             Employment employment = (Employment) instance;
-            retValue = employment.getCompany().hashCode() * employment.getTheStart().hashCode() * employment.getTheEnd().hashCode();
+            retValue = employment.getCompany().hashCode()
+                    * employment.getTheBegin().hashCode()
+                    * employment.getTheEnd().hashCode();
         } else if (instance instanceof FinanceAccount) {
             FinanceAccount financeAccount = (FinanceAccount) instance;
-            retValue = financeAccount.getIban() != null ? financeAccount.getIban().hashCode() : financeAccount.getBlz().hashCode() * financeAccount.getNumber().hashCode();
+            retValue = financeAccount.getIban() != null
+                            ? financeAccount.getIban().hashCode()
+                            : financeAccount.getBlz().hashCode()
+                    * financeAccount.getNumber().hashCode();
         } else if (instance instanceof Company) {
             Company company = (Company) instance;
             retValue = company.getName().hashCode();
             if (instance instanceof Person) {
                 Person person = (Person) instance;
-                retValue = retValue * person.getFirstnames().hashCode() * person.getLastnames().hashCode();
+                retValue = retValue
+                        * person.getFirstnames().hashCode()
+                        * person.getLastnames().hashCode();
             }
         } else if (instance instanceof Location) {
             Location location = (Location) instance;
             retValue = location.getDescription().hashCode();
         } else if (instance instanceof Payment) {
             Payment payment = (Payment) instance;
-            retValue = payment.getSender().hashCode() * payment.getRecipient().hashCode() * payment.getTheDate().hashCode();
+            retValue = payment.getSender().hashCode()
+                    * payment.getRecipient().hashCode()
+                    * payment.getTheDate().hashCode();
         } else if (instance instanceof Transport) {
             Transport transport = (Transport) instance;
             retValue = transport.getTickets().hashCode();
         } else if (instance instanceof TransportTicket) {
             TransportTicket transportTicket = (TransportTicket) instance;
-            retValue = transportTicket.getTheDate().hashCode() * transportTicket.getWaypoints().hashCode() * transportTicket.getTransportCompany().hashCode(); //theDate is only sufficient to distungish if it is precise. In order to allow to specify a vague date in conjunction with waypoints and/or transportCompany, use all properties for hash code.
+            retValue = transportTicket.getTheDate().hashCode()
+                    * transportTicket.getWaypoints().hashCode()
+                    * transportTicket.getTransportCompany().hashCode(); //theDate is only sufficient to distungish if it is precise. In order to allow to specify a vague date in conjunction with waypoints and/or transportCompany, use all properties for hash code.
         }else {
             throw new IllegalArgumentException(String.format("type '%s' not supported", instance.getClass()));
         }

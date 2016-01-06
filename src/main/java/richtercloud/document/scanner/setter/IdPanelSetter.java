@@ -32,7 +32,7 @@ public class IdPanelSetter implements ValueSetter<LongIdPanel>{
 
     @Override
     public void setValue(String value, LongIdPanel comp) {
-        comp.getIdSpinner().setValue(value);
+        comp.getValueSpinner().setValue(value);
     }
 
 }
