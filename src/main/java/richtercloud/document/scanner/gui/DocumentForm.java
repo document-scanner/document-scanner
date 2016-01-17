@@ -58,6 +58,7 @@ import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
 import richtercloud.reflection.form.builder.fieldhandler.FieldHandlingException;
 import richtercloud.reflection.form.builder.jpa.JPACachedFieldRetriever;
 import richtercloud.reflection.form.builder.jpa.JPAReflectionFormBuilder;
+import richtercloud.reflection.form.builder.jpa.panels.BidirectionalControlPanel;
 import richtercloud.reflection.form.builder.jpa.panels.QueryPanel;
 import richtercloud.reflection.form.builder.jpa.panels.QueryPanelUpdateEvent;
 import richtercloud.reflection.form.builder.jpa.panels.QueryPanelUpdateListener;
@@ -560,10 +561,19 @@ public class DocumentForm extends javax.swing.JPanel {
         entityEditingQueryPanel = this.entityEditingQueryPanelCache.get(selectedEntityClass);
         if(entityEditingQueryPanel == null) {
             try {
+                List<Field> entityClassFields = reflectionFormBuilder.getFieldRetriever().retrieveRelevantFields(selectedEntityClass);
+                Set<Field> mappedFieldCandidates = QueryPanel.retrieveMappedFieldCandidates(selectedEntityClass,
+                                entityClassFields,
+                                reflectionFormBuilder.getFieldRetriever());
+                BidirectionalControlPanel bidirectionalControlPanel = new BidirectionalControlPanel(selectedEntityClass,
+                        DocumentScanner.BIDIRECTIONAL_HELP_DIALOG_TITLE, //bidirectionalHelpDialogTitle
+                        QueryPanel.retrieveMappedByField(entityClassFields),
+                        mappedFieldCandidates);
                 this.entityEditingQueryPanel = new QueryPanel<>(entityManager,
                         selectedEntityClass,
                         reflectionFormBuilder,
-                        null //initialValue
+                        null, //initialValue
+                        bidirectionalControlPanel
                 );
             } catch (IllegalArgumentException | IllegalAccessException ex) {
                 throw new RuntimeException(ex);

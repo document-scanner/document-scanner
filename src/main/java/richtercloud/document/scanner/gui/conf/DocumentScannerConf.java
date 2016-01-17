@@ -86,7 +86,7 @@ public class DocumentScannerConf implements Serializable {
                         xMLStorageFile),
                 AUTO_GENERATE_IDS_DEFAULT);
     }
-    
+
     public DocumentScannerConf(StorageConf storageConf,
             Set<StorageConf<?>> availableStorageConfs,
             boolean autoGenerateIDs) {
@@ -94,13 +94,13 @@ public class DocumentScannerConf implements Serializable {
         this.availableStorageConfs = availableStorageConfs;
         this.autoGenerateIDs = autoGenerateIDs;
     }
-    
+
     public DocumentScannerConf(DocumentScannerConf documentScannerConf) {
         this(documentScannerConf.getStorageConf(),
                 documentScannerConf.getAvailableStorageConfs(),
                 documentScannerConf.isAutoGenerateIDs());
     }
-    
+
     public void updateFrom(DocumentScannerConf documentScannerConf) {
         if(documentScannerConf == null) {
             throw new IllegalArgumentException("documentScannerConf mustn't be null");

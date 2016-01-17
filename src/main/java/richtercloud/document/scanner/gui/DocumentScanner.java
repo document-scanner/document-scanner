@@ -44,7 +44,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.net.ConnectException;
 import java.net.InetAddress;
@@ -63,8 +62,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import javax.imageio.ImageIO;
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
@@ -89,8 +86,6 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.math4.stat.descriptive.DescriptiveStatistics;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -99,8 +94,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.components.OCRResultPanelFetcher;
 import richtercloud.document.scanner.components.ScanResultPanelFetcher;
-import richtercloud.document.scanner.components.annotations.OCRResult;
-import richtercloud.document.scanner.components.annotations.ScanResult;
 import richtercloud.document.scanner.gui.conf.DerbyPersistenceStorageConf;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.gui.conf.OCREngineConf;
@@ -109,6 +102,7 @@ import richtercloud.document.scanner.gui.conf.StorageConfInitializationException
 import richtercloud.document.scanner.gui.conf.TesseractOCREngineConf;
 import richtercloud.document.scanner.gui.engineconf.OCREngineConfPanel;
 import richtercloud.document.scanner.gui.storageconf.StorageConfPanel;
+import richtercloud.document.scanner.idgenerator.EntityIdGenerator;
 import richtercloud.document.scanner.model.APackage;
 import richtercloud.document.scanner.model.Bill;
 import richtercloud.document.scanner.model.Company;
@@ -131,31 +125,25 @@ import richtercloud.document.scanner.setter.SpinnerSetter;
 import richtercloud.document.scanner.setter.TextFieldSetter;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.reflection.form.builder.AnyType;
-import richtercloud.reflection.form.builder.ClassAnnotationHandler;
+import richtercloud.reflection.form.builder.FieldRetriever;
 import richtercloud.reflection.form.builder.ReflectionFormPanel;
 import richtercloud.reflection.form.builder.components.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.AmountMoneyPanel;
 import richtercloud.reflection.form.builder.components.AmountMoneyUsageStatisticsStorage;
 import richtercloud.reflection.form.builder.components.FileAmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.FileAmountMoneyUsageStatisticsStorage;
-import richtercloud.reflection.form.builder.fieldhandler.FieldAnnotationHandler;
 import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
-import richtercloud.reflection.form.builder.fieldhandler.FieldUpdateEvent;
 import richtercloud.reflection.form.builder.fieldhandler.MappingFieldHandler;
 import richtercloud.reflection.form.builder.fieldhandler.factory.AmountMoneyMappingFieldHandlerFactory;
-import richtercloud.reflection.form.builder.fieldhandler.factory.MappingClassAnnotationFactory;
-import richtercloud.reflection.form.builder.fieldhandler.factory.MappingFieldAnnotationFactory;
-import richtercloud.reflection.form.builder.jpa.ElementCollectionFieldAnnotationHandler;
-import richtercloud.reflection.form.builder.jpa.EntityClassAnnotationHandler;
+import richtercloud.reflection.form.builder.jpa.IdGenerator;
 import richtercloud.reflection.form.builder.jpa.JPACachedFieldRetriever;
-import richtercloud.reflection.form.builder.jpa.fieldhandler.JPAMappingFieldHandler;
-import richtercloud.reflection.form.builder.jpa.fieldhandler.factory.JPAAmountMoneyMappingClassAnnotationFactory;
-import richtercloud.reflection.form.builder.jpa.fieldhandler.factory.JPAAmountMoneyMappingFieldAnnotationFactory;
 import richtercloud.reflection.form.builder.jpa.fieldhandler.factory.JPAAmountMoneyMappingFieldHandlerFactory;
-import richtercloud.reflection.form.builder.jpa.fieldhandler.factory.JPAAmountMoneyMappingTypeHandlerFactory;
 import richtercloud.reflection.form.builder.jpa.panels.LongIdPanel;
 import richtercloud.reflection.form.builder.jpa.typehandler.ElementCollectionTypeHandler;
 import richtercloud.reflection.form.builder.jpa.typehandler.JPAEntityListTypeHandler;
+import richtercloud.reflection.form.builder.jpa.typehandler.ToManyTypeHandler;
+import richtercloud.reflection.form.builder.jpa.typehandler.ToOneTypeHandler;
+import richtercloud.reflection.form.builder.jpa.typehandler.factory.JPAAmountMoneyMappingTypeHandlerFactory;
 import richtercloud.reflection.form.builder.message.DialogMessageHandler;
 import richtercloud.reflection.form.builder.message.Message;
 import richtercloud.reflection.form.builder.message.MessageHandler;
@@ -264,7 +252,7 @@ public class DocumentScanner extends javax.swing.JFrame {
     private final AmountMoneyCurrencyStorage amountMoneyCurrencyStorage;
     private final static String AMOUNT_MONEY_USAGE_STATISTICS_STORAGE_FILE_NAME = "currency-usage-statistics.xml";
     private final static String AMOUNT_MONEY_CURRENCY_STORAGE_FILE_NAME = "currencies.xml";
-    private final Map<java.lang.reflect.Type, TypeHandler<?, ?,?>> typeHandlerMapping;
+    private final Map<java.lang.reflect.Type, TypeHandler<?, ?,?, ?>> typeHandlerMapping;
     private MessageHandler messageHandler = new DialogMessageHandler(this, generateApplicationWindowTitle("", APP_NAME, APP_VERSION));
     private ListCellRenderer<Object> oCRDialogEngineComboBoxRenderer = new DefaultListCellRenderer() {
         private static final long serialVersionUID = 1L;
@@ -286,10 +274,13 @@ public class DocumentScanner extends javax.swing.JFrame {
     private final static String XML_STORAGE_FILE_NAME_DEFAULT = "xml-storage.xml";
     private File xMLStorageFile = new File(CONFIG_DIR, XML_STORAGE_FILE_NAME_DEFAULT);
     public final static int INITIAL_QUERY_LIMIT_DEFAULT = 20;
+    public final static String BIDIRECTIONAL_HELP_DIALOG_TITLE = generateApplicationWindowTitle("Bidirectional relations help", APP_NAME, APP_VERSION);
 
     public static String generateApplicationWindowTitle(String title, String applicationName, String applicationVersion) {
         return String.format("%s - %s %s", title, applicationName, applicationVersion);
     }
+    private final IdGenerator idGenerator = EntityIdGenerator.getInstance();
+    private final FieldRetriever fieldRetriever = new JPACachedFieldRetriever();
 
     /**
      * Parses the command line and evaluates system properties. Command line
@@ -577,12 +568,17 @@ public class DocumentScanner extends javax.swing.JFrame {
             throw new RuntimeException(ex);
         }
         this.amountMoneyCurrencyStorage = new FileAmountMoneyCurrencyStorage(amountMoneyCurrencyStorageFile);
-        JPAAmountMoneyMappingTypeHandlerFactory fieldHandlerFactory = new JPAAmountMoneyMappingTypeHandlerFactory(entityManager, INITIAL_QUERY_LIMIT_DEFAULT, messageHandler);
+        JPAAmountMoneyMappingTypeHandlerFactory fieldHandlerFactory = new JPAAmountMoneyMappingTypeHandlerFactory(entityManager,
+                INITIAL_QUERY_LIMIT_DEFAULT,
+                messageHandler,
+                BIDIRECTIONAL_HELP_DIALOG_TITLE);
         this.typeHandlerMapping = fieldHandlerFactory.generateTypeHandlerMapping();
 
         //after entity manager creation
         this.typeHandlerMapping.put(new TypeToken<List<AnyType>>() {
-            }.getType(), new JPAEntityListTypeHandler(entityManager, messageHandler));
+            }.getType(), new JPAEntityListTypeHandler(entityManager,
+                    messageHandler,
+                    BIDIRECTIONAL_HELP_DIALOG_TITLE));
     }
 
     /**
@@ -1501,48 +1497,38 @@ public class DocumentScanner extends javax.swing.JFrame {
             OCREngine oCREngine) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         OCRResultPanelFetcher oCRResultPanelFetcher = new DocumentTabOCRResultPanelFetcher(oCRSelectComponent, oCREngine);
         ScanResultPanelFetcher scanResultPanelFetcher = new DocumentTabScanResultPanelFetcher(oCRSelectComponent);
-        JPAAmountMoneyMappingFieldAnnotationFactory jPAAmountMoneyMappingFieldAnnotationFactory = JPAAmountMoneyMappingFieldAnnotationFactory.create(EntityIdGenerator.getInstance(),
-                messageHandler,
-                new JPACachedFieldRetriever(),
-                INITIAL_QUERY_LIMIT_DEFAULT,
-                entityManager,
-                amountMoneyUsageStatisticsStorage,
-                amountMoneyCurrencyStorage);
-        List<Pair<Class<? extends Annotation>, FieldAnnotationHandler>> fieldAnnotationMapping = new LinkedList<>(jPAAmountMoneyMappingFieldAnnotationFactory.generateFieldAnnotationMapping());
-        fieldAnnotationMapping.add(new ImmutablePair<Class<? extends Annotation>, FieldAnnotationHandler>(OCRResult.class,
-                new OCRResultFieldAnnotationHandler(oCRResultPanelFetcher,
-                        messageHandler)));
-        fieldAnnotationMapping.add(new ImmutablePair<Class<? extends Annotation>, FieldAnnotationHandler>(ScanResult.class, new ScanResultFieldAnnotationHandler(scanResultPanelFetcher)));
         AmountMoneyMappingFieldHandlerFactory embeddableFieldHandlerFactory = new AmountMoneyMappingFieldHandlerFactory(amountMoneyUsageStatisticsStorage,
                 amountMoneyCurrencyStorage,
                 messageHandler);
-        MappingFieldAnnotationFactory embeddableFieldAnnotationFactory = new MappingFieldAnnotationFactory();
-        MappingClassAnnotationFactory embeddableClassAnnotationFactory = new MappingClassAnnotationFactory();
         FieldHandler embeddableFieldHandler = new MappingFieldHandler(embeddableFieldHandlerFactory.generateClassMapping(),
-                embeddableFieldHandlerFactory.generatePrimitiveMapping(),
-                embeddableFieldAnnotationFactory.generateFieldAnnotationMapping(),
-                embeddableClassAnnotationFactory.generateClassAnnotationMapping());
+                embeddableFieldHandlerFactory.generatePrimitiveMapping());
         ElementCollectionTypeHandler elementCollectionTypeHandler = new ElementCollectionTypeHandler(typeHandlerMapping,
                 typeHandlerMapping,
                 messageHandler,
                 embeddableFieldHandler);
-        fieldAnnotationMapping.add(new ImmutablePair<Class<? extends Annotation>, FieldAnnotationHandler>(ElementCollection.class,
-                new ElementCollectionFieldAnnotationHandler(elementCollectionTypeHandler)));
-        JPAAmountMoneyMappingClassAnnotationFactory jPAAmountMoneyMappingClassAnnotationFactory = JPAAmountMoneyMappingClassAnnotationFactory.create(entityManager);
-        List<Pair<Class<? extends Annotation>, ClassAnnotationHandler<Object, FieldUpdateEvent<Object>>>> classAnnotationMapping = jPAAmountMoneyMappingClassAnnotationFactory.generateClassAnnotationMapping();
-        classAnnotationMapping.add(new ImmutablePair<Class<? extends Annotation>, ClassAnnotationHandler<Object, FieldUpdateEvent<Object>>>(Entity.class,
-                new EntityClassAnnotationHandler(entityManager)));
         JPAAmountMoneyMappingFieldHandlerFactory jPAAmountMoneyMappingFieldHandlerFactory = JPAAmountMoneyMappingFieldHandlerFactory.create(entityManager,
                 INITIAL_QUERY_LIMIT_DEFAULT,
                 messageHandler,
                 amountMoneyUsageStatisticsStorage,
-                amountMoneyCurrencyStorage);
-        FieldHandler fieldHandler = new JPAMappingFieldHandler(jPAAmountMoneyMappingFieldHandlerFactory.generateClassMapping(),
+                amountMoneyCurrencyStorage,
+                BIDIRECTIONAL_HELP_DIALOG_TITLE);
+        ToManyTypeHandler toManyTypeHandler = new ToManyTypeHandler(entityManager,
+                typeHandlerMapping,
+                typeHandlerMapping,
+                BIDIRECTIONAL_HELP_DIALOG_TITLE);
+        ToOneTypeHandler toOneTypeHandler = new ToOneTypeHandler(entityManager,
+                BIDIRECTIONAL_HELP_DIALOG_TITLE);
+        FieldHandler fieldHandler = new DocumentScannerFieldHandler(jPAAmountMoneyMappingFieldHandlerFactory.generateClassMapping(),
                 embeddableFieldHandlerFactory.generateClassMapping(),
                 embeddableFieldHandlerFactory.generatePrimitiveMapping(),
-                fieldAnnotationMapping,
-                classAnnotationMapping,
-                elementCollectionTypeHandler);
+                elementCollectionTypeHandler,
+                toManyTypeHandler,
+                toOneTypeHandler,
+                idGenerator,
+                messageHandler,
+                fieldRetriever,
+                oCRResultPanelFetcher,
+                scanResultPanelFetcher);
         DocumentTab retValue = new DocumentTab(UNSAVED_NAME,
                 oCRSelectComponent,
                 oCREngine,
@@ -1550,8 +1536,6 @@ public class DocumentScanner extends javax.swing.JFrame {
                 Document.class, //primaryClassSelection
                 fieldHandler,
                 entityManager,
-                fieldAnnotationMapping,
-                classAnnotationMapping,
                 oCRResultPanelFetcher,
                 scanResultPanelFetcher,
                 amountMoneyUsageStatisticsStorage,

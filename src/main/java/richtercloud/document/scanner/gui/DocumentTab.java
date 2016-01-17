@@ -14,25 +14,18 @@
  */
 package richtercloud.document.scanner.gui;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Type;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.persistence.EntityManager;
 import javax.swing.JComponent;
-import org.apache.commons.lang3.tuple.Pair;
 import richtercloud.document.scanner.components.OCRResultPanelFetcher;
 import richtercloud.document.scanner.components.ScanResultPanelFetcher;
 import richtercloud.document.scanner.ocr.OCREngine;
 import richtercloud.document.scanner.setter.ValueSetter;
-import richtercloud.reflection.form.builder.ClassAnnotationHandler;
-import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
-import richtercloud.reflection.form.builder.fieldhandler.FieldUpdateEvent;
 import richtercloud.reflection.form.builder.components.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.AmountMoneyUsageStatisticsStorage;
-import richtercloud.reflection.form.builder.fieldhandler.FieldAnnotationHandler;
+import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
 import richtercloud.reflection.form.builder.message.MessageHandler;
 
 /**
@@ -54,8 +47,6 @@ public class DocumentTab extends javax.swing.JPanel {
             Class<?> primaryClassSelection,
             FieldHandler fieldHandler,
             EntityManager entityManager,
-            List<Pair<Class<? extends Annotation>,FieldAnnotationHandler>> fieldAnnotationMapping,
-            List<Pair<Class<? extends Annotation>,ClassAnnotationHandler<Object,FieldUpdateEvent<Object>>>> classAnnotationMapping,
             OCRResultPanelFetcher oCRResultPanelFetcher,
             ScanResultPanelFetcher scanResultPanelFetcher,
             AmountMoneyUsageStatisticsStorage amountMoneyUsageStatisticsStorage,
@@ -69,8 +60,6 @@ public class DocumentTab extends javax.swing.JPanel {
                 fieldHandler,
                 DocumentScanner.VALUE_SETTER_MAPPING_DEFAULT,
                 entityManager,
-                fieldAnnotationMapping,
-                classAnnotationMapping,
                 oCRResultPanelFetcher,
                 scanResultPanelFetcher,
                 amountMoneyUsageStatisticsStorage,
@@ -86,8 +75,6 @@ public class DocumentTab extends javax.swing.JPanel {
             FieldHandler fieldHandler,
             Map<Class<? extends JComponent>, ValueSetter<?>> valueSetterMapping,
             EntityManager entityManager,
-            List<Pair<Class<? extends Annotation>,FieldAnnotationHandler>> fieldAnnotationMapping,
-            List<Pair<Class<? extends Annotation>,ClassAnnotationHandler<Object,FieldUpdateEvent<Object>>>> classAnnotationMapping,
             OCRResultPanelFetcher oCRResultPanelFetcher,
             ScanResultPanelFetcher scanResultPanelFetcher,
             AmountMoneyUsageStatisticsStorage amountMoneyUsageStatisticsStorage,

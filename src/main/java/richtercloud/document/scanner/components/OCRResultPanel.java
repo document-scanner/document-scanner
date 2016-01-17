@@ -32,13 +32,7 @@ public class OCRResultPanel extends javax.swing.JPanel {
      */
     private boolean cancelable = true;
     private MessageHandler messageHandler;
-
-    /**
-     * Creates new form OCRResultPanel
-     */
-    protected OCRResultPanel() {
-        this.initComponents();
-    }
+    private final String initialValue;
 
     public OCRResultPanel(OCRResultPanelFetcher retriever,
             String initialValue,
@@ -53,10 +47,12 @@ public class OCRResultPanel extends javax.swing.JPanel {
             String initialValue,
             boolean cancelable,
             MessageHandler messageHandler) {
-        this();
+        this.initComponents();
         this.retriever = retriever;
         this.oCRResultTextArea.setText(initialValue);
         this.cancelable = cancelable;
+        this.initialValue = initialValue;
+        reset();
     }
 
     public String retrieveText() {
@@ -73,6 +69,14 @@ public class OCRResultPanel extends javax.swing.JPanel {
 
     public boolean isCancelable() {
         return cancelable;
+    }
+
+    public void reset() {
+        if(this.initialValue != null) {
+            this.oCRResultTextArea.setText(initialValue);
+        }else {
+            this.oCRResultTextArea.setText("");
+        }
     }
 
     /**

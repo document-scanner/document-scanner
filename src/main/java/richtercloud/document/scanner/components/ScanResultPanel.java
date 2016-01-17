@@ -27,19 +27,13 @@ public class ScanResultPanel extends javax.swing.JPanel {
     private byte[] scanData;
     private final static String LABEL_DEFAULT_TEXT = "No data scanned";
     private Set<ScanResultPanelUpdateListener> updateListener = new HashSet<>();
-
-    /**
-     * Creates new form ScanResultPanel
-     */
-    protected ScanResultPanel() {
-        this.initComponents();
-    }
+    private final byte[] initialValue;
 
     public ScanResultPanel(ScanResultPanelFetcher retriever, byte[] initialValue) {
-        this();
+        this.initComponents();
         this.retriever = retriever;
-        this.scanData = initialValue;
-        handleScanDataUpdate();
+        this.initialValue = initialValue;
+        reset();
     }
 
     public void addUpdateListerner(ScanResultPanelUpdateListener updateListener) {
@@ -56,6 +50,15 @@ public class ScanResultPanel extends javax.swing.JPanel {
         }else {
             this.scanResultLabel.setText(LABEL_DEFAULT_TEXT);
         }
+    }
+
+    public void reset() {
+        if(this.initialValue != null) {
+            this.scanData = initialValue;
+        }else {
+            this.scanData = new byte[0];
+        }
+        handleScanDataUpdate();
     }
 
     /**

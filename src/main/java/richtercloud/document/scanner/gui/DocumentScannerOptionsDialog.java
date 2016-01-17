@@ -18,8 +18,8 @@ import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 
 /**
  * A dialog which allows to enforce instantiation of component values based on
- * values of a {@link DocumentScannerConf}. You have to display the dialog with 
- * 
+ * values of a {@link DocumentScannerConf}. You have to display the dialog with
+ *
  * @author richter
  */
 /*

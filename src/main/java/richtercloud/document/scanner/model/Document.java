@@ -69,8 +69,25 @@ public class Document extends AbstractDocument {
     protected Document() {
     }
 
-    public Document(String comment, String identifier, byte[] scanData, String scanOCRText, List<Payment> payments, Date date, Date receptionDate, Location originalLocation, boolean originalLost, Long id, Company sender, Company recipient) {
-        super(date, receptionDate, originalLocation, originalLost, id, sender, recipient);
+    public Document(String comment,
+            String identifier,
+            byte[] scanData,
+            String scanOCRText,
+            List<Payment> payments,
+            Date date,
+            Date receptionDate,
+            Location originalLocation,
+            boolean originalLost,
+            Long id,
+            Company sender,
+            Company recipient) {
+        super(date,
+                receptionDate,
+                originalLocation,
+                originalLost,
+                id,
+                sender,
+                recipient);
         this.comment = comment;
         this.identifier = identifier;
         this.scanData = scanData;
