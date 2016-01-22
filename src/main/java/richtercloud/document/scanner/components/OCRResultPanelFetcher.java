@@ -47,4 +47,8 @@ public interface OCRResultPanelFetcher {
     return first and it return when it's completed only
     */
     void cancelFetch() throws UnsupportedOperationException;
+
+    void addProgressListener(OCRResultPanelFetcherProgressListener progressListener);
+
+    void removeProgressListener(OCRResultPanelFetcherProgressListener progressListener);
 }

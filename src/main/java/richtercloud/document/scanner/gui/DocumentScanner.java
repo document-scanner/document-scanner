@@ -73,13 +73,14 @@ import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
-import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.ListCellRenderer;
 import javax.swing.MutableComboBoxModel;
+import javax.swing.ProgressMonitor;
+import javax.swing.SwingWorker;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
@@ -93,6 +94,8 @@ import org.jscience.economics.money.Currency;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.components.OCRResultPanelFetcher;
+import richtercloud.document.scanner.components.OCRResultPanelFetcherProgressEvent;
+import richtercloud.document.scanner.components.OCRResultPanelFetcherProgressListener;
 import richtercloud.document.scanner.components.ScanResultPanelFetcher;
 import richtercloud.document.scanner.gui.conf.DerbyPersistenceStorageConf;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
@@ -1083,7 +1086,8 @@ public class DocumentScanner extends javax.swing.JFrame {
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle(String.format("%s %s", APP_NAME, APP_VERSION) //generateApplicationWindowTitle not applicable
         );
-        setBounds(new java.awt.Rectangle(0, 0, 0, 0));
+        setBounds(new java.awt.Rectangle(0, 0, 800, 600));
+        setPreferredSize(new java.awt.Dimension(800, 600));
 
         javax.swing.GroupLayout statusBarLayout = new javax.swing.GroupLayout(statusBar);
         statusBar.setLayout(statusBarLayout);
@@ -1197,7 +1201,7 @@ public class DocumentScanner extends javax.swing.JFrame {
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addComponent(mainTabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 260, Short.MAX_VALUE)
+                .addComponent(mainTabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 290, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(statusBar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
@@ -1320,49 +1324,71 @@ public class DocumentScanner extends javax.swing.JFrame {
     }//GEN-LAST:event_storageDialogNewButtonActionPerformed
 
     private void openMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openMenuItemActionPerformed
-        try {
-            JFileChooser chooser = new JFileChooser();
-            FileNameExtensionFilter filter = new FileNameExtensionFilter(
-                    "PDF files", "pdf");
-            chooser.setFileFilter(filter);
-            int returnVal = chooser.showOpenDialog(this);
-            File selectedFile = chooser.getSelectedFile();
-            if (returnVal != JFileChooser.APPROVE_OPTION) {
-                return;
-            }
-            InputStream pdfInputStream = new FileInputStream(selectedFile);
-            PDDocument document = PDDocument.load(pdfInputStream);
-            @SuppressWarnings("unchecked")
-            List<PDPage> pages = document.getDocumentCatalog().getAllPages();
-            List<OCRSelectPanel> panels = new LinkedList<>();
-            for (PDPage page : pages) {
-                BufferedImage image = page.convertToImage();
-                @SuppressWarnings("serial")
-                OCRSelectPanel panel = new OCRSelectPanel(image) {
-                    @Override
-                    public void mouseReleased(MouseEvent evt) {
-                        super.mouseReleased(evt);
-                        if (this.getDragStart() != null && !this.getDragStart().equals(this.getDragEnd())) {
-                            DocumentScanner.this.handleOCRSelection();
-                        }
-                    }
-                };
-                panels.add(panel);
-            }
-            document.close();
-            OCRSelectComponent oCRSelectComponent = new OCRSelectComponent(panels);
-            OCREngine oCREngine = this.retrieveOCREninge();
-            if (oCREngine == null) {
-                //a warning in form of a dialog has been given
-                return;
-            }
-            DocumentTab documentTab = generateDocumentTab(oCRSelectComponent,
-                    oCREngine);
-            this.mainTabbedPane.add(selectedFile.getName(), documentTab);
-            this.validate();
-        } catch (HeadlessException | IOException | IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException | InvocationTargetException ex) {
-            this.handleException(ex);
+        final ProgressMonitor progressMonitor = new ProgressMonitor(this,
+                "Generating new document tab", //message
+                null, //note
+                0,
+                100);
+        JFileChooser chooser = new JFileChooser();
+        FileNameExtensionFilter filter = new FileNameExtensionFilter(
+                "PDF files", "pdf");
+        chooser.setFileFilter(filter);
+        int returnVal = chooser.showOpenDialog(this);
+        final File selectedFile = chooser.getSelectedFile();
+        if (returnVal != JFileChooser.APPROVE_OPTION) {
+            return;
         }
+        final SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                try {
+                    InputStream pdfInputStream = new FileInputStream(selectedFile);
+                    PDDocument document = PDDocument.load(pdfInputStream);
+                    @SuppressWarnings("unchecked")
+                    List<PDPage> pages = document.getDocumentCatalog().getAllPages();
+                    List<OCRSelectPanel> panels = new LinkedList<>();
+                    for (PDPage page : pages) {
+                        BufferedImage image = page.convertToImage();
+                        @SuppressWarnings("serial")
+                        OCRSelectPanel panel = new OCRSelectPanel(image) {
+                            @Override
+                            public void mouseReleased(MouseEvent evt) {
+                                super.mouseReleased(evt);
+                                if (this.getDragStart() != null && !this.getDragStart().equals(this.getDragEnd())) {
+                                    DocumentScanner.this.handleOCRSelection();
+                                }
+                            }
+                        };
+                        panels.add(panel);
+                    }
+                    document.close();
+                    OCRSelectComponent oCRSelectComponent = new OCRSelectComponent(panels);
+                    OCREngine oCREngine = DocumentScanner.this.retrieveOCREninge();
+                    if (oCREngine == null) {
+                        //a warning in form of a dialog has been given
+                        progressMonitor.setProgress(100);
+                        return null;
+                    }
+                    DocumentTab documentTab = generateDocumentTab(oCRSelectComponent,
+                            oCREngine);
+                    if(!progressMonitor.isCanceled()) {
+                        DocumentScanner.this.mainTabbedPane.add(selectedFile.getName(), documentTab);
+                        DocumentScanner.this.validate();
+                    }
+                } catch (HeadlessException | IOException | IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException | InvocationTargetException ex) {
+                    progressMonitor.setProgress(100);
+                    DocumentScanner.this.handleException(ex);
+                }
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                progressMonitor.setProgress(100);
+            }
+        };
+        progressMonitor.setProgress(0);
+        worker.execute();
     }//GEN-LAST:event_openMenuItemActionPerformed
 
     private void optionsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_optionsMenuItemActionPerformed
@@ -1493,8 +1519,8 @@ public class DocumentScanner extends javax.swing.JFrame {
         }
     }
 
-    private DocumentTab generateDocumentTab(OCRSelectComponent oCRSelectComponent,
-            OCREngine oCREngine) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+    private DocumentTab generateDocumentTab(final OCRSelectComponent oCRSelectComponent,
+            final OCREngine oCREngine) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         OCRResultPanelFetcher oCRResultPanelFetcher = new DocumentTabOCRResultPanelFetcher(oCRSelectComponent, oCREngine);
         ScanResultPanelFetcher scanResultPanelFetcher = new DocumentTabScanResultPanelFetcher(oCRSelectComponent);
         AmountMoneyMappingFieldHandlerFactory embeddableFieldHandlerFactory = new AmountMoneyMappingFieldHandlerFactory(amountMoneyUsageStatisticsStorage,
@@ -1563,19 +1589,7 @@ public class DocumentScanner extends javax.swing.JFrame {
 
     private void handleException(Throwable ex) {
         LOGGER.info("handling exception {}", ex);
-        MessagePanelEntry entry = new MessagePanelEntry(new JLabel(ex.getMessage()));
-        GroupLayout layout = new GroupLayout(this.statusBar);
-        GroupLayout.SequentialGroup hGroup = layout.createSequentialGroup();
-        hGroup.addGroup(layout.createParallelGroup().
-                addComponent(entry));
-        layout.setHorizontalGroup(hGroup);
-        GroupLayout.SequentialGroup vGroup = layout.createSequentialGroup();
-        vGroup.addGroup(layout.createParallelGroup(Alignment.BASELINE).
-                addComponent(entry));
-        layout.setVerticalGroup(vGroup);
-        this.statusBar.setLayout(layout);
-        this.pack();
-        this.invalidate();
+        this.messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
     }
 
     private OCREngine retrieveOCREninge() {
@@ -1635,6 +1649,8 @@ public class DocumentScanner extends javax.swing.JFrame {
         private final List<Double> stringBufferLengths = new ArrayList<>();
         private final OCRSelectComponent oCRSelectComponent;
         private final OCREngine oCREngine;
+        private final Set<OCRResultPanelFetcherProgressListener> progressListeners = new HashSet<>();
+        private boolean cancelRequested = false;
 
         DocumentTabOCRResultPanelFetcher(OCRSelectComponent oCRSelectComponent, OCREngine oCREngine) {
             this.oCRSelectComponent = oCRSelectComponent;
@@ -1646,6 +1662,7 @@ public class DocumentScanner extends javax.swing.JFrame {
             //estimate the initial StringBuilder size based on the median
             //of all prior OCR results (string length) (and 1000 initially)
             int stringBufferLengh;
+            cancelRequested = false;
             if (this.stringBufferLengths.isEmpty()) {
                 stringBufferLengh = 1_000;
             } else {
@@ -1654,9 +1671,26 @@ public class DocumentScanner extends javax.swing.JFrame {
             }
             this.stringBufferLengths.add((double) stringBufferLengh);
             StringBuilder retValueBuilder = new StringBuilder(stringBufferLengh);
-            for (OCRSelectPanel imagePanel : this.oCRSelectComponent.getImagePanels()) {
+            int i=0;
+            List<OCRSelectPanel> imagePanels = this.oCRSelectComponent.getImagePanels();
+            for (OCRSelectPanel imagePanel : imagePanels) {
+                if(cancelRequested) {
+                    //no need to notify progress listener
+                    break;
+                }
                 String oCRResult = this.oCREngine.recognizeImage(imagePanel.getImage());
+                if(oCRResult == null) {
+                    //indicates that the OCREngine.recognizeImage has been aborted
+                    if(cancelRequested) {
+                        //no need to notify progress listener
+                        break;
+                    }
+                }
                 retValueBuilder.append(oCRResult);
+                for(OCRResultPanelFetcherProgressListener progressListener: progressListeners) {
+                    progressListener.onProgressUpdate(new OCRResultPanelFetcherProgressEvent(oCRResult, i/imagePanels.size()));
+                }
+                i += 1;
             }
             String retValue = retValueBuilder.toString();
             return retValue;
@@ -1664,7 +1698,18 @@ public class DocumentScanner extends javax.swing.JFrame {
 
         @Override
         public void cancelFetch() {
+            this.cancelRequested = true;
             this.oCREngine.cancelRecognizeImage();
+        }
+
+        @Override
+        public void addProgressListener(OCRResultPanelFetcherProgressListener progressListener) {
+            this.progressListeners.add(progressListener);
+        }
+
+        @Override
+        public void removeProgressListener(OCRResultPanelFetcherProgressListener progressListener) {
+            this.progressListeners.remove(progressListener);
         }
     }
 

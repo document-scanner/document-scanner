@@ -52,13 +52,17 @@ public class ScanResultPanel extends javax.swing.JPanel {
         }
     }
 
-    public void reset() {
+    private void reset0() {
         if(this.initialValue != null) {
             this.scanData = initialValue;
         }else {
             this.scanData = new byte[0];
         }
         handleScanDataUpdate();
+    }
+
+    public void reset() {
+        reset0();
     }
 
     /**

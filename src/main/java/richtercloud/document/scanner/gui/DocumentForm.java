@@ -593,7 +593,7 @@ public class DocumentForm extends javax.swing.JPanel {
                             @Override
                             public void onUpdate(ReflectionFormPanelUpdateEvent reflectionFormPanelUpdateEvent) {
                                 if(reflectionFormPanelUpdateEvent.getType() == ReflectionFormPanelUpdateEvent.INSTANCE_DELETED) {
-                                    entityEditingQueryPanel.repeatLastQuery();
+                                    entityEditingQueryPanel.getQueryComponent().repeatLastQuery();
                                     if(entityEditingQueryPanel.getQueryResults().isEmpty()) {
                                         DocumentForm.this.entityEditingReflectionFormPanelScrollPane.setViewportView(null);
                                     }

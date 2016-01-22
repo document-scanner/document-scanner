@@ -773,7 +773,10 @@
       <Connection code="String.format(&quot;%s %s&quot;, APP_NAME, APP_VERSION) //generateApplicationWindowTitle not applicable&#xa;" type="code"/>
     </Property>
     <Property name="bounds" type="java.awt.Rectangle" editor="org.netbeans.beaninfo.editors.RectangleEditor">
-      <Rectangle value="[0, 0, 0, 0]"/>
+      <Rectangle value="[0, 0, 800, 600]"/>
+    </Property>
+    <Property name="preferredSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
+      <Dimension value="[800, 600]"/>
     </Property>
   </Properties>
   <SyntheticProperties>
@@ -803,7 +806,7 @@
     <DimensionLayout dim="1">
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" alignment="0" attributes="0">
-              <Component id="mainTabbedPane" pref="260" max="32767" attributes="0"/>
+              <Component id="mainTabbedPane" pref="290" max="32767" attributes="0"/>
               <EmptySpace type="unrelated" max="-2" attributes="0"/>
               <Component id="statusBar" min="-2" max="-2" attributes="0"/>
           </Group>

@@ -129,7 +129,12 @@ public class TesseractOCREngine implements OCREngine {
             ImageIO.write(image, "png", tesseractProcess.getOutputStream());
             tesseractProcess.getOutputStream().flush();
             tesseractProcess.getOutputStream().close(); //sending EOF not an option because it's not documented what is expected (sending -1 once or twice doesn't have any effect, also with flush)
-            tesseractProcess.waitFor();
+            int tesseractProcessExitValue = tesseractProcess.waitFor();
+            if(tesseractProcessExitValue != 0) {
+                //tesseractProcess.destroy might cause IOException, but
+                //termination with exit value != 0 might occur as well
+                return null;
+            }
             StringWriter tesseractResultWriter = new StringWriter();
             IOUtils.copy(tesseractProcess.getInputStream(), tesseractResultWriter);
             String tesseractResult = tesseractResultWriter.toString();

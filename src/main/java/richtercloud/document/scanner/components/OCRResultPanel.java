@@ -14,8 +14,24 @@
  */
 package richtercloud.document.scanner.components;
 
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JDialog;
+import javax.swing.JOptionPane;
+import javax.swing.ProgressMonitor;
+import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
+import org.apache.commons.lang.exception.ExceptionUtils;
+import richtercloud.reflection.form.builder.message.Message;
 import richtercloud.reflection.form.builder.message.MessageHandler;
 
 /**
@@ -52,7 +68,7 @@ public class OCRResultPanel extends javax.swing.JPanel {
         this.oCRResultTextArea.setText(initialValue);
         this.cancelable = cancelable;
         this.initialValue = initialValue;
-        reset();
+        reset0();
     }
 
     public String retrieveText() {
@@ -71,12 +87,16 @@ public class OCRResultPanel extends javax.swing.JPanel {
         return cancelable;
     }
 
-    public void reset() {
+    private void reset0() {
         if(this.initialValue != null) {
             this.oCRResultTextArea.setText(initialValue);
         }else {
             this.oCRResultTextArea.setText("");
         }
+    }
+
+    public void reset() {
+        reset0();
     }
 
     /**
@@ -128,14 +148,87 @@ public class OCRResultPanel extends javax.swing.JPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void oCRResultButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_oCRResultButtonActionPerformed
-        String oCRResult;
+        String oCRResult = null;
         if(!cancelable) {
             oCRResult = this.retriever.fetch();
         }else {
-            oCRResult = new OCRResultPanelProgressDialog(null, //parent
-                    retriever,
-                    messageHandler
-            ).processOCR();
+            final JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this));
+            dialog.setModal(true);
+            dialog.setSize(0, 0);
+            final ProgressMonitor progressMonitor = new ProgressMonitor(dialog, "OCR recognition in progress",
+                    null,
+                    0,
+                    100);
+            progressMonitor.setMillisToPopup(0);
+            progressMonitor.setMillisToDecideToPopup(0);
+            final SwingWorker<String,String> oCRThread = new SwingWorker<String,String>() {
+                private final OCRResultPanelFetcherProgressListener progressListener = new OCRResultPanelFetcherProgressListener() {
+                    @Override
+                    public void onProgressUpdate(OCRResultPanelFetcherProgressEvent progressEvent) {
+                        int progress = (int) (progressEvent.getProgress()*100);
+                        progressMonitor.setProgress(progress);
+                    }
+                };
+                @Override
+                public String doInBackground() {
+                    retriever.addProgressListener(progressListener);
+                    try {
+                        Thread thread1 = new Thread() {
+                            @Override
+                            public void run() {
+                                while(!isDone()) {
+                                    if(progressMonitor.isCanceled()) {
+                                        retriever.cancelFetch();
+                                        break;
+                                    }
+                                    try {
+                                        Thread.sleep(100);
+                                    } catch (InterruptedException ex) {
+                                        Logger.getLogger(OCRResultPanel.class.getName()).log(Level.SEVERE, null, ex);
+                                    }
+                                }
+                            }
+                        };
+                        thread1.start();
+                        String retValue = retriever.fetch();
+                        return retValue;
+                    }catch(Exception ex) {
+                        progressMonitor.setProgress(101);
+                        messageHandler.handle(new Message(ExceptionUtils.getRootCauseMessage(ex),
+                                JOptionPane.ERROR_MESSAGE));
+                    }
+                    return null;
+                }
+
+                @Override
+                protected void done() {
+                    retriever.removeProgressListener(progressListener);
+                    progressMonitor.setProgress(101);
+                }
+            };
+            dialog.addComponentListener(new ComponentAdapter() {
+                @Override
+                public void componentShown(ComponentEvent e) {
+                    progressMonitor.setProgress(0);
+                }
+            });
+            oCRThread.execute();
+            oCRThread.addPropertyChangeListener(new PropertyChangeListener() {
+                @Override
+                public void propertyChange(PropertyChangeEvent event) {
+                    if ("state".equals(event.getPropertyName())
+                            && SwingWorker.StateValue.DONE == event.getNewValue()) {
+                        dialog.setVisible(false);
+                        dialog.dispose();
+                    }
+                }
+            });
+            dialog.setVisible(true);
+            try {
+                oCRResult = oCRThread.get();
+            } catch (InterruptedException | ExecutionException ex) {
+                Logger.getLogger(OCRResultPanel.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
         if(oCRResult != null) {
             //might be null if fetch has been canceled (this check is
