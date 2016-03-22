@@ -63,20 +63,6 @@ public abstract class CommunicationItem extends Identifiable {
     /**
      * @return the sender
      */
-    public Company getContact() {
-        return this.getSender();
-    }
-
-    /**
-     * @param contact the sender to set
-     */
-    public void setContact(Company contact) {
-        this.setSender(contact);
-    }
-
-    /**
-     * @return the sender
-     */
     public Company getSender() {
         return this.sender;
     }
@@ -114,5 +100,13 @@ public abstract class CommunicationItem extends Identifiable {
      */
     public void setTheDate(Date theDate) {
         this.theDate = theDate;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s: %s -> %s",
+                this.getTheDate(),
+                this.getSender(),
+                this.getRecipient());
     }
 }

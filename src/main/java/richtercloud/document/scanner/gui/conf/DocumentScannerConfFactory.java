@@ -29,7 +29,12 @@ public class DocumentScannerConfFactory {
     public DocumentScannerConf create(EntityManager entityManager,
             MessageHandler messageHandler,
             Set<Class<?>> entityClasses,
+            File schemeChecksumFile,
             File xMLStorageFile) throws IOException {
-        return new DocumentScannerConf(entityManager, messageHandler, entityClasses, xMLStorageFile);
+        return new DocumentScannerConf(entityManager,
+                messageHandler,
+                entityClasses,
+                schemeChecksumFile,
+                xMLStorageFile);
     }
 }

@@ -36,16 +36,15 @@ import richtercloud.reflection.form.builder.message.MessageHandler;
  *
  * @author richter
  */
-public class DerbyPersistenceStorageConf implements Serializable, StorageConf<DerbyPersistenceStorage> {
+public class DerbyPersistenceStorageConf implements Serializable, StorageConf<DerbyPersistenceStorage, DerbyPersistenceStorageConfInitializationException> {
     private static final long serialVersionUID = 1L;
     private static DerbyPersistenceStorage instance;
     private final static String CONNECTION_URL_DEFAULT = "localhost";
     private final static String USERNAME_DEFAULT = "";
     private final static String PASSWORD_DEFAULT = "";
-    private final static String STORAGE_PARENT_DIR_PATH_DEFAULT = "."; //the empty string causes directories created with contructor with parent argument to be subdirectories of /
     private final static String DATABASE_DIR_NAME_DEFAULT = DocumentScanner.DATABASE_DIR_NAME_DEFAULT;
-    private final static String LAST_SCHEME_STORAGE_FILE_NAME = "last-scheme.xml";
-    private final static File STORAGE_PARENT_DIR_DEFAULT = new File(STORAGE_PARENT_DIR_PATH_DEFAULT);
+    public final static String SCHEME_CHECKSUM_FILE_NAME = "last-scheme.xml";
+
     /**
      * Generates a checksum to track changes to {@code clazz} from the hash codes of declared fields and methods (tracking both might cause redundancies, but increases safety of getting all changes of database relevant properties).
      *
@@ -79,39 +78,48 @@ public class DerbyPersistenceStorageConf implements Serializable, StorageConf<De
     private String connectionURL = CONNECTION_URL_DEFAULT;
     private String username = USERNAME_DEFAULT;
     private String password = PASSWORD_DEFAULT;
-    private String storageParentDirPath = STORAGE_PARENT_DIR_PATH_DEFAULT;
+    private String storageParentDirPath;
     private String databaseDirName = DATABASE_DIR_NAME_DEFAULT;
     private EntityManager entityManager;
-    private File lastSchemeStorageFile;
+    private File schemeChecksumFile;
     private MessageHandler messageHandler;
     private Set<Class<?>> entityClasses;
 
     protected DerbyPersistenceStorageConf() {
     }
 
-    protected DerbyPersistenceStorageConf(File lastSchemeStorageFile) {
+    protected DerbyPersistenceStorageConf(File schemeChecksumFile) {
         super();
-        this.lastSchemeStorageFile = lastSchemeStorageFile;
+        this.schemeChecksumFile = schemeChecksumFile;
     }
 
-    public DerbyPersistenceStorageConf(EntityManager entityManager,
-            MessageHandler messageHandler,
-            Set<Class<?>> entityClasses) throws FileNotFoundException, IOException {
-        this(entityManager, messageHandler, entityClasses, new File(STORAGE_PARENT_DIR_DEFAULT, LAST_SCHEME_STORAGE_FILE_NAME));
-    }
-
+    /**
+     *
+     * @param entityManager
+     * @param messageHandler
+     * @param entityClasses
+     * @param schemeChecksumFile
+     * @throws FileNotFoundException
+     * @throws IOException
+     */
+    /*
+    internal implementation notes:
+    - it appears more elegant to enforce specification of scheme checksum file
+    in constructor rather than provide a constructor with a parent directory
+    argument
+    */
     public DerbyPersistenceStorageConf(EntityManager entityManager,
             MessageHandler messageHandler,
             Set<Class<?>> entityClasses,
-            File lastSchemeStorageFile) throws FileNotFoundException, IOException {
-        if(!lastSchemeStorageFile.exists()) {
-            try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream(lastSchemeStorageFile))) {
+            File schemeChecksumFile) throws FileNotFoundException, IOException {
+        if(!schemeChecksumFile.exists()) {
+            try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream(schemeChecksumFile))) {
                 Map<Class<?>, Long> checksumMap = generateSchemeChecksumMap(entityClasses);
                 objectOutputStream.writeObject(checksumMap);
                 objectOutputStream.flush();
             }
         }
-        this.lastSchemeStorageFile = lastSchemeStorageFile;
+        this.schemeChecksumFile = schemeChecksumFile;
         this.entityManager = entityManager;
         this.messageHandler = messageHandler;
         this.entityClasses = entityClasses;
@@ -202,22 +210,28 @@ public class DerbyPersistenceStorageConf implements Serializable, StorageConf<De
      */
     /*
     internal implementation notes:
-    - Metamodel implementations don't reliably implement `equals` (e.g. `org.hibernate.jpa.internal.metamodel.Metamodel` doesn't
-    - java.lang.reflect.Field can't be serialized with `ObjectOutputStream` (fails with `java.io.NotSerializableException: java.lang.reflect.Field`) -> use version field, e.g. `serialVersionUID`
+    - Metamodel implementations don't reliably implement `equals` (e.g.
+    `org.hibernate.jpa.internal.metamodel.Metamodel` doesn't
+    - java.lang.reflect.Field can't be serialized with `ObjectOutputStream`
+    (fails with `java.io.NotSerializableException: java.lang.reflect.Field`) ->
+    use version field, e.g. `serialVersionUID`
     obsolete internal implementation notes:
-    - Metamodel can't be serialized with XMLEncoder because implementations don't guarantee to be persistable with it (needs a default constructor and also hibernate's MetamodelImpl doesn't provide one) -> ObjectOutputStream and ObjectInputStream
+    - Metamodel can't be serialized with XMLEncoder because implementations
+    don't guarantee to be persistable with it (needs a default constructor and
+    also hibernate's MetamodelImpl doesn't provide one) -> ObjectOutputStream
+    and ObjectInputStream
     */
     @Override
-    public void validate() throws StorageConfInitializationException {
+    public void validate() throws DerbyPersistenceStorageConfInitializationException {
         try {
-            ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(lastSchemeStorageFile));
+            ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(schemeChecksumFile));
             Map<Class<?>, Long> checksumMapOld = (Map<Class<?>, Long>) objectInputStream.readObject();
             Map<Class<?>, Long> checksumMap = generateSchemeChecksumMap(entityClasses);
             if(!checksumMap.equals(checksumMapOld)) {
-                throw new StorageConfInitializationException(String.format("The sum of checksum of class fields and methods doesn't match with the persisted map in '%s'", this.lastSchemeStorageFile.getAbsolutePath()));
+                throw new DerbyPersistenceStorageConfInitializationException(String.format("The sum of checksum of class fields and methods doesn't match with the persisted map in '%s'", this.schemeChecksumFile.getAbsolutePath()), schemeChecksumFile);
             }
         } catch (IOException | ClassNotFoundException ex) {
-            throw new StorageConfInitializationException(ex);
+            throw new DerbyPersistenceStorageConfInitializationException(ex, schemeChecksumFile);
         }
     }
 }

@@ -22,6 +22,7 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.validation.constraints.NotNull;
 import javax.validation.groups.Default;
+import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import richtercloud.document.scanner.model.validator.ValidEmailAddress;
 import richtercloud.reflection.form.builder.FieldInfo;
 import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
@@ -77,5 +78,15 @@ public class EmailAddress extends Identifiable {
      */
     public void setPgpKeyIds(List<String> pgpKeyIds) {
         this.pgpKeyIds = pgpKeyIds;
+    }
+
+    /*
+    internal implementation notes:
+    - don't include PGP key IDs because they're not interesting for toString
+    return value
+    */
+    @Override
+    public String toString() {
+        return String.format("%s", this.address);
     }
 }

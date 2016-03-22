@@ -87,6 +87,7 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.math4.stat.descriptive.DescriptiveStatistics;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -98,6 +99,7 @@ import richtercloud.document.scanner.components.OCRResultPanelFetcherProgressEve
 import richtercloud.document.scanner.components.OCRResultPanelFetcherProgressListener;
 import richtercloud.document.scanner.components.ScanResultPanelFetcher;
 import richtercloud.document.scanner.gui.conf.DerbyPersistenceStorageConf;
+import richtercloud.document.scanner.gui.conf.DerbyPersistenceStorageConfInitializationException;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.gui.conf.OCREngineConf;
 import richtercloud.document.scanner.gui.conf.StorageConf;
@@ -174,7 +176,7 @@ internal implementation notes:
 storage doesn't have to be a StorageConf instance and it's misleading if it is
 because such a StorageConf is about to be created -> use Class
  */
-public class DocumentScanner extends javax.swing.JFrame {
+public class DocumentScanner extends javax.swing.JFrame implements Managed {
 
     private static final long serialVersionUID = 1L;
     private static final Logger LOGGER = LoggerFactory.getLogger(DocumentScanner.class);
@@ -210,9 +212,9 @@ public class DocumentScanner extends javax.swing.JFrame {
     private static final String CONFIG_DIR_NAME = ".document-scanner";
     private final static String CONFIG_FILE_NAME = "document-scanner-config.xml";
     private final File configFile;
-    private MutableComboBoxModel<Class<? extends StorageConf<?>>> storageCreateDialogTypeComboBoxModel = new DefaultComboBoxModel<>();
-    private Map<Class<? extends StorageConf<?>>, StorageConfPanel<?>> storageConfPanelMap = new HashMap<>();
-    private DefaultListModel<StorageConf<?>> storageListModel = new DefaultListModel<>();
+    private MutableComboBoxModel<Class<? extends StorageConf<?,?>>> storageCreateDialogTypeComboBoxModel = new DefaultComboBoxModel<>();
+    private Map<Class<? extends StorageConf<?,?>>, StorageConfPanel<?>> storageConfPanelMap = new HashMap<>();
+    private DefaultListModel<StorageConf<?,?>> storageListModel = new DefaultListModel<>();
     private final static Set<Class<?>> ENTITY_CLASSES = Collections.unmodifiableSet(new HashSet<Class<?>>(
             Arrays.asList(APackage.class,
                     Bill.class,
@@ -276,6 +278,7 @@ public class DocumentScanner extends javax.swing.JFrame {
     };
     private final static String XML_STORAGE_FILE_NAME_DEFAULT = "xml-storage.xml";
     private File xMLStorageFile = new File(CONFIG_DIR, XML_STORAGE_FILE_NAME_DEFAULT);
+    private File derbyPersistenceStorageSchemeChecksumFile = new File(CONFIG_DIR, DerbyPersistenceStorageConf.SCHEME_CHECKSUM_FILE_NAME);
     public final static int INITIAL_QUERY_LIMIT_DEFAULT = 20;
     public final static String BIDIRECTIONAL_HELP_DIALOG_TITLE = generateApplicationWindowTitle("Bidirectional relations help", APP_NAME, APP_VERSION);
 
@@ -386,23 +389,12 @@ public class DocumentScanner extends javax.swing.JFrame {
     private final static DocumentScannerConfConverter DOCUMENT_SCANNER_CONF_CONVERTER = new DocumentScannerConfConverter();
 
     /**
-     * set all closed resource references to {@code null} in order to allow this
-     * to be run again by shutdown hook
+     * Handles all non-resource related cleanup tasks (like persistence of
+     * configuration). Sets all handled item references to {@code null} in order
+     * to allow this to be run again by shutdown hook.
      */
     private void shutdownHook() {
         LOGGER.info("running {} shutdown hooks", DocumentScanner.class);
-        if (this.device != null && this.device.isOpen()) {
-            try {
-                this.device.close();
-            } catch (IOException ex) {
-                LOGGER.error("an exception during shutdown of scanner device occured", ex);
-            }
-            this.device = null;
-        }
-        if (this.db != null) {
-            this.db.close();
-            this.db = null;
-        }
         if (this.conf != null) {
             try {
                 XStream xStream = new XStream();
@@ -413,16 +405,6 @@ public class DocumentScanner extends javax.swing.JFrame {
             }
             this.conf = null;
         }
-        if (DocumentScanner.this.conn != null) {
-            try {
-                DocumentScanner.this.conn.commit();
-                DocumentScanner.this.conn.close();
-                DriverManager.getConnection(String.format("%s;shutdown=true", DERBY_CONNECTION_URL));
-                DocumentScanner.this.conn = null;
-            } catch (SQLException ex) {
-                LOGGER.error("an exception during shutdown of the database connection occured", ex);
-            }
-        }
     }
 
     private final static File HOME_DIR = new File(System.getProperty("user.home"));
@@ -431,10 +413,14 @@ public class DocumentScanner extends javax.swing.JFrame {
     private final static String DERBY_CONNECTION_URL = String.format("jdbc:derby:%s", DATABASE_DIR.getAbsolutePath());
 
     /**
-     * Creates new form OrientdbDocumentScanner
+     * Creates new DocumentScanner which does nothing unless
      *
      * @throws richtercloud.document.scanner.gui.TesseractNotFoundException
      */
+    /*
+    internal implementation notes:
+    - resources are opened in init methods only (see https://richtercloud.de:446/doku.php?id=programming:java#resource_handling for details)
+    */
     public DocumentScanner() throws TesseractNotFoundException {
         this.parseArguments();
         assert HOME_DIR.exists();
@@ -442,13 +428,11 @@ public class DocumentScanner extends javax.swing.JFrame {
             CONFIG_DIR.mkdir();
             LOGGER.info("created inexisting configuration directory '{}'", CONFIG_DIR_NAME);
         }
-
-        Map<Object, Object> entityManagerFactoryMap = new HashMap<>();
-        entityManagerFactoryMap.put("javax.persistence.jdbc.url",
-                String.format("%s;create=%s", DERBY_CONNECTION_URL, !DATABASE_DIR.exists()));
-        this.entityManagerFactory = Persistence.createEntityManagerFactory("richtercloud_document-scanner_jar_1.0-SNAPSHOTPU",
-                entityManagerFactoryMap);
-        this.entityManager = entityManagerFactory.createEntityManager();
+        try {
+            this.tesseractOCREngineConfPanel = new TesseractOCREngineConfPanel();
+        } catch (IOException | InterruptedException ex) {
+            throw new RuntimeException(ex);
+        }
 
         this.initComponents();
 
@@ -459,7 +443,11 @@ public class DocumentScanner extends javax.swing.JFrame {
             this.loadProperties(); //initializes this.conf
         } else {
             try {
-                this.conf = new DocumentScannerConf(entityManager, messageHandler, ENTITY_CLASSES, xMLStorageFile);
+                this.conf = new DocumentScannerConf(entityManager,
+                        messageHandler,
+                        ENTITY_CLASSES,
+                        derbyPersistenceStorageSchemeChecksumFile,
+                        xMLStorageFile);
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
             }
@@ -468,7 +456,7 @@ public class DocumentScanner extends javax.swing.JFrame {
         }
 
         //after loading DocumentScannerConf
-        for(StorageConf<?> availableStorageConf : this.conf.getAvailableStorageConfs()) {
+        for(StorageConf<?,?> availableStorageConf : this.conf.getAvailableStorageConfs()) {
             this.storageListModel.addElement(availableStorageConf);
         }
 
@@ -486,11 +474,6 @@ public class DocumentScanner extends javax.swing.JFrame {
                 DocumentScanner.this.shutdownHook();
             }
         });
-        try {
-            this.tesseractOCREngineConfPanel = new TesseractOCREngineConfPanel();
-        } catch (IOException | InterruptedException ex) {
-            throw new RuntimeException(ex);
-        }
         this.oCREngineConfPanelMap.put(TesseractOCREngineConf.class, this.tesseractOCREngineConfPanel);
         this.oCREngineComboBoxModel.addElement(TesseractOCREngineConf.class);
         this.oCRDialogEngineComboBox.addItemListener(new ItemListener() {
@@ -514,20 +497,10 @@ public class DocumentScanner extends javax.swing.JFrame {
         this.oCRDialogPanel.repaint();
 
         this.storageCreateDialogTypeComboBoxModel.addElement(DerbyPersistenceStorageConf.class);
-        DerbyPersistenceStorageConfPanel derbyStorageConfPanel;
-        try {
-            derbyStorageConfPanel = new DerbyPersistenceStorageConfPanel(entityManager, messageHandler, ENTITY_CLASSES); //@TODO: replace with classpath annotation discovery
-        } catch (StorageConfInitializationException ex) {
-            messageHandler.handle(new Message(String.format("A change to the metamodel has occured and the database scheme needs to be adjusted externally. It might help to store the entities in an XML file, open the XML file and store the entities in the new format."), JOptionPane.ERROR_MESSAGE));
-            throw new RuntimeException(ex);
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
-        this.storageConfPanelMap.put(DerbyPersistenceStorageConf.class, derbyStorageConfPanel);
         this.storageCreateDialogTypeComboBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
-                Class<? extends StorageConf<?>> clazz = (Class<? extends StorageConf<?>>) e.getItem();
+                Class<? extends StorageConf<?,?>> clazz = (Class<? extends StorageConf<?,?>>) e.getItem();
                 StorageConfPanel<?> storageConfPanel = DocumentScanner.this.storageConfPanelMap.get(clazz);
                 DocumentScanner.this.storageCreateDialogPanel.removeAll();
                 DocumentScanner.this.storageCreateDialogPanel.add(storageConfPanel);
@@ -582,6 +555,61 @@ public class DocumentScanner extends javax.swing.JFrame {
             }.getType(), new JPAEntityListTypeHandler(entityManager,
                     messageHandler,
                     BIDIRECTIONAL_HELP_DIALOG_TITLE));
+    }
+
+    /**
+     * run all initialization routines which open resources which need to be
+     * referenced by {@code this} in order to be closable (if everything is
+     * initialized in the constructor and the initialization fails there's no
+     * way to close opened resources).
+     */
+    @Override
+    public void init() throws DerbyPersistenceStorageConfInitializationException, IOException {
+        Map<Object, Object> entityManagerFactoryMap = new HashMap<>();
+        entityManagerFactoryMap.put("javax.persistence.jdbc.url",
+                String.format("%s;create=%s", DERBY_CONNECTION_URL, !DATABASE_DIR.exists()));
+        this.entityManagerFactory = Persistence.createEntityManagerFactory("richtercloud_document-scanner_jar_1.0-SNAPSHOTPU",
+                entityManagerFactoryMap);
+        this.entityManager = entityManagerFactory.createEntityManager();
+
+        DerbyPersistenceStorageConfPanel derbyStorageConfPanel;
+        derbyStorageConfPanel = new DerbyPersistenceStorageConfPanel(entityManager,
+                messageHandler,
+                ENTITY_CLASSES,
+                derbyPersistenceStorageSchemeChecksumFile //schemeChecksumFile
+        ); //@TODO: replace with classpath annotation discovery
+        this.storageConfPanelMap.put(DerbyPersistenceStorageConf.class, derbyStorageConfPanel);
+    }
+
+    @Override
+    public void close() {
+        this.entityManager.close();
+        this.entityManagerFactory.close();
+
+        //DocumentScanner doesn't necessarily need to manage device. It'd be
+        //more elegant if that was done by a manager or conf class.
+        if (this.device != null && this.device.isOpen()) {
+            try {
+                this.device.close();
+            } catch (IOException ex) {
+                LOGGER.error("an exception during shutdown of scanner device occured", ex);
+            }
+            this.device = null;
+        }
+        if (this.db != null) {
+            this.db.close();
+            this.db = null;
+        }
+        if (DocumentScanner.this.conn != null) {
+            try {
+                DocumentScanner.this.conn.commit();
+                DocumentScanner.this.conn.close();
+                DriverManager.getConnection(String.format("%s;shutdown=true", DERBY_CONNECTION_URL));
+                DocumentScanner.this.conn = null;
+            } catch (SQLException ex) {
+                LOGGER.error("an exception during shutdown of the database connection occured", ex);
+            }
+        }
     }
 
     /**
@@ -1210,8 +1238,9 @@ public class DocumentScanner extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void exitMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exitMenuItemActionPerformed
-        this.shutdownHook();
         this.setVisible(false);
+        this.close();
+        this.shutdownHook();
         this.dispose();
         System.exit(EXIT_SUCCESS);
     }//GEN-LAST:event_exitMenuItemActionPerformed
@@ -1295,9 +1324,9 @@ public class DocumentScanner extends javax.swing.JFrame {
     }//GEN-LAST:event_storageCreateDialogTypeComboBoxActionPerformed
 
     private void storageCreateDialogSaveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_storageCreateDialogSaveButtonActionPerformed
-        Class<? extends StorageConf<?>> clazz = this.storageCreateDialogTypeComboBox.getItemAt(this.storageCreateDialogTypeComboBox.getSelectedIndex());
+        Class<? extends StorageConf<?,?>> clazz = this.storageCreateDialogTypeComboBox.getItemAt(this.storageCreateDialogTypeComboBox.getSelectedIndex());
         StorageConfPanel<?> responsibleStorageConfPanel = this.storageConfPanelMap.get(clazz);
-        StorageConf<?> createdStorageConf = responsibleStorageConfPanel.getStorageConf();
+        StorageConf<?,?> createdStorageConf = responsibleStorageConfPanel.getStorageConf();
         this.storageListModel.addElement(createdStorageConf);
         this.conf.getAvailableStorageConfs().add(createdStorageConf);
         this.conf.setStorageConf(createdStorageConf);
@@ -1312,7 +1341,7 @@ public class DocumentScanner extends javax.swing.JFrame {
     }//GEN-LAST:event_storageDialogCancelButtonActionPerformed
 
     private void storageDialogSelectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_storageDialogSelectButtonActionPerformed
-        StorageConf<?> selectedStorage = this.storageList.getSelectedValue();
+        StorageConf<?,?> selectedStorage = this.storageList.getSelectedValue();
         assert selectedStorage != null;
         this.conf.setStorageConf(selectedStorage);
     }//GEN-LAST:event_storageDialogSelectButtonActionPerformed
@@ -1348,6 +1377,11 @@ public class DocumentScanner extends javax.swing.JFrame {
                     List<PDPage> pages = document.getDocumentCatalog().getAllPages();
                     List<OCRSelectPanel> panels = new LinkedList<>();
                     for (PDPage page : pages) {
+                        if(progressMonitor.isCanceled()) {
+                            document.close();
+                            DocumentScanner.LOGGER.debug("tab generation aborted");
+                            return null;
+                        }
                         BufferedImage image = page.convertToImage();
                         @SuppressWarnings("serial")
                         OCRSelectPanel panel = new OCRSelectPanel(image) {
@@ -1631,14 +1665,54 @@ public class DocumentScanner extends javax.swing.JFrame {
         java.awt.EventQueue.invokeLater(new Runnable() {
             @Override
             public void run() {
+                DocumentScanner documentScanner = null;
                 try {
-                    new DocumentScanner().setVisible(true);
+                    documentScanner = new DocumentScanner();
+                    documentScanner.init();
+                    documentScanner.setVisible(true); //all shutdown and
+                        //resource closing routines need to be handled in event
+                        //handling and shutdown hooks since this doesn't block
+                        //and there's no way of acchieving that without trouble
                 } catch (TesseractNotFoundException ex) {
-                    JOptionPane.showConfirmDialog(null, //parent
-                            "The tesseract binary isn't available. Install it on your system and make sure it's executable (in doubt check if tesseract runs on the console)",
-                            DocumentScanner.generateApplicationWindowTitle("tesserate binary missing", APP_NAME, APP_VERSION),
-                            JOptionPane.OK_OPTION,
+                    String message = "The tesseract binary isn't available. Install it on your system and make sure it's executable (in doubt check if tesseract runs on the console)";
+                    LOGGER.error(message);
+                    JOptionPane.showMessageDialog(null, //parent
+                            message,
+                            DocumentScanner.generateApplicationWindowTitle("tesseract binary missing", APP_NAME, APP_VERSION),
                             JOptionPane.ERROR_MESSAGE);
+                    if(documentScanner != null) {
+                        documentScanner.setVisible(false);
+                        documentScanner.close();
+                        documentScanner.shutdownHook();
+                        documentScanner.dispose();
+                    }
+                } catch(DerbyPersistenceStorageConfInitializationException ex) {
+                    String message = String.format("A change to the metamodel has occured and the database scheme needs to be adjusted externally. It might help to store the entities in an XML file, open the XML file and store the entities in the new format. If you're sure you know what you're doing, consider removing the old scheme checksum file '%s' and restart the application.",
+                            ex.getSchemeChecksumFile().getAbsolutePath());
+                    LOGGER.error(message, ex);
+                    JOptionPane.showMessageDialog(null, //parent
+                            message,
+                            DocumentScanner.generateApplicationWindowTitle("unexpected exception occurred", APP_NAME, APP_VERSION),
+                            JOptionPane.ERROR_MESSAGE);
+                    if(documentScanner != null) {
+                        documentScanner.setVisible(false);
+                        documentScanner.close();
+                        documentScanner.shutdownHook();
+                        documentScanner.dispose();
+                    }
+                } catch(Exception ex) {
+                    String message = String.format("The unexpected exception '%s' occured", ExceptionUtils.getRootCauseMessage(ex));
+                    LOGGER.error(message, ex);
+                    JOptionPane.showMessageDialog(null, //parent
+                            message,
+                            DocumentScanner.generateApplicationWindowTitle("unexpected exception occurred", APP_NAME, APP_VERSION),
+                            JOptionPane.ERROR_MESSAGE);
+                    if(documentScanner != null) {
+                        documentScanner.setVisible(false);
+                        documentScanner.close();
+                        documentScanner.shutdownHook();
+                        documentScanner.dispose();
+                    }
                 }
             }
         });
@@ -1793,7 +1867,7 @@ public class DocumentScanner extends javax.swing.JFrame {
     private javax.swing.JPanel storageCreateDialogPanel;
     private javax.swing.JButton storageCreateDialogSaveButton;
     private javax.swing.JSeparator storageCreateDialogSeparator;
-    private javax.swing.JComboBox<Class<? extends StorageConf<?>>> storageCreateDialogTypeComboBox;
+    private javax.swing.JComboBox<Class<? extends StorageConf<?,?>>> storageCreateDialogTypeComboBox;
     private javax.swing.JLabel storageCreateDialogTypeLabel;
     private javax.swing.JDialog storageDialog;
     private javax.swing.JButton storageDialogCancelButton;
@@ -1802,7 +1876,7 @@ public class DocumentScanner extends javax.swing.JFrame {
     private javax.swing.JButton storageDialogNewButton;
     private javax.swing.JButton storageDialogSelectButton;
     private javax.swing.JLabel storageLabel;
-    private javax.swing.JList<StorageConf<?>> storageList;
+    private javax.swing.JList<StorageConf<?,?>> storageList;
     private javax.swing.JScrollPane storageListScrollPane;
     private javax.swing.JMenu storageSelectionMenu;
     private javax.swing.JMenuItem storageSelectionMenuItem;

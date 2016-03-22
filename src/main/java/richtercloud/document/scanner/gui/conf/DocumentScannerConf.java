@@ -34,14 +34,16 @@ public class DocumentScannerConf implements Serializable {
     private final static OCREngineConf<?> OCR_ENGINE_CONF_DEFAULT = new TesseractOCREngineConf();
     private static final Currency DEFAULT_CURRENCY_DEFAULT = Currency.getInstance("EUR");
     private final static boolean AUTO_GENERATE_IDS_DEFAULT = true;
-    private static Set<StorageConf<?>> generateAvailableStorageConfsDefault(EntityManager entityManager,
+    private static Set<StorageConf<?,?>> generateAvailableStorageConfsDefault(EntityManager entityManager,
             MessageHandler messageHandler,
             Set<Class<?>> entityClasses,
+            File schemeChecksumFile,
             File xMLStorageFile) throws IOException {
-        Set<StorageConf<?>> availableStorageConfs = new HashSet<>();
+        Set<StorageConf<?,?>> availableStorageConfs = new HashSet<>();
         availableStorageConfs.add(new DerbyPersistenceStorageConf(entityManager,
                 messageHandler,
-                entityClasses));
+                entityClasses,
+                schemeChecksumFile));
         availableStorageConfs.add(new XMLStorageConf(xMLStorageFile));
         return availableStorageConfs;
     }
@@ -52,13 +54,13 @@ public class DocumentScannerConf implements Serializable {
      *
      * @see #availableStorageConfs
      */
-    private StorageConf<?> storageConf;
+    private StorageConf<?,?> storageConf;
     /**
      * Available storage configurations (including all changes done to them).
      *
      * @see #storageConf
      */
-    private Set<StorageConf<?>> availableStorageConfs = new HashSet<>();
+    private Set<StorageConf<?,?>> availableStorageConfs = new HashSet<>();
     private OCREngineConf<?> oCREngineConf = OCR_ENGINE_CONF_DEFAULT;
     /**
      * The currency initially displayed in data entry components (e.g. for
@@ -78,17 +80,22 @@ public class DocumentScannerConf implements Serializable {
     public DocumentScannerConf(EntityManager entityManager,
             MessageHandler messageHandler,
             Set<Class<?>> entityClasses,
+            File schemeChecksumFile,
             File xMLStorageFile) throws IOException {
-        this(new DerbyPersistenceStorageConf(entityManager, messageHandler, entityClasses),
+        this(new DerbyPersistenceStorageConf(entityManager,
+                messageHandler,
+                entityClasses,
+                schemeChecksumFile),
                 generateAvailableStorageConfsDefault(entityManager,
                         messageHandler,
                         entityClasses,
+                        schemeChecksumFile,
                         xMLStorageFile),
                 AUTO_GENERATE_IDS_DEFAULT);
     }
 
     public DocumentScannerConf(StorageConf storageConf,
-            Set<StorageConf<?>> availableStorageConfs,
+            Set<StorageConf<?,?>> availableStorageConfs,
             boolean autoGenerateIDs) {
         this.storageConf = storageConf;
         this.availableStorageConfs = availableStorageConfs;
@@ -159,14 +166,14 @@ public class DocumentScannerConf implements Serializable {
     /**
      * @return the storageConf
      */
-    public StorageConf<?> getStorageConf() {
+    public StorageConf<?,?> getStorageConf() {
         return this.storageConf;
     }
 
     /**
      * @param storageConf the storageConf to set
      */
-    public void setStorageConf(StorageConf<?> storageConf) {
+    public void setStorageConf(StorageConf<?,?> storageConf) {
         this.storageConf = storageConf;
     }
 
@@ -184,11 +191,11 @@ public class DocumentScannerConf implements Serializable {
         this.defaultCurrency = defaultCurrency;
     }
 
-    public void setAvailableStorageConfs(Set<StorageConf<?>> availableStorageConfs) {
+    public void setAvailableStorageConfs(Set<StorageConf<?,?>> availableStorageConfs) {
         this.availableStorageConfs = availableStorageConfs;
     }
 
-    public Set<StorageConf<?>> getAvailableStorageConfs() {
+    public Set<StorageConf<?,?>> getAvailableStorageConfs() {
         return availableStorageConfs;
     }
 

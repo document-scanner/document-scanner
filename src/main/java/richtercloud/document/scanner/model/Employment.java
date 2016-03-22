@@ -100,4 +100,9 @@ public class Employment extends Identifiable {
         this.theEnd = theEnd;
     }
 
+    @Override
+    public String toString() {
+        return String.format("%s -> %s at %s", this.getTheBegin(), this.getTheEnd(), this.getCompany());
+    }
+
 }

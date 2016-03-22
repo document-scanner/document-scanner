@@ -14,6 +14,7 @@
  */
 package richtercloud.document.scanner.gui.conf;
 
+import richtercloud.document.scanner.gui.Managed;
 import richtercloud.document.scanner.storage.Storage;
 
 /**
@@ -21,7 +22,7 @@ import richtercloud.document.scanner.storage.Storage;
  * @author richter
  * @param <S> the type of the storage managed by this configuration
  */
-public interface StorageConf<S extends Storage> {
+public interface StorageConf<S extends Storage, E extends StorageConfInitializationException> {
 
     /**
      * The managed instance of {@link Storage}.
@@ -35,5 +36,5 @@ public interface StorageConf<S extends Storage> {
      * guide if changes were detected).
      * @throws richtercloud.document.scanner.gui.conf.StorageConfInitializationException
      */
-    void validate() throws StorageConfInitializationException;
+    void validate() throws E;
 }

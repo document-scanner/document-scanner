@@ -28,7 +28,7 @@ internal implementation notes:
 cancel methods because buttons can not be included in the panel itself in order
 to provide sane GUI elements
 */
-public abstract class StorageConfPanel<C extends StorageConf<?>> extends JPanel {
+public abstract class StorageConfPanel<C extends StorageConf<?,?>> extends JPanel {
     private static final long serialVersionUID = 1L;
 
     public abstract C getStorageConf();

@@ -57,4 +57,15 @@ public class Transport extends Identifiable {
     public void setTickets(List<TransportTicket> tickets) {
         this.tickets = tickets;
     }
+
+    @Override
+    public String toString() {
+        if(this.getTickets() == null || this.getTickets().isEmpty()) {
+            return "(empty)";
+        }
+        assert !this.getTickets().contains(null);
+        TransportTicket lastTicket = this.getTickets().get(this.getTickets().size()-1);
+        return String.format("%s: %s -> %s", this.getTickets().get(0).getTheDate(), this.getTickets().get(0).getWaypoints().get(0), lastTicket.getWaypoints().get(lastTicket.getWaypoints().size()-1));
+    }
+
 }

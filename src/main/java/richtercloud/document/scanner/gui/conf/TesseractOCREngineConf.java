@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import richtercloud.document.scanner.ocr.OCREngine;
 import richtercloud.document.scanner.ocr.OCREngineConfInfo;
 import richtercloud.document.scanner.ocr.TesseractOCREngine;
 
@@ -29,9 +30,13 @@ import richtercloud.document.scanner.ocr.TesseractOCREngine;
 @OCREngineConfInfo(name = "Tesseract OCR")
 public class TesseractOCREngineConf implements Serializable, OCREngineConf<TesseractOCREngine> {
     private static final long serialVersionUID = 1L;
-    private static TesseractOCREngine instance;
     private final static List<String> SELECTED_LANGUAGES_DEFAULT = Collections.unmodifiableList(new LinkedList<>(Arrays.asList("deu")));
-    private List<String> selectedLanguages = SELECTED_LANGUAGES_DEFAULT;
+    /**
+     * The {@link OCREngine} which this configuration manages (initialized
+     * lazily).
+     */
+    private TesseractOCREngine oCREngine;
+    private List<String> selectedLanguages = new LinkedList<>(SELECTED_LANGUAGES_DEFAULT);
     /**
      * the {@code tesseract} binary
      */
@@ -56,10 +61,10 @@ public class TesseractOCREngineConf implements Serializable, OCREngineConf<Tesse
 
     @Override
     public TesseractOCREngine getOCREngine() {
-        if(instance == null) {
-            instance = new TesseractOCREngine(this.selectedLanguages);
+        if(oCREngine == null) {
+            oCREngine = new TesseractOCREngine(new LinkedList<>(SELECTED_LANGUAGES_DEFAULT));
         }
-        return instance;
+        return oCREngine;
     }
 
     public String getTesseract() {

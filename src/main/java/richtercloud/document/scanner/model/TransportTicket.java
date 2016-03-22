@@ -31,7 +31,6 @@ import javax.validation.constraints.Size;
 import javax.validation.groups.Default;
 import richtercloud.document.scanner.components.annotations.OCRResult;
 import richtercloud.document.scanner.components.annotations.ScanResult;
-import richtercloud.document.scanner.model.validator.NoEmptyEntriesList;
 import richtercloud.reflection.form.builder.FieldInfo;
 import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
 
@@ -102,8 +101,12 @@ public class TransportTicket extends Identifiable {
     /**
      * @return the waypoints
      */
+    /*
+    internal implementation notes:
+    - returning an unmodifiable collection causes merging entities to fail
+    */
     public List<String> getWaypoints() {
-        return Collections.unmodifiableList(this.waypoints);
+        return this.waypoints;
     }
 
     /**
@@ -141,5 +144,10 @@ public class TransportTicket extends Identifiable {
 
     public byte[] getScanData() {
         return scanData;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s: %s -> %s", this.getTheDate(), this.getWaypoints().get(0), this.getWaypoints().get(this.getWaypoints().size()-1));
     }
 }

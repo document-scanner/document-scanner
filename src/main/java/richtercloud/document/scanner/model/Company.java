@@ -67,16 +67,20 @@ public class Company extends Identifiable {
     @OneToMany(fetch = FetchType.EAGER)
     @NoEmptyEntriesList
     private List<FinanceAccount> accounts;
+    @OneToMany
+    @NoEmptyEntriesList
+    private List<TelephoneNumber> telephoneNumbers;
 
     protected Company() {
     }
 
-    public Company(Long id, String name, List<String> allNames, List<Address> addresses, List<EmailAddress> emails) {
+    public Company(Long id, String name, List<String> allNames, List<Address> addresses, List<EmailAddress> emails, List<TelephoneNumber> telephoneNumbers) {
         super(id);
         this.name = name;
         this.allNames = allNames;
         this.addresses = addresses;
         this.emails = emails;
+        this.telephoneNumbers = telephoneNumbers;
     }
 
     public String getName() {
@@ -141,5 +145,22 @@ public class Company extends Identifiable {
      */
     public void setAccounts(List<FinanceAccount> accounts) {
         this.accounts = accounts;
+    }
+
+    public List<TelephoneNumber> getTelephoneNumbers() {
+        return telephoneNumbers;
+    }
+
+    public void setTelephoneNumbers(List<TelephoneNumber> telephoneNumbers) {
+        this.telephoneNumbers = telephoneNumbers;
+    }
+
+    @Override
+    public String toString() {
+        if(allNames != null && !allNames.isEmpty()) {
+            return String.join(" ", allNames);
+        }else  {
+            return name;
+        }
     }
 }

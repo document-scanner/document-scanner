@@ -179,4 +179,9 @@ public class Payment extends Identifiable {
     public void setDocuments(List<Document> documents) {
         this.documents = documents;
     }
+
+    @Override
+    public String toString() {
+        return String.format("%s: %s -> %s: %s", this.getAccount(), this.getSender(), this.getRecipient(), this.getAmount());
+    }
 }

@@ -18,6 +18,7 @@ import java.util.Date;
 import javax.persistence.Basic;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.ManyToOne;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
@@ -38,14 +39,20 @@ public class TelephoneCall extends CommunicationItem {
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Transcription", description = "The transcription of the call")
     private String transcription;
+    @NotNull
+    @Basic
+    @ManyToOne
+    @FieldInfo(name = "Telephone number", description = "The telephone number used for the call")
+    private TelephoneNumber telephoneNumber;
 
     protected TelephoneCall() {
     }
 
-    public TelephoneCall(Date begin, Date end, String transcription, Long id, Company sender, Company recipient) {
+    public TelephoneCall(Date begin, Date end, String transcription, Long id, Company sender, Company recipient, TelephoneNumber telephoneNumber) {
         super(id, sender, recipient, begin);
         this.theEnd = end;
         this.transcription = transcription;
+        this.telephoneNumber = telephoneNumber;
     }
 
     /**
@@ -74,5 +81,18 @@ public class TelephoneCall extends CommunicationItem {
      */
     public void setTranscription(String transcription) {
         this.transcription = transcription;
+    }
+
+    public TelephoneNumber getTelephoneNumber() {
+        return telephoneNumber;
+    }
+
+    public void setTelephoneNumber(TelephoneNumber telephoneNumber) {
+        this.telephoneNumber = telephoneNumber;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s (%s)", super.toString(), this.getTelephoneNumber());
     }
 }

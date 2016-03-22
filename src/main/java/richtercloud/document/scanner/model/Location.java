@@ -57,4 +57,9 @@ public class Location extends Identifiable {
         this.description = description;
     }
 
+    @Override
+    public String toString() {
+        return this.getDescription();
+    }
+
 }

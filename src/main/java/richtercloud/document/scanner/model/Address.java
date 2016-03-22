@@ -34,6 +34,7 @@ public class Address implements Serializable {
     private String street;
     private String number;
     private String region;
+    private String zipcode;
     private String city;
     private String country;
     private String additional;
@@ -41,9 +42,15 @@ public class Address implements Serializable {
     protected Address() {
     }
 
-    public Address(String street, String number, String region, String city, String country) {
+    public Address(String street,
+            String number,
+            String zipcode,
+            String region,
+            String city,
+            String country) {
         this.street = street;
         this.number = number;
+        this.zipcode = zipcode;
         this.region = region;
         this.city = city;
         this.country = country;
@@ -75,6 +82,14 @@ public class Address implements Serializable {
      */
     public void setNumber(String number) {
         this.number = number;
+    }
+
+    public String getZipcode() {
+        return zipcode;
+    }
+
+    public void setZipcode(String zipcode) {
+        this.zipcode = zipcode;
     }
 
     /**
@@ -131,5 +146,20 @@ public class Address implements Serializable {
      */
     public void setAdditional(String additional) {
         this.additional = additional;
+    }
+
+    @Override
+    public String toString() {
+        String regionString = "";
+        if(this.getRegion() != null && !this.getRegion().isEmpty()) {
+            regionString = String.format(" (%s)", this.getRegion());
+        }
+        return String.format("%s %s, %s %s%s, %s",
+                this.getStreet(),
+                this.getNumber(),
+                this.getZipcode(),
+                this.getCity(),
+                regionString,
+                this.getCountry());
     }
 }

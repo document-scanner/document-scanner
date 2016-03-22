@@ -160,4 +160,13 @@ public class FinanceAccount extends Identifiable {
         this.owner = owner;
     }
 
+    @Override
+    public String toString() {
+        if(this.getIban() != null && this.getBic() != null) {
+            return String.format("%s %s of %s", this.getIban(), this.getBic(), this.getOwner());
+        }else {
+            return String.format("%s %s of %s", this.getNumber(), this.getBlz(), this.getOwner());
+        }
+    }
+
 }

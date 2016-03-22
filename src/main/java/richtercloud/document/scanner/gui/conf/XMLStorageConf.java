@@ -25,7 +25,7 @@ import richtercloud.document.scanner.storage.XMLStorage;
  *
  * @author richter
  */
-public class XMLStorageConf implements StorageConf<XMLStorage> {
+public class XMLStorageConf implements StorageConf<XMLStorage, StorageConfInitializationException> {
     private File file;
     private XMLStorage xMLStorage;
 

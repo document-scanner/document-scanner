@@ -12,36 +12,31 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.gui.conf.model;
+package richtercloud.document.scanner.model;
 
-import java.io.Serializable;
-import javax.persistence.Entity;
-import javax.persistence.Id;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+import static org.junit.Assert.*;
+import org.junit.Test;
 
 /**
  *
  * @author richter
  */
-@Entity
-public class TestClass implements Serializable {
-    private static final long serialVersionUID = 1L;
-    @Id
-    private Long id;
-    private String a;
+public class EmailAddressTest extends AbstractTest {
 
-    protected TestClass() {
+    /**
+     * Test of toString method, of class EmailAddress.
+     */
+    @Test
+    public void testToString() {
+        String address = "x@y.com";
+        List<String> pgpKeyIds = new LinkedList<>(Arrays.asList("1e2", "22"));
+        EmailAddress instance = new EmailAddress(getRandom().nextLong(), address, pgpKeyIds);
+        String expResult = address;
+        String result = instance.toString();
+        assertEquals(expResult, result);
     }
 
-    public TestClass(Long id, String a) {
-        this.id = id;
-        this.a = a;
-    }
-
-    public String getA() {
-        return a;
-    }
-
-    public Long getId() {
-        return id;
-    }
 }

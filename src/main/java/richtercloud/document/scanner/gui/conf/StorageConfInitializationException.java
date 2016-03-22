@@ -14,6 +14,8 @@
  */
 package richtercloud.document.scanner.gui.conf;
 
+import java.io.File;
+
 /**
  *
  * @author richter
