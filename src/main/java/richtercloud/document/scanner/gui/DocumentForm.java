@@ -550,6 +550,8 @@ public class DocumentForm extends javax.swing.JPanel {
                 GroupLayout.DEFAULT_SIZE,
                 Short.MAX_VALUE));
         entityContentPanel.validate();
+        entityEditingSplitPane.setDividerLocation(0.66); //invoke after
+            //entityContentPanel.validate
     }//GEN-LAST:event_editingModeButtonActionPerformed
 
     private void entityEditingClassComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_entityEditingClassComboBoxActionPerformed
