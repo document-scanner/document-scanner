@@ -50,6 +50,18 @@ import richtercloud.reflection.form.builder.message.MessageHandler;
  * @author richter
  */
 public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, FieldUpdateEvent<Object>> {
+    private final static ComponentResettable<OCRResultPanel> OCR_RESULT_PANEL_COMPONENT_RESETTABLE = new ComponentResettable<OCRResultPanel>() {
+        @Override
+        public void reset(OCRResultPanel component) {
+            component.reset();
+        }
+    };
+    private final static ComponentResettable<ScanResultPanel> SCAN_RESULT_PANEL_COMPONENT_RESETTABLE = new ComponentResettable<ScanResultPanel>() {
+        @Override
+        public void reset(ScanResultPanel component) {
+            component.reset();
+        }
+    };
     private final OCRResultPanelFetcher oCRResultPanelFetcher;
     private final ScanResultPanelFetcher scanResultPanelFetcher;
 
@@ -78,7 +90,15 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
     }
 
     @Override
-    public Pair<JComponent, ComponentResettable> handle0(Field field, Object instance, final FieldUpdateListener updateListener, JPAReflectionFormBuilder reflectionFormBuilder) throws IllegalArgumentException, IllegalAccessException, FieldHandlingException, InvocationTargetException, NoSuchMethodException, InstantiationException {
+    protected Pair<JComponent, ComponentResettable<?>> handle0(Field field,
+            Object instance,
+            final FieldUpdateListener updateListener,
+            JPAReflectionFormBuilder reflectionFormBuilder) throws IllegalArgumentException,
+            IllegalAccessException,
+            FieldHandlingException,
+            InvocationTargetException,
+            NoSuchMethodException,
+            InstantiationException {
         if(field.getAnnotation(OCRResult.class) != null) {
             if(field == null) {
                 throw new IllegalArgumentException("field mustn't be null");
@@ -93,7 +113,8 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
                     updateListener.onUpdate(new FieldUpdateEvent<>(event.getNewValue()));
                 }
             });
-            return new ImmutablePair<JComponent, ComponentResettable>(retValue, null);
+            return new ImmutablePair<JComponent, ComponentResettable<?>>(retValue,
+                    OCR_RESULT_PANEL_COMPONENT_RESETTABLE);
         }
         if(field.getAnnotation(ScanResult.class) != null) {
             if(field == null) {
@@ -107,7 +128,8 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
                     updateListener.onUpdate(new FieldUpdateEvent<>(event.getNewValue()));
                 }
             });
-            return new ImmutablePair<JComponent, ComponentResettable>(retValue, null);
+            return new ImmutablePair<JComponent, ComponentResettable<?>>(retValue,
+                    SCAN_RESULT_PANEL_COMPONENT_RESETTABLE);
         }
         return super.handle0(field, instance, updateListener, reflectionFormBuilder);
     }
