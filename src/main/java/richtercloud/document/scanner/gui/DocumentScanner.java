@@ -53,13 +53,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import javax.imageio.ImageIO;
 import javax.persistence.EntityManager;
@@ -91,7 +89,6 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.math4.stat.descriptive.DescriptiveStatistics;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
-import org.jscience.economics.money.Currency;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.components.OCRResultPanelFetcher;
@@ -103,7 +100,6 @@ import richtercloud.document.scanner.gui.conf.DerbyPersistenceStorageConfInitial
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.gui.conf.OCREngineConf;
 import richtercloud.document.scanner.gui.conf.StorageConf;
-import richtercloud.document.scanner.gui.conf.StorageConfInitializationException;
 import richtercloud.document.scanner.gui.conf.TesseractOCREngineConf;
 import richtercloud.document.scanner.gui.engineconf.OCREngineConfPanel;
 import richtercloud.document.scanner.gui.storageconf.StorageConfPanel;
@@ -133,10 +129,11 @@ import richtercloud.reflection.form.builder.AnyType;
 import richtercloud.reflection.form.builder.FieldRetriever;
 import richtercloud.reflection.form.builder.ReflectionFormPanel;
 import richtercloud.reflection.form.builder.components.AmountMoneyCurrencyStorage;
-import richtercloud.reflection.form.builder.components.AmountMoneyPanel;
+import richtercloud.reflection.form.builder.components.AmountMoneyExchangeRateRetriever;
 import richtercloud.reflection.form.builder.components.AmountMoneyUsageStatisticsStorage;
 import richtercloud.reflection.form.builder.components.FileAmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.FileAmountMoneyUsageStatisticsStorage;
+import richtercloud.reflection.form.builder.components.FixerAmountMoneyExchangeRateRetriever;
 import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
 import richtercloud.reflection.form.builder.fieldhandler.MappingFieldHandler;
 import richtercloud.reflection.form.builder.fieldhandler.factory.AmountMoneyMappingFieldHandlerFactory;
@@ -176,7 +173,7 @@ internal implementation notes:
 storage doesn't have to be a StorageConf instance and it's misleading if it is
 because such a StorageConf is about to be created -> use Class
  */
-public class DocumentScanner extends javax.swing.JFrame implements Managed {
+public class DocumentScanner extends javax.swing.JFrame implements Managed<Exception> {
 
     private static final long serialVersionUID = 1L;
     private static final Logger LOGGER = LoggerFactory.getLogger(DocumentScanner.class);
@@ -255,6 +252,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed {
     }
     private final AmountMoneyUsageStatisticsStorage amountMoneyUsageStatisticsStorage;
     private final AmountMoneyCurrencyStorage amountMoneyCurrencyStorage;
+    private final AmountMoneyExchangeRateRetriever amountMoneyConversionRateRetriever = new FixerAmountMoneyExchangeRateRetriever();
     private final static String AMOUNT_MONEY_USAGE_STATISTICS_STORAGE_FILE_NAME = "currency-usage-statistics.xml";
     private final static String AMOUNT_MONEY_CURRENCY_STORAGE_FILE_NAME = "currencies.xml";
     private final Map<java.lang.reflect.Type, TypeHandler<?, ?,?, ?>> typeHandlerMapping;
@@ -519,25 +517,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed {
         });
         File amountMoneyUsageStatisticsStorageFile = new File(CONFIG_DIR, AMOUNT_MONEY_USAGE_STATISTICS_STORAGE_FILE_NAME);
         File amountMoneyCurrencyStorageFile = new File(CONFIG_DIR, AMOUNT_MONEY_CURRENCY_STORAGE_FILE_NAME);
-        if (!amountMoneyCurrencyStorageFile.exists()) {
-            try {
-                amountMoneyCurrencyStorageFile.createNewFile();
-                Set<Currency> additionalCurrencies = new HashSet<>(AmountMoneyPanel.DEFAULT_CURRENCIES);
-                XStream xStream = new XStream();
-                xStream.toXML(additionalCurrencies, new FileOutputStream(amountMoneyCurrencyStorageFile));
-            } catch (IOException ex) {
-                throw new RuntimeException(String.format("creation of file '%s' failed", amountMoneyCurrencyStorageFile.getAbsolutePath()));
-            }
-        }
-        if (!amountMoneyUsageStatisticsStorageFile.exists()) {
-            try {
-                amountMoneyUsageStatisticsStorageFile.createNewFile();
-                Properties properties = new Properties();
-                properties.storeToXML(new FileOutputStream(amountMoneyUsageStatisticsStorageFile), new Date().toString());
-            } catch (IOException ex) {
-                throw new RuntimeException(String.format("creation of file '%s' failed", amountMoneyCurrencyStorageFile.getAbsolutePath()));
-            }
-        }
         try {
             this.amountMoneyUsageStatisticsStorage = new FileAmountMoneyUsageStatisticsStorage(amountMoneyUsageStatisticsStorageFile);
         } catch (IOException ex) {
@@ -1559,6 +1538,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed {
         ScanResultPanelFetcher scanResultPanelFetcher = new DocumentTabScanResultPanelFetcher(oCRSelectComponent);
         AmountMoneyMappingFieldHandlerFactory embeddableFieldHandlerFactory = new AmountMoneyMappingFieldHandlerFactory(amountMoneyUsageStatisticsStorage,
                 amountMoneyCurrencyStorage,
+                amountMoneyConversionRateRetriever,
                 messageHandler);
         FieldHandler embeddableFieldHandler = new MappingFieldHandler(embeddableFieldHandlerFactory.generateClassMapping(),
                 embeddableFieldHandlerFactory.generatePrimitiveMapping());
@@ -1571,6 +1551,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed {
                 messageHandler,
                 amountMoneyUsageStatisticsStorage,
                 amountMoneyCurrencyStorage,
+                amountMoneyConversionRateRetriever,
                 BIDIRECTIONAL_HELP_DIALOG_TITLE);
         ToManyTypeHandler toManyTypeHandler = new ToManyTypeHandler(entityManager,
                 typeHandlerMapping,
