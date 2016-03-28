@@ -21,10 +21,6 @@ import java.beans.PropertyChangeListener;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JDialog;
 import javax.swing.JOptionPane;
 import javax.swing.ProgressMonitor;
@@ -40,14 +36,14 @@ import richtercloud.reflection.form.builder.message.MessageHandler;
  */
 public class OCRResultPanel extends javax.swing.JPanel {
     private static final long serialVersionUID = 1L;
-    private OCRResultPanelFetcher retriever;
+    private OCRResultPanelFetcher oCRResultPanelFetcher;
     private final Set<OCRResultPanelUpdateListener> updateListeners = new HashSet<>();
     /**
      * Whether the OCR recognition process can be canceled with a dialog control
      * (modal dialog is displayed while the process is in progress)
      */
     private boolean cancelable = true;
-    private MessageHandler messageHandler;
+    private final MessageHandler messageHandler;
     private final String initialValue;
 
     public OCRResultPanel(OCRResultPanelFetcher retriever,
@@ -64,10 +60,11 @@ public class OCRResultPanel extends javax.swing.JPanel {
             boolean cancelable,
             MessageHandler messageHandler) {
         this.initComponents();
-        this.retriever = retriever;
+        this.oCRResultPanelFetcher = retriever;
         this.oCRResultTextArea.setText(initialValue);
         this.cancelable = cancelable;
         this.initialValue = initialValue;
+        this.messageHandler = messageHandler;
         reset0();
     }
 
@@ -150,7 +147,7 @@ public class OCRResultPanel extends javax.swing.JPanel {
     private void oCRResultButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_oCRResultButtonActionPerformed
         String oCRResult = null;
         if(!cancelable) {
-            oCRResult = this.retriever.fetch();
+            oCRResult = this.oCRResultPanelFetcher.fetch();
         }else {
             final JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this));
             dialog.setModal(true);
@@ -171,26 +168,26 @@ public class OCRResultPanel extends javax.swing.JPanel {
                 };
                 @Override
                 public String doInBackground() {
-                    retriever.addProgressListener(progressListener);
+                    oCRResultPanelFetcher.addProgressListener(progressListener);
                     try {
                         Thread thread1 = new Thread() {
                             @Override
                             public void run() {
                                 while(!isDone()) {
                                     if(progressMonitor.isCanceled()) {
-                                        retriever.cancelFetch();
+                                        oCRResultPanelFetcher.cancelFetch();
                                         break;
                                     }
                                     try {
                                         Thread.sleep(100);
                                     } catch (InterruptedException ex) {
-                                        Logger.getLogger(OCRResultPanel.class.getName()).log(Level.SEVERE, null, ex);
+                                        throw new RuntimeException(ex);
                                     }
                                 }
                             }
                         };
                         thread1.start();
-                        String retValue = retriever.fetch();
+                        String retValue = oCRResultPanelFetcher.fetch();
                         return retValue;
                     }catch(Exception ex) {
                         progressMonitor.setProgress(101);
@@ -202,7 +199,7 @@ public class OCRResultPanel extends javax.swing.JPanel {
 
                 @Override
                 protected void done() {
-                    retriever.removeProgressListener(progressListener);
+                    oCRResultPanelFetcher.removeProgressListener(progressListener);
                     progressMonitor.setProgress(101);
                 }
             };
@@ -227,7 +224,7 @@ public class OCRResultPanel extends javax.swing.JPanel {
             try {
                 oCRResult = oCRThread.get();
             } catch (InterruptedException | ExecutionException ex) {
-                Logger.getLogger(OCRResultPanel.class.getName()).log(Level.SEVERE, null, ex);
+                throw new RuntimeException(ex);
             }
         }
         if(oCRResult != null) {

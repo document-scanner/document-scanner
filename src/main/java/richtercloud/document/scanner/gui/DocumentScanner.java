@@ -58,7 +58,14 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.ThreadPoolExecutor;
 import javax.imageio.ImageIO;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -86,6 +93,8 @@ import javax.swing.event.TableModelListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.math4.stat.descriptive.DescriptiveStatistics;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -119,8 +128,12 @@ import richtercloud.document.scanner.model.Shipping;
 import richtercloud.document.scanner.model.TelephoneCall;
 import richtercloud.document.scanner.model.Transport;
 import richtercloud.document.scanner.model.TransportTicket;
+import richtercloud.document.scanner.ocr.DelegatingOCREngineFactory;
 import richtercloud.document.scanner.ocr.OCREngine;
 import richtercloud.document.scanner.ocr.OCREngineConfInfo;
+import richtercloud.document.scanner.ocr.OCREngineFactory;
+import richtercloud.document.scanner.ocr.TesseractOCREngine;
+import richtercloud.document.scanner.ocr.TesseractOCREngineFactory;
 import richtercloud.document.scanner.setter.IdPanelSetter;
 import richtercloud.document.scanner.setter.SpinnerSetter;
 import richtercloud.document.scanner.setter.TextFieldSetter;
@@ -379,7 +392,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         @Override
         public boolean canConvert(Class clazz) {
             boolean retValue = EntityManager.class.isAssignableFrom(clazz)
-                    || java.awt.Component.class.isAssignableFrom(clazz);
+                    || java.awt.Component.class.isAssignableFrom(clazz)
+                    || Process.class.isAssignableFrom(clazz);
             return retValue;
         }
     }
@@ -1376,7 +1390,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                     }
                     document.close();
                     OCRSelectComponent oCRSelectComponent = new OCRSelectComponent(panels);
-                    OCREngine oCREngine = DocumentScanner.this.retrieveOCREninge();
+                    OCREngine oCREngine = DocumentScanner.this.retrieveOCREngine();
                     if (oCREngine == null) {
                         //a warning in form of a dialog has been given
                         progressMonitor.setProgress(100);
@@ -1510,7 +1524,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 }
             };
             OCRSelectComponent oCRSelectComponent = new OCRSelectComponent(panel);
-            OCREngine oCREngine = this.retrieveOCREninge();
+            OCREngine oCREngine = this.retrieveOCREngine();
             if (oCREngine == null) {
                 //a warning in form of a dialog has been given
                 return;
@@ -1534,7 +1548,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
 
     private DocumentTab generateDocumentTab(final OCRSelectComponent oCRSelectComponent,
             final OCREngine oCREngine) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-        OCRResultPanelFetcher oCRResultPanelFetcher = new DocumentTabOCRResultPanelFetcher(oCRSelectComponent, oCREngine);
+        OCRResultPanelFetcher oCRResultPanelFetcher = new DocumentTabOCRResultPanelFetcher(oCRSelectComponent);
         ScanResultPanelFetcher scanResultPanelFetcher = new DocumentTabScanResultPanelFetcher(oCRSelectComponent);
         AmountMoneyMappingFieldHandlerFactory embeddableFieldHandlerFactory = new AmountMoneyMappingFieldHandlerFactory(amountMoneyUsageStatisticsStorage,
                 amountMoneyCurrencyStorage,
@@ -1593,7 +1607,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             //image panels only contain selections of width or height <= 0 -> skip silently
             return;
         }
-        OCREngine oCREngine = this.retrieveOCREninge();
+        OCREngine oCREngine = this.retrieveOCREngine();
         if (oCREngine == null) {
             //a warning in form of a dialog has been given
             return;
@@ -1607,7 +1621,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         this.messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
     }
 
-    private OCREngine retrieveOCREninge() {
+    private OCREngine retrieveOCREngine() {
         if (this.conf.getoCREngineConf() == null) {
             JOptionPane.showMessageDialog(this, //parent
                     "OCREngine isn't set up",
@@ -1699,17 +1713,31 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         });
     }
 
-    private class DocumentTabOCRResultPanelFetcher implements OCRResultPanelFetcher {
+    private final static OCREngineFactory TESSERACT_OCRENGINE_FACTORY = new DelegatingOCREngineFactory();
 
+
+    private class DocumentTabOCRResultPanelFetcher implements OCRResultPanelFetcher {
         private final List<Double> stringBufferLengths = new ArrayList<>();
         private final OCRSelectComponent oCRSelectComponent;
-        private final OCREngine oCREngine;
         private final Set<OCRResultPanelFetcherProgressListener> progressListeners = new HashSet<>();
         private boolean cancelRequested = false;
+        /**
+         * Since {@link OCRSelectPanel} has an immutable {@code image} property
+         * it can be used well as cache map key.
+         */
+        private final Map<OCRSelectPanel, String> fetchCache = new HashMap<>();
+        /**
+         * Record all used {@link OCREngine}s in order to be able to cancel if
+         * {@link #cancelFetch() } is invoked.
+         */
+        /*
+        internal implementation notes:
+        - is a Queue in order to be able to cancel as fast as possible
+        */
+        private Queue<OCREngine> usedEngines = new LinkedList<>();
 
-        DocumentTabOCRResultPanelFetcher(OCRSelectComponent oCRSelectComponent, OCREngine oCREngine) {
+        DocumentTabOCRResultPanelFetcher(OCRSelectComponent oCRSelectComponent) {
             this.oCRSelectComponent = oCRSelectComponent;
-            this.oCREngine = oCREngine;
         }
 
         @Override
@@ -1728,20 +1756,56 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             StringBuilder retValueBuilder = new StringBuilder(stringBufferLengh);
             int i=0;
             List<OCRSelectPanel> imagePanels = this.oCRSelectComponent.getImagePanels();
-            for (OCRSelectPanel imagePanel : imagePanels) {
+            Queue<Pair<OCRSelectPanel, FutureTask<String>>> threadQueue = new LinkedList<>();
+            Executor executor = Executors.newCachedThreadPool();
+            //check in loop whether cache can be used, otherwise enqueue started
+            //SwingWorkers; after loop wait for SwingWorkers until queue is
+            //empty and append to retValueBuilder (if cache has been used
+            //(partially) queue will be empty)
+            for (final OCRSelectPanel imagePanel : imagePanels) {
                 if(cancelRequested) {
                     //no need to notify progress listener
                     break;
                 }
-                String oCRResult = this.oCREngine.recognizeImage(imagePanel.getImage());
-                if(oCRResult == null) {
-                    //indicates that the OCREngine.recognizeImage has been aborted
-                    if(cancelRequested) {
-                        //no need to notify progress listener
-                        break;
+                String oCRResult = fetchCache.get(imagePanel);
+                if(oCRResult != null) {
+                    LOGGER.info(String.format("using cached OCR result for image %d of current OCR select component", i));
+                    retValueBuilder.append(oCRResult);
+                    for(OCRResultPanelFetcherProgressListener progressListener: progressListeners) {
+                        progressListener.onProgressUpdate(new OCRResultPanelFetcherProgressEvent(oCRResult, i/imagePanels.size()));
                     }
+                    i += 1;
+                }else {
+                    FutureTask<String> worker = new FutureTask<>(new Callable<String>() {
+                        @Override
+                        public String call() throws Exception {
+                            OCREngine oCREngine = TESSERACT_OCRENGINE_FACTORY.create(DocumentScanner.this.conf.getoCREngineConf());
+                            usedEngines.add(oCREngine);
+                            String oCRResult = oCREngine.recognizeImage(imagePanel.getImage());
+                            if(oCRResult == null) {
+                                //indicates that the OCREngine.recognizeImage has been aborted
+                                if(cancelRequested) {
+                                    //no need to notify progress listener
+                                    return null;
+                                }
+                            }
+                            return oCRResult;
+                        }
+                    });
+                    executor.execute(worker);
+                    threadQueue.add(new ImmutablePair<>(imagePanel, worker));
+                }
+            }
+            while(!threadQueue.isEmpty()) {
+                Pair<OCRSelectPanel, FutureTask<String>> threadQueueHead = threadQueue.poll();
+                String oCRResult;
+                try {
+                    oCRResult = threadQueueHead.getValue().get();
+                } catch (InterruptedException | ExecutionException ex) {
+                    throw new RuntimeException(ex);
                 }
                 retValueBuilder.append(oCRResult);
+                fetchCache.put(threadQueueHead.getKey(), oCRResult);
                 for(OCRResultPanelFetcherProgressListener progressListener: progressListeners) {
                     progressListener.onProgressUpdate(new OCRResultPanelFetcherProgressEvent(oCRResult, i/imagePanels.size()));
                 }
@@ -1754,7 +1818,10 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         @Override
         public void cancelFetch() {
             this.cancelRequested = true;
-            this.oCREngine.cancelRecognizeImage();
+            while(!usedEngines.isEmpty()) {
+                OCREngine usedEngine = usedEngines.poll();
+                usedEngine.cancelRecognizeImage();
+            }
         }
 
         @Override
@@ -1769,7 +1836,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     }
 
     private class DocumentTabScanResultPanelFetcher implements ScanResultPanelFetcher {
-
         private final OCRSelectComponent oCRSelectComponent;
 
         DocumentTabScanResultPanelFetcher(OCRSelectComponent oCRSelectComponent) {

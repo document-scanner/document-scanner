@@ -537,6 +537,18 @@ public class DocumentForm extends javax.swing.JPanel {
         entityContentPanel.validate();
     }//GEN-LAST:event_creationModeButtonActionPerformed
 
+    /**
+     * Changes to the editing mode and updates the visible components.
+     * @param evt
+     */
+    /*
+    internal implementation notes:
+    - it doesn't make sense to skip rerunning the query on the QueryPanel from
+    which the to be edited entity has been retrieved in order to make it
+    possible to save the entity again because it's not possible to save a
+    deleted (= new) instance in editing mode -> add listener to
+    ReflectionFormPanel
+    */
     private void editingModeButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_editingModeButtonActionPerformed
         entityContentPanel.removeAll();
         //GroupLayout seems not necessary, but doesn't hurt

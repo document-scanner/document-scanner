@@ -29,6 +29,12 @@ import javax.swing.JPanel;
  * A panel which represents one PDF or image page/scan.
  * @author richter
  */
+/*
+internal implementation notes:
+- there's no sense in overwriting equals or hashCode since the only property
+which can be used for distinction is image, but BufferedImage doesn't override
+equals or hashCode
+*/
 public class OCRSelectPanel extends JPanel implements MouseListener, MouseMotionListener {
     private static final long serialVersionUID = 1L;
     private Point dragStart;

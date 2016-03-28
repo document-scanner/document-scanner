@@ -20,6 +20,8 @@ import java.io.StringWriter;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import javax.imageio.ImageIO;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -74,6 +76,7 @@ public class TesseractOCREngine implements OCREngine {
             throw new TesseractNotFoundException(tesseract, exception);
         }
     }
+    private final Lock lock = new ReentrantLock();
     private String tesseract = TESSERACT_DEFAULT;
     private List<String> languages;
     private Process tesseractProcess;
@@ -99,15 +102,15 @@ public class TesseractOCREngine implements OCREngine {
     }
 
     /**
-     * Don't invoke {@code recognizeImage} from multiple threads (result would
-     * be undefined).
+     * Don't invoke {@code recognizeImage} from multiple threads.
      *
      * @param image
      * @throws IllegalArgumentException if {@code image} is {@code null}
+     * @throws IllegalStateException if another recognition is currently running
      * @return {@code null} if the recognition has been canceled using {@link #cancelRecognizeImage() } or the recognition process crashed or the recognition result otherwise
      */
     @Override
-    public String recognizeImage(BufferedImage image) {
+    public String recognizeImage(BufferedImage image) throws IllegalStateException {
         if(image == null) {
             throw new IllegalArgumentException("image mustn't be null");
         }
@@ -117,14 +120,17 @@ public class TesseractOCREngine implements OCREngine {
             throw new RuntimeException("tesseract not available (see nested exception for details)", ex);
         }
         LOGGER.debug("tesseract binary '{}' found and executable", this.tesseract);
-        Iterator<String> languagesItr = this.languages.iterator();
-        String lanuguageString = languagesItr.next();
-        while(languagesItr.hasNext()) {
-            lanuguageString += "+"+languagesItr.next();
+        if(!lock.tryLock()) {
+            throw new IllegalStateException("This tesseract OCR engine is already used from another thread.");
         }
-        ProcessBuilder tesseractProcessBuilder = new ProcessBuilder(this.tesseract, "-l", lanuguageString, "stdin", "stdout")
-                .redirectOutput(ProcessBuilder.Redirect.PIPE);
         try {
+            Iterator<String> languagesItr = this.languages.iterator();
+            String lanuguageString = languagesItr.next();
+            while(languagesItr.hasNext()) {
+                lanuguageString += "+"+languagesItr.next();
+            }
+            ProcessBuilder tesseractProcessBuilder = new ProcessBuilder(this.tesseract, "-l", lanuguageString, "stdin", "stdout")
+                    .redirectOutput(ProcessBuilder.Redirect.PIPE);
             tesseractProcess = tesseractProcessBuilder.start();
             ImageIO.write(image, "png", tesseractProcess.getOutputStream());
             tesseractProcess.getOutputStream().flush();
@@ -149,6 +155,8 @@ public class TesseractOCREngine implements OCREngine {
                 return null; //result of Process.destroy
             }
             throw new RuntimeException(ex);
+        }finally {
+            lock.unlock();
         }
     }
 
@@ -162,6 +170,4 @@ public class TesseractOCREngine implements OCREngine {
                 // process pipes
         }
     }
-
-
 }
