@@ -18,6 +18,7 @@ import java.util.Date;
 import javax.persistence.Basic;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.Inheritance;
 import javax.persistence.ManyToOne;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -31,6 +32,7 @@ import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
  * @author richter
  */
 @Entity
+@Inheritance
 public class Employment extends Identifiable {
     private static final long serialVersionUID = 1L;
     @ManyToOne(fetch = FetchType.EAGER)

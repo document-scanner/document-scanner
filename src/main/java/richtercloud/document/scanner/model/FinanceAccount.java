@@ -19,6 +19,7 @@ import java.util.List;
 import javax.persistence.Basic;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.Inheritance;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.validation.constraints.NotNull;
@@ -34,6 +35,7 @@ import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
  * @author richter
  */
 @Entity
+@Inheritance
 @ValidFinanceAccount(groups = {Default.class, IdGenerationValidation.class})
 public class FinanceAccount extends Identifiable {
     private static final long serialVersionUID = 1L;

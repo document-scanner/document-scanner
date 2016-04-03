@@ -19,6 +19,7 @@ import java.util.List;
 import javax.persistence.Basic;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.Inheritance;
 import javax.validation.constraints.NotNull;
 import org.jscience.economics.money.Money;
 import org.jscience.physics.amount.Amount;
@@ -29,6 +30,7 @@ import richtercloud.reflection.form.builder.FieldInfo;
  * @author richter
  */
 @Entity
+@Inheritance
 public class Bill extends Document {
     private static final long serialVersionUID = 1L;
     @NotNull

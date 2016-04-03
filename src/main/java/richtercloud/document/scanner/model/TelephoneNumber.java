@@ -19,6 +19,8 @@ import java.util.HashSet;
 import java.util.Set;
 import javax.persistence.Basic;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.Inheritance;
 import javax.persistence.ManyToOne;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
@@ -37,6 +39,7 @@ initialization which is annoying and the information who owns the telephone
 number isn't essential and can be queried easily
 */
 @Entity
+@Inheritance
 public class TelephoneNumber extends Identifiable {
     private static final long serialVersionUID = 1L;
     public final static int TYPE_LANDLINE = 1;
@@ -49,7 +52,7 @@ public class TelephoneNumber extends Identifiable {
      * <ref>https://en.wikipedia.org/wiki/List_of_country_calling_codes</ref>)
      */
     @Min(1) @Max(999)
-    @Basic
+    @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Country code", description = "The country code of the "
             + "telephone number")
     private int countryCode;
@@ -59,7 +62,7 @@ public class TelephoneNumber extends Identifiable {
      * There're no negative prefixes in phone numbers.
      */
     @Min(0)
-    @Basic
+    @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "prefix", description = "The prefix of the number (can "
             + "have different meaning for different countries)")
     private int thePrefix;
@@ -69,6 +72,7 @@ public class TelephoneNumber extends Identifiable {
  and many more which shouldn't matter for this application.
      */
     @Min(0)
+    @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "number", description = "The remaining part of the "
             + "number after the prefix (including room numbers or prefix and "
             + "suffix in USA)")
@@ -77,7 +81,7 @@ public class TelephoneNumber extends Identifiable {
      * A contact representing a telephone service provider. Might be
      * {@code null} if the provider is unknown.
      */
-    @Basic
+    @Basic(fetch = FetchType.EAGER)
     @ManyToOne
     @FieldInfo(name = "Provider", description = "The provider which services "
             + "this telephone number")

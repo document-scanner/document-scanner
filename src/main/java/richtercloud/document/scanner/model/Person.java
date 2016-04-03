@@ -20,6 +20,7 @@ import java.util.List;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.Inheritance;
 import javax.validation.groups.Default;
 import richtercloud.document.scanner.model.validator.NoEmptyEntriesList;
 import richtercloud.document.scanner.model.validator.ValidPerson;
@@ -31,6 +32,7 @@ import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
  * @author richter
  */
 @Entity
+@Inheritance
 @ValidPerson(groups = {Default.class, IdGenerationValidation.class})
 public class Person extends Company {
     private static final long serialVersionUID = 1L;

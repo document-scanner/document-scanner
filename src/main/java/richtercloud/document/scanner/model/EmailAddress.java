@@ -20,9 +20,9 @@ import javax.persistence.Basic;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.Inheritance;
 import javax.validation.constraints.NotNull;
 import javax.validation.groups.Default;
-import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import richtercloud.document.scanner.model.validator.ValidEmailAddress;
 import richtercloud.reflection.form.builder.FieldInfo;
 import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
@@ -32,6 +32,7 @@ import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
  * @author richter
  */
 @Entity
+@Inheritance
 public class EmailAddress extends Identifiable {
     private static final long serialVersionUID = 1L;
     @NotNull(groups = {Default.class, IdGenerationValidation.class})

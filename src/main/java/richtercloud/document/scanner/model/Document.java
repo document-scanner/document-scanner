@@ -21,6 +21,7 @@ import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.Inheritance;
 import javax.persistence.Lob;
 import javax.persistence.ManyToMany;
 import javax.validation.constraints.NotNull;
@@ -35,6 +36,7 @@ import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
  * @author richter
  */
 @Entity
+@Inheritance
 public class Document extends AbstractDocument {
     private static final long serialVersionUID = 1L;
     @Basic(fetch = FetchType.EAGER)

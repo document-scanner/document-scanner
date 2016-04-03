@@ -109,6 +109,7 @@ public class DocumentForm extends javax.swing.JPanel {
     private Map<Class<?>, QueryPanel<Object>> entityEditingQueryPanelCache = new HashMap<>();
     private final static int DEFAULT_SCROLL_INTERVAL = 24;
     private final FieldHandler fieldHandler;
+    private final MessageHandler messageHandler;
 
     public DocumentForm(Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
@@ -172,6 +173,10 @@ public class DocumentForm extends javax.swing.JPanel {
                 }
             }
         });
+        if(messageHandler == null) {
+            throw new IllegalArgumentException("messageHandler mustn't be null");
+        }
+        this.messageHandler = messageHandler;
         reflectionFormBuilder = new JPAReflectionFormBuilder(entityManager,
                 DocumentScanner.generateApplicationWindowTitle("Field description", DocumentScanner.APP_NAME, DocumentScanner.APP_VERSION),
                 messageHandler,
@@ -585,6 +590,7 @@ public class DocumentForm extends javax.swing.JPanel {
                         mappedFieldCandidates);
                 this.entityEditingQueryPanel = new QueryPanel<>(entityManager,
                         selectedEntityClass,
+                        messageHandler,
                         reflectionFormBuilder,
                         null, //initialValue
                         bidirectionalControlPanel

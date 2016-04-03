@@ -1,31 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <persistence version="2.1" xmlns="http://xmlns.jcp.org/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd">
-  <persistence-unit name="richtercloud_document-scanner_jar_1.0-SNAPSHOTPU" transaction-type="RESOURCE_LOCAL">
-    <provider>org.hibernate.ejb.HibernatePersistence</provider>
-    <class>richtercloud.document.scanner.model.APackage</class>
-    <class>richtercloud.document.scanner.model.Address</class>
-    <class>richtercloud.document.scanner.model.Bill</class>
-    <class>richtercloud.document.scanner.model.Company</class>
-    <class>richtercloud.document.scanner.model.Document</class>
-    <class>richtercloud.document.scanner.model.EmailAddress</class>
-    <class>richtercloud.document.scanner.model.Employment</class>
-    <class>richtercloud.document.scanner.model.FinanceAccount</class>
-    <class>richtercloud.document.scanner.model.Leaflet</class>
-    <class>richtercloud.document.scanner.model.Payment</class>
-    <class>richtercloud.document.scanner.model.Person</class>
-    <class>richtercloud.document.scanner.model.Shipping</class>
-    <class>richtercloud.document.scanner.model.SimpleLocation</class>
-    <class>richtercloud.document.scanner.model.TelephoneCall</class>
-    <class>richtercloud.document.scanner.model.TransportTicket</class>
-    <class>richtercloud.document.scanner.model.Location</class>
-    <class>richtercloud.document.scanner.model.Transport</class>
-    <properties>
-      <property name="javax.persistence.jdbc.url" value="jdbc:derby:/home/richter/.document-scanner/databases"/>
-      <property name="javax.persistence.jdbc.user" value=""/>
-      <property name="javax.persistence.jdbc.driver" value="org.apache.derby.jdbc.EmbeddedDriver"/>
-      <property name="javax.persistence.jdbc.password" value=""/>
-      <property name="hibernate.cache.provider_class" value="org.hibernate.cache.NoCacheProvider"/>
-      <property name="hibernate.hbm2ddl.auto" value="update"/>
-    </properties>
-  </persistence-unit>
+    <persistence-unit name="richtercloud_document-scanner_jar_1.0-SNAPSHOTPU" transaction-type="RESOURCE_LOCAL">
+        <!--as long as https://hibernate.atlassian.net/browse/HHH-10653 which causes
+        mapped superclasses to make queries using TYPE operator fail with
+        `org.hibernate.QueryException: could not resolve property: class of:
+        [entity class]` isn't resolved OpenJPA should be used which seems much
+        more useful anyway (validation, usable feedback, etc.)-->
+        <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
+        <class>richtercloud.document.scanner.model.APackage</class>
+        <class>richtercloud.document.scanner.model.Bill</class>
+        <class>richtercloud.document.scanner.model.Company</class>
+        <class>richtercloud.document.scanner.model.Document</class>
+        <class>richtercloud.document.scanner.model.EmailAddress</class>
+        <class>richtercloud.document.scanner.model.Employment</class>
+        <class>richtercloud.document.scanner.model.FinanceAccount</class>
+        <class>richtercloud.document.scanner.model.Leaflet</class>
+        <class>richtercloud.document.scanner.model.Location</class>
+        <class>richtercloud.document.scanner.model.Payment</class>
+        <class>richtercloud.document.scanner.model.Person</class>
+        <class>richtercloud.document.scanner.model.Shipping</class>
+        <class>richtercloud.document.scanner.model.SimpleLocation</class>
+        <class>richtercloud.document.scanner.model.TelephoneCall</class>
+        <class>richtercloud.document.scanner.model.TelephoneNumber</class>
+        <class>richtercloud.document.scanner.model.Transport</class>
+        <class>richtercloud.document.scanner.model.TransportTicket</class>
+        <properties>
+            <property name="javax.persistence.jdbc.url" value="jdbc:derby:/home/richter/.document-scanner/databases"/>
+            <property name="javax.persistence.jdbc.user" value=""/>
+            <property name="javax.persistence.jdbc.driver" value="org.apache.derby.jdbc.EmbeddedDriver"/>
+            <property name="javax.persistence.jdbc.password" value=""/>
+            <!--<property name="hibernate.cache.provider_class" value="org.hibernate.cache.NoCacheProvider"/>-->
+            <!--<property name="hibernate.hbm2ddl.auto" value="update"/>-->
+            <property name="eclipselink.ddl-generation" value="create-or-extend-tables"/>
+        </properties>
+    </persistence-unit>
 </persistence>

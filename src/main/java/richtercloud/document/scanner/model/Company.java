@@ -20,6 +20,7 @@ import javax.persistence.Basic;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.Inheritance;
 import javax.persistence.OneToMany;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -33,6 +34,7 @@ import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
  * @author richter
  */
 @Entity
+@Inheritance
 public class Company extends Identifiable {
     private static final long serialVersionUID = 1L;
     @FieldInfo(name = "Name", description = "A unique name for the contact "
@@ -67,7 +69,9 @@ public class Company extends Identifiable {
     @OneToMany(fetch = FetchType.EAGER)
     @NoEmptyEntriesList
     private List<FinanceAccount> accounts;
-    @OneToMany
+    @FieldInfo(name = "Telephone numbers", description = "A list of telephone "
+            + "numbers owned by the contact or somehow associated with it.")
+    @OneToMany(fetch = FetchType.EAGER)
     @NoEmptyEntriesList
     private List<TelephoneNumber> telephoneNumbers;
 

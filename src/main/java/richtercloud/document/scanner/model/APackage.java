@@ -20,6 +20,7 @@ import java.util.List;
 import javax.persistence.Basic;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.Inheritance;
 import javax.persistence.ManyToMany;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -36,6 +37,7 @@ internal implementation notes:
 - name prefixed with A in order to avoid collision with java.lang.Package
 */
 @Entity
+@Inheritance
 @ClassInfo(name="Package")
 public class APackage extends CommunicationItem {
     private static final long serialVersionUID = 1L;

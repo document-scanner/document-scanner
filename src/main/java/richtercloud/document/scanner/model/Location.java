@@ -17,6 +17,7 @@ package richtercloud.document.scanner.model;
 import javax.persistence.Basic;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.Inheritance;
 import javax.validation.constraints.NotNull;
 import javax.validation.groups.Default;
 import richtercloud.reflection.form.builder.FieldInfo;
@@ -27,6 +28,7 @@ import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
  * @author richter
  */
 @Entity
+@Inheritance
 public class Location extends Identifiable {
     private static final long serialVersionUID = 1L;
     @NotNull(groups = {Default.class, IdGenerationValidation.class}) //used for

@@ -61,11 +61,29 @@
             <version>10.11.1.1</version>
             <type>jar</type>
         </dependency>
-        <dependency>
+        <!--use org.hibernate:hibernate-entitymanager instead of
+        org.hibernate:hibernate-core
+        <ref>http://hibernate.org/orm/downloads/</ref>-->
+
+        <!--JPA provider-->
+        <!--explanations and reasons for JPA provider are documented in comments
+        in persistence.xml-->
+<!--        <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-entitymanager</artifactId>
-            <version>5.0.0.Final</version>
+            <version>5.1.0.Final</version>
         </dependency>
+        <dependency>
+            <groupId>org.hibernate.javax.persistence</groupId>
+            <artifactId>hibernate-jpa-2.1-api</artifactId>
+            <version>1.0.0.Final</version>
+        </dependency>-->
+        <dependency>
+            <groupId>org.eclipse.persistence</groupId>
+            <artifactId>eclipselink</artifactId>
+            <version>2.6.2</version>
+        </dependency>
+
         <dependency>
             <groupId>richtercloud</groupId>
             <artifactId>reflection-form-builder-jpa</artifactId>

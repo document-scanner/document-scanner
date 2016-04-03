@@ -16,6 +16,7 @@ package richtercloud.document.scanner.model;
 
 import java.io.Serializable;
 import javax.persistence.Id;
+import javax.persistence.Inheritance;
 import javax.persistence.MappedSuperclass;
 import javax.validation.constraints.NotNull;
 import richtercloud.reflection.form.builder.FieldInfo;
@@ -41,6 +42,7 @@ is IdGenerator and subclasses) and manage dependencies of id generation there
 and only there.
 */
 @MappedSuperclass
+@Inheritance
 public abstract class Identifiable implements Serializable {
     private static final long serialVersionUID = 1L;
     @Id

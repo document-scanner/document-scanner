@@ -19,6 +19,7 @@ import java.util.Date;
 import java.util.List;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.Inheritance;
 import javax.persistence.ManyToMany;
 import javax.validation.constraints.Size;
 import richtercloud.reflection.form.builder.FieldInfo;
@@ -28,6 +29,7 @@ import richtercloud.reflection.form.builder.FieldInfo;
  * @author richter
  */
 @Entity
+@Inheritance
 public class Shipping extends CommunicationItem {
     private static final long serialVersionUID = 1L;
     @ManyToMany(mappedBy = "shippings", fetch = FetchType.EAGER)

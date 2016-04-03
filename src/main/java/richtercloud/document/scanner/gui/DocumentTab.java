@@ -80,6 +80,9 @@ public class DocumentTab extends javax.swing.JPanel {
             AmountMoneyUsageStatisticsStorage amountMoneyUsageStatisticsStorage,
             AmountMoneyCurrencyStorage amountMoneyAdditionalCurrencyStorage,
             MessageHandler messageHandler) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+        if(messageHandler == null) {
+            throw new IllegalArgumentException("messageHandler mustn't be null");
+        }
         this.title = title;
         this.oCRSelectComponent = oCRSelectComponent;
         this.oCREngine = oCREngine;

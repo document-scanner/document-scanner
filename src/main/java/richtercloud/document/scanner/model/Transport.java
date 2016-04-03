@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.List;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.Inheritance;
 import javax.persistence.ManyToMany;
 import javax.validation.constraints.Size;
 import javax.validation.groups.Default;
@@ -29,6 +30,7 @@ import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
  * @author richter
  */
 @Entity
+@Inheritance
 public class Transport extends Identifiable {
     private static final long serialVersionUID = 1L;
     @ManyToMany(fetch = FetchType.EAGER)

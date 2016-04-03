@@ -197,6 +197,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     public static final String APP_VERSION = "1.0";
     private static final String UNSAVED_NAME = "unsaved";
     private static final String SCANNER_ADDRESS_DEFAULT = "localhost";
+    private static final String BUG_URL = "https://github.com/krichter722/document-scanner";
     private SaneDevice device;
     private ODatabaseDocumentTx db;
     private final DefaultTableModel scannerDialogTableModel = new DefaultTableModel();
@@ -1405,6 +1406,24 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 } catch (HeadlessException | IOException | IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException | InvocationTargetException ex) {
                     progressMonitor.setProgress(100);
                     DocumentScanner.this.handleException(ex);
+                } catch(Throwable ex) {
+                    //This dramatically facilitates debugging since Java
+                    //debugger has a lot of problems to halt at uncatched
+                    //exceptions and a lot of JVMs don't provide debugging
+                    //symbols.
+                    progressMonitor.setProgress(100);
+                    JOptionPane.showMessageDialog(DocumentScanner.this, //parentComponent
+                            String.format("<html>An unexpected exception occured "
+                                    + "during initialization (see stacktrace "
+                                    + "for details). Please consider filing a "
+                                    + "bug at <a href=\"%s\">%s</a>. Stacktrace: %s</html>",
+                                    BUG_URL,
+                                    BUG_URL,
+                                    ExceptionUtils.getFullStackTrace(ex)),
+                            generateApplicationWindowTitle("An exception occured",
+                                    APP_NAME,
+                                    APP_VERSION),
+                            JOptionPane.ERROR_MESSAGE);
                 }
                 return null;
             }
@@ -1568,10 +1587,12 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 amountMoneyConversionRateRetriever,
                 BIDIRECTIONAL_HELP_DIALOG_TITLE);
         ToManyTypeHandler toManyTypeHandler = new ToManyTypeHandler(entityManager,
+                messageHandler,
                 typeHandlerMapping,
                 typeHandlerMapping,
                 BIDIRECTIONAL_HELP_DIALOG_TITLE);
         ToOneTypeHandler toOneTypeHandler = new ToOneTypeHandler(entityManager,
+                messageHandler,
                 BIDIRECTIONAL_HELP_DIALOG_TITLE);
         FieldHandler fieldHandler = new DocumentScannerFieldHandler(jPAAmountMoneyMappingFieldHandlerFactory.generateClassMapping(),
                 embeddableFieldHandlerFactory.generateClassMapping(),

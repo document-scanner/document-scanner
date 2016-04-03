@@ -16,12 +16,14 @@ package richtercloud.document.scanner.model;
 
 import java.util.Date;
 import javax.persistence.Entity;
+import javax.persistence.Inheritance;
 
 /**
  *
  * @author richter
  */
 @Entity
+@Inheritance
 public class Leaflet extends AbstractDocument {
     private static final long serialVersionUID = 1L;
 
