@@ -12,27 +12,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.setter;
-
-import richtercloud.reflection.form.builder.jpa.panels.LongIdPanel;
+package richtercloud.document.scanner.gui;
 
 /**
- *
+ * A wrapper for cross-thread exceptions.
  * @author richter
  */
-public class IdPanelSetter implements ValueSetter<LongIdPanel>{
-    private final static IdPanelSetter INSTANCE = new IdPanelSetter();
+/*
+internal implementation notes:
+- enforce specification of a reason since this is a wrapper exception
+*/
+public class DocumentAddException extends Exception {
 
-    public static IdPanelSetter getInstance() {
-        return INSTANCE;
+    public DocumentAddException(String message, Throwable cause) {
+        super(message, cause);
     }
 
-    protected IdPanelSetter() {
+    public DocumentAddException(Throwable cause) {
+        super(cause);
     }
-
-    @Override
-    public void setValue(String value, LongIdPanel comp) {
-        comp.getValueSpinner().setValue(value);
-    }
-
 }

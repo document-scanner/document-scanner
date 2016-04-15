@@ -800,13 +800,13 @@
     <DimensionLayout dim="0">
       <Group type="103" groupAlignment="0" attributes="0">
           <Component id="statusBar" max="32767" attributes="0"/>
-          <Component id="mainTabbedPane" alignment="0" max="32767" attributes="0"/>
+          <Component id="mainPanelPanel" alignment="0" max="32767" attributes="0"/>
       </Group>
     </DimensionLayout>
     <DimensionLayout dim="1">
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" alignment="0" attributes="0">
-              <Component id="mainTabbedPane" pref="290" max="32767" attributes="0"/>
+              <Component id="mainPanelPanel" max="32767" attributes="0"/>
               <EmptySpace type="unrelated" max="-2" attributes="0"/>
               <Component id="statusBar" min="-2" max="-2" attributes="0"/>
           </Group>
@@ -829,9 +829,9 @@
         </DimensionLayout>
       </Layout>
     </Container>
-    <Container class="javax.swing.JTabbedPane" name="mainTabbedPane">
+    <Container class="javax.swing.JPanel" name="mainPanelPanel">
 
-      <Layout class="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout"/>
+      <Layout class="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout"/>
     </Container>
   </SubComponents>
 </Form>

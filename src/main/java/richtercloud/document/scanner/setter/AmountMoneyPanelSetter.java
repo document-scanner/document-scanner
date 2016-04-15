@@ -12,27 +12,26 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.ocr;
+package richtercloud.document.scanner.setter;
 
-import richtercloud.document.scanner.gui.conf.OCREngineConf;
+import org.jscience.economics.money.Money;
+import org.jscience.physics.amount.Amount;
+import richtercloud.reflection.form.builder.components.AmountMoneyPanel;
 
 /**
  *
  * @author richter
- * @param <E> the type of {@link OCREngine} to create
- * @param <C> the type of {@link OCREngineConf} to use for creation
  */
-public interface OCREngineFactory<E extends OCREngine, C extends OCREngineConf<?>> {
+public class AmountMoneyPanelSetter implements ValueSetter<AmountMoneyPanel> {
+    private final static AmountMoneyPanelSetter INSTANCE = new AmountMoneyPanelSetter();
 
-    /**
-     * Creates a new {@link OCREngine}.
-     * @return the created {@link OCREngine}
-     */
-    /*
-    internal implementation notes:
-    - don't provide a OCREngineConf argument in order to force implementations
-    to deal with references which should facilitate updating configuration
-    instantly
-    */
-    E create(C oCREngineConf);
+    public static AmountMoneyPanelSetter getInstance() {
+        return INSTANCE;
+    }
+
+    @Override
+    public void setValue(String value, AmountMoneyPanel comp) {
+        Amount<Money> amountMoney = AmountMoneyPanel.parseValue(value);
+        comp.setValue(amountMoney);
+    }
 }

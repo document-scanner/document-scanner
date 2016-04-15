@@ -20,7 +20,7 @@ import javax.swing.JComponent;
  * An interface to handle different setter methods of different
  * {@link JComponent} and pass the OCR result to them (always a {@code String}).
  * @author richter
- * @param <C>
+ * @param <C> the type of the component the value is set on
  */
 public interface ValueSetter<C extends JComponent> {
 

@@ -32,7 +32,7 @@ public class SpinnerSetter implements ValueSetter<JSpinner> {
 
     @Override
     public void setValue(String value, JSpinner comp) {
-        comp.setValue(value);
+        comp.setValue(Double.valueOf(value));
     }
 
 }

@@ -32,25 +32,19 @@ import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import java.awt.Component;
-import java.awt.HeadlessException;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -58,15 +52,8 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.ThreadPoolExecutor;
-import javax.imageio.ImageIO;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
@@ -84,8 +71,6 @@ import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.ListCellRenderer;
 import javax.swing.MutableComboBoxModel;
-import javax.swing.ProgressMonitor;
-import javax.swing.SwingWorker;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
@@ -93,17 +78,8 @@ import javax.swing.event.TableModelListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import org.apache.commons.lang.exception.ExceptionUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.math4.stat.descriptive.DescriptiveStatistics;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import richtercloud.document.scanner.components.OCRResultPanelFetcher;
-import richtercloud.document.scanner.components.OCRResultPanelFetcherProgressEvent;
-import richtercloud.document.scanner.components.OCRResultPanelFetcherProgressListener;
-import richtercloud.document.scanner.components.ScanResultPanelFetcher;
 import richtercloud.document.scanner.gui.conf.DerbyPersistenceStorageConf;
 import richtercloud.document.scanner.gui.conf.DerbyPersistenceStorageConfInitializationException;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
@@ -128,14 +104,14 @@ import richtercloud.document.scanner.model.Shipping;
 import richtercloud.document.scanner.model.TelephoneCall;
 import richtercloud.document.scanner.model.Transport;
 import richtercloud.document.scanner.model.TransportTicket;
-import richtercloud.document.scanner.ocr.DelegatingOCREngineFactory;
 import richtercloud.document.scanner.ocr.OCREngine;
 import richtercloud.document.scanner.ocr.OCREngineConfInfo;
 import richtercloud.document.scanner.ocr.OCREngineFactory;
-import richtercloud.document.scanner.ocr.TesseractOCREngine;
 import richtercloud.document.scanner.ocr.TesseractOCREngineFactory;
-import richtercloud.document.scanner.setter.IdPanelSetter;
+import richtercloud.document.scanner.setter.AmountMoneyPanelSetter;
+import richtercloud.document.scanner.setter.LongIdPanelSetter;
 import richtercloud.document.scanner.setter.SpinnerSetter;
+import richtercloud.document.scanner.setter.StringAutoCompletePanelSetter;
 import richtercloud.document.scanner.setter.TextFieldSetter;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.reflection.form.builder.AnyType;
@@ -143,21 +119,16 @@ import richtercloud.reflection.form.builder.FieldRetriever;
 import richtercloud.reflection.form.builder.ReflectionFormPanel;
 import richtercloud.reflection.form.builder.components.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.AmountMoneyExchangeRateRetriever;
+import richtercloud.reflection.form.builder.components.AmountMoneyPanel;
 import richtercloud.reflection.form.builder.components.AmountMoneyUsageStatisticsStorage;
 import richtercloud.reflection.form.builder.components.FileAmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.FileAmountMoneyUsageStatisticsStorage;
 import richtercloud.reflection.form.builder.components.FixerAmountMoneyExchangeRateRetriever;
-import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
-import richtercloud.reflection.form.builder.fieldhandler.MappingFieldHandler;
-import richtercloud.reflection.form.builder.fieldhandler.factory.AmountMoneyMappingFieldHandlerFactory;
 import richtercloud.reflection.form.builder.jpa.IdGenerator;
 import richtercloud.reflection.form.builder.jpa.JPACachedFieldRetriever;
-import richtercloud.reflection.form.builder.jpa.fieldhandler.factory.JPAAmountMoneyMappingFieldHandlerFactory;
 import richtercloud.reflection.form.builder.jpa.panels.LongIdPanel;
-import richtercloud.reflection.form.builder.jpa.typehandler.ElementCollectionTypeHandler;
+import richtercloud.reflection.form.builder.jpa.panels.StringAutoCompletePanel;
 import richtercloud.reflection.form.builder.jpa.typehandler.JPAEntityListTypeHandler;
-import richtercloud.reflection.form.builder.jpa.typehandler.ToManyTypeHandler;
-import richtercloud.reflection.form.builder.jpa.typehandler.ToOneTypeHandler;
 import richtercloud.reflection.form.builder.jpa.typehandler.factory.JPAAmountMoneyMappingTypeHandlerFactory;
 import richtercloud.reflection.form.builder.message.DialogMessageHandler;
 import richtercloud.reflection.form.builder.message.Message;
@@ -178,6 +149,18 @@ import richtercloud.reflection.form.builder.typehandler.TypeHandler;
  * only while one is selected. That's why they're containers. The difference
  * between static information and messages is trivial.
  *
+ * <h2>Window arrangement</h2>
+ * Docking is superior in function and more flexible in programming changes than
+ * split panes, so use a docking framework (see
+ * <a href="https://richtercloud.de:446/doku.php?id=tasks:java:docking_
+ * framework">https://richtercloud.de:446/doku.php?id=tasks:java:docking_
+ * framework</a> for choices). In order to allow easy switching between
+ * documents a tabbed pane should be used. In order to avoid non-constructive
+ * docking/window configuration for the user which is possible if all components
+ * of a document are managed in one tab and separate docking is set up for each.
+ * Switch document tabs on one component of the document and make its other
+ * components change - like NetBeans does with editor and navigator and others.
+ *
  * @author richter
  */
 /*
@@ -197,7 +180,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     public static final String APP_VERSION = "1.0";
     private static final String UNSAVED_NAME = "unsaved";
     private static final String SCANNER_ADDRESS_DEFAULT = "localhost";
-    private static final String BUG_URL = "https://github.com/krichter722/document-scanner";
+    public static final String BUG_URL = "https://github.com/krichter722/document-scanner";
     private SaneDevice device;
     private ODatabaseDocumentTx db;
     private final DefaultTableModel scannerDialogTableModel = new DefaultTableModel();
@@ -259,14 +242,21 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
 
     static {
         Map<Class<? extends JComponent>, ValueSetter<?>> valueSetterMappingDefault = new HashMap<>();
-        valueSetterMappingDefault.put(JTextField.class, TextFieldSetter.getInstance());
-        valueSetterMappingDefault.put(JSpinner.class, SpinnerSetter.getInstance());
-        valueSetterMappingDefault.put(LongIdPanel.class, IdPanelSetter.getInstance());
+        valueSetterMappingDefault.put(JTextField.class,
+                TextFieldSetter.getInstance());
+        valueSetterMappingDefault.put(JSpinner.class,
+                SpinnerSetter.getInstance());
+        valueSetterMappingDefault.put(LongIdPanel.class,
+                LongIdPanelSetter.getInstance());
+        valueSetterMappingDefault.put(StringAutoCompletePanel.class,
+                StringAutoCompletePanelSetter.getInstance());
+        valueSetterMappingDefault.put(AmountMoneyPanel.class,
+                AmountMoneyPanelSetter.getInstance());
         VALUE_SETTER_MAPPING_DEFAULT = valueSetterMappingDefault;
     }
     private final AmountMoneyUsageStatisticsStorage amountMoneyUsageStatisticsStorage;
     private final AmountMoneyCurrencyStorage amountMoneyCurrencyStorage;
-    private final AmountMoneyExchangeRateRetriever amountMoneyConversionRateRetriever = new FixerAmountMoneyExchangeRateRetriever();
+    private final AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever = new FixerAmountMoneyExchangeRateRetriever();
     private final static String AMOUNT_MONEY_USAGE_STATISTICS_STORAGE_FILE_NAME = "currency-usage-statistics.xml";
     private final static String AMOUNT_MONEY_CURRENCY_STORAGE_FILE_NAME = "currencies.xml";
     private final Map<java.lang.reflect.Type, TypeHandler<?, ?,?, ?>> typeHandlerMapping;
@@ -299,6 +289,13 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     }
     private final IdGenerator idGenerator = EntityIdGenerator.getInstance();
     private final FieldRetriever fieldRetriever = new JPACachedFieldRetriever();
+    /*
+    internal implementation notes:
+    - can't be final because it's initialized in init because it depends on
+    initialized entityManager
+    */
+    private MainPanel mainPanel;
+    private final OCREngineFactory oCREngineFactory = new TesseractOCREngineFactory();
 
     /**
      * Parses the command line and evaluates system properties. Command line
@@ -573,6 +570,18 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 derbyPersistenceStorageSchemeChecksumFile //schemeChecksumFile
         ); //@TODO: replace with classpath annotation discovery
         this.storageConfPanelMap.put(DerbyPersistenceStorageConf.class, derbyStorageConfPanel);
+        this.mainPanel = new MainPanel(ENTITY_CLASSES,
+                Document.class,
+                entityManager,
+                amountMoneyUsageStatisticsStorage,
+                amountMoneyCurrencyStorage,
+                amountMoneyExchangeRateRetriever,
+                messageHandler,
+                this,
+                oCREngineFactory,
+                conf.getoCREngineConf(),
+                typeHandlerMapping);
+        mainPanelPanel.add(this.mainPanel);
     }
 
     @Override
@@ -663,7 +672,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         storageDialogDeleteButton = new javax.swing.JButton();
         storageDialogNewButton = new javax.swing.JButton();
         statusBar = new javax.swing.JPanel();
-        mainTabbedPane = new javax.swing.JTabbedPane();
+        mainPanelPanel = new javax.swing.JPanel();
         mainMenuBar = new javax.swing.JMenuBar();
         fileMenu = new javax.swing.JMenu();
         scannerSelectionMenu = new javax.swing.JMenu();
@@ -1122,6 +1131,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             .addGap(0, 23, Short.MAX_VALUE)
         );
 
+        mainPanelPanel.setLayout(new java.awt.BorderLayout());
+
         fileMenu.setText("File");
 
         scannerSelectionMenu.setText("Scanner selection");
@@ -1218,12 +1229,12 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(statusBar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addComponent(mainTabbedPane)
+            .addComponent(mainPanelPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addComponent(mainTabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 290, Short.MAX_VALUE)
+                .addComponent(mainPanelPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(statusBar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
@@ -1347,11 +1358,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     }//GEN-LAST:event_storageDialogNewButtonActionPerformed
 
     private void openMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openMenuItemActionPerformed
-        final ProgressMonitor progressMonitor = new ProgressMonitor(this,
-                "Generating new document tab", //message
-                null, //note
-                0,
-                100);
         JFileChooser chooser = new JFileChooser();
         FileNameExtensionFilter filter = new FileNameExtensionFilter(
                 "PDF files", "pdf");
@@ -1361,80 +1367,18 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         if (returnVal != JFileChooser.APPROVE_OPTION) {
             return;
         }
-        final SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
-            @Override
-            protected Void doInBackground() throws Exception {
-                try {
-                    InputStream pdfInputStream = new FileInputStream(selectedFile);
-                    PDDocument document = PDDocument.load(pdfInputStream);
-                    @SuppressWarnings("unchecked")
-                    List<PDPage> pages = document.getDocumentCatalog().getAllPages();
-                    List<OCRSelectPanel> panels = new LinkedList<>();
-                    for (PDPage page : pages) {
-                        if(progressMonitor.isCanceled()) {
-                            document.close();
-                            DocumentScanner.LOGGER.debug("tab generation aborted");
-                            return null;
-                        }
-                        BufferedImage image = page.convertToImage();
-                        @SuppressWarnings("serial")
-                        OCRSelectPanel panel = new OCRSelectPanel(image) {
-                            @Override
-                            public void mouseReleased(MouseEvent evt) {
-                                super.mouseReleased(evt);
-                                if (this.getDragStart() != null && !this.getDragStart().equals(this.getDragEnd())) {
-                                    DocumentScanner.this.handleOCRSelection();
-                                }
-                            }
-                        };
-                        panels.add(panel);
-                    }
-                    document.close();
-                    OCRSelectComponent oCRSelectComponent = new OCRSelectComponent(panels);
-                    OCREngine oCREngine = DocumentScanner.this.retrieveOCREngine();
-                    if (oCREngine == null) {
-                        //a warning in form of a dialog has been given
-                        progressMonitor.setProgress(100);
-                        return null;
-                    }
-                    DocumentTab documentTab = generateDocumentTab(oCRSelectComponent,
-                            oCREngine);
-                    if(!progressMonitor.isCanceled()) {
-                        DocumentScanner.this.mainTabbedPane.add(selectedFile.getName(), documentTab);
-                        DocumentScanner.this.validate();
-                    }
-                } catch (HeadlessException | IOException | IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException | InvocationTargetException ex) {
-                    progressMonitor.setProgress(100);
-                    DocumentScanner.this.handleException(ex);
-                } catch(Throwable ex) {
-                    //This dramatically facilitates debugging since Java
-                    //debugger has a lot of problems to halt at uncatched
-                    //exceptions and a lot of JVMs don't provide debugging
-                    //symbols.
-                    progressMonitor.setProgress(100);
-                    JOptionPane.showMessageDialog(DocumentScanner.this, //parentComponent
-                            String.format("<html>An unexpected exception occured "
-                                    + "during initialization (see stacktrace "
-                                    + "for details). Please consider filing a "
-                                    + "bug at <a href=\"%s\">%s</a>. Stacktrace: %s</html>",
-                                    BUG_URL,
-                                    BUG_URL,
-                                    ExceptionUtils.getFullStackTrace(ex)),
-                            generateApplicationWindowTitle("An exception occured",
-                                    APP_NAME,
-                                    APP_VERSION),
-                            JOptionPane.ERROR_MESSAGE);
-                }
-                return null;
-            }
-
-            @Override
-            protected void done() {
-                progressMonitor.setProgress(100);
-            }
-        };
-        progressMonitor.setProgress(0);
-        worker.execute();
+        OCREngine oCREngine = DocumentScanner.this.retrieveOCREngine();
+        if (oCREngine == null) {
+            //a warning in form of a dialog has been given
+            return;
+        }
+        try {
+            List<BufferedImage> images = this.mainPanel.retrieveImages(selectedFile);
+            this.mainPanel.addDocument(images,
+                    selectedFile.getName());
+        } catch (DocumentAddException | InterruptedException | ExecutionException ex) {
+            handleException(ex);
+        }
     }//GEN-LAST:event_openMenuItemActionPerformed
 
     private void optionsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_optionsMenuItemActionPerformed
@@ -1532,27 +1476,10 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 LOGGER.debug("set SANE option \"resolution\" to {}", RESOLUTION_DEFAULT);
             }
             BufferedImage image = this.device.acquireImage();
-            @SuppressWarnings("serial")
-            OCRSelectPanel panel = new OCRSelectPanel(image) {
-                @Override
-                public void mouseReleased(MouseEvent evt) {
-                    super.mouseReleased(evt);
-                    if (this.getDragStart() != null && !this.getDragStart().equals(this.getDragEnd())) {
-                        DocumentScanner.this.handleOCRSelection();
-                    }
-                }
-            };
-            OCRSelectComponent oCRSelectComponent = new OCRSelectComponent(panel);
-            OCREngine oCREngine = this.retrieveOCREngine();
-            if (oCREngine == null) {
-                //a warning in form of a dialog has been given
-                return;
-            }
-            DocumentTab newTab = generateDocumentTab(oCRSelectComponent,
-                    oCREngine);
-            this.mainTabbedPane.add(UNSAVED_NAME, newTab);
-            this.invalidate();
-        } catch (SaneException | IOException | IllegalAccessException | IllegalArgumentException | IllegalStateException | InstantiationException | NoSuchMethodException | InvocationTargetException ex) {
+            this.mainPanel.addDocument(new LinkedList<>(Arrays.asList(image)),
+                    UNSAVED_NAME);
+            this.validate();
+        } catch (SaneException | IOException | IllegalArgumentException | IllegalStateException | DocumentAddException ex) {
             this.handleException(ex);
         } finally {
             if (this.device != null) {
@@ -1563,78 +1490,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 }
             }
         }
-    }
-
-    private DocumentTab generateDocumentTab(final OCRSelectComponent oCRSelectComponent,
-            final OCREngine oCREngine) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-        OCRResultPanelFetcher oCRResultPanelFetcher = new DocumentTabOCRResultPanelFetcher(oCRSelectComponent);
-        ScanResultPanelFetcher scanResultPanelFetcher = new DocumentTabScanResultPanelFetcher(oCRSelectComponent);
-        AmountMoneyMappingFieldHandlerFactory embeddableFieldHandlerFactory = new AmountMoneyMappingFieldHandlerFactory(amountMoneyUsageStatisticsStorage,
-                amountMoneyCurrencyStorage,
-                amountMoneyConversionRateRetriever,
-                messageHandler);
-        FieldHandler embeddableFieldHandler = new MappingFieldHandler(embeddableFieldHandlerFactory.generateClassMapping(),
-                embeddableFieldHandlerFactory.generatePrimitiveMapping());
-        ElementCollectionTypeHandler elementCollectionTypeHandler = new ElementCollectionTypeHandler(typeHandlerMapping,
-                typeHandlerMapping,
-                messageHandler,
-                embeddableFieldHandler);
-        JPAAmountMoneyMappingFieldHandlerFactory jPAAmountMoneyMappingFieldHandlerFactory = JPAAmountMoneyMappingFieldHandlerFactory.create(entityManager,
-                INITIAL_QUERY_LIMIT_DEFAULT,
-                messageHandler,
-                amountMoneyUsageStatisticsStorage,
-                amountMoneyCurrencyStorage,
-                amountMoneyConversionRateRetriever,
-                BIDIRECTIONAL_HELP_DIALOG_TITLE);
-        ToManyTypeHandler toManyTypeHandler = new ToManyTypeHandler(entityManager,
-                messageHandler,
-                typeHandlerMapping,
-                typeHandlerMapping,
-                BIDIRECTIONAL_HELP_DIALOG_TITLE);
-        ToOneTypeHandler toOneTypeHandler = new ToOneTypeHandler(entityManager,
-                messageHandler,
-                BIDIRECTIONAL_HELP_DIALOG_TITLE);
-        FieldHandler fieldHandler = new DocumentScannerFieldHandler(jPAAmountMoneyMappingFieldHandlerFactory.generateClassMapping(),
-                embeddableFieldHandlerFactory.generateClassMapping(),
-                embeddableFieldHandlerFactory.generatePrimitiveMapping(),
-                elementCollectionTypeHandler,
-                toManyTypeHandler,
-                toOneTypeHandler,
-                idGenerator,
-                messageHandler,
-                fieldRetriever,
-                oCRResultPanelFetcher,
-                scanResultPanelFetcher);
-        DocumentTab retValue = new DocumentTab(UNSAVED_NAME,
-                oCRSelectComponent,
-                oCREngine,
-                ENTITY_CLASSES,
-                Document.class, //primaryClassSelection
-                fieldHandler,
-                entityManager,
-                oCRResultPanelFetcher,
-                scanResultPanelFetcher,
-                amountMoneyUsageStatisticsStorage,
-                amountMoneyCurrencyStorage,
-                messageHandler);
-        return retValue;
-    }
-
-    private void handleOCRSelection() {
-        DocumentTab selectedComponent = (DocumentTab) this.mainTabbedPane.getSelectedComponent();
-        OCRSelectComponent oCRSelectComponent = selectedComponent.getoCRSelectComponent();
-        BufferedImage imageSelection = oCRSelectComponent.getSelection();
-        if(imageSelection == null) {
-            //image panels only contain selections of width or height <= 0 -> skip silently
-            return;
-        }
-        OCREngine oCREngine = this.retrieveOCREngine();
-        if (oCREngine == null) {
-            //a warning in form of a dialog has been given
-            return;
-        }
-        String oCRResult = oCREngine.recognizeImage(imageSelection);
-        selectedComponent.getDocumentForm().getoCRResultTextArea().setText(oCRResult);
     }
 
     private void handleException(Throwable ex) {
@@ -1734,151 +1589,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         });
     }
 
-    private final static OCREngineFactory TESSERACT_OCRENGINE_FACTORY = new DelegatingOCREngineFactory();
-
-
-    private class DocumentTabOCRResultPanelFetcher implements OCRResultPanelFetcher {
-        private final List<Double> stringBufferLengths = new ArrayList<>();
-        private final OCRSelectComponent oCRSelectComponent;
-        private final Set<OCRResultPanelFetcherProgressListener> progressListeners = new HashSet<>();
-        private boolean cancelRequested = false;
-        /**
-         * Since {@link OCRSelectPanel} has an immutable {@code image} property
-         * it can be used well as cache map key.
-         */
-        private final Map<OCRSelectPanel, String> fetchCache = new HashMap<>();
-        /**
-         * Record all used {@link OCREngine}s in order to be able to cancel if
-         * {@link #cancelFetch() } is invoked.
-         */
-        /*
-        internal implementation notes:
-        - is a Queue in order to be able to cancel as fast as possible
-        */
-        private Queue<OCREngine> usedEngines = new LinkedList<>();
-
-        DocumentTabOCRResultPanelFetcher(OCRSelectComponent oCRSelectComponent) {
-            this.oCRSelectComponent = oCRSelectComponent;
-        }
-
-        @Override
-        public String fetch() {
-            //estimate the initial StringBuilder size based on the median
-            //of all prior OCR results (string length) (and 1000 initially)
-            int stringBufferLengh;
-            cancelRequested = false;
-            if (this.stringBufferLengths.isEmpty()) {
-                stringBufferLengh = 1_000;
-            } else {
-                DescriptiveStatistics descriptiveStatistics = new DescriptiveStatistics(this.stringBufferLengths.toArray(new Double[this.stringBufferLengths.size()]));
-                stringBufferLengh = ((int) descriptiveStatistics.getPercentile(.5)) + 1;
-            }
-            this.stringBufferLengths.add((double) stringBufferLengh);
-            StringBuilder retValueBuilder = new StringBuilder(stringBufferLengh);
-            int i=0;
-            List<OCRSelectPanel> imagePanels = this.oCRSelectComponent.getImagePanels();
-            Queue<Pair<OCRSelectPanel, FutureTask<String>>> threadQueue = new LinkedList<>();
-            Executor executor = Executors.newCachedThreadPool();
-            //check in loop whether cache can be used, otherwise enqueue started
-            //SwingWorkers; after loop wait for SwingWorkers until queue is
-            //empty and append to retValueBuilder (if cache has been used
-            //(partially) queue will be empty)
-            for (final OCRSelectPanel imagePanel : imagePanels) {
-                if(cancelRequested) {
-                    //no need to notify progress listener
-                    break;
-                }
-                String oCRResult = fetchCache.get(imagePanel);
-                if(oCRResult != null) {
-                    LOGGER.info(String.format("using cached OCR result for image %d of current OCR select component", i));
-                    retValueBuilder.append(oCRResult);
-                    for(OCRResultPanelFetcherProgressListener progressListener: progressListeners) {
-                        progressListener.onProgressUpdate(new OCRResultPanelFetcherProgressEvent(oCRResult, i/imagePanels.size()));
-                    }
-                    i += 1;
-                }else {
-                    FutureTask<String> worker = new FutureTask<>(new Callable<String>() {
-                        @Override
-                        public String call() throws Exception {
-                            OCREngine oCREngine = TESSERACT_OCRENGINE_FACTORY.create(DocumentScanner.this.conf.getoCREngineConf());
-                            usedEngines.add(oCREngine);
-                            String oCRResult = oCREngine.recognizeImage(imagePanel.getImage());
-                            if(oCRResult == null) {
-                                //indicates that the OCREngine.recognizeImage has been aborted
-                                if(cancelRequested) {
-                                    //no need to notify progress listener
-                                    return null;
-                                }
-                            }
-                            return oCRResult;
-                        }
-                    });
-                    executor.execute(worker);
-                    threadQueue.add(new ImmutablePair<>(imagePanel, worker));
-                }
-            }
-            while(!threadQueue.isEmpty()) {
-                Pair<OCRSelectPanel, FutureTask<String>> threadQueueHead = threadQueue.poll();
-                String oCRResult;
-                try {
-                    oCRResult = threadQueueHead.getValue().get();
-                } catch (InterruptedException | ExecutionException ex) {
-                    throw new RuntimeException(ex);
-                }
-                retValueBuilder.append(oCRResult);
-                fetchCache.put(threadQueueHead.getKey(), oCRResult);
-                for(OCRResultPanelFetcherProgressListener progressListener: progressListeners) {
-                    progressListener.onProgressUpdate(new OCRResultPanelFetcherProgressEvent(oCRResult, i/imagePanels.size()));
-                }
-                i += 1;
-            }
-            String retValue = retValueBuilder.toString();
-            return retValue;
-        }
-
-        @Override
-        public void cancelFetch() {
-            this.cancelRequested = true;
-            while(!usedEngines.isEmpty()) {
-                OCREngine usedEngine = usedEngines.poll();
-                usedEngine.cancelRecognizeImage();
-            }
-        }
-
-        @Override
-        public void addProgressListener(OCRResultPanelFetcherProgressListener progressListener) {
-            this.progressListeners.add(progressListener);
-        }
-
-        @Override
-        public void removeProgressListener(OCRResultPanelFetcherProgressListener progressListener) {
-            this.progressListeners.remove(progressListener);
-        }
-    }
-
-    private class DocumentTabScanResultPanelFetcher implements ScanResultPanelFetcher {
-        private final OCRSelectComponent oCRSelectComponent;
-
-        DocumentTabScanResultPanelFetcher(OCRSelectComponent oCRSelectComponent) {
-            this.oCRSelectComponent = oCRSelectComponent;
-        }
-
-        @Override
-        public byte[] fetch() {
-            ByteArrayOutputStream retValueStream = new ByteArrayOutputStream();
-            for (OCRSelectPanel imagePanel : this.oCRSelectComponent.getImagePanels()) {
-                try {
-                    if (!ImageIO.write(imagePanel.getImage(), "png", retValueStream)) {
-                        throw new IllegalStateException("writing image data to output stream failed");
-                    }
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                }
-            }
-            return retValueStream.toByteArray();
-        }
-    }
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenuItem aboutMenuItem;
     private javax.swing.JButton databaseCancelButton;
@@ -1899,7 +1609,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private javax.swing.JPopupMenu.Separator knownScannersMenuItemSeparator;
     private javax.swing.JPopupMenu.Separator knownStoragesMenuItemSeparartor;
     private javax.swing.JMenuBar mainMenuBar;
-    private javax.swing.JTabbedPane mainTabbedPane;
+    private javax.swing.JPanel mainPanelPanel;
     private javax.swing.JDialog oCRDialog;
     private javax.swing.JButton oCRDialogCancelButton;
     private javax.swing.JComboBox<Class<? extends OCREngineConf<?>>> oCRDialogEngineComboBox;

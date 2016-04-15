@@ -15,11 +15,8 @@
 package richtercloud.document.scanner.gui;
 
 import java.awt.Component;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.awt.event.MouseEvent;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
@@ -39,11 +36,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JList;
-import javax.swing.JMenu;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import javax.swing.ListCellRenderer;
 import richtercloud.document.scanner.components.OCRResultPanelFetcher;
 import richtercloud.document.scanner.components.ScanResultPanelFetcher;
@@ -65,7 +58,9 @@ import richtercloud.reflection.form.builder.jpa.panels.QueryPanelUpdateListener;
 import richtercloud.reflection.form.builder.message.MessageHandler;
 
 /**
- *
+ * Contains the {@link ReflectionFormPanel}s to
+ * create or edit entities (including a  {@link JRadioButton} to switch between
+ * creation and editing mode).
  * @author richter
  */
 /*
@@ -77,7 +72,7 @@ placeholder panel entityEditingQueryPanelPanel
 component -> add two panels as left and right component and move components
 between them
 */
-public class DocumentForm extends javax.swing.JPanel {
+public class EntityPanel extends javax.swing.JPanel {
     private static final long serialVersionUID = 1L;
     private DefaultComboBoxModel<Class<?>> entityEditingClassComboBoxModel = new DefaultComboBoxModel<>();
     private ListCellRenderer<Object> entityEditingClassComboBoxRenderer = new DefaultListCellRenderer() {
@@ -111,48 +106,14 @@ public class DocumentForm extends javax.swing.JPanel {
     private final FieldHandler fieldHandler;
     private final MessageHandler messageHandler;
 
-    public DocumentForm(Set<Class<?>> entityClasses,
-            Class<?> primaryClassSelection,
-            FieldHandler fieldHandler,
-            EntityManager entityManager,
-            final OCRResultPanelFetcher oCRResultPanelRetriever,
-            final ScanResultPanelFetcher scanResultPanelRetriever,
-            AmountMoneyUsageStatisticsStorage amountMoneyUsageStatisticsStorage,
-            AmountMoneyCurrencyStorage amountMoneyAdditionalCurrencyStorage,
-            MessageHandler messageHandler) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-        this(entityClasses,
-                primaryClassSelection,
-                fieldHandler,
-                DocumentScanner.VALUE_SETTER_MAPPING_DEFAULT,
-                entityManager,
-                oCRResultPanelRetriever,
-                scanResultPanelRetriever,
-                amountMoneyUsageStatisticsStorage,
-                amountMoneyAdditionalCurrencyStorage,
-                messageHandler);
-    }
-
     /**
-     *
-     * @param entityClasses
-     * @param primaryClassSelection the entry in the edit and create class choise combo box which is initially selected in a freshly created DocumentForm
-     * @param fieldHandler
-     * @param valueRetrieverMapping
-     * @param valueSetterMapping
-     * @param entityManager
-     * @param oCRResultPanelRetriever
-     * @param scanResultPanelRetriever
-     * @param amountMoneyUsageStatisticsStorage
-     * @param amountMoneyAdditionalCurrencyStorage
-     * @param messageHandler
-     * @throws NoSuchMethodException
-     * @throws InstantiationException
-     * @throws IllegalAccessException
-     * @throws IllegalArgumentException
-     * @throws InvocationTargetException
+     * Creates new form EntityPanel
+     * @param reflectionFormPanelMap allows sharing of already generated
+     * {@link ReflectionFormPanel}s
      */
-    public DocumentForm(Set<Class<?>> entityClasses,
+    public EntityPanel(Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
+            Map<Class<?>, ReflectionFormPanel> reflectionFormPanelMap,
             FieldHandler fieldHandler,
             Map<Class<? extends JComponent>, ValueSetter<?>> valueSetterMapping,
             EntityManager entityManager,
@@ -160,14 +121,18 @@ public class DocumentForm extends javax.swing.JPanel {
             final ScanResultPanelFetcher scanResultPanelRetriever,
             AmountMoneyUsageStatisticsStorage amountMoneyUsageStatisticsStorage,
             AmountMoneyCurrencyStorage amountMoneyAdditionalCurrencyStorage,
-            MessageHandler messageHandler) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+            MessageHandler messageHandler) throws InstantiationException,
+            IllegalAccessException,
+            IllegalArgumentException,
+            InvocationTargetException,
+            NoSuchMethodException {
         this.initComponents();
         this.entityEditingClassComboBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
                 //don't recreate QueryPanel instances, but cache them in order
                 //to keep custom queries managed in QueryPanel
-                if(DocumentForm.this.entityEditingQueryPanel != null) {
+                if(EntityPanel.this.entityEditingQueryPanel != null) {
                     Class<?> selectedEntityClass = (Class<?>) e.getItem();
                     handleEntityEditingQueryPanelUpdate(selectedEntityClass);
                 }
@@ -194,40 +159,13 @@ public class DocumentForm extends javax.swing.JPanel {
         if(!entityClasses.contains(primaryClassSelection)) {
             throw new IllegalArgumentException(String.format("primaryClassSelection '%s' has to be contained in entityClasses", primaryClassSelection));
         }
-        List<Class<?>> entityClassesSort = new LinkedList<>(entityClasses);
-        Collections.sort(entityClassesSort, new Comparator<Class<?>>() {
-            @Override
-            public int compare(Class<?> o1, Class<?> o2) {
-                String o1Value = null;
-                ClassInfo o1ClassInfo = o1.getAnnotation(ClassInfo.class);
-                if(o1ClassInfo != null) {
-                    o1Value = o1ClassInfo.name();
-                }else {
-                    o1Value = o1.getSimpleName();
-                }
-                String o2Value = null;
-                ClassInfo o2ClassInfo = o2.getAnnotation(ClassInfo.class);
-                if(o2ClassInfo != null) {
-                    o2Value = o2ClassInfo.name();
-                }else {
-                    o2Value = o2.getSimpleName();
-                }
-                return o1Value.compareTo(o2Value);
-            }
-        });
+        List<Class<?>> entityClassesSort = sortEntityClasses(entityClasses);
         for(Class<?> entityClass : entityClassesSort) {
-            ReflectionFormPanel reflectionFormPanel;
-            try {
-                reflectionFormPanel = reflectionFormBuilder.transformEntityClass(entityClass,
-                        null, //entityToUpdate
-                        fieldHandler
-                );
-            } catch (FieldHandlingException ex) {
-                JOptionPane.showMessageDialog(this,
-                        String.format("An exception during creation of components occured (details: %s)", ex.getMessage()),
-                        DocumentScanner.generateApplicationWindowTitle("Exception", DocumentScanner.APP_NAME, DocumentScanner.APP_VERSION),
-                        JOptionPane.WARNING_MESSAGE);
-                continue;
+            ReflectionFormPanel reflectionFormPanel = reflectionFormPanelMap.get(entityClass);
+            if(reflectionFormPanel == null) {
+                throw new IllegalArgumentException(String.format("entityClass %s has no %s mapped in reflectionFormPanelMap",
+                        entityClass,
+                        ReflectionFormPanel.class));
             }
             JScrollPane reflectionFormPanelScrollPane = new JScrollPane(reflectionFormPanel);
             reflectionFormPanelScrollPane.getVerticalScrollBar().setUnitIncrement(DEFAULT_SCROLL_INTERVAL);
@@ -249,23 +187,17 @@ public class DocumentForm extends javax.swing.JPanel {
                     newTabTip,
                     this.entityCreationTabbedPane.getTabCount()
             );
-            List<Field> relevantFields = reflectionFormBuilder.getFieldRetriever().retrieveRelevantFields(entityClass);
-            JMenu entityClassMenu = new JMenu(entityClass.getSimpleName());
-            for(Field relevantField : relevantFields) {
-                JMenuItem relevantFieldMenuItem = new JMenuItem(relevantField.getName());
-                relevantFieldMenuItem.addActionListener(new FieldActionListener(reflectionFormPanel, relevantField, valueSetterMapping));
-                entityClassMenu.add(relevantFieldMenuItem);
-            }
-            this.oCRResultPopupPasteIntoMenuItem.add(entityClassMenu);
         }
         this.entityCreationTabbedPane.setSelectedIndex(this.entityCreationTabbedPane.indexOfTab(createClassTabTitle(primaryClassSelection)));
-        this.entityCreationTabbedPane.validate();
-        this.validate();
         for(Class<?> entityClass : entityClassesSort) {
             this.entityEditingClassComboBoxModel.addElement(entityClass);
         }
         this.entityEditingClassComboBox.setSelectedItem(primaryClassSelection);
         this.fieldHandler = fieldHandler;
+        this.modeSelectionButtonGroup.add(creationModeButton);
+        this.modeSelectionButtonGroup.add(editingModeButton);
+        this.creationModeButtonSetup(); //JButton.setSelected doesn't trigger
+            //action listener
     }
 
     private String createClassTabTitle(Class<?> entityClass) {
@@ -279,33 +211,29 @@ public class DocumentForm extends javax.swing.JPanel {
         return retValue;
     }
 
-    private class FieldActionListener implements ActionListener {
-        private final Field field;
-        private final ReflectionFormPanel reflectionFormPanel;
-        private final Map<Class<? extends JComponent>, ValueSetter<?>> valueSetterMapping;
-
-        FieldActionListener(ReflectionFormPanel reflectionFormPanel, Field field, Map<Class<? extends JComponent>, ValueSetter<?>> valueSetterMapping) {
-            this.field = field;
-            this.reflectionFormPanel = reflectionFormPanel;
-            this.valueSetterMapping = valueSetterMapping;
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            JComponent comp = this.reflectionFormPanel.getComponentByField(this.field);
-            String oCRSelection = DocumentForm.this.oCRResultTextArea.getSelectedText();
-            ValueSetter valueSetter = this.valueSetterMapping.get(comp.getClass());
-            if(valueSetter != null) {
-                valueSetter.setValue(oCRSelection, comp);
-            }else {
-                //@TODO: handle feedback
+    protected static List<Class<?>> sortEntityClasses(Set<Class<?>> entityClasses) {
+        List<Class<?>> entityClassesSort = new LinkedList<>(entityClasses);
+        Collections.sort(entityClassesSort, new Comparator<Class<?>>() {
+            @Override
+            public int compare(Class<?> o1, Class<?> o2) {
+                String o1Value;
+                ClassInfo o1ClassInfo = o1.getAnnotation(ClassInfo.class);
+                if(o1ClassInfo != null) {
+                    o1Value = o1ClassInfo.name();
+                }else {
+                    o1Value = o1.getSimpleName();
+                }
+                String o2Value;
+                ClassInfo o2ClassInfo = o2.getAnnotation(ClassInfo.class);
+                if(o2ClassInfo != null) {
+                    o2Value = o2ClassInfo.name();
+                }else {
+                    o2Value = o2.getSimpleName();
+                }
+                return o1Value.compareTo(o2Value);
             }
-        }
-
-    }
-
-    public JTextArea getoCRResultTextArea() {
-        return this.oCRResultTextArea;
+        });
+        return entityClassesSort;
     }
 
     /**
@@ -317,11 +245,8 @@ public class DocumentForm extends javax.swing.JPanel {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        oCRResultPopup = new javax.swing.JPopupMenu();
-        oCRResultPopupPasteIntoMenuItem = new javax.swing.JMenuItem();
-        oCRResultPopupSeparator = new javax.swing.JPopupMenu.Separator();
         entityCreationTabbedPane = new javax.swing.JTabbedPane();
-        entityEditingPanel = new javax.swing.JPanel();
+        editingPanel = new javax.swing.JPanel();
         entityEditingClassComboBox = new JComboBox<>();
         ;
         entityEditingClassComboBoxLabel = new javax.swing.JLabel();
@@ -332,20 +257,9 @@ public class DocumentForm extends javax.swing.JPanel {
         entityEditingSplitPaneRightPanel = new javax.swing.JPanel();
         entityEditingQueryPanelScrollPane = new javax.swing.JScrollPane();
         modeSelectionButtonGroup = new javax.swing.ButtonGroup();
-        splitPane = new javax.swing.JSplitPane();
-        entityPanel = new javax.swing.JPanel();
         entityContentPanel = new javax.swing.JPanel();
         creationModeButton = new javax.swing.JRadioButton();
         editingModeButton = new javax.swing.JRadioButton();
-        oCRResultPanel = new javax.swing.JPanel();
-        oCRResultLabel = new javax.swing.JLabel();
-        oCRResultTextAreaScrollPane = new javax.swing.JScrollPane();
-        oCRResultTextArea = new javax.swing.JTextArea();
-
-        oCRResultPopupPasteIntoMenuItem.setText("Paste into");
-        oCRResultPopupPasteIntoMenuItem.setEnabled(false);
-        oCRResultPopup.add(oCRResultPopupPasteIntoMenuItem);
-        oCRResultPopup.add(oCRResultPopupSeparator);
 
         entityEditingClassComboBox.setModel(entityEditingClassComboBoxModel);
         entityEditingClassComboBox.setRenderer(entityEditingClassComboBoxRenderer);
@@ -363,11 +277,11 @@ public class DocumentForm extends javax.swing.JPanel {
         entityEditingSplitPaneLeftPanel.setLayout(entityEditingSplitPaneLeftPanelLayout);
         entityEditingSplitPaneLeftPanelLayout.setHorizontalGroup(
             entityEditingSplitPaneLeftPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(entityEditingReflectionFormPanelScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 698, Short.MAX_VALUE)
+            .addComponent(entityEditingReflectionFormPanelScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 376, Short.MAX_VALUE)
         );
         entityEditingSplitPaneLeftPanelLayout.setVerticalGroup(
             entityEditingSplitPaneLeftPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(entityEditingReflectionFormPanelScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 410, Short.MAX_VALUE)
+            .addComponent(entityEditingReflectionFormPanelScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 193, Short.MAX_VALUE)
         );
 
         entityEditingSplitPane.setRightComponent(entityEditingSplitPaneLeftPanel);
@@ -376,35 +290,35 @@ public class DocumentForm extends javax.swing.JPanel {
         entityEditingSplitPaneRightPanel.setLayout(entityEditingSplitPaneRightPanelLayout);
         entityEditingSplitPaneRightPanelLayout.setHorizontalGroup(
             entityEditingSplitPaneRightPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(entityEditingQueryPanelScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 698, Short.MAX_VALUE)
+            .addComponent(entityEditingQueryPanelScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 376, Short.MAX_VALUE)
         );
         entityEditingSplitPaneRightPanelLayout.setVerticalGroup(
             entityEditingSplitPaneRightPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(entityEditingQueryPanelScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 370, Short.MAX_VALUE)
+            .addComponent(entityEditingQueryPanelScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 19, Short.MAX_VALUE)
         );
 
         entityEditingSplitPane.setLeftComponent(entityEditingSplitPaneRightPanel);
 
-        javax.swing.GroupLayout entityEditingPanelLayout = new javax.swing.GroupLayout(entityEditingPanel);
-        entityEditingPanel.setLayout(entityEditingPanelLayout);
-        entityEditingPanelLayout.setHorizontalGroup(
-            entityEditingPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, entityEditingPanelLayout.createSequentialGroup()
+        javax.swing.GroupLayout editingPanelLayout = new javax.swing.GroupLayout(editingPanel);
+        editingPanel.setLayout(editingPanelLayout);
+        editingPanelLayout.setHorizontalGroup(
+            editingPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, editingPanelLayout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(entityEditingPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                .addGroup(editingPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(entityEditingSplitPane)
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, entityEditingPanelLayout.createSequentialGroup()
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, editingPanelLayout.createSequentialGroup()
                         .addComponent(entityEditingClassComboBoxLabel)
                         .addGap(18, 18, 18)
                         .addComponent(entityEditingClassComboBox, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addComponent(entityEditingClassSeparator, javax.swing.GroupLayout.Alignment.LEADING))
                 .addContainerGap())
         );
-        entityEditingPanelLayout.setVerticalGroup(
-            entityEditingPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(entityEditingPanelLayout.createSequentialGroup()
+        editingPanelLayout.setVerticalGroup(
+            editingPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(editingPanelLayout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(entityEditingPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addGroup(editingPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(entityEditingClassComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(entityEditingClassComboBoxLabel))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
@@ -414,20 +328,18 @@ public class DocumentForm extends javax.swing.JPanel {
                 .addContainerGap())
         );
 
-        splitPane.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
-
         javax.swing.GroupLayout entityContentPanelLayout = new javax.swing.GroupLayout(entityContentPanel);
         entityContentPanel.setLayout(entityContentPanelLayout);
         entityContentPanelLayout.setHorizontalGroup(
             entityContentPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 653, Short.MAX_VALUE)
+            .addGap(0, 376, Short.MAX_VALUE)
         );
         entityContentPanelLayout.setVerticalGroup(
             entityContentPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 229, Short.MAX_VALUE)
+            .addGap(0, 246, Short.MAX_VALUE)
         );
 
-        modeSelectionButtonGroup.add(creationModeButton);
+        creationModeButton.setSelected(true);
         creationModeButton.setText("Creation mode");
         creationModeButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -435,7 +347,6 @@ public class DocumentForm extends javax.swing.JPanel {
             }
         });
 
-        modeSelectionButtonGroup.add(editingModeButton);
         editingModeButton.setText("Editing mode");
         editingModeButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -443,91 +354,40 @@ public class DocumentForm extends javax.swing.JPanel {
             }
         });
 
-        javax.swing.GroupLayout entityPanelLayout = new javax.swing.GroupLayout(entityPanel);
-        entityPanel.setLayout(entityPanelLayout);
-        entityPanelLayout.setHorizontalGroup(
-            entityPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(entityPanelLayout.createSequentialGroup()
+        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
+        this.setLayout(layout);
+        layout.setHorizontalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(entityPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(entityContentPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addGroup(entityPanelLayout.createSequentialGroup()
+                    .addGroup(layout.createSequentialGroup()
                         .addComponent(creationModeButton)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(editingModeButton)
                         .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
-        entityPanelLayout.setVerticalGroup(
-            entityPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, entityPanelLayout.createSequentialGroup()
+        layout.setVerticalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(entityPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(creationModeButton)
                     .addComponent(editingModeButton))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(entityContentPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addContainerGap())
         );
-
-        splitPane.setRightComponent(entityPanel);
-
-        oCRResultLabel.setText("OCR result");
-
-        oCRResultTextArea.setColumns(20);
-        oCRResultTextArea.setRows(5);
-        oCRResultTextArea.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                oCRResultTextAreaMouseClicked(evt);
-            }
-        });
-        oCRResultTextAreaScrollPane.setViewportView(oCRResultTextArea);
-
-        javax.swing.GroupLayout oCRResultPanelLayout = new javax.swing.GroupLayout(oCRResultPanel);
-        oCRResultPanel.setLayout(oCRResultPanelLayout);
-        oCRResultPanelLayout.setHorizontalGroup(
-            oCRResultPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(oCRResultPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(oCRResultPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(oCRResultTextAreaScrollPane)
-                    .addGroup(oCRResultPanelLayout.createSequentialGroup()
-                        .addComponent(oCRResultLabel)
-                        .addGap(0, 0, Short.MAX_VALUE)))
-                .addContainerGap())
-        );
-        oCRResultPanelLayout.setVerticalGroup(
-            oCRResultPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, oCRResultPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(oCRResultLabel)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(oCRResultTextAreaScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap())
-        );
-
-        splitPane.setTopComponent(oCRResultPanel);
-
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
-        this.setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(splitPane)
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(splitPane, javax.swing.GroupLayout.DEFAULT_SIZE, 435, Short.MAX_VALUE)
-        );
     }// </editor-fold>//GEN-END:initComponents
 
-    private void oCRResultTextAreaMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_oCRResultTextAreaMouseClicked
-        if(evt.getButton() == MouseEvent.BUTTON3) {
-            //right click
-            this.oCRResultPopup.show(this.oCRResultTextArea, evt.getX(), evt.getY());
-        }
-    }//GEN-LAST:event_oCRResultTextAreaMouseClicked
+    private void entityEditingClassComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_entityEditingClassComboBoxActionPerformed
+        Class<?> selectedEntityClass = (Class<?>) entityEditingClassComboBox.getSelectedItem();
+        handleEntityEditingQueryPanelUpdate(selectedEntityClass);
+    }//GEN-LAST:event_entityEditingClassComboBoxActionPerformed
 
-    private void creationModeButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_creationModeButtonActionPerformed
+    private void creationModeButtonSetup() {
         entityContentPanel.removeAll();
         //GroupLayout seems not necessary, but doesn't hurt
         GroupLayout entityContentPanelLayout = (GroupLayout) entityContentPanel.getLayout();
@@ -540,41 +400,28 @@ public class DocumentForm extends javax.swing.JPanel {
                 GroupLayout.DEFAULT_SIZE,
                 Short.MAX_VALUE));
         entityContentPanel.validate();
+    }
+
+    private void creationModeButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_creationModeButtonActionPerformed
+        creationModeButtonSetup();
     }//GEN-LAST:event_creationModeButtonActionPerformed
 
-    /**
-     * Changes to the editing mode and updates the visible components.
-     * @param evt
-     */
-    /*
-    internal implementation notes:
-    - it doesn't make sense to skip rerunning the query on the QueryPanel from
-    which the to be edited entity has been retrieved in order to make it
-    possible to save the entity again because it's not possible to save a
-    deleted (= new) instance in editing mode -> add listener to
-    ReflectionFormPanel
-    */
     private void editingModeButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_editingModeButtonActionPerformed
         entityContentPanel.removeAll();
         //GroupLayout seems not necessary, but doesn't hurt
         GroupLayout entityContentPanelLayout = (GroupLayout) entityContentPanel.getLayout();
-        entityContentPanelLayout.setHorizontalGroup(entityContentPanelLayout.createParallelGroup().addComponent(entityEditingPanel,
+        entityContentPanelLayout.setHorizontalGroup(entityContentPanelLayout.createParallelGroup().addComponent(editingPanel,
                 0, //min (0 necessary to make the scroll pane to appear)
                 GroupLayout.DEFAULT_SIZE,
                 Short.MAX_VALUE));
-        entityContentPanelLayout.setVerticalGroup(entityContentPanelLayout.createSequentialGroup().addComponent(entityEditingPanel,
+        entityContentPanelLayout.setVerticalGroup(entityContentPanelLayout.createSequentialGroup().addComponent(editingPanel,
                 0, //min (0 necessary to make the scroll pane to appear)
                 GroupLayout.DEFAULT_SIZE,
                 Short.MAX_VALUE));
         entityContentPanel.validate();
         entityEditingSplitPane.setDividerLocation(0.66); //invoke after
-            //entityContentPanel.validate
+        //entityContentPanel.validate
     }//GEN-LAST:event_editingModeButtonActionPerformed
-
-    private void entityEditingClassComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_entityEditingClassComboBoxActionPerformed
-        Class<?> selectedEntityClass = (Class<?>) entityEditingClassComboBox.getSelectedItem();
-        handleEntityEditingQueryPanelUpdate(selectedEntityClass);
-    }//GEN-LAST:event_entityEditingClassComboBoxActionPerformed
 
     private void handleEntityEditingQueryPanelUpdate(Class<?> selectedEntityClass) {
         entityEditingQueryPanel = this.entityEditingQueryPanelCache.get(selectedEntityClass);
@@ -603,8 +450,8 @@ public class DocumentForm extends javax.swing.JPanel {
                 @Override
                 public void onUpdate(QueryPanelUpdateEvent event) {
                     try {
-                        Object selectEntity = DocumentForm.this.entityEditingQueryPanel.getSelectedObject();
-                        ReflectionFormPanel reflectionFormPanel = DocumentForm.this.reflectionFormBuilder.transformEntityClass(event.getSource().getEntityClass(),
+                        Object selectEntity = EntityPanel.this.entityEditingQueryPanel.getSelectedObject();
+                        ReflectionFormPanel reflectionFormPanel = EntityPanel.this.reflectionFormBuilder.transformEntityClass(event.getSource().getEntityClass(),
                                 selectEntity,
                                 true, //editingMode
                                 fieldHandler
@@ -615,14 +462,14 @@ public class DocumentForm extends javax.swing.JPanel {
                                 if(reflectionFormPanelUpdateEvent.getType() == ReflectionFormPanelUpdateEvent.INSTANCE_DELETED) {
                                     entityEditingQueryPanel.getQueryComponent().repeatLastQuery();
                                     if(entityEditingQueryPanel.getQueryResults().isEmpty()) {
-                                        DocumentForm.this.entityEditingReflectionFormPanelScrollPane.setViewportView(null);
+                                        EntityPanel.this.entityEditingReflectionFormPanelScrollPane.setViewportView(null);
                                     }
                                 }
                             }
                         });
-                        DocumentForm.this.entityEditingReflectionFormPanelScrollPane.setViewportView(reflectionFormPanel);
-                        DocumentForm.this.entityEditingReflectionFormPanelScrollPane.getVerticalScrollBar().setUnitIncrement(DEFAULT_SCROLL_INTERVAL);
-                        DocumentForm.this.entityEditingReflectionFormPanelScrollPane.getHorizontalScrollBar().setUnitIncrement(DEFAULT_SCROLL_INTERVAL);
+                        EntityPanel.this.entityEditingReflectionFormPanelScrollPane.setViewportView(reflectionFormPanel);
+                        EntityPanel.this.entityEditingReflectionFormPanelScrollPane.getVerticalScrollBar().setUnitIncrement(DEFAULT_SCROLL_INTERVAL);
+                        EntityPanel.this.entityEditingReflectionFormPanelScrollPane.getHorizontalScrollBar().setUnitIncrement(DEFAULT_SCROLL_INTERVAL);
                     } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | FieldHandlingException ex) {
                         throw new RuntimeException(ex);
                     }
@@ -639,26 +486,17 @@ public class DocumentForm extends javax.swing.JPanel {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JRadioButton creationModeButton;
     private javax.swing.JRadioButton editingModeButton;
+    private javax.swing.JPanel editingPanel;
     private javax.swing.JPanel entityContentPanel;
     private javax.swing.JTabbedPane entityCreationTabbedPane;
     private javax.swing.JComboBox<Class<?>> entityEditingClassComboBox;
     private javax.swing.JLabel entityEditingClassComboBoxLabel;
     private javax.swing.JSeparator entityEditingClassSeparator;
-    private javax.swing.JPanel entityEditingPanel;
     private javax.swing.JScrollPane entityEditingQueryPanelScrollPane;
     private javax.swing.JScrollPane entityEditingReflectionFormPanelScrollPane;
     private javax.swing.JSplitPane entityEditingSplitPane;
     private javax.swing.JPanel entityEditingSplitPaneLeftPanel;
     private javax.swing.JPanel entityEditingSplitPaneRightPanel;
-    private javax.swing.JPanel entityPanel;
     private javax.swing.ButtonGroup modeSelectionButtonGroup;
-    private javax.swing.JLabel oCRResultLabel;
-    private javax.swing.JPanel oCRResultPanel;
-    private javax.swing.JPopupMenu oCRResultPopup;
-    private javax.swing.JMenuItem oCRResultPopupPasteIntoMenuItem;
-    private javax.swing.JPopupMenu.Separator oCRResultPopupSeparator;
-    private javax.swing.JTextArea oCRResultTextArea;
-    private javax.swing.JScrollPane oCRResultTextAreaScrollPane;
-    private javax.swing.JSplitPane splitPane;
     // End of variables declaration//GEN-END:variables
 }
