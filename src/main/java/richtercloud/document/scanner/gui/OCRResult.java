@@ -12,28 +12,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.setter;
-
-import richtercloud.document.scanner.gui.OCRResult;
-import richtercloud.reflection.form.builder.jpa.panels.LongIdPanel;
+package richtercloud.document.scanner.gui;
 
 /**
  *
  * @author richter
  */
-public class LongIdPanelSetter implements ValueSetter<OCRResult, LongIdPanel>{
-    private final static LongIdPanelSetter INSTANCE = new LongIdPanelSetter();
+public class OCRResult {
+    private final String oCRResult;
 
-    public static LongIdPanelSetter getInstance() {
-        return INSTANCE;
+    public OCRResult(String oCRResult) {
+        this.oCRResult = oCRResult;
     }
 
-    protected LongIdPanelSetter() {
+    public String getoCRResult() {
+        return oCRResult;
     }
-
-    @Override
-    public void setValue(OCRResult value, LongIdPanel comp) {
-        comp.setValue(Long.valueOf(value.getoCRResult()));
-    }
-
 }

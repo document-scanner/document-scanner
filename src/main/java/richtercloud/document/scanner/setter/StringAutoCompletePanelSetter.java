@@ -14,13 +14,14 @@
  */
 package richtercloud.document.scanner.setter;
 
+import richtercloud.document.scanner.gui.OCRResult;
 import richtercloud.reflection.form.builder.jpa.panels.StringAutoCompletePanel;
 
 /**
  *
  * @author richter
  */
-public class StringAutoCompletePanelSetter implements ValueSetter<StringAutoCompletePanel<?>> {
+public class StringAutoCompletePanelSetter implements ValueSetter<OCRResult, StringAutoCompletePanel<?>> {
     private final static StringAutoCompletePanelSetter INSTANCE = new StringAutoCompletePanelSetter();
 
     public static StringAutoCompletePanelSetter getInstance() {
@@ -28,7 +29,7 @@ public class StringAutoCompletePanelSetter implements ValueSetter<StringAutoComp
     }
 
     @Override
-    public void setValue(String value, StringAutoCompletePanel<?> comp) {
-        comp.getComboBox().setSelectedItem(value);
+    public void setValue(OCRResult value, StringAutoCompletePanel<?> comp) {
+        comp.getComboBox().setSelectedItem(value.getoCRResult());
     }
 }

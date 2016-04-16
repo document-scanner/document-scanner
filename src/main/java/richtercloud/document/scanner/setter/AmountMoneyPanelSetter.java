@@ -14,15 +14,18 @@
  */
 package richtercloud.document.scanner.setter;
 
+import java.text.ParseException;
+import org.jscience.economics.money.Currency;
 import org.jscience.economics.money.Money;
 import org.jscience.physics.amount.Amount;
+import richtercloud.document.scanner.gui.FormatOCRResult;
 import richtercloud.reflection.form.builder.components.AmountMoneyPanel;
 
 /**
  *
  * @author richter
  */
-public class AmountMoneyPanelSetter implements ValueSetter<AmountMoneyPanel> {
+public class AmountMoneyPanelSetter implements ValueSetter<FormatOCRResult, AmountMoneyPanel> {
     private final static AmountMoneyPanelSetter INSTANCE = new AmountMoneyPanelSetter();
 
     public static AmountMoneyPanelSetter getInstance() {
@@ -30,8 +33,20 @@ public class AmountMoneyPanelSetter implements ValueSetter<AmountMoneyPanel> {
     }
 
     @Override
-    public void setValue(String value, AmountMoneyPanel comp) {
-        Amount<Money> amountMoney = AmountMoneyPanel.parseValue(value);
+    public void setValue(FormatOCRResult value, AmountMoneyPanel comp) {
+        Number number;
+        try {
+            //don't parse with percent format because it doesn't make sense
+            number = value.getCurrencyFormat().parse(value.getoCRResult());
+        } catch (ParseException ex) {
+            try {
+                number = value.getNumberFormat().parse(value.getoCRResult());
+            }catch(ParseException ex1) {
+                throw new IllegalArgumentException(ex);
+            }
+        }
+        Amount<Money> amountMoney = Amount.valueOf(number.doubleValue(),
+                new Currency(value.getCurrencyFormat().getCurrency().getCurrencyCode()));
         comp.setValue(amountMoney);
     }
 }

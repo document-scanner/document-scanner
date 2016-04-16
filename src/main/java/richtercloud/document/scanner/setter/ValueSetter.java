@@ -15,6 +15,7 @@
 package richtercloud.document.scanner.setter;
 
 import javax.swing.JComponent;
+import richtercloud.document.scanner.gui.OCRResult;
 
 /**
  * An interface to handle different setter methods of different
@@ -22,7 +23,7 @@ import javax.swing.JComponent;
  * @author richter
  * @param <C> the type of the component the value is set on
  */
-public interface ValueSetter<C extends JComponent> {
+public interface ValueSetter<O extends OCRResult, C extends JComponent> {
 
-    void setValue(String value, C comp);
+    void setValue(O value, C comp);
 }

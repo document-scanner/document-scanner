@@ -54,6 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.locks.ReentrantLock;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
@@ -78,6 +79,7 @@ import javax.swing.event.TableModelListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import org.apache.commons.lang.exception.ExceptionUtils;
+import org.jscience.economics.money.Currency;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.conf.DerbyPersistenceStorageConf;
@@ -238,10 +240,10 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private boolean debug = false;
     private DocumentScannerCommandParser cmd = new DocumentScannerCommandParser();
     private final static String PROPERTY_KEY_DEBUG = "document.scanner.debug";
-    public final static Map<Class<? extends JComponent>, ValueSetter<?>> VALUE_SETTER_MAPPING_DEFAULT;
+    public final static Map<Class<? extends JComponent>, ValueSetter<?,?>> VALUE_SETTER_MAPPING_DEFAULT;
 
     static {
-        Map<Class<? extends JComponent>, ValueSetter<?>> valueSetterMappingDefault = new HashMap<>();
+        Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMappingDefault = new HashMap<>();
         valueSetterMappingDefault.put(JTextField.class,
                 TextFieldSetter.getInstance());
         valueSetterMappingDefault.put(JSpinner.class,
@@ -283,6 +285,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private File derbyPersistenceStorageSchemeChecksumFile = new File(CONFIG_DIR, DerbyPersistenceStorageConf.SCHEME_CHECKSUM_FILE_NAME);
     public final static int INITIAL_QUERY_LIMIT_DEFAULT = 20;
     public final static String BIDIRECTIONAL_HELP_DIALOG_TITLE = generateApplicationWindowTitle("Bidirectional relations help", APP_NAME, APP_VERSION);
+    private final static DocumentScannerConfConverter DOCUMENT_SCANNER_CONF_CONVERTER = new DocumentScannerConfConverter();
 
     public static String generateApplicationWindowTitle(String title, String applicationName, String applicationVersion) {
         return String.format("%s - %s %s", title, applicationName, applicationVersion);
@@ -391,12 +394,11 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         public boolean canConvert(Class clazz) {
             boolean retValue = EntityManager.class.isAssignableFrom(clazz)
                     || java.awt.Component.class.isAssignableFrom(clazz)
-                    || Process.class.isAssignableFrom(clazz);
+                    || Process.class.isAssignableFrom(clazz)
+                    || ReentrantLock.class.isAssignableFrom(clazz);
             return retValue;
         }
     }
-
-    private final static DocumentScannerConfConverter DOCUMENT_SCANNER_CONF_CONVERTER = new DocumentScannerConfConverter();
 
     /**
      * Handles all non-resource related cleanup tasks (like persistence of
@@ -580,7 +582,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 this,
                 oCREngineFactory,
                 conf.getoCREngineConf(),
-                typeHandlerMapping);
+                typeHandlerMapping,
+                conf);
         mainPanelPanel.add(this.mainPanel);
     }
 

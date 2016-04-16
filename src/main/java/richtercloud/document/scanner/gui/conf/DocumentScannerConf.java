@@ -17,10 +17,11 @@ package richtercloud.document.scanner.gui.conf;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Currency;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 import javax.persistence.EntityManager;
+import org.jscience.economics.money.Currency;
 import richtercloud.document.scanner.model.Bill;
 import richtercloud.reflection.form.builder.message.MessageHandler;
 
@@ -32,7 +33,8 @@ public class DocumentScannerConf implements Serializable {
     private static final long serialVersionUID = 1L;
     private final static String SCANNER_SANE_ADDRESS_DEFAULT = "localhost";
     private final static OCREngineConf<?> OCR_ENGINE_CONF_DEFAULT = new TesseractOCREngineConf();
-    private static final Currency DEFAULT_CURRENCY_DEFAULT = Currency.getInstance("EUR");
+    private static final Locale LOCALE_DEFAULT = Locale.getDefault();
+    private static final Currency CURRENCY_DEFAULT = new Currency(java.util.Currency.getInstance(LOCALE_DEFAULT).getCurrencyCode());
     private final static boolean AUTO_GENERATE_IDS_DEFAULT = true;
     private static Set<StorageConf<?,?>> generateAvailableStorageConfsDefault(EntityManager entityManager,
             MessageHandler messageHandler,
@@ -64,15 +66,16 @@ public class DocumentScannerConf implements Serializable {
     private OCREngineConf<?> oCREngineConf = OCR_ENGINE_CONF_DEFAULT;
     /**
      * The currency initially displayed in data entry components (e.g. for
-     * {@link Bill}).
+     * {@link Bill}). Can be different from the currency of the locale.
      */
-    private Currency defaultCurrency = DEFAULT_CURRENCY_DEFAULT;
+    private Currency currency = CURRENCY_DEFAULT;
     /**
      * A flag indicating that the IDs are generated automatically if the save
      * button is pressed (without the id generation button of the id panel
      * being pressed)
      */
     private boolean autoGenerateIDs;
+    private Locale locale = LOCALE_DEFAULT;
 
     protected DocumentScannerConf() {
     }
@@ -117,7 +120,7 @@ public class DocumentScannerConf implements Serializable {
         this.setoCREngineConf(documentScannerConf.getoCREngineConf());
         this.setStorageConf(documentScannerConf.getStorageConf());
         this.setAvailableStorageConfs(documentScannerConf.getAvailableStorageConfs());
-        this.setDefaultCurrency(documentScannerConf.getDefaultCurrency());
+        this.setCurrency(documentScannerConf.getCurrency());
         this.setAutoGenerateIDs(documentScannerConf.isAutoGenerateIDs());
     }
 
@@ -178,17 +181,17 @@ public class DocumentScannerConf implements Serializable {
     }
 
     /**
-     * @return the defaultCurrency
+     * @return the currency
      */
-    public Currency getDefaultCurrency() {
-        return this.defaultCurrency;
+    public Currency getCurrency() {
+        return this.currency;
     }
 
     /**
-     * @param defaultCurrency the defaultCurrency to set
+     * @param currency the currency to set
      */
-    public void setDefaultCurrency(Currency defaultCurrency) {
-        this.defaultCurrency = defaultCurrency;
+    public void setCurrency(Currency currency) {
+        this.currency = currency;
     }
 
     public void setAvailableStorageConfs(Set<StorageConf<?,?>> availableStorageConfs) {
@@ -205,5 +208,13 @@ public class DocumentScannerConf implements Serializable {
 
     public boolean isAutoGenerateIDs() {
         return autoGenerateIDs;
+    }
+
+    public Locale getLocale() {
+        return locale;
+    }
+
+    public void setLocale(Locale locale) {
+        this.locale = locale;
     }
 }

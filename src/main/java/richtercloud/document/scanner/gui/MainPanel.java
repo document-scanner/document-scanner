@@ -76,6 +76,7 @@ import static richtercloud.document.scanner.gui.DocumentScanner.APP_VERSION;
 import static richtercloud.document.scanner.gui.DocumentScanner.BIDIRECTIONAL_HELP_DIALOG_TITLE;
 import static richtercloud.document.scanner.gui.DocumentScanner.INITIAL_QUERY_LIMIT_DEFAULT;
 import static richtercloud.document.scanner.gui.DocumentScanner.generateApplicationWindowTitle;
+import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.gui.conf.OCREngineConf;
 import richtercloud.document.scanner.idgenerator.EntityIdGenerator;
 import richtercloud.document.scanner.model.Document;
@@ -130,10 +131,10 @@ public class MainPanel extends javax.swing.JPanel {
      * components can be retrieved as well.
      */
     private Map<CDockable, Pair<DefaultMultipleCDockable, DefaultMultipleCDockable>> documentSwitchingMap = new HashMap<>();
-    private Map<Class<?>, ReflectionFormPanel> reflectionFormPanelMap;
+    private Map<Class<?>, ReflectionFormPanel<?>> reflectionFormPanelMap;
     private final Set<Class<?>> entityClasses;
     private final Class<?> primaryClassSelection;
-    private final Map<Class<? extends JComponent>, ValueSetter<?>> valueSetterMapping;
+    private final Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping;
     private final EntityManager entityManager;
     private final MessageHandler messageHandler;
     private final ReflectionFormBuilder reflectionFormBuilder;
@@ -160,6 +161,7 @@ public class MainPanel extends javax.swing.JPanel {
     private final FieldRetriever fieldRetriever = new JPACachedFieldRetriever();
     private final Map<java.lang.reflect.Type, TypeHandler<?, ?,?, ?>> typeHandlerMapping;
     private final OCREngineConf oCREngineConf;
+    private final DocumentScannerConf documentScannerConf;
 
     public MainPanel(Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
@@ -171,7 +173,8 @@ public class MainPanel extends javax.swing.JPanel {
             JFrame dockingControlFrame,
             OCREngineFactory oCREngineFactory,
             OCREngineConf oCREngineConf,
-            Map<java.lang.reflect.Type, TypeHandler<?, ?,?, ?>> typeHandlerMapping) {
+            Map<java.lang.reflect.Type, TypeHandler<?, ?,?, ?>> typeHandlerMapping,
+            DocumentScannerConf documentScannerConf) {
         this(entityClasses,
                 primaryClassSelection,
                 DocumentScanner.VALUE_SETTER_MAPPING_DEFAULT,
@@ -183,12 +186,13 @@ public class MainPanel extends javax.swing.JPanel {
                 dockingControlFrame,
                 oCREngineFactory,
                 oCREngineConf,
-                typeHandlerMapping);
+                typeHandlerMapping,
+                documentScannerConf);
     }
 
     public MainPanel(Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
-            Map<Class<? extends JComponent>, ValueSetter<?>> valueSetterMapping,
+            Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping,
             EntityManager entityManager,
             AmountMoneyUsageStatisticsStorage amountMoneyUsageStatisticsStorage,
             AmountMoneyCurrencyStorage amountMoneyCurrencyStorage,
@@ -197,15 +201,21 @@ public class MainPanel extends javax.swing.JPanel {
             JFrame dockingControlFrame,
             OCREngineFactory oCREngineFactory,
             OCREngineConf oCREngineConf,
-            Map<java.lang.reflect.Type, TypeHandler<?, ?,?, ?>> typeHandlerMapping) {
+            Map<java.lang.reflect.Type, TypeHandler<?, ?,?, ?>> typeHandlerMapping,
+            DocumentScannerConf documentScannerConf) {
         if(messageHandler == null) {
             throw new IllegalArgumentException("messageHandler mustn't be null");
         }
+        this.messageHandler = messageHandler;
+        if(documentScannerConf == null) {
+            throw new IllegalArgumentException("documentScannerConf mustn't be "
+                    + "null");
+        }
+        this.documentScannerConf = documentScannerConf;
         this.entityClasses = entityClasses;
         this.primaryClassSelection = primaryClassSelection;
         this.valueSetterMapping = valueSetterMapping;
         this.entityManager = entityManager;
-        this.messageHandler = messageHandler;
         this.amountMoneyUsageStatisticsStorage = amountMoneyUsageStatisticsStorage;
         this.amountMoneyCurrencyStorage = amountMoneyCurrencyStorage;
         this.amountMoneyExchangeRateRetriever = amountMoneyExchangeRateRetriever;
@@ -412,7 +422,8 @@ public class MainPanel extends javax.swing.JPanel {
                             valueSetterMapping,
                             entityManager,
                             messageHandler,
-                            reflectionFormBuilder);
+                            reflectionFormBuilder,
+                            documentScannerConf);
                     EntityPanel entityPanel = new EntityPanel(entityClasses,
                             primaryClassSelection,
                             reflectionFormPanelMap,
@@ -480,6 +491,10 @@ public class MainPanel extends javax.swing.JPanel {
                 //invoke CDockable.setVisible in done in order to avoid
                 //ConcurrentModificationException
                 Pair<DefaultMultipleCDockable, DefaultMultipleCDockable> documentSwitchingPair = documentSwitchingMap.get(oCRSelectComponentDockable);
+                if(documentSwitchingPair == null) {
+                    //worker was canceled
+                    return;
+                }
                 MultipleCDockable oCRPanelDockable = documentSwitchingPair.getLeft();
                 MultipleCDockable entityPanelDockable = documentSwitchingPair.getRight();
                 oCRSelectComponentDockable.setVisible(true);

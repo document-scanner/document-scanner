@@ -113,9 +113,9 @@ public class EntityPanel extends javax.swing.JPanel {
      */
     public EntityPanel(Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
-            Map<Class<?>, ReflectionFormPanel> reflectionFormPanelMap,
+            Map<Class<?>, ReflectionFormPanel<?>> reflectionFormPanelMap,
             FieldHandler fieldHandler,
-            Map<Class<? extends JComponent>, ValueSetter<?>> valueSetterMapping,
+            Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping,
             EntityManager entityManager,
             final OCRResultPanelFetcher oCRResultPanelRetriever,
             final ScanResultPanelFetcher scanResultPanelRetriever,
