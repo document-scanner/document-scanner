@@ -264,6 +264,8 @@ public class MainPanel extends javax.swing.JPanel {
                 null, //note
                 0,
                 100);
+        progressMonitor.setMillisToPopup(0);
+        progressMonitor.setMillisToDecideToPopup(0);
         final SwingWorker<List<BufferedImage>, Void> worker = new SwingWorker<List<BufferedImage>, Void>() {
             @Override
             protected List<BufferedImage> doInBackground() throws Exception {
@@ -317,6 +319,8 @@ public class MainPanel extends javax.swing.JPanel {
                 null, //note
                 0,
                 100);
+        progressMonitor.setMillisToPopup(0);
+        progressMonitor.setMillisToDecideToPopup(0);
         final SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
             private OCRSelectComponentScrollPane createdOCRSelectComponentScrollPane;
 
