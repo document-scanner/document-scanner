@@ -79,7 +79,6 @@ import javax.swing.event.TableModelListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import org.apache.commons.lang.exception.ExceptionUtils;
-import org.jscience.economics.money.Currency;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.conf.DerbyPersistenceStorageConf;
@@ -180,7 +179,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private static final String CONNECTION_URL_TOOLTIP_TEXT = String.format("[mode]:[path] (where mode is one of <b>remote</b>, <b>plocal</b> or <b>??</b> and path is in the form [IP or hostname]/[database name], e.g. %s)", CONNECTION_URL_EXAMPLE);
     public static final String APP_NAME = "Document scanner";
     public static final String APP_VERSION = "1.0";
-    private static final String UNSAVED_NAME = "unsaved";
+    public static final String UNSAVED_NAME = "unsaved";
     private static final String SCANNER_ADDRESS_DEFAULT = "localhost";
     public static final String BUG_URL = "https://github.com/krichter722/document-scanner";
     private SaneDevice device;
@@ -583,7 +582,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 oCREngineFactory,
                 conf.getoCREngineConf(),
                 typeHandlerMapping,
-                conf);
+                conf,
+                this);
         mainPanelPanel.add(this.mainPanel);
     }
 
@@ -1378,7 +1378,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         try {
             List<BufferedImage> images = this.mainPanel.retrieveImages(selectedFile);
             this.mainPanel.addDocument(images,
-                    selectedFile.getName());
+                    selectedFile);
         } catch (DocumentAddException | InterruptedException | ExecutionException ex) {
             handleException(ex);
         }
@@ -1480,7 +1480,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             }
             BufferedImage image = this.device.acquireImage();
             this.mainPanel.addDocument(new LinkedList<>(Arrays.asList(image)),
-                    UNSAVED_NAME);
+                    null //documentFile
+            );
             this.validate();
         } catch (SaneException | IOException | IllegalArgumentException | IllegalStateException | DocumentAddException ex) {
             this.handleException(ex);

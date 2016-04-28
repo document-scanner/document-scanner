@@ -17,14 +17,9 @@ package richtercloud.document.scanner.gui;
 import bibliothek.gui.dock.common.CControl;
 import bibliothek.gui.dock.common.CLocation;
 import bibliothek.gui.dock.common.DefaultMultipleCDockable;
-import bibliothek.gui.dock.common.DefaultSingleCDockable;
-import bibliothek.gui.dock.common.EmptyMultipleCDockableFactory;
 import bibliothek.gui.dock.common.MultipleCDockable;
-import bibliothek.gui.dock.common.MultipleCDockableFactory;
-import bibliothek.gui.dock.common.SingleCDockable;
 import bibliothek.gui.dock.common.event.CVetoFocusListener;
 import bibliothek.gui.dock.common.intern.CDockable;
-import com.thoughtworks.xstream.core.ReferenceByIdMarshaller;
 import java.awt.BorderLayout;
 import java.awt.HeadlessException;
 import java.awt.event.MouseEvent;
@@ -43,7 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -53,7 +47,6 @@ import javax.imageio.ImageIO;
 import javax.persistence.EntityManager;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.ProgressMonitor;
@@ -61,7 +54,6 @@ import javax.swing.SwingWorker;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
 import org.apache.commons.math4.stat.descriptive.DescriptiveStatistics;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -79,7 +71,6 @@ import static richtercloud.document.scanner.gui.DocumentScanner.generateApplicat
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.gui.conf.OCREngineConf;
 import richtercloud.document.scanner.idgenerator.EntityIdGenerator;
-import richtercloud.document.scanner.model.Document;
 import richtercloud.document.scanner.ocr.OCREngine;
 import richtercloud.document.scanner.ocr.OCREngineFactory;
 import richtercloud.document.scanner.setter.ValueSetter;
@@ -115,11 +106,22 @@ internal implementation notes:
 - shouldn't manage an OCREngine or OCREngineFactory or AmountMoney related
 factories or resources because they're managed in a dialog which MainPanel
 doesn't need to know about
+- Adding the first OCRSelectComponentScrollPane inside a dockable
+doesn't trigger the CVetoFocusListener added to control, but the second does!
+- After adding a second OCRSelectComponentScrollPane inside dockable in
+addDocumentDockable
+  1. CVetoFocusListener.willGainFocus is invoked with the second
+dockable as argument
+  2. CVetoFocusListener.willLoseFocus is invoked with the second dockable as
+argument (which appears unintuitive)
+  3. CVetoFocusListener.willGainFocus is invoked with the second dockable as
+argument
+-> previously focused component can't be retrieved with
+CVetoFocusListener.willLoseFocus, but needs to be stored in a variable
 */
 public class MainPanel extends javax.swing.JPanel {
     private static final long serialVersionUID = 1L;
     private final static Logger LOGGER = LoggerFactory.getLogger(MainPanel.class);
-    private final CControl dockingControl;
     /**
      * Holds information which are necessary to adjust docked windows when
      * switching the document in the document tab dock. Store whole components
@@ -130,8 +132,7 @@ public class MainPanel extends javax.swing.JPanel {
      * {@link OCRPanel}'s and {@link EntityPanel}'s dockables from which
      * components can be retrieved as well.
      */
-    private Map<CDockable, Pair<DefaultMultipleCDockable, DefaultMultipleCDockable>> documentSwitchingMap = new HashMap<>();
-    private Map<Class<?>, ReflectionFormPanel<?>> reflectionFormPanelMap;
+    private Map<OCRSelectComponentScrollPane, Pair<OCRPanel, EntityPanel>> documentSwitchingMap = new HashMap<>();
     private final Set<Class<?>> entityClasses;
     private final Class<?> primaryClassSelection;
     private final Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping;
@@ -149,19 +150,15 @@ public class MainPanel extends javax.swing.JPanel {
      * {@link OCRSelectComponent}s and surrounding components can be visible,
      * but only one focused.
      */
-    /*
-    internal implementation notes:
-    - has to be a DefaultMultipleCDockable instead of a MultipleCDockable in
-    order to have getContentPane method available -> in case this field is
-    exposed consider managing components in a separate mapping of
-    MultipleCDockable -> triple of all involved components
-    */
-    private DefaultMultipleCDockable oCRSelectComponentDockable;
+    private OCRSelectComponentScrollPane oCRSelectComponentScrollPane;
     private final OCREngineFactory oCREngineFactory;
     private final FieldRetriever fieldRetriever = new JPACachedFieldRetriever();
     private final Map<java.lang.reflect.Type, TypeHandler<?, ?,?, ?>> typeHandlerMapping;
     private final OCREngineConf oCREngineConf;
     private final DocumentScannerConf documentScannerConf;
+    private final CControl control;
+    private final Map<JComponent, MultipleCDockable> dockableMap = new HashMap<>();
+    private final Map<CDockable, OCRSelectComponentScrollPane> componentMap = new HashMap<>();
 
     public MainPanel(Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
@@ -174,7 +171,8 @@ public class MainPanel extends javax.swing.JPanel {
             OCREngineFactory oCREngineFactory,
             OCREngineConf oCREngineConf,
             Map<java.lang.reflect.Type, TypeHandler<?, ?,?, ?>> typeHandlerMapping,
-            DocumentScannerConf documentScannerConf) {
+            DocumentScannerConf documentScannerConf,
+            JFrame parentFrame) {
         this(entityClasses,
                 primaryClassSelection,
                 DocumentScanner.VALUE_SETTER_MAPPING_DEFAULT,
@@ -187,7 +185,8 @@ public class MainPanel extends javax.swing.JPanel {
                 oCREngineFactory,
                 oCREngineConf,
                 typeHandlerMapping,
-                documentScannerConf);
+                documentScannerConf,
+                parentFrame);
     }
 
     public MainPanel(Set<Class<?>> entityClasses,
@@ -202,7 +201,8 @@ public class MainPanel extends javax.swing.JPanel {
             OCREngineFactory oCREngineFactory,
             OCREngineConf oCREngineConf,
             Map<java.lang.reflect.Type, TypeHandler<?, ?,?, ?>> typeHandlerMapping,
-            DocumentScannerConf documentScannerConf) {
+            DocumentScannerConf documentScannerConf,
+            JFrame parentFrame) {
         if(messageHandler == null) {
             throw new IllegalArgumentException("messageHandler mustn't be null");
         }
@@ -220,49 +220,7 @@ public class MainPanel extends javax.swing.JPanel {
         this.amountMoneyCurrencyStorage = amountMoneyCurrencyStorage;
         this.amountMoneyExchangeRateRetriever = amountMoneyExchangeRateRetriever;
         this.typeHandlerMapping = typeHandlerMapping;
-        this.dockingControl = new CControl(dockingControlFrame);
-        this.dockingControl.addVetoFocusListener(new CVetoFocusListener() {
-            /**
-             * Reference to the {@link CDockable} which will lose the focus.
-             */
-            /*
-            internal implementation notes:
-            - not too elegant, but since it's kept in this CVetoFocusListener
-            it's ok, otherwise DockingFrames ought to be investigated for a more
-            elegant solution for replacement of dockables
-            */
-            private CDockable willLoseFocus;
-            @Override
-            public boolean willGainFocus(CDockable cd) {
-                if(this.willLoseFocus == null) {
-                    //not switching from a OCRSelectComponent dockable
-                    return true;
-                }
-                if(cd.equals(willLoseFocus)) {
-                    //no switch of documents
-                    return true;
-                }
-                Pair<DefaultMultipleCDockable, DefaultMultipleCDockable> documentSwitchingPair = documentSwitchingMap.get(cd);
-                if(documentSwitchingPair != null) {
-                    MultipleCDockable oCRResultPanelDockable = documentSwitchingPair.getLeft();
-                    MultipleCDockable entityPanelDockable = documentSwitchingPair.getRight();
-                    Pair<DefaultMultipleCDockable, DefaultMultipleCDockable> documentSwitchingPairOld = documentSwitchingMap.get(willLoseFocus);
-                    MultipleCDockable oCRPanelDockableOld = documentSwitchingPairOld.getLeft();
-                    MultipleCDockable entityPanelDockableOld = documentSwitchingPairOld.getRight();
-                    dockingControl.replace(oCRPanelDockableOld, oCRResultPanelDockable);
-                    dockingControl.replace(entityPanelDockableOld, entityPanelDockable);
-                }
-                return true;
-            }
-
-            @Override
-            public boolean willLoseFocus(CDockable cd) {
-                if(documentSwitchingMap.keySet().contains(cd)) {
-                    this.willLoseFocus = cd;
-                }
-                return true;
-            }
-        });
+        this.control = new CControl (parentFrame);
         this.reflectionFormBuilder = new JPAReflectionFormBuilder(entityManager,
                 DocumentScanner.generateApplicationWindowTitle("Field description",
                         DocumentScanner.APP_NAME,
@@ -270,7 +228,29 @@ public class MainPanel extends javax.swing.JPanel {
                 messageHandler,
                 new JPACachedFieldRetriever());
         this.initComponents();
-        this.add(dockingControl.getContentArea(), BorderLayout.CENTER);
+        this.add(this.control.getContentArea(),
+                BorderLayout.CENTER); //has to be called after initComponents
+        this.control.addVetoFocusListener(new CVetoFocusListener() {
+
+            @Override
+            public boolean willGainFocus(CDockable dockable) {
+                OCRSelectComponentScrollPane aNew = componentMap.get(dockable);
+                if(aNew != null
+                        && !aNew.equals(MainPanel.this.oCRSelectComponentScrollPane)
+                        //focused component requests focus (e.g. after newly
+                        //adding)
+                ) {
+                    switchDocument(MainPanel.this.oCRSelectComponentScrollPane, aNew);
+                    MainPanel.this.oCRSelectComponentScrollPane = aNew;
+                }
+                return true;
+            }
+
+            @Override
+            public boolean willLoseFocus(CDockable dockable) {
+                return true;
+            }
+        });
         this.oCREngineFactory = oCREngineFactory;
         this.oCREngineConf = oCREngineConf;
     }
@@ -320,7 +300,15 @@ public class MainPanel extends javax.swing.JPanel {
         return retValue;
     }
 
-    public void addDocument (final List<BufferedImage> images, final String title) throws DocumentAddException {
+    /**
+     *
+     * @param images
+     * @param documentFile The {@link File} the document is stored in.
+     * {@code null} indicates that the document has not been saved yet (e.g. if
+     * the {@link OCRSelectComponent} represents scan data).
+     * @throws DocumentAddException
+     */
+    public void addDocument (final List<BufferedImage> images, final File documentFile) throws DocumentAddException {
         if(images == null) {
             throw new IllegalArgumentException("images mustn't be null");
         }
@@ -330,6 +318,8 @@ public class MainPanel extends javax.swing.JPanel {
                 0,
                 100);
         final SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+            private OCRSelectComponentScrollPane createdOCRSelectComponentScrollPane;
+
             @Override
             protected Void doInBackground() throws Exception {
                 try {
@@ -348,7 +338,8 @@ public class MainPanel extends javax.swing.JPanel {
                         panels.add(panel);
                     }
 
-                    OCRSelectComponent oCRSelectComponent = new OCRSelectComponent(panels);
+                    OCRSelectComponent oCRSelectComponent = new OCRSelectComponent(panels,
+                            documentFile);
 
                     OCRResultPanelFetcher oCRResultPanelFetcher = new DocumentTabOCRResultPanelFetcher(oCRSelectComponent,
                             oCREngineFactory);
@@ -391,32 +382,30 @@ public class MainPanel extends javax.swing.JPanel {
                             oCRResultPanelFetcher,
                             scanResultPanelFetcher);
 
-                    if(MainPanel.this.reflectionFormPanelMap == null) {
-                        MainPanel.this.reflectionFormPanelMap = new HashMap<>();
-                        for(Class<?> entityClass : entityClasses) {
-                            ReflectionFormPanel reflectionFormPanel;
-                            try {
-                                reflectionFormPanel = reflectionFormBuilder.transformEntityClass(entityClass,
-                                        null, //entityToUpdate
-                                        fieldHandler
-                                );
-                                reflectionFormPanelMap.put(entityClass, reflectionFormPanel);
-                            } catch (FieldHandlingException ex) {
-                                String message = String.format("An exception during creation of components occured (details: %s)",
-                                        ex.getMessage());
-                                JOptionPane.showMessageDialog(MainPanel.this,
-                                        message,
-                                        DocumentScanner.generateApplicationWindowTitle("Exception",
-                                                DocumentScanner.APP_NAME,
-                                                DocumentScanner.APP_VERSION),
-                                        JOptionPane.WARNING_MESSAGE);
-                                LOGGER.error(message, ex);
-                                throw ex;
-                            }
+                    Map<Class<?>, ReflectionFormPanel<?>> reflectionFormPanelMap = new HashMap<>();
+                    for(Class<?> entityClass : entityClasses) {
+                        ReflectionFormPanel reflectionFormPanel;
+                        try {
+                            reflectionFormPanel = reflectionFormBuilder.transformEntityClass(entityClass,
+                                    null, //entityToUpdate
+                                    fieldHandler
+                            );
+                            reflectionFormPanelMap.put(entityClass, reflectionFormPanel);
+                        } catch (FieldHandlingException ex) {
+                            String message = String.format("An exception during creation of components occured (details: %s)",
+                                    ex.getMessage());
+                            JOptionPane.showMessageDialog(MainPanel.this,
+                                    message,
+                                    DocumentScanner.generateApplicationWindowTitle("Exception",
+                                            DocumentScanner.APP_NAME,
+                                            DocumentScanner.APP_VERSION),
+                                    JOptionPane.WARNING_MESSAGE);
+                            LOGGER.error(message, ex);
+                            throw ex;
                         }
                     }
 
-                    JScrollPane oCRSelectComponentScrollPane = new JScrollPane(oCRSelectComponent);
+                    this.createdOCRSelectComponentScrollPane = new OCRSelectComponentScrollPane(oCRSelectComponent);
                     OCRPanel oCRPanel = new OCRPanel(entityClasses,
                             reflectionFormPanelMap,
                             valueSetterMapping,
@@ -435,27 +424,9 @@ public class MainPanel extends javax.swing.JPanel {
                             amountMoneyUsageStatisticsStorage,
                             amountMoneyCurrencyStorage,
                             messageHandler);
-                    MainPanel.this.oCRSelectComponentDockable = new DefaultMultipleCDockable(null,
-                            title,
-                            oCRSelectComponentScrollPane);
-                    DefaultMultipleCDockable oCRPanelDockable = new DefaultMultipleCDockable (null,
-                            "OCR result",
-                            oCRPanel);
-                    DefaultMultipleCDockable entityPanelDockable = new DefaultMultipleCDockable(null,
-                            "Entity editing",
-                            entityPanel);
                     if(!progressMonitor.isCanceled()) {
-                        dockingControl.addDockable(oCRSelectComponentDockable);
-                        dockingControl.addDockable(oCRPanelDockable);
-                        dockingControl.addDockable(entityPanelDockable);
-                        documentSwitchingMap.put(oCRSelectComponentDockable,
-                                new ImmutablePair<>(oCRPanelDockable, entityPanelDockable));
-                            //needs to be called before setVisible
-                        oCRSelectComponentDockable.setLocation(CLocation.base().normalWest(0.4));
-                        oCRPanelDockable.setLocation(CLocation.base().normalEast(0.6));
-                        entityPanelDockable.setLocation(CLocation.base().normalSouth(0.6));
-                        //invoke CDockable.setVisible in done in order to avoid
-                        //ConcurrentModificationException
+                        documentSwitchingMap.put(this.createdOCRSelectComponentScrollPane,
+                                new ImmutablePair<>(oCRPanel, entityPanel));
                     }
                 } catch (HeadlessException | IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException | InvocationTargetException ex) {
                     progressMonitor.close();
@@ -488,18 +459,15 @@ public class MainPanel extends javax.swing.JPanel {
             @Override
             protected void done() {
                 progressMonitor.close();
-                //invoke CDockable.setVisible in done in order to avoid
-                //ConcurrentModificationException
-                Pair<DefaultMultipleCDockable, DefaultMultipleCDockable> documentSwitchingPair = documentSwitchingMap.get(oCRSelectComponentDockable);
-                if(documentSwitchingPair == null) {
-                    //worker was canceled
-                    return;
+
+                addDocumentDockable(MainPanel.this.oCRSelectComponentScrollPane,
+                        this.createdOCRSelectComponentScrollPane);
+                if(MainPanel.this.oCRSelectComponentScrollPane == null) {
+                    //first document added -> CVetoFocusListener methods not
+                    //triggered
+                    switchDocument(MainPanel.this.oCRSelectComponentScrollPane,
+                            this.createdOCRSelectComponentScrollPane);
                 }
-                MultipleCDockable oCRPanelDockable = documentSwitchingPair.getLeft();
-                MultipleCDockable entityPanelDockable = documentSwitchingPair.getRight();
-                oCRSelectComponentDockable.setVisible(true);
-                oCRPanelDockable.setVisible(true);
-                entityPanelDockable.setVisible(true);
             }
         };
         worker.execute();
@@ -507,10 +475,113 @@ public class MainPanel extends javax.swing.JPanel {
             //is invoked
     }
 
+    /**
+     * A method which is called after a new {@link OCRSelectComponentScrollPane}
+     * has been created in {@link #addDocument(java.util.List, java.io.File) }
+     * which adds the created component to the docking framework which triggers
+     * the {@link CVetoFocusListener} added to {@code control}.
+     * @param old
+     * @param aNew
+     */
+    private void addDocumentDockable(OCRSelectComponentScrollPane old,
+            OCRSelectComponentScrollPane aNew) {
+        MultipleCDockable aNewDockable = dockableMap.get(aNew);
+        if(aNewDockable == null) {
+            aNewDockable = new DefaultMultipleCDockable(null,
+                    aNew.getoCRSelectComponent().getDocumentFile() != null
+                            ? aNew.getoCRSelectComponent().getDocumentFile().getName()
+                            : DocumentScanner.UNSAVED_NAME,
+                    aNew);
+            dockableMap.put(aNew, aNewDockable);
+            componentMap.put(aNewDockable, aNew);
+        }
+        control.addDockable(aNewDockable);
+        MultipleCDockable oldDockable = dockableMap.get(old);
+        assert oldDockable != null;
+        if(old != null) {
+            aNewDockable.setLocationsAside(oldDockable);
+        }else {
+            aNewDockable.setLocation(CLocation.base().normalNorth(0.4));
+        }
+        aNewDockable.setVisible(true);
+    }
+
+    /**
+     * Handles both switching documents (if {@code old} and {@code aNew} are not
+     * {@code null} and adding the first document (if {@code old} is
+     * {@code null}.
+     * @param old
+     * @param aNew
+     */
+    /*
+    internal implementation notes:
+    - handling both switching and adding the first document maximizes code
+    reusage
+    */
+    private void switchDocument(OCRSelectComponentScrollPane old,
+            final OCRSelectComponentScrollPane aNew) {
+        synchronized(aNew.getTreeLock()) {
+            Pair<OCRPanel, EntityPanel> newPair = documentSwitchingMap.get(aNew);
+            assert newPair != null;
+            OCRPanel oCRPanelNew = newPair.getKey();
+            EntityPanel entityPanelNew = newPair.getValue();
+            assert oCRPanelNew != null;
+            assert entityPanelNew != null;
+            //check if dockables already exist in order to avoid failure of
+            //CControl.replace if dockable is recreated
+            MultipleCDockable oCRPanelNewDockable = dockableMap.get(oCRPanelNew);
+            if(oCRPanelNewDockable == null) {
+                oCRPanelNewDockable = new DefaultMultipleCDockable(null,
+                        "OCR result",
+                        oCRPanelNew);
+                dockableMap.put(oCRPanelNew, oCRPanelNewDockable);
+            }
+            MultipleCDockable entityPanelNewDockable = dockableMap.get(entityPanelNew);
+            if(entityPanelNewDockable == null) {
+                entityPanelNewDockable = new DefaultMultipleCDockable(null,
+                        "Entities",
+                        entityPanelNew);
+                dockableMap.put(entityPanelNew, entityPanelNewDockable);
+            }
+            if(old != null) {
+                Pair<OCRPanel, EntityPanel> oldPair = documentSwitchingMap.get(old);
+                assert oldPair != null;
+                //order doesn't matter
+                OCRPanel oCRPanelOld = oldPair.getKey();
+                EntityPanel entityPanelOld = oldPair.getValue();
+                assert oCRPanelOld != null;
+                assert entityPanelOld != null;
+                MultipleCDockable oCRPanelOldDockable = dockableMap.get(oCRPanelOld);
+                MultipleCDockable entityPanelOldDockable = dockableMap.get(entityPanelOld);
+                control.replace(oCRPanelOldDockable, oCRPanelNewDockable);
+                    //CControl.replace fails if new dockable is already
+                    //registered at CControl
+                    //CControl.replace fails if old dockable has already been
+                    //removed from CControl
+                    //CDockable.setVisible(false) unregisters dockable at
+                    //CControl
+                oCRPanelNewDockable.setVisible(true);
+                control.replace(entityPanelOldDockable, entityPanelNewDockable);
+                    //MultipleCDockable.setVisible(true) fails if it's not
+                    //registered at a CControl (which has to be done with
+                    //CControl.replace (see above))
+                entityPanelNewDockable.setVisible(true);
+            }else {
+                //order matters
+                control.addDockable(oCRPanelNewDockable);
+                control.addDockable(entityPanelNewDockable);
+                oCRPanelNewDockable.setLocation(CLocation.base().normalEast(0.4));
+                oCRPanelNewDockable.setVisible(true);
+                entityPanelNewDockable.setLocation(CLocation.base().normalSouth(0.4));
+                entityPanelNewDockable.setVisible(true);
+            }
+            this.oCRSelectComponentScrollPane = aNew;
+            validate();
+        }
+    };
+
     private void handleOCRSelection() {
-        JScrollPane oCRSelectComponentScrollPane = (JScrollPane) oCRSelectComponentDockable.getContentPane().getComponents()[0];
-        OCRSelectComponent oCRSelectComponent = (OCRSelectComponent) oCRSelectComponentScrollPane.getViewport().getComponents()[0];
-        BufferedImage imageSelection = oCRSelectComponent.getSelection();
+        BufferedImage imageSelection = oCRSelectComponentScrollPane.getoCRSelectComponent().getSelection();
         if(imageSelection == null) {
             //image panels only contain selections of width or height <= 0 -> skip silently
             return;
@@ -521,7 +592,7 @@ public class MainPanel extends javax.swing.JPanel {
             return;
         }
         String oCRResult = oCREngine.recognizeImage(imageSelection);
-        OCRPanel oCRPanel = (OCRPanel) documentSwitchingMap.get(oCRSelectComponentDockable).getLeft().getContentPane().getComponents()[0];
+        OCRPanel oCRPanel = documentSwitchingMap.get(oCRSelectComponentScrollPane).getLeft();
         oCRPanel.getoCRResultTextArea().setText(oCRResult);
     }
 

@@ -14,7 +14,6 @@
  */
 package richtercloud.document.scanner.gui.conf;
 
-import richtercloud.document.scanner.gui.Managed;
 import richtercloud.document.scanner.storage.Storage;
 
 /**

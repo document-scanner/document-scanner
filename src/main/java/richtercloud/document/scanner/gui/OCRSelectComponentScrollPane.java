@@ -12,28 +12,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.gui.conf;
+package richtercloud.document.scanner.gui;
+
+import javax.swing.JScrollPane;
 
 /**
  *
  * @author richter
  */
-public class StorageConfInitializationException extends Exception {
+public class OCRSelectComponentScrollPane extends JScrollPane {
     private static final long serialVersionUID = 1L;
+    private final OCRSelectComponent oCRSelectComponent;
 
-    public StorageConfInitializationException() {
+    public OCRSelectComponentScrollPane(OCRSelectComponent oCRSelectComponent) {
+        super(oCRSelectComponent);
+        this.oCRSelectComponent = oCRSelectComponent;
     }
 
-    public StorageConfInitializationException(String message) {
-        super(message);
+    public OCRSelectComponent getoCRSelectComponent() {
+        return oCRSelectComponent;
     }
-
-    public StorageConfInitializationException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public StorageConfInitializationException(Throwable cause) {
-        super(cause);
-    }
-
 }

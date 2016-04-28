@@ -27,7 +27,6 @@ import javax.swing.ProgressMonitor;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import org.apache.commons.lang.exception.ExceptionUtils;
-import richtercloud.document.scanner.gui.OCRSelectComponent;
 import richtercloud.reflection.form.builder.message.Message;
 import richtercloud.reflection.form.builder.message.MessageHandler;
 

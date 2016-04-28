@@ -18,6 +18,7 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -50,17 +51,27 @@ public class OCRSelectComponent extends JPanel implements Scrollable {
     private List<OCRSelectPanel> imagePanels = new LinkedList<>();
     private OCRSelectPanel selectedPanel = null;
     private int maxUnitIncrement = 100;
+    /**
+     * The {@link File} the document is stored in. {@code null} indicates that
+     * the document has not been saved yet (e.g. if the
+     * {@link OCRSelectComponent} represents scan data).
+     */
+    private File documentFile;
 
     protected OCRSelectComponent() {
     }
 
-    public OCRSelectComponent(OCRSelectPanel panel) {
+    public OCRSelectComponent(OCRSelectPanel panel,
+            File documentFile) {
         this();
         this.imagePanels.add(panel);
+        this.documentFile = documentFile;
     }
 
-    public OCRSelectComponent(List<OCRSelectPanel> panels) {
+    public OCRSelectComponent(List<OCRSelectPanel> panels,
+            File documentFile) {
         this();
+        this.documentFile = documentFile;
         int preferredWidth = 0, preferredHeight = 0;
         FlowLayout layout = new FlowLayout(FlowLayout.CENTER, 5, 5);
         this.setLayout(layout);
@@ -72,6 +83,14 @@ public class OCRSelectComponent extends JPanel implements Scrollable {
             this.add(panel);
         }
         this.setPreferredSize(new Dimension(preferredWidth, preferredHeight));
+    }
+
+    public File getDocumentFile() {
+        return documentFile;
+    }
+
+    public void setDocumentFile(File documentFile) {
+        this.documentFile = documentFile;
     }
 
     public List<OCRSelectPanel> getImagePanels() {
