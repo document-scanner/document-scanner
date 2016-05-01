@@ -20,10 +20,24 @@ import bibliothek.gui.dock.common.DefaultMultipleCDockable;
 import bibliothek.gui.dock.common.MultipleCDockable;
 import bibliothek.gui.dock.common.event.CVetoFocusListener;
 import bibliothek.gui.dock.common.intern.CDockable;
+import bibliothek.gui.dock.util.DockUtilities;
 import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dialog;
+import java.awt.Dialog.ModalityType;
+import java.awt.Frame;
 import java.awt.HeadlessException;
+import java.awt.Window;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -43,13 +57,18 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
+import javax.accessibility.AccessibleContext;
 import javax.imageio.ImageIO;
 import javax.persistence.EntityManager;
 import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import static javax.swing.JOptionPane.INPUT_VALUE_PROPERTY;
+import static javax.swing.JOptionPane.VALUE_PROPERTY;
 import javax.swing.JScrollPane;
 import javax.swing.ProgressMonitor;
+import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -93,6 +112,8 @@ import richtercloud.reflection.form.builder.jpa.typehandler.ToManyTypeHandler;
 import richtercloud.reflection.form.builder.jpa.typehandler.ToOneTypeHandler;
 import richtercloud.reflection.form.builder.message.MessageHandler;
 import richtercloud.reflection.form.builder.typehandler.TypeHandler;
+import richtercloud.swing.worker.get.wait.dialog.SwingWorkerCompletionWaiter;
+import richtercloud.swing.worker.get.wait.dialog.SwingWorkerGetWaitDialog;
 
 /**
  * Manages all central windows (see {@link DocumentScanner} for details and
@@ -118,10 +139,31 @@ argument (which appears unintuitive)
 argument
 -> previously focused component can't be retrieved with
 CVetoFocusListener.willLoseFocus, but needs to be stored in a variable
+- Unclear why `Warning: layout should not be modified by subclasses of bibliothek.gui.dock.event.DockStationListener
+ This is only an information, not an exception. If your code is actually safe you can:
+ - disabled the warning by calling DockUtilities.disableCheckLayoutLocked() )
+ - mark your code as safe by setting the annotation 'LayoutLocked'` is printed
+-> using `DockUtilities.disableCheckLayoutLocked()` in static block causes
+`java.lang.IllegalStateException: During an operation the framework attempted to
+acquire the same lock twice. There are two possible explanations:` -> ignore as
+long as no problem occurs
 */
 public class MainPanel extends javax.swing.JPanel {
     private static final long serialVersionUID = 1L;
     private final static Logger LOGGER = LoggerFactory.getLogger(MainPanel.class);
+    /**
+     * indicates that {@link #addDocument(java.util.List, java.io.File) } ought
+     * to be handled in another thread while a {@link ProgressMonitor} dialog
+     * is displayed. If {@code ADD_DOCUMENT_ASYNC} is {@code false}
+     * {@link #addDocument(java.util.List, java.io.File) } isn't cancelable and
+     * will block the GUI.
+     */
+    /*
+    internal implementation notes:
+    - whilst this is used for debugging purposes mostly, it's useful to keep and
+    almost costs nothing
+    */
+    private static final boolean ADD_DOCUMENT_ASYNC = true;
     /**
      * Holds information which are necessary to adjust docked windows when
      * switching the document in the document tab dock. Store whole components
@@ -255,17 +297,30 @@ public class MainPanel extends javax.swing.JPanel {
         this.oCREngineConf = oCREngineConf;
     }
 
+    /**
+     * Uses a modal dialog in order to display the progress of the retrieval and
+     * make the operation cancelable.
+     * @param documentFile
+     * @return the retrieved images or {@code null} if the retrieval has been
+     * canceled (in dialog)
+     * @throws DocumentAddException
+     * @throws InterruptedException
+     * @throws ExecutionException
+     */
+    /*
+    internal implementation notes:
+    - can't use ProgressMonitor without blocking EVT instead of a model dialog
+    when using SwingWorker.get
+    */
     public List<BufferedImage> retrieveImages(final File documentFile) throws DocumentAddException, InterruptedException, ExecutionException {
         if(documentFile == null) {
             throw new IllegalArgumentException("documentFile mustn't be null");
         }
-        final ProgressMonitor progressMonitor = new ProgressMonitor(this,
-                "Generating new document tab", //message
-                null, //note
-                0,
-                100);
-        progressMonitor.setMillisToPopup(0);
-        progressMonitor.setMillisToDecideToPopup(0);
+        final SwingWorkerGetWaitDialog dialog = new SwingWorkerGetWaitDialog(SwingUtilities.getWindowAncestor(this), //owner
+                DocumentScanner.generateApplicationWindowTitle("Wait", APP_NAME, APP_VERSION), //dialogTitle
+                "Retrieving image data", //labelText
+                null //progressBarText
+        );
         final SwingWorker<List<BufferedImage>, Void> worker = new SwingWorker<List<BufferedImage>, Void>() {
             @Override
             protected List<BufferedImage> doInBackground() throws Exception {
@@ -276,7 +331,7 @@ public class MainPanel extends javax.swing.JPanel {
                     @SuppressWarnings("unchecked")
                     List<PDPage> pages = document.getDocumentCatalog().getAllPages();
                     for (PDPage page : pages) {
-                        if(progressMonitor.isCanceled()) {
+                        if(dialog.isCanceled()) {
                             document.close();
                             MainPanel.LOGGER.debug("tab generation aborted");
                             return null;
@@ -293,11 +348,13 @@ public class MainPanel extends javax.swing.JPanel {
 
             @Override
             protected void done() {
-                progressMonitor.setProgress(100);
             }
         };
+        worker.addPropertyChangeListener(
+            new SwingWorkerCompletionWaiter(dialog));
         worker.execute();
-        progressMonitor.setProgress(1);
+        //the dialog will be visible until the SwingWorker is done
+        dialog.setVisible(true);
         List<BufferedImage> retValue = worker.get();
         return retValue;
     }
@@ -314,169 +371,203 @@ public class MainPanel extends javax.swing.JPanel {
         if(images == null) {
             throw new IllegalArgumentException("images mustn't be null");
         }
-        final ProgressMonitor progressMonitor = new ProgressMonitor(this,
-                "Generating new document tab", //message
-                null, //note
-                0,
-                100);
-        progressMonitor.setMillisToPopup(0);
-        progressMonitor.setMillisToDecideToPopup(0);
-        final SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
-            private OCRSelectComponentScrollPane createdOCRSelectComponentScrollPane;
+        if(ADD_DOCUMENT_ASYNC) {
+            final ProgressMonitor progressMonitor = new ProgressMonitor(this,
+                    "Generating new document tab", //message
+                    null, //note
+                    0,
+                    100);
+            progressMonitor.setMillisToPopup(0);
+            progressMonitor.setMillisToDecideToPopup(0);
+            final SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+                private OCRSelectComponentScrollPane createdOCRSelectComponentScrollPane;
 
-            @Override
-            protected Void doInBackground() throws Exception {
-                try {
-                    List<OCRSelectPanel> panels = new LinkedList<>();
-                    for (BufferedImage image : images) {
-                        @SuppressWarnings("serial")
-                        OCRSelectPanel panel = new OCRSelectPanel(image) {
-                            @Override
-                            public void mouseReleased(MouseEvent evt) {
-                                super.mouseReleased(evt);
-                                if (this.getDragStart() != null && !this.getDragStart().equals(this.getDragEnd())) {
-                                    MainPanel.this.handleOCRSelection();
-                                }
-                            }
-                        };
-                        panels.add(panel);
-                    }
+                @Override
+                protected Void doInBackground() throws Exception {
+                    this.createdOCRSelectComponentScrollPane = addDocumentRoutine(images,
+                            documentFile,
+                            progressMonitor);
+                    return null;
+                }
 
-                    OCRSelectComponent oCRSelectComponent = new OCRSelectComponent(panels,
-                            documentFile);
+                @Override
+                protected void done() {
+                    progressMonitor.close();
+                    addDocumentDone(this.createdOCRSelectComponentScrollPane);
+                }
+            };
+            worker.execute();
+            progressMonitor.setProgress(1); //ProgressMonitor dialog blocks until SwingWorker.done
+                //is invoked
+        }else {
+            OCRSelectComponentScrollPane oCRSelectComponentScrollPane = addDocumentRoutine(images,
+                    documentFile,
+                    null //progressMonitor
+            );
+            addDocumentDone(oCRSelectComponentScrollPane);
+        }
+    }
 
-                    OCRResultPanelFetcher oCRResultPanelFetcher = new DocumentTabOCRResultPanelFetcher(oCRSelectComponent,
-                            oCREngineFactory);
-                    ScanResultPanelFetcher scanResultPanelFetcher = new DocumentTabScanResultPanelFetcher(oCRSelectComponent);
+    private void addDocumentDone(OCRSelectComponentScrollPane oCRSelectComponentScrollPane) {
+        addDocumentDockable(MainPanel.this.oCRSelectComponentScrollPane,
+                oCRSelectComponentScrollPane);
+        if(MainPanel.this.oCRSelectComponentScrollPane == null) {
+            //first document added -> CVetoFocusListener methods not
+            //triggered
+            switchDocument(MainPanel.this.oCRSelectComponentScrollPane,
+                    oCRSelectComponentScrollPane);
+        }
+    }
 
-                    AmountMoneyMappingFieldHandlerFactory embeddableFieldHandlerFactory = new AmountMoneyMappingFieldHandlerFactory(amountMoneyUsageStatisticsStorage,
-                            amountMoneyCurrencyStorage,
-                            amountMoneyExchangeRateRetriever,
-                            messageHandler);
-                    FieldHandler embeddableFieldHandler = new MappingFieldHandler(embeddableFieldHandlerFactory.generateClassMapping(),
-                            embeddableFieldHandlerFactory.generatePrimitiveMapping());
-                    ElementCollectionTypeHandler elementCollectionTypeHandler = new ElementCollectionTypeHandler(typeHandlerMapping,
-                            typeHandlerMapping,
-                            messageHandler,
-                            embeddableFieldHandler);
-                    JPAAmountMoneyMappingFieldHandlerFactory jPAAmountMoneyMappingFieldHandlerFactory = JPAAmountMoneyMappingFieldHandlerFactory.create(entityManager,
-                            INITIAL_QUERY_LIMIT_DEFAULT,
-                            messageHandler,
-                            amountMoneyUsageStatisticsStorage,
-                            amountMoneyCurrencyStorage,
-                            amountMoneyExchangeRateRetriever,
-                            BIDIRECTIONAL_HELP_DIALOG_TITLE);
-                    ToManyTypeHandler toManyTypeHandler = new ToManyTypeHandler(entityManager,
-                            messageHandler,
-                            typeHandlerMapping,
-                            typeHandlerMapping,
-                            BIDIRECTIONAL_HELP_DIALOG_TITLE);
-                    ToOneTypeHandler toOneTypeHandler = new ToOneTypeHandler(entityManager,
-                            messageHandler,
-                            BIDIRECTIONAL_HELP_DIALOG_TITLE);
-                    FieldHandler fieldHandler = new DocumentScannerFieldHandler(jPAAmountMoneyMappingFieldHandlerFactory.generateClassMapping(),
-                            embeddableFieldHandlerFactory.generateClassMapping(),
-                            embeddableFieldHandlerFactory.generatePrimitiveMapping(),
-                            elementCollectionTypeHandler,
-                            toManyTypeHandler,
-                            toOneTypeHandler,
-                            idGenerator,
-                            messageHandler,
-                            fieldRetriever,
-                            oCRResultPanelFetcher,
-                            scanResultPanelFetcher);
-
-                    Map<Class<?>, ReflectionFormPanel<?>> reflectionFormPanelMap = new HashMap<>();
-                    for(Class<?> entityClass : entityClasses) {
-                        ReflectionFormPanel reflectionFormPanel;
-                        try {
-                            reflectionFormPanel = reflectionFormBuilder.transformEntityClass(entityClass,
-                                    null, //entityToUpdate
-                                    fieldHandler
-                            );
-                            reflectionFormPanelMap.put(entityClass, reflectionFormPanel);
-                        } catch (FieldHandlingException ex) {
-                            String message = String.format("An exception during creation of components occured (details: %s)",
-                                    ex.getMessage());
-                            JOptionPane.showMessageDialog(MainPanel.this,
-                                    message,
-                                    DocumentScanner.generateApplicationWindowTitle("Exception",
-                                            DocumentScanner.APP_NAME,
-                                            DocumentScanner.APP_VERSION),
-                                    JOptionPane.WARNING_MESSAGE);
-                            LOGGER.error(message, ex);
-                            throw ex;
+    /**
+     * Exceptions are handled here in order to maximize code reusage although
+     * this requires check if {@code progressMonitor} is used (not {@code null})
+     * or not.
+     * @param images
+     * @param documentFile
+     * @return the created {@link OCRSelectComponentScrollPane}
+     */
+    private OCRSelectComponentScrollPane addDocumentRoutine(List<BufferedImage> images,
+            File documentFile,
+            ProgressMonitor progressMonitor) throws DocumentAddException {
+        OCRSelectComponentScrollPane retValue = null;
+        try {
+            List<OCRSelectPanel> panels = new LinkedList<>();
+            for (BufferedImage image : images) {
+                @SuppressWarnings("serial")
+                OCRSelectPanel panel = new OCRSelectPanel(image) {
+                    @Override
+                    public void mouseReleased(MouseEvent evt) {
+                        super.mouseReleased(evt);
+                        if (this.getDragStart() != null && !this.getDragStart().equals(this.getDragEnd())) {
+                            MainPanel.this.handleOCRSelection();
                         }
                     }
+                };
+                panels.add(panel);
+            }
 
-                    this.createdOCRSelectComponentScrollPane = new OCRSelectComponentScrollPane(oCRSelectComponent);
-                    OCRPanel oCRPanel = new OCRPanel(entityClasses,
-                            reflectionFormPanelMap,
-                            valueSetterMapping,
-                            entityManager,
-                            messageHandler,
-                            reflectionFormBuilder,
-                            documentScannerConf);
-                    EntityPanel entityPanel = new EntityPanel(entityClasses,
-                            primaryClassSelection,
-                            reflectionFormPanelMap,
-                            fieldHandler,
-                            valueSetterMapping,
-                            entityManager,
-                            oCRResultPanelFetcher,
-                            scanResultPanelFetcher,
-                            amountMoneyUsageStatisticsStorage,
-                            amountMoneyCurrencyStorage,
-                            messageHandler);
-                    if(!progressMonitor.isCanceled()) {
-                        documentSwitchingMap.put(this.createdOCRSelectComponentScrollPane,
-                                new ImmutablePair<>(oCRPanel, entityPanel));
-                    }
-                } catch (HeadlessException | IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException | InvocationTargetException ex) {
-                    progressMonitor.close();
-                    throw new DocumentAddException(ex);
-                } catch(Throwable ex) {
-                    //This dramatically facilitates debugging since Java
-                    //debugger has a lot of problems to halt at uncatched
-                    //exceptions and a lot of JVMs don't provide debugging
-                    //symbols.
-                    String message = "An unexpected exception occured "
-                                    + "during initialization (see stacktrace "
-                                    + "for details)";
+            OCRSelectComponent oCRSelectComponent = new OCRSelectComponent(panels,
+                    documentFile);
+
+            OCRResultPanelFetcher oCRResultPanelFetcher = new DocumentTabOCRResultPanelFetcher(oCRSelectComponent,
+                    oCREngineFactory);
+            ScanResultPanelFetcher scanResultPanelFetcher = new DocumentTabScanResultPanelFetcher(oCRSelectComponent);
+
+            AmountMoneyMappingFieldHandlerFactory embeddableFieldHandlerFactory = new AmountMoneyMappingFieldHandlerFactory(amountMoneyUsageStatisticsStorage,
+                    amountMoneyCurrencyStorage,
+                    amountMoneyExchangeRateRetriever,
+                    messageHandler);
+            FieldHandler embeddableFieldHandler = new MappingFieldHandler(embeddableFieldHandlerFactory.generateClassMapping(),
+                    embeddableFieldHandlerFactory.generatePrimitiveMapping());
+            ElementCollectionTypeHandler elementCollectionTypeHandler = new ElementCollectionTypeHandler(typeHandlerMapping,
+                    typeHandlerMapping,
+                    messageHandler,
+                    embeddableFieldHandler);
+            JPAAmountMoneyMappingFieldHandlerFactory jPAAmountMoneyMappingFieldHandlerFactory = JPAAmountMoneyMappingFieldHandlerFactory.create(entityManager,
+                    INITIAL_QUERY_LIMIT_DEFAULT,
+                    messageHandler,
+                    amountMoneyUsageStatisticsStorage,
+                    amountMoneyCurrencyStorage,
+                    amountMoneyExchangeRateRetriever,
+                    BIDIRECTIONAL_HELP_DIALOG_TITLE);
+            ToManyTypeHandler toManyTypeHandler = new ToManyTypeHandler(entityManager,
+                    messageHandler,
+                    typeHandlerMapping,
+                    typeHandlerMapping,
+                    BIDIRECTIONAL_HELP_DIALOG_TITLE);
+            ToOneTypeHandler toOneTypeHandler = new ToOneTypeHandler(entityManager,
+                    messageHandler,
+                    BIDIRECTIONAL_HELP_DIALOG_TITLE);
+            FieldHandler fieldHandler = new DocumentScannerFieldHandler(jPAAmountMoneyMappingFieldHandlerFactory.generateClassMapping(),
+                    embeddableFieldHandlerFactory.generateClassMapping(),
+                    embeddableFieldHandlerFactory.generatePrimitiveMapping(),
+                    elementCollectionTypeHandler,
+                    toManyTypeHandler,
+                    toOneTypeHandler,
+                    idGenerator,
+                    messageHandler,
+                    fieldRetriever,
+                    oCRResultPanelFetcher,
+                    scanResultPanelFetcher);
+
+            Map<Class<?>, ReflectionFormPanel<?>> reflectionFormPanelMap = new HashMap<>();
+            for(Class<?> entityClass : entityClasses) {
+                ReflectionFormPanel reflectionFormPanel;
+                try {
+                    reflectionFormPanel = reflectionFormBuilder.transformEntityClass(entityClass,
+                            null, //entityToUpdate
+                            fieldHandler
+                    );
+                    reflectionFormPanelMap.put(entityClass, reflectionFormPanel);
+                } catch (FieldHandlingException ex) {
+                    String message = String.format("An exception during creation of components occured (details: %s)",
+                            ex.getMessage());
+                    JOptionPane.showMessageDialog(MainPanel.this,
+                            message,
+                            DocumentScanner.generateApplicationWindowTitle("Exception",
+                                    DocumentScanner.APP_NAME,
+                                    DocumentScanner.APP_VERSION),
+                            JOptionPane.WARNING_MESSAGE);
                     LOGGER.error(message, ex);
-                    progressMonitor.close();
-                    JOptionPane.showMessageDialog(MainPanel.this, //parentComponent
-                            String.format("<html>%s. Please consider filing a "
-                                    + "bug at <a href=\"%s\">%s</a>. Stacktrace: %s</html>",
-                                    message,
-                                    DocumentScanner.BUG_URL,
-                                    DocumentScanner.BUG_URL,
-                                    ExceptionUtils.getFullStackTrace(ex)),
-                            generateApplicationWindowTitle("An exception occured",
-                                    APP_NAME,
-                                    APP_VERSION),
-                            JOptionPane.ERROR_MESSAGE);
+                    throw ex;
                 }
-                return null;
             }
 
-            @Override
-            protected void done() {
+            retValue = new OCRSelectComponentScrollPane(oCRSelectComponent);
+            OCRPanel oCRPanel = new OCRPanel(entityClasses,
+                    reflectionFormPanelMap,
+                    valueSetterMapping,
+                    entityManager,
+                    messageHandler,
+                    reflectionFormBuilder,
+                    documentScannerConf);
+            EntityPanel entityPanel = new EntityPanel(entityClasses,
+                    primaryClassSelection,
+                    reflectionFormPanelMap,
+                    fieldHandler,
+                    valueSetterMapping,
+                    entityManager,
+                    oCRResultPanelFetcher,
+                    scanResultPanelFetcher,
+                    amountMoneyUsageStatisticsStorage,
+                    amountMoneyCurrencyStorage,
+                    messageHandler);
+            if(progressMonitor == null || !progressMonitor.isCanceled()) {
+                documentSwitchingMap.put(retValue,
+                        new ImmutablePair<>(oCRPanel, entityPanel));
+            }
+            return retValue;
+        } catch (HeadlessException | IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException | InvocationTargetException ex) {
+            if(progressMonitor != null) {
                 progressMonitor.close();
-
-                addDocumentDockable(MainPanel.this.oCRSelectComponentScrollPane,
-                        this.createdOCRSelectComponentScrollPane);
-                if(MainPanel.this.oCRSelectComponentScrollPane == null) {
-                    //first document added -> CVetoFocusListener methods not
-                    //triggered
-                    switchDocument(MainPanel.this.oCRSelectComponentScrollPane,
-                            this.createdOCRSelectComponentScrollPane);
-                }
             }
-        };
-        worker.execute();
-        progressMonitor.setProgress(1); //ProgressMonitor dialog blocks until SwingWorker.done
-            //is invoked
+            throw new DocumentAddException(ex);
+        } catch(Throwable ex) {
+            //This dramatically facilitates debugging since Java
+            //debugger has a lot of problems to halt at uncatched
+            //exceptions and a lot of JVMs don't provide debugging
+            //symbols.
+            String message = "An unexpected exception occured "
+                            + "during initialization (see stacktrace "
+                            + "for details)";
+            LOGGER.error(message, ex);
+            if(progressMonitor != null) {
+                progressMonitor.close();
+            }
+            JOptionPane.showMessageDialog(MainPanel.this, //parentComponent
+                    String.format("<html>%s. Please consider filing a "
+                            + "bug at <a href=\"%s\">%s</a>. Stacktrace: %s</html>",
+                            message,
+                            DocumentScanner.BUG_URL,
+                            DocumentScanner.BUG_URL,
+                            ExceptionUtils.getFullStackTrace(ex)),
+                    generateApplicationWindowTitle("An exception occured",
+                            APP_NAME,
+                            APP_VERSION),
+                    JOptionPane.ERROR_MESSAGE);
+        }
+        return retValue;
     }
 
     /**

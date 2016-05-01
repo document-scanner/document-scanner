@@ -1377,6 +1377,10 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
         try {
             List<BufferedImage> images = this.mainPanel.retrieveImages(selectedFile);
+            if(images == null) {
+                LOGGER.debug("image retrieval has been canceled, discontinuing adding document");
+                return;
+            }
             this.mainPanel.addDocument(images,
                     selectedFile);
         } catch (DocumentAddException | InterruptedException | ExecutionException ex) {
