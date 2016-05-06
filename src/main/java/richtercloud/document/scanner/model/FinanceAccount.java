@@ -25,6 +25,7 @@ import javax.persistence.OneToMany;
 import javax.validation.constraints.NotNull;
 import javax.validation.groups.Default;
 import richtercloud.document.scanner.model.validator.ValidFinanceAccount;
+import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.reflection.form.builder.FieldInfo;
 import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
 
@@ -37,6 +38,7 @@ import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
 @Entity
 @Inheritance
 @ValidFinanceAccount(groups = {Default.class, IdGenerationValidation.class})
+@ClassInfo(name="Finance account")
 public class FinanceAccount extends Identifiable {
     private static final long serialVersionUID = 1L;
     @ManyToOne

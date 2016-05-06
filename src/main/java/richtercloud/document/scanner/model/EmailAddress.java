@@ -24,6 +24,7 @@ import javax.persistence.Inheritance;
 import javax.validation.constraints.NotNull;
 import javax.validation.groups.Default;
 import richtercloud.document.scanner.model.validator.ValidEmailAddress;
+import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.reflection.form.builder.FieldInfo;
 import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
 
@@ -33,6 +34,7 @@ import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
  */
 @Entity
 @Inheritance
+@ClassInfo(name = "Email address")
 public class EmailAddress extends Identifiable {
     private static final long serialVersionUID = 1L;
     @NotNull(groups = {Default.class, IdGenerationValidation.class})

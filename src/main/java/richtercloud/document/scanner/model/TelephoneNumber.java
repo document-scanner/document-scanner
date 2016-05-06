@@ -24,6 +24,7 @@ import javax.persistence.Inheritance;
 import javax.persistence.ManyToOne;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
+import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.reflection.form.builder.FieldInfo;
 
 /**
@@ -40,6 +41,7 @@ number isn't essential and can be queried easily
 */
 @Entity
 @Inheritance
+@ClassInfo(name = "Telephone number")
 public class TelephoneNumber extends Identifiable {
     private static final long serialVersionUID = 1L;
     public final static int TYPE_LANDLINE = 1;

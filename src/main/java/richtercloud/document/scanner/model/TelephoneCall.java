@@ -23,6 +23,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
+import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.reflection.form.builder.FieldInfo;
 
 /**
@@ -31,6 +32,7 @@ import richtercloud.reflection.form.builder.FieldInfo;
  */
 @Entity
 @Inheritance
+@ClassInfo(name="Telephone call")
 public class TelephoneCall extends CommunicationItem {
     private static final long serialVersionUID = 1L;
     @Temporal(TemporalType.TIMESTAMP)
