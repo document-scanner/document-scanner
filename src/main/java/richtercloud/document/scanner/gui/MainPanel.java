@@ -164,6 +164,16 @@ public class MainPanel extends javax.swing.JPanel {
     almost costs nothing
     */
     private static final boolean ADD_DOCUMENT_ASYNC = true;
+    static {
+        /*
+        doesn't prevent `java.lang.IllegalStateException: During an operation the framework attempted to acquire the same lock twice. There are two possible explanations:
+        1. In a multi-threaded application one or both operations are not executed in the EventDispatchThread, or
+        2. The operations are calling each other, which should not happen.
+        Please verify that this application is not accessing the framework from different threads, and fill a bugreport if you feel that this exception is not caused by your application.`
+        as suggested in the error message
+        */
+        DockUtilities.disableCheckLayoutLocked();
+    }
     /**
      * Holds information which are necessary to adjust docked windows when
      * switching the document in the document tab dock. Store whole components
