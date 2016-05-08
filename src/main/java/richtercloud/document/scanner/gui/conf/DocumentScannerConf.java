@@ -14,11 +14,15 @@
  */
 package richtercloud.document.scanner.gui.conf;
 
+import au.com.southsky.jfreesane.SaneDevice;
+import au.com.southsky.jfreesane.SaneOption;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import javax.persistence.EntityManager;
 import org.jscience.economics.money.Currency;
@@ -76,6 +80,11 @@ public class DocumentScannerConf implements Serializable {
      */
     private boolean autoGenerateIDs;
     private Locale locale = LOCALE_DEFAULT;
+    /**
+     * Stores information about changed SANE options because {@link SaneDevice}
+     * and {@link SaneOption} don't provide a way to do that.
+     */
+    private Map<SaneDevice, Map<SaneOption, Object>> changedOptions = new HashMap<>();
 
     protected DocumentScannerConf() {
     }
@@ -122,6 +131,14 @@ public class DocumentScannerConf implements Serializable {
         this.setAvailableStorageConfs(documentScannerConf.getAvailableStorageConfs());
         this.setCurrency(documentScannerConf.getCurrency());
         this.setAutoGenerateIDs(documentScannerConf.isAutoGenerateIDs());
+    }
+
+    public Map<SaneDevice, Map<SaneOption, Object>> getChangedOptions() {
+        return changedOptions;
+    }
+
+    public void setChangedOptions(Map<SaneDevice, Map<SaneOption, Object>> changedOptions) {
+        this.changedOptions = changedOptions;
     }
 
     /**

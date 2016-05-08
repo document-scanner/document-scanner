@@ -131,6 +131,7 @@ import richtercloud.reflection.form.builder.jpa.panels.LongIdPanel;
 import richtercloud.reflection.form.builder.jpa.panels.StringAutoCompletePanel;
 import richtercloud.reflection.form.builder.jpa.typehandler.JPAEntityListTypeHandler;
 import richtercloud.reflection.form.builder.jpa.typehandler.factory.JPAAmountMoneyMappingTypeHandlerFactory;
+import richtercloud.reflection.form.builder.message.DialogMessage;
 import richtercloud.reflection.form.builder.message.DialogMessageHandler;
 import richtercloud.reflection.form.builder.message.Message;
 import richtercloud.reflection.form.builder.message.MessageHandler;
@@ -180,30 +181,19 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     public static final String APP_NAME = "Document scanner";
     public static final String APP_VERSION = "1.0";
     public static final String UNSAVED_NAME = "unsaved";
-    private static final String SCANNER_ADDRESS_DEFAULT = "localhost";
     public static final String BUG_URL = "https://github.com/krichter722/document-scanner";
     private SaneDevice device;
     private ODatabaseDocumentTx db;
-    private final DefaultTableModel scannerDialogTableModel = new DefaultTableModel();
-    private SaneSession scannerDialogSaneSession;
-    private final TableModelListener scannerDialogTableModelListener = new TableModelListener() {
-        @Override
-        public void tableChanged(TableModelEvent e) {
-            DocumentScanner.this.scannerDialogSelectButton.setEnabled(DocumentScanner.this.scannerDialogSelectButtonEnabled());
-        }
-    };
-    private final ListSelectionListener scannerDialogTableSelectionListener = new ListSelectionListener() {
-        @Override
-        public void valueChanged(ListSelectionEvent e) {
-            DocumentScanner.this.scannerDialogSelectButton.setEnabled(DocumentScanner.this.scannerDialogSelectButtonEnabled());
-        }
-    };
     private final MutableComboBoxModel<Class<? extends OCREngineConf<?>>> oCREngineComboBoxModel = new DefaultComboBoxModel<>();
     private OCREngineConfPanel<?> currentOCREngineConfPanel;
     //@TODO: implement class path discovery of associated conf panel with annotations
     private final TesseractOCREngineConfPanel tesseractOCREngineConfPanel;
     private final Map<Class<? extends OCREngineConf<?>>, OCREngineConfPanel<?>> oCREngineConfPanelMap = new HashMap<>();
-    private final static int RESOLUTION_DEFAULT = 150;
+    /**
+     * The default value for resolution in DPI. The closest value to it might be
+     * chosen if the exact resolution isn't available.
+     */
+    public final static int RESOLUTION_DEFAULT = 300;
     private static final String CONFIG_DIR_NAME = ".document-scanner";
     private final static String CONFIG_FILE_NAME = "document-scanner-config.xml";
     private final File configFile;
@@ -261,7 +251,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private final static String AMOUNT_MONEY_USAGE_STATISTICS_STORAGE_FILE_NAME = "currency-usage-statistics.xml";
     private final static String AMOUNT_MONEY_CURRENCY_STORAGE_FILE_NAME = "currencies.xml";
     private final Map<java.lang.reflect.Type, TypeHandler<?, ?,?, ?>> typeHandlerMapping;
-    private MessageHandler messageHandler = new DialogMessageHandler(this, generateApplicationWindowTitle("", APP_NAME, APP_VERSION));
+    private DialogMessageHandler messageHandler = new DialogMessageHandler(this);
     private ListCellRenderer<Object> oCRDialogEngineComboBoxRenderer = new DefaultListCellRenderer() {
         private static final long serialVersionUID = 1L;
 
@@ -298,6 +288,17 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     */
     private MainPanel mainPanel;
     private final OCREngineFactory oCREngineFactory = new TesseractOCREngineFactory();
+    /**
+     * Since {@link SaneSession#getDevice(java.lang.String) } overwrites
+     * configuration settings, keep a reference to once retrieved
+     * {@link SaneDevice}.
+     */
+    private final Map<String, SaneDevice> nameDeviceMap = new HashMap<>();
+    public final static String SANED_BUG_INFO = "<br/>You might suffer from a "
+            + "saned bug, try <tt>/usr/sbin/saned -d -s -a saned</tt> with "
+            + "appropriate privileges in order to restart saned and try again"
+            + "</html>";
+
 
     /**
      * Parses the command line and evaluates system properties. Command line
@@ -321,7 +322,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     }
 
     /**
-     * expected {@code conf} to be filled from configuration file
+     * Fills {@code conf} from configuration file.
      */
     private void loadProperties() {
         XStream xStream = new XStream();
@@ -331,18 +332,45 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         } catch (FileNotFoundException ex) {
             throw new RuntimeException(ex);
         }
+        //if a scanner address and device name is in persisted conf check if
+        //it's accessible and treat it as selected scanner silently
         try {
             InetAddress address = InetAddress.getByName(this.conf.getScannerSaneAddress());
-            this.scannerDialogSaneSession = SaneSession.withRemoteSane(address);
-            this.device = this.scannerDialogSaneSession.getDevice(this.conf.getScannerName());
+            SaneSession saneSession = SaneSession.withRemoteSane(address);
+            this.device = saneSession.getDevice(this.conf.getScannerName());
+            afterScannerSelection(this.conf.getScannerSaneAddress(),
+                    device);
         } catch (IOException ex) {
-            this.handleException(ex);
+            String text = handleSearchScannerException("An exception during the setup of "
+                    + "previously selected scanner occured: ",
+                    ex,
+                    SANED_BUG_INFO);
+            messageHandler.handle(new DialogMessage("Exception during setup of previously selected scanner",
+                    text,
+                    JOptionPane.WARNING_MESSAGE));
         }
     }
 
-    private boolean scannerDialogSelectButtonEnabled() {
-        return this.scannerDialogTableModel.getDataVector().size() > 0
-                && this.scannerDialogTable.getSelectedRowCount() > 0;
+    public static String handleSearchScannerException(String text,
+            Exception ex,
+            String additional) {
+        String message = ex.getMessage();
+        if (ex.getCause() != null) {
+            message = String.format("%s (caused by '%s')", message, ex.getCause().getMessage());
+        }
+        String retValue = String.format("<html>%s%s%s</html>", text, message, additional);
+        return retValue;
+    }
+
+    public static SaneDevice getDevice(String name,
+            SaneSession saneSession,
+            Map<String, SaneDevice> nameDeviceMap) throws IOException {
+        SaneDevice retValue = nameDeviceMap.get(name);
+        if(retValue == null) {
+            retValue = saneSession.getDevice(name);
+            nameDeviceMap.put(name, retValue);
+        }
+        return retValue;
     }
 
     private void onDeviceSet() {
@@ -376,6 +404,23 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         this.statusBar.setLayout(layout);
         this.pack();
         this.invalidate();
+    }
+
+    private void afterScannerSelection(String address, SaneDevice device) {
+        assert device != null;
+        this.device = device;
+        try {
+            ScannerEditDialog.configureDefaultOptionValues(device,
+                    this.conf.getChangedOptions(),
+                    false //overwrite (might have been changed in edit dialog)
+            );
+        } catch (IOException | SaneException | IllegalArgumentException ex) {
+            this.messageHandler.handle(new DialogMessage("Exception during setup of scanner default options occured", ex, JOptionPane.ERROR_MESSAGE));
+        }
+        this.conf.setScannerName(device.getName());
+        this.conf.setScannerSaneAddress(address);
+        this.scanMenuItem.setEnabled(true);
+        this.scanMenuItem.getParent().revalidate();
     }
 
     private static class DocumentScannerConfConverter implements Converter {
@@ -472,12 +517,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
 
         this.onDeviceUnset();
-        this.scannerDialogTableModel.addColumn("Name");
-        this.scannerDialogTableModel.addColumn("Model");
-        this.scannerDialogTableModel.addColumn("Type");
-        this.scannerDialogTableModel.addColumn("Vendor");
-        this.scannerDialogTableModel.addTableModelListener(this.scannerDialogTableModelListener);
-        this.scannerDialogTable.getSelectionModel().addListSelectionListener(this.scannerDialogTableSelectionListener);
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
@@ -629,16 +668,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
 
         scannerLabel = new javax.swing.JLabel();
         selectScannerButton = new javax.swing.JButton();
-        scannerDialog = new javax.swing.JDialog();
-        scannerDialogAddressTextField = new javax.swing.JTextField();
-        scannerDialogAddressLabel = new javax.swing.JLabel();
-        scannerDialogSearchButton = new javax.swing.JButton();
-        scannerDialogSeparator = new javax.swing.JSeparator();
-        scannerDialogScrollPane = new javax.swing.JScrollPane();
-        scannerDialogTable = new javax.swing.JTable();
-        scannerDialogCancelButton = new javax.swing.JButton();
-        scannerDialogSelectButton = new javax.swing.JButton();
-        scannerDialogStatusLabel = new javax.swing.JLabel();
         databaseDialog = new javax.swing.JDialog();
         databaseConnectionURLTextField = new javax.swing.JTextField();
         databaseConnectionURLLabel = new javax.swing.JLabel();
@@ -705,86 +734,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 selectScannerButtonActionPerformed(evt);
             }
         });
-
-        scannerDialog.setTitle(DocumentScanner.generateApplicationWindowTitle("Select scanner", APP_NAME, APP_VERSION));
-        scannerDialog.setModal(true);
-
-        scannerDialogAddressTextField.setText(SCANNER_ADDRESS_DEFAULT);
-
-        scannerDialogAddressLabel.setText("Address");
-
-        scannerDialogSearchButton.setText("Search");
-        scannerDialogSearchButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                scannerDialogSearchButtonActionPerformed(evt);
-            }
-        });
-
-        scannerDialogTable.setModel(scannerDialogTableModel);
-        scannerDialogScrollPane.setViewportView(scannerDialogTable);
-
-        scannerDialogCancelButton.setText("Cancel");
-        scannerDialogCancelButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                scannerDialogCancelButtonActionPerformed(evt);
-            }
-        });
-
-        scannerDialogSelectButton.setText("Select scanner");
-        scannerDialogSelectButton.setEnabled(false);
-        scannerDialogSelectButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                scannerDialogSelectButtonActionPerformed(evt);
-            }
-        });
-
-        scannerDialogStatusLabel.setText(" ");
-
-        javax.swing.GroupLayout scannerDialogLayout = new javax.swing.GroupLayout(scannerDialog.getContentPane());
-        scannerDialog.getContentPane().setLayout(scannerDialogLayout);
-        scannerDialogLayout.setHorizontalGroup(
-            scannerDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(scannerDialogLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(scannerDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, scannerDialogLayout.createSequentialGroup()
-                        .addComponent(scannerDialogAddressLabel)
-                        .addGap(18, 18, 18)
-                        .addComponent(scannerDialogAddressTextField))
-                    .addComponent(scannerDialogSeparator)
-                    .addComponent(scannerDialogScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 496, Short.MAX_VALUE)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, scannerDialogLayout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
-                        .addComponent(scannerDialogSelectButton)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(scannerDialogCancelButton))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, scannerDialogLayout.createSequentialGroup()
-                        .addComponent(scannerDialogStatusLabel)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(scannerDialogSearchButton)))
-                .addContainerGap())
-        );
-        scannerDialogLayout.setVerticalGroup(
-            scannerDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(scannerDialogLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(scannerDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(scannerDialogAddressTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(scannerDialogAddressLabel))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(scannerDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(scannerDialogSearchButton)
-                    .addComponent(scannerDialogStatusLabel))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(scannerDialogSeparator, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(scannerDialogScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 293, Short.MAX_VALUE)
-                .addGap(18, 18, 18)
-                .addGroup(scannerDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(scannerDialogCancelButton)
-                    .addComponent(scannerDialogSelectButton))
-                .addContainerGap())
-        );
 
         databaseDialog.setTitle(DocumentScanner.generateApplicationWindowTitle("Connect to database", APP_NAME, APP_VERSION));
         databaseDialog.setModal(true);
@@ -1127,7 +1076,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         statusBar.setLayout(statusBarLayout);
         statusBarLayout.setHorizontalGroup(
             statusBarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 428, Short.MAX_VALUE)
+            .addGap(0, 800, Short.MAX_VALUE)
         );
         statusBarLayout.setVerticalGroup(
             statusBarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1262,9 +1211,22 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     }//GEN-LAST:event_scanMenuItemActionPerformed
 
     private void selectScannerMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectScannerMenuItemActionPerformed
-        this.scannerDialog.pack();
-        this.scannerDialog.setLocationRelativeTo(this);
-        this.scannerDialog.setVisible(true);
+        ScannerSelectionDialog scannerSelectionDialog = new ScannerSelectionDialog(this,
+                messageHandler,
+                nameDeviceMap,
+                this.conf.getChangedOptions(),
+                this.conf.getScannerSaneAddress());
+        scannerSelectionDialog.pack();
+        scannerSelectionDialog.setLocationRelativeTo(this);
+        scannerSelectionDialog.setVisible(true);//blocks
+
+        String scannerAddress = scannerSelectionDialog.getAddress();
+        SaneDevice selectedDevice = scannerSelectionDialog.getSelectedDevice();
+        if(selectedDevice == null) {
+            //dialog has been canceled
+            return;
+        }
+        afterScannerSelection(scannerAddress, selectedDevice);
     }//GEN-LAST:event_selectScannerMenuItemActionPerformed
 
     private void storageSelectionMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_storageSelectionMenuItemActionPerformed
@@ -1296,19 +1258,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         this.databaseDialog.setVisible(false);
         this.databaseConnectionFailureLabel.setText(" ");
     }//GEN-LAST:event_databaseCancelButtonActionPerformed
-
-    private void scannerDialogCancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_scannerDialogCancelButtonActionPerformed
-        this.scannerDialog.setVisible(false);
-    }//GEN-LAST:event_scannerDialogCancelButtonActionPerformed
-
-    private void scannerDialogSelectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_scannerDialogSelectButtonActionPerformed
-        this.selectScanner();
-        this.scannerDialog.setVisible(false);
-    }//GEN-LAST:event_scannerDialogSelectButtonActionPerformed
-
-    private void scannerDialogSearchButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_scannerDialogSearchButtonActionPerformed
-        this.searchScanner();
-    }//GEN-LAST:event_scannerDialogSearchButtonActionPerformed
 
     private void oCRMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_oCRMenuItemActionPerformed
         this.oCRDialog.pack();
@@ -1384,7 +1333,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             this.mainPanel.addDocument(images,
                     selectedFile);
         } catch (DocumentAddException | InterruptedException | ExecutionException ex) {
-            handleException(ex);
+            handleException(ex, "Exception during adding new document");
         }
     }//GEN-LAST:event_openMenuItemActionPerformed
 
@@ -1392,55 +1341,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         DocumentScannerOptionsDialog documentScannerOptionsDialog = new DocumentScannerOptionsDialog(this, conf);
         documentScannerOptionsDialog.setVisible(true);
     }//GEN-LAST:event_optionsMenuItemActionPerformed
-
-    /**
-     * for code reusage in {@link #searchScanner() }
-     *
-     * @param ex
-     * @param additional
-     */
-    private void handleSearchScannerException(Exception ex, String additional) {
-        String message = ex.getMessage();
-        if (ex.getCause() != null) {
-            message = String.format("%s (caused by '%s')", message, ex.getCause().getMessage());
-        }
-        this.scannerDialogStatusLabel.setText(String.format("<html>The search at the specified address failed with the following error: %s%s</html>", message, additional));
-    }
-
-    private void searchScanner() {
-        String addressString = this.scannerDialogAddressTextField.getText();
-        InetAddress address;
-        this.scannerDialogStatusLabel.setText("Searching...");
-        try {
-            address = InetAddress.getByName(addressString);
-            this.scannerDialogSaneSession = SaneSession.withRemoteSane(address);
-            List<SaneDevice> availableDevices = this.scannerDialogSaneSession.listDevices();
-            for (SaneDevice available : availableDevices) {
-                this.scannerDialogTableModel.addRow(new Object[]{available.getName(), available.getModel(), available.getType(), available.getVendor()});
-            }
-            this.scannerDialogStatusLabel.setText(" ");
-        } catch (ConnectException ex) {
-            String additional = "<br/>You might suffer from a saned bug, try <tt>/usr/sbin/saned -d -s -a saned</tt> with appropriate privileges in order to restart saned and try again</html>";
-            this.handleSearchScannerException(ex, additional);
-        } catch (IOException | SaneException ex) {
-            this.handleSearchScannerException(ex, "");
-        }
-    }
-
-    private void selectScanner() {
-        String selectedName = (String) ((List) this.scannerDialogTableModel.getDataVector().get(this.scannerDialogTable.getSelectedRow())).get(0);
-        try {
-            this.device = this.scannerDialogSaneSession.getDevice(selectedName);
-        } catch (IOException ex) {
-            this.handleException(ex);
-        }
-        String scannerAddress = this.scannerDialogAddressTextField.getText();
-        String scannerName = this.device.getName();
-        this.conf.setScannerName(scannerName);
-        this.conf.setScannerSaneAddress(scannerAddress);
-        this.scanMenuItem.setEnabled(true);
-        this.scanMenuItem.getParent().revalidate();
-    }
 
     /**
      * connects to an OrientDB database using the current values of the text
@@ -1467,20 +1367,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private void scan() {
         assert this.device != null;
         try {
-            this.device.open();
-            //for a list of SANE options see http://www.sane-project.org/html/doc014.html
-            SaneOption deviceResolutionOption = this.device.getOption("resolution");
-            if (!deviceResolutionOption.isWriteable()) {
-                LOGGER.warn("SANE option \"resolution\" isn't writable in this SANE frontend. There's nothing you can do. Scanning with {} DPI only", deviceResolutionOption.getType().equals(OptionValueType.INT) ? deviceResolutionOption.getIntegerValue() : deviceResolutionOption.getFixedValue());
-            } else {
-                if (deviceResolutionOption.getType().equals(OptionValueType.INT)) {
-                    deviceResolutionOption.setIntegerValue(RESOLUTION_DEFAULT);
-                } else if (deviceResolutionOption.getType().equals(OptionValueType.FIXED)) {
-                    deviceResolutionOption.setFixedValue(RESOLUTION_DEFAULT);
-                } else {
-                    throw new IllegalStateException("type of SANE option \"resolution\" is neither int nor fixed");
-                }
-                LOGGER.debug("set SANE option \"resolution\" to {}", RESOLUTION_DEFAULT);
+            if(!this.device.isOpen()) {
+                this.device.open();
             }
             BufferedImage image = this.device.acquireImage();
             this.mainPanel.addDocument(new LinkedList<>(Arrays.asList(image)),
@@ -1488,21 +1376,23 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             );
             this.validate();
         } catch (SaneException | IOException | IllegalArgumentException | IllegalStateException | DocumentAddException ex) {
-            this.handleException(ex);
+            this.handleException(ex, "Exception during scanning");
         } finally {
-            if (this.device != null) {
+            if (this.device != null && this.device.isOpen()) {
                 try {
                     this.device.close();
                 } catch (IOException ex) {
-                    this.handleException(ex);
+                    this.handleException(ex, "Exception during closing of scanner");
                 }
             }
         }
     }
 
-    private void handleException(Throwable ex) {
+    private void handleException(Throwable ex, String title) {
         LOGGER.info("handling exception {}", ex);
-        this.messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+        this.messageHandler.handle(new DialogMessage(generateApplicationWindowTitle(title, APP_NAME, APP_VERSION),
+                ex,
+                JOptionPane.ERROR_MESSAGE));
     }
 
     private OCREngine retrieveOCREngine() {
@@ -1631,16 +1521,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private javax.swing.JMenuItem optionsMenuItem;
     private javax.swing.JMenuItem saveMenuItem;
     private javax.swing.JMenuItem scanMenuItem;
-    private javax.swing.JDialog scannerDialog;
-    private javax.swing.JLabel scannerDialogAddressLabel;
-    private javax.swing.JTextField scannerDialogAddressTextField;
-    private javax.swing.JButton scannerDialogCancelButton;
-    private javax.swing.JScrollPane scannerDialogScrollPane;
-    private javax.swing.JButton scannerDialogSearchButton;
-    private javax.swing.JButton scannerDialogSelectButton;
-    private javax.swing.JSeparator scannerDialogSeparator;
-    private javax.swing.JLabel scannerDialogStatusLabel;
-    private javax.swing.JTable scannerDialogTable;
     private javax.swing.JLabel scannerLabel;
     private javax.swing.JMenu scannerSelectionMenu;
     private javax.swing.JButton selectScannerButton;
