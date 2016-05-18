@@ -22,22 +22,9 @@ import bibliothek.gui.dock.common.event.CVetoFocusListener;
 import bibliothek.gui.dock.common.intern.CDockable;
 import bibliothek.gui.dock.util.DockUtilities;
 import java.awt.BorderLayout;
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Dialog;
-import java.awt.Dialog.ModalityType;
-import java.awt.Frame;
 import java.awt.HeadlessException;
-import java.awt.Window;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -57,15 +44,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
-import javax.accessibility.AccessibleContext;
 import javax.imageio.ImageIO;
 import javax.persistence.EntityManager;
 import javax.swing.JComponent;
-import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
-import static javax.swing.JOptionPane.INPUT_VALUE_PROPERTY;
-import static javax.swing.JOptionPane.VALUE_PROPERTY;
 import javax.swing.JScrollPane;
 import javax.swing.ProgressMonitor;
 import javax.swing.SwingUtilities;
@@ -184,7 +167,7 @@ public class MainPanel extends javax.swing.JPanel {
      * {@link OCRPanel}'s and {@link EntityPanel}'s dockables from which
      * components can be retrieved as well.
      */
-    private Map<OCRSelectComponentScrollPane, Pair<OCRPanel, EntityPanel>> documentSwitchingMap = new HashMap<>();
+    private Map<OCRSelectComponent, Pair<OCRPanel, EntityPanel>> documentSwitchingMap = new HashMap<>();
     private final Set<Class<?>> entityClasses;
     private final Class<?> primaryClassSelection;
     private final Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping;
@@ -202,7 +185,7 @@ public class MainPanel extends javax.swing.JPanel {
      * {@link OCRSelectComponent}s and surrounding components can be visible,
      * but only one focused.
      */
-    private OCRSelectComponentScrollPane oCRSelectComponentScrollPane;
+    private OCRSelectComponent oCRSelectComponentScrollPane;
     private final OCREngineFactory oCREngineFactory;
     private final FieldRetriever fieldRetriever = new JPACachedFieldRetriever();
     private final Map<java.lang.reflect.Type, TypeHandler<?, ?,?, ?>> typeHandlerMapping;
@@ -210,7 +193,7 @@ public class MainPanel extends javax.swing.JPanel {
     private final DocumentScannerConf documentScannerConf;
     private final CControl control;
     private final Map<JComponent, MultipleCDockable> dockableMap = new HashMap<>();
-    private final Map<CDockable, OCRSelectComponentScrollPane> componentMap = new HashMap<>();
+    private final Map<CDockable, OCRSelectComponent> componentMap = new HashMap<>();
 
     public MainPanel(Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
@@ -286,7 +269,7 @@ public class MainPanel extends javax.swing.JPanel {
 
             @Override
             public boolean willGainFocus(CDockable dockable) {
-                OCRSelectComponentScrollPane aNew = componentMap.get(dockable);
+                OCRSelectComponent aNew = componentMap.get(dockable);
                 if(aNew != null
                         && !aNew.equals(MainPanel.this.oCRSelectComponentScrollPane)
                         //focused component requests focus (e.g. after newly
@@ -390,7 +373,7 @@ public class MainPanel extends javax.swing.JPanel {
             progressMonitor.setMillisToPopup(0);
             progressMonitor.setMillisToDecideToPopup(0);
             final SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
-                private OCRSelectComponentScrollPane createdOCRSelectComponentScrollPane;
+                private OCRSelectComponent createdOCRSelectComponentScrollPane;
 
                 @Override
                 protected Void doInBackground() throws Exception {
@@ -410,7 +393,7 @@ public class MainPanel extends javax.swing.JPanel {
             progressMonitor.setProgress(1); //ProgressMonitor dialog blocks until SwingWorker.done
                 //is invoked
         }else {
-            OCRSelectComponentScrollPane oCRSelectComponentScrollPane = addDocumentRoutine(images,
+            OCRSelectComponent oCRSelectComponentScrollPane = addDocumentRoutine(images,
                     documentFile,
                     null //progressMonitor
             );
@@ -418,7 +401,7 @@ public class MainPanel extends javax.swing.JPanel {
         }
     }
 
-    private void addDocumentDone(OCRSelectComponentScrollPane oCRSelectComponentScrollPane) {
+    private void addDocumentDone(OCRSelectComponent oCRSelectComponentScrollPane) {
         addDocumentDockable(MainPanel.this.oCRSelectComponentScrollPane,
                 oCRSelectComponentScrollPane);
         if(MainPanel.this.oCRSelectComponentScrollPane == null) {
@@ -437,10 +420,10 @@ public class MainPanel extends javax.swing.JPanel {
      * @param documentFile
      * @return the created {@link OCRSelectComponentScrollPane}
      */
-    private OCRSelectComponentScrollPane addDocumentRoutine(List<BufferedImage> images,
+    private OCRSelectComponent addDocumentRoutine(List<BufferedImage> images,
             File documentFile,
             ProgressMonitor progressMonitor) throws DocumentAddException {
-        OCRSelectComponentScrollPane retValue = null;
+        OCRSelectComponent retValue = null;
         try {
             List<OCRSelectPanel> panels = new LinkedList<>();
             for (BufferedImage image : images) {
@@ -457,12 +440,12 @@ public class MainPanel extends javax.swing.JPanel {
                 panels.add(panel);
             }
 
-            OCRSelectComponent oCRSelectComponent = new OCRSelectComponent(panels,
+            OCRSelectPanelPanel oCRSelectPanelPanel = new OCRSelectPanelPanel(panels,
                     documentFile);
 
-            OCRResultPanelFetcher oCRResultPanelFetcher = new DocumentTabOCRResultPanelFetcher(oCRSelectComponent,
+            OCRResultPanelFetcher oCRResultPanelFetcher = new DocumentTabOCRResultPanelFetcher(oCRSelectPanelPanel,
                     oCREngineFactory);
-            ScanResultPanelFetcher scanResultPanelFetcher = new DocumentTabScanResultPanelFetcher(oCRSelectComponent);
+            ScanResultPanelFetcher scanResultPanelFetcher = new DocumentTabScanResultPanelFetcher(oCRSelectPanelPanel);
 
             AmountMoneyMappingFieldHandlerFactory embeddableFieldHandlerFactory = new AmountMoneyMappingFieldHandlerFactory(amountMoneyUsageStatisticsStorage,
                     amountMoneyCurrencyStorage,
@@ -524,7 +507,7 @@ public class MainPanel extends javax.swing.JPanel {
                 }
             }
 
-            retValue = new OCRSelectComponentScrollPane(oCRSelectComponent);
+            retValue = new OCRSelectComponent(oCRSelectPanelPanel);
             OCRPanel oCRPanel = new OCRPanel(entityClasses,
                     reflectionFormPanelMap,
                     valueSetterMapping,
@@ -588,13 +571,13 @@ public class MainPanel extends javax.swing.JPanel {
      * @param old
      * @param aNew
      */
-    private void addDocumentDockable(OCRSelectComponentScrollPane old,
-            OCRSelectComponentScrollPane aNew) {
+    private void addDocumentDockable(OCRSelectComponent old,
+            OCRSelectComponent aNew) {
         MultipleCDockable aNewDockable = dockableMap.get(aNew);
         if(aNewDockable == null) {
             aNewDockable = new DefaultMultipleCDockable(null,
-                    aNew.getoCRSelectComponent().getDocumentFile() != null
-                            ? aNew.getoCRSelectComponent().getDocumentFile().getName()
+                    aNew.getoCRSelectPanelPanel().getDocumentFile() != null
+                            ? aNew.getoCRSelectPanelPanel().getDocumentFile().getName()
                             : DocumentScanner.UNSAVED_NAME,
                     aNew);
             dockableMap.put(aNew, aNewDockable);
@@ -623,8 +606,8 @@ public class MainPanel extends javax.swing.JPanel {
     - handling both switching and adding the first document maximizes code
     reusage
     */
-    private void switchDocument(OCRSelectComponentScrollPane old,
-            final OCRSelectComponentScrollPane aNew) {
+    private void switchDocument(OCRSelectComponent old,
+            final OCRSelectComponent aNew) {
         synchronized(aNew.getTreeLock()) {
             Pair<OCRPanel, EntityPanel> newPair = documentSwitchingMap.get(aNew);
             assert newPair != null;
@@ -686,7 +669,7 @@ public class MainPanel extends javax.swing.JPanel {
     };
 
     private void handleOCRSelection() {
-        BufferedImage imageSelection = oCRSelectComponentScrollPane.getoCRSelectComponent().getSelection();
+        BufferedImage imageSelection = oCRSelectComponentScrollPane.getoCRSelectPanelPanel().getSelection();
         if(imageSelection == null) {
             //image panels only contain selections of width or height <= 0 -> skip silently
             return;
@@ -720,7 +703,7 @@ public class MainPanel extends javax.swing.JPanel {
      */
     private class DocumentTabOCRResultPanelFetcher implements OCRResultPanelFetcher {
         private final List<Double> stringBufferLengths = new ArrayList<>();
-        private final OCRSelectComponent oCRSelectComponent;
+        private final OCRSelectPanelPanel oCRSelectComponent;
         private final Set<OCRResultPanelFetcherProgressListener> progressListeners = new HashSet<>();
         private boolean cancelRequested = false;
         /**
@@ -743,7 +726,7 @@ public class MainPanel extends javax.swing.JPanel {
          */
         private final OCREngineFactory oCREngineFactory;
 
-        DocumentTabOCRResultPanelFetcher(OCRSelectComponent oCRSelectComponent,
+        DocumentTabOCRResultPanelFetcher(OCRSelectPanelPanel oCRSelectComponent,
                 OCREngineFactory oCREngineFactory) {
             this.oCRSelectComponent = oCRSelectComponent;
             this.oCREngineFactory = oCREngineFactory;
@@ -764,7 +747,7 @@ public class MainPanel extends javax.swing.JPanel {
             this.stringBufferLengths.add((double) stringBufferLengh);
             StringBuilder retValueBuilder = new StringBuilder(stringBufferLengh);
             int i=0;
-            List<OCRSelectPanel> imagePanels = oCRSelectComponent.getImagePanels();
+            List<OCRSelectPanel> imagePanels = oCRSelectComponent.getoCRSelectPanels();
             Queue<Pair<OCRSelectPanel, FutureTask<String>>> threadQueue = new LinkedList<>();
             Executor executor = Executors.newCachedThreadPool();
             //check in loop whether cache can be used, otherwise enqueue started
@@ -845,16 +828,16 @@ public class MainPanel extends javax.swing.JPanel {
     }
 
     private class DocumentTabScanResultPanelFetcher implements ScanResultPanelFetcher {
-        private final OCRSelectComponent oCRSelectComponent;
+        private final OCRSelectPanelPanel oCRSelectComponent;
 
-        DocumentTabScanResultPanelFetcher(OCRSelectComponent oCRSelectComponent) {
+        DocumentTabScanResultPanelFetcher(OCRSelectPanelPanel oCRSelectComponent) {
             this.oCRSelectComponent = oCRSelectComponent;
         }
 
         @Override
         public byte[] fetch() {
             ByteArrayOutputStream retValueStream = new ByteArrayOutputStream();
-            for (OCRSelectPanel imagePanel : this.oCRSelectComponent.getImagePanels()) {
+            for (OCRSelectPanel imagePanel : this.oCRSelectComponent.getoCRSelectPanels()) {
                 try {
                     if (!ImageIO.write(imagePanel.getImage(), "png", retValueStream)) {
                         throw new IllegalStateException("writing image data to output stream failed");

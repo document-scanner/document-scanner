@@ -14,182 +14,69 @@
  */
 package richtercloud.document.scanner.gui;
 
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Rectangle;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import javax.swing.GroupLayout;
+import javax.swing.JButton;
 import javax.swing.JPanel;
-import javax.swing.Scrollable;
-import javax.swing.SwingConstants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import javax.swing.JToolBar;
 
 /**
- * Arranges multiple (or one) image in different selection panel and handles
- * selection on them for OCR.
  *
- * No cross image selection are supported. Starting a selection on one panel
- * removes the selection on another.
  * @author richter
  */
-/*
-internal implementation notes:
-- due to the fact that constructors with List<OCRSelectPanel> and List<BufferedImage>
-argument have the same erasure, provide List<OCRSelectPanel> because often
-action methods of OCRSelectPanel are adjusted by callers
-*/
-public class OCRSelectComponent extends JPanel implements Scrollable {
+public class OCRSelectComponent extends JPanel {
     private static final long serialVersionUID = 1L;
-    private final static Logger LOGGER = LoggerFactory.getLogger(OCRSelectComponent.class);
-    /**
-     * The pages of which the drawing area ought to be composed
-     */
-    private List<OCRSelectPanel> imagePanels = new LinkedList<>();
-    private OCRSelectPanel selectedPanel = null;
-    private int maxUnitIncrement = 100;
-    /**
-     * The {@link File} the document is stored in. {@code null} indicates that
-     * the document has not been saved yet (e.g. if the
-     * {@link OCRSelectComponent} represents scan data).
-     */
-    private File documentFile;
-
-    protected OCRSelectComponent() {
-    }
-
-    public OCRSelectComponent(OCRSelectPanel panel,
-            File documentFile) {
-        this();
-        this.imagePanels.add(panel);
-        this.documentFile = documentFile;
-    }
-
-    public OCRSelectComponent(List<OCRSelectPanel> panels,
-            File documentFile) {
-        this();
-        this.documentFile = documentFile;
-        int preferredWidth = 0, preferredHeight = 0;
-        FlowLayout layout = new FlowLayout(FlowLayout.CENTER, 5, 5);
-        this.setLayout(layout);
-        for(OCRSelectPanel panel : panels) {
-            preferredHeight += panel.getImage().getHeight();
-            preferredWidth = Math.max(preferredWidth, panel.getImage().getWidth());
-            panel.addSelectionListener(new PanelSelectionListener(panel));
-            this.imagePanels.add(panel);
-            this.add(panel);
-        }
-        this.setPreferredSize(new Dimension(preferredWidth, preferredHeight));
-    }
-
-    public File getDocumentFile() {
-        return documentFile;
-    }
-
-    public void setDocumentFile(File documentFile) {
-        this.documentFile = documentFile;
-    }
-
-    public List<OCRSelectPanel> getImagePanels() {
-        return Collections.unmodifiableList(this.imagePanels);
-    }
+    private final OCRSelectPanelPanel oCRSelectPanelPanel;
+    private final JToolBar toolbar = new JToolBar();
+    private final JButton zoomInButton = new JButton(" + ");
+    private final JButton zoomOutButton = new JButton(" - ");
+    private float zoomLevel = 1;
 
     /**
      *
-     * @return the selected image or {@code null} if all image panels contain selections with width or height <= 0
+     * @param oCRSelectPanelPanel will be wrapped in a
+     * {@link OCRSelectPanelPanelScrollPane}
      */
-    public BufferedImage getSelection() {
-        for(OCRSelectPanel panel : this.imagePanels) {
-            if(panel.getDragStart() != null && panel.getDragEnd() != null) {
-                int width = panel.dragSelectionWidth();
-                if(width <= 0) {
-                    //avoid java.awt.image.RasterFormatException: negative or zero height
-                    LOGGER.debug(String.format("skipping selection with width %d <= 0", width));
-                    continue;
-                }
-                int height = panel.dragSeletionHeight();
-                if(height <= 0) {
-                    //avoid java.awt.image.RasterFormatException: negative or zero height
-                    LOGGER.debug(String.format("skipping selection with height %d <= 0", height));
-                    continue;
-                }
-                BufferedImage imageSelection = panel.getImage().getSubimage(panel.dragSelectionX(),
-                        panel.dragSelectionY(),
-                        width,
-                        height);
-                return imageSelection;
+    public OCRSelectComponent(OCRSelectPanelPanel oCRSelectPanelPanel) {
+        this.oCRSelectPanelPanel = oCRSelectPanelPanel;
+
+        toolbar.add(zoomInButton);
+        toolbar.add(zoomOutButton);
+
+        GroupLayout groupLayout = new GroupLayout(this);
+        OCRSelectPanelPanelScrollPane oCRSelectPanelPanelScrollPane =
+                new OCRSelectPanelPanelScrollPane(oCRSelectPanelPanel);
+        this.setLayout(groupLayout);
+        groupLayout.setVerticalGroup(groupLayout.createSequentialGroup()
+                .addComponent(oCRSelectPanelPanelScrollPane)
+                .addComponent(toolbar));
+        groupLayout.setHorizontalGroup(groupLayout.createParallelGroup()
+                .addComponent(oCRSelectPanelPanelScrollPane)
+                .addComponent(toolbar));
+
+        zoomInButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                OCRSelectComponent.this.zoomLevel *= 2;
+                OCRSelectComponent.this.oCRSelectPanelPanel.setZoomLevels(OCRSelectComponent.this.zoomLevel);
+                OCRSelectComponent.this.repaint();
             }
-        }
-        return null;
-    }
-
-    @Override
-    public Dimension getPreferredScrollableViewportSize() {
-        return this.getPreferredSize(); //as suggested by
-            //https://docs.oracle.com/javase/8/docs/api/javax/swing/Scrollable.html
-    }
-
-    @Override
-    public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
-        //Get the current position.
-        int currentPosition = 0;
-        if (orientation == SwingConstants.HORIZONTAL) {
-            currentPosition = visibleRect.x;
-        } else {
-            currentPosition = visibleRect.y;
-        }
-
-        //Return the number of pixels between currentPosition
-        //and the nearest tick mark in the indicated direction.
-        if (direction < 0) {
-            int newPosition = currentPosition -
-                             (currentPosition / this.maxUnitIncrement)
-                              * this.maxUnitIncrement;
-            return (newPosition == 0) ? this.maxUnitIncrement : newPosition;
-        } else {
-            return ((currentPosition / this.maxUnitIncrement) + 1)
-                     * this.maxUnitIncrement
-                     - currentPosition;
-        }
-    }
-
-    @Override
-    public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
-        if (orientation == SwingConstants.HORIZONTAL) {
-            return visibleRect.width - this.maxUnitIncrement;
-        } else {
-            return visibleRect.height - this.maxUnitIncrement;
-        }
-    }
-
-    @Override
-    public boolean getScrollableTracksViewportWidth() {
-        return false;
-    }
-
-    @Override
-    public boolean getScrollableTracksViewportHeight() {
-        return false;
-    }
-
-    private class PanelSelectionListener implements OCRSelectPanelSelectionListener {
-        private final OCRSelectPanel panel;
-
-        PanelSelectionListener(OCRSelectPanel panel) {
-            this.panel = panel;
-        }
-
-        @Override
-        public void selectionChanged() {
-            OCRSelectComponent.this.selectedPanel = this.panel;
-            for(OCRSelectPanel panel0: OCRSelectComponent.this.imagePanels) {
-                if(!panel0.equals(OCRSelectComponent.this.selectedPanel)) {
-                    panel0.unselect();
-                }
+        });
+        zoomOutButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                OCRSelectComponent.this.zoomLevel /= 2;
+                OCRSelectComponent.this.oCRSelectPanelPanel.setZoomLevels(OCRSelectComponent.this.zoomLevel);
+                OCRSelectComponent.this.repaint();
+                    //zooming out requires a scroll event to occur in order to
+                    //paint other pages than the first only; revalidate doesn't
+                    //help
             }
-        }
+        });
+    }
+
+    public OCRSelectPanelPanel getoCRSelectPanelPanel() {
+        return oCRSelectPanelPanel;
     }
 }

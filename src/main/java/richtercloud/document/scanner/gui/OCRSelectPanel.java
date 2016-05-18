@@ -41,11 +41,17 @@ public class OCRSelectPanel extends JPanel implements MouseListener, MouseMotion
     private Point dragEnd;
     private final BufferedImage image;
     private final Set<OCRSelectPanelSelectionListener> selectionListeners = new HashSet<>();
+    private float zoomLevel = 1;
 
     public OCRSelectPanel(BufferedImage image) {
         this.image = image;
-        this.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));
+        updatePreferredSize();
         this.init0();
+    }
+
+    private void updatePreferredSize() {
+        this.setPreferredSize(new Dimension((int)(image.getWidth()*zoomLevel),
+                (int)(image.getHeight()*zoomLevel)));
     }
 
     private void init0() {
@@ -122,7 +128,13 @@ public class OCRSelectPanel extends JPanel implements MouseListener, MouseMotion
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        g.drawImage(this.image, 0, 0, this);
+        int imageWidth = image.getWidth();
+        int imageHeight = image.getHeight();
+        int newImageWidth = (int)(imageWidth * zoomLevel);
+        int newImageHeight = (int)(imageHeight * zoomLevel);
+        g.drawImage(this.image, 0, 0, newImageWidth , newImageHeight ,
+                null //imageObserver
+        );
         if(this.getDragStart() != null && this.getDragEnd() != null) {
             g.drawRect(this.dragSelectionX(),
                     this.dragSelectionY(),
@@ -176,4 +188,12 @@ public class OCRSelectPanel extends JPanel implements MouseListener, MouseMotion
         this.dragEnd = dragEnd;
     }
 
+    public float getZoomLevel() {
+        return zoomLevel;
+    }
+
+    public void setZoomLevel(float zoomLevel) {
+        this.zoomLevel = zoomLevel;
+        updatePreferredSize();
+    }
 }

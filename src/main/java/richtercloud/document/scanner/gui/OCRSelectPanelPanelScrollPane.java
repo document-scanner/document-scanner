@@ -20,16 +20,16 @@ import javax.swing.JScrollPane;
  *
  * @author richter
  */
-public class OCRSelectComponentScrollPane extends JScrollPane {
+public class OCRSelectPanelPanelScrollPane extends JScrollPane {
     private static final long serialVersionUID = 1L;
-    private final OCRSelectComponent oCRSelectComponent;
+    private final OCRSelectPanelPanel oCRSelectPanelPanel;
 
-    public OCRSelectComponentScrollPane(OCRSelectComponent oCRSelectComponent) {
-        super(oCRSelectComponent);
-        this.oCRSelectComponent = oCRSelectComponent;
+    public OCRSelectPanelPanelScrollPane(OCRSelectPanelPanel oCRSelectPanelPanel) {
+        super(oCRSelectPanelPanel);
+        this.oCRSelectPanelPanel = oCRSelectPanelPanel;
     }
 
-    public OCRSelectComponent getoCRSelectComponent() {
-        return oCRSelectComponent;
+    public OCRSelectPanelPanel getoCRSelectPanelPanel() {
+        return oCRSelectPanelPanel;
     }
 }
