@@ -40,6 +40,9 @@ public class DocumentScannerConf implements Serializable {
     private static final Locale LOCALE_DEFAULT = Locale.getDefault();
     private static final Currency CURRENCY_DEFAULT = new Currency(java.util.Currency.getInstance(LOCALE_DEFAULT).getCurrencyCode());
     private final static boolean AUTO_GENERATE_IDS_DEFAULT = true;
+    private final static boolean AUTO_SAVE_IMAGE_DATA_DEFAULT = true;
+    private final static boolean AUTO_SAVE_OCR_DATA_DEFAULT = true;
+
     private static Set<StorageConf<?,?>> generateAvailableStorageConfsDefault(EntityManager entityManager,
             MessageHandler messageHandler,
             Set<Class<?>> entityClasses,
@@ -53,6 +56,7 @@ public class DocumentScannerConf implements Serializable {
         availableStorageConfs.add(new XMLStorageConf(xMLStorageFile));
         return availableStorageConfs;
     }
+
     private String scannerName;
     private String scannerSaneAddress = SCANNER_SANE_ADDRESS_DEFAULT;
     /**
@@ -80,6 +84,8 @@ public class DocumentScannerConf implements Serializable {
      */
     private boolean autoGenerateIDs;
     private Locale locale = LOCALE_DEFAULT;
+    private boolean autoSaveImageData;
+    private boolean autoSaveOCRData;
     /**
      * Stores information about changed SANE options because {@link SaneDevice}
      * and {@link SaneOption} don't provide a way to do that.
@@ -103,34 +109,29 @@ public class DocumentScannerConf implements Serializable {
                         entityClasses,
                         schemeChecksumFile,
                         xMLStorageFile),
-                AUTO_GENERATE_IDS_DEFAULT);
+                AUTO_GENERATE_IDS_DEFAULT,
+                AUTO_SAVE_IMAGE_DATA_DEFAULT,
+                AUTO_SAVE_OCR_DATA_DEFAULT);
     }
 
     public DocumentScannerConf(StorageConf storageConf,
             Set<StorageConf<?,?>> availableStorageConfs,
-            boolean autoGenerateIDs) {
+            boolean autoGenerateIDs,
+            boolean autoSaveImageData,
+            boolean autoSaveOCRData) {
         this.storageConf = storageConf;
         this.availableStorageConfs = availableStorageConfs;
         this.autoGenerateIDs = autoGenerateIDs;
+        this.autoSaveImageData = autoSaveImageData;
+        this.autoSaveOCRData = autoSaveOCRData;
     }
 
     public DocumentScannerConf(DocumentScannerConf documentScannerConf) {
         this(documentScannerConf.getStorageConf(),
                 documentScannerConf.getAvailableStorageConfs(),
-                documentScannerConf.isAutoGenerateIDs());
-    }
-
-    public void updateFrom(DocumentScannerConf documentScannerConf) {
-        if(documentScannerConf == null) {
-            throw new IllegalArgumentException("documentScannerConf mustn't be null");
-        }
-        this.setScannerName(documentScannerConf.getScannerName());
-        this.setScannerSaneAddress(documentScannerConf.getScannerSaneAddress());
-        this.setoCREngineConf(documentScannerConf.getoCREngineConf());
-        this.setStorageConf(documentScannerConf.getStorageConf());
-        this.setAvailableStorageConfs(documentScannerConf.getAvailableStorageConfs());
-        this.setCurrency(documentScannerConf.getCurrency());
-        this.setAutoGenerateIDs(documentScannerConf.isAutoGenerateIDs());
+                documentScannerConf.isAutoGenerateIDs(),
+                documentScannerConf.isAutoSaveImageData(),
+                documentScannerConf.isAutoSaveOCRData());
     }
 
     public Map<SaneDevice, Map<SaneOption, Object>> getChangedOptions() {
@@ -233,5 +234,33 @@ public class DocumentScannerConf implements Serializable {
 
     public void setLocale(Locale locale) {
         this.locale = locale;
+    }
+
+    /**
+     * @return the autoSaveImageData
+     */
+    public boolean isAutoSaveImageData() {
+        return autoSaveImageData;
+    }
+
+    /**
+     * @param autoSaveImageData the autoSaveImageData to set
+     */
+    public void setAutoSaveImageData(boolean autoSaveImageData) {
+        this.autoSaveImageData = autoSaveImageData;
+    }
+
+    /**
+     * @return the autoSaveOCRData
+     */
+    public boolean isAutoSaveOCRData() {
+        return autoSaveOCRData;
+    }
+
+    /**
+     * @param autoSaveOCRData the autoSaveOCRData to set
+     */
+    public void setAutoSaveOCRData(boolean autoSaveOCRData) {
+        this.autoSaveOCRData = autoSaveOCRData;
     }
 }

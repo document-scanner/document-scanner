@@ -34,6 +34,8 @@
                       <EmptySpace type="unrelated" max="-2" attributes="0"/>
                       <Component id="saveButton" min="-2" max="-2" attributes="0"/>
                   </Group>
+                  <Component id="autoSaveImageDataCheckBox" max="32767" attributes="0"/>
+                  <Component id="autoSaveOCRDataCheckBox" alignment="0" max="32767" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
           </Group>
@@ -44,7 +46,11 @@
           <Group type="102" alignment="0" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
               <Component id="autoGenerateIDsCheckBox" min="-2" max="-2" attributes="0"/>
-              <EmptySpace pref="222" max="32767" attributes="0"/>
+              <EmptySpace max="-2" attributes="0"/>
+              <Component id="autoSaveImageDataCheckBox" min="-2" max="-2" attributes="0"/>
+              <EmptySpace max="-2" attributes="0"/>
+              <Component id="autoSaveOCRDataCheckBox" min="-2" max="-2" attributes="0"/>
+              <EmptySpace pref="162" max="32767" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="saveButton" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="discardButton" alignment="3" min="-2" max="-2" attributes="0"/>
@@ -75,6 +81,16 @@
       <Events>
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="discardButtonActionPerformed"/>
       </Events>
+    </Component>
+    <Component class="javax.swing.JCheckBox" name="autoSaveImageDataCheckBox">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Automatically generate image data"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JCheckBox" name="autoSaveOCRDataCheckBox">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Automatically generate OCR data"/>
+      </Properties>
     </Component>
   </SubComponents>
 </Form>

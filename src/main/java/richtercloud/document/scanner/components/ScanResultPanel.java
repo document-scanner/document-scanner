@@ -29,11 +29,16 @@ public class ScanResultPanel extends javax.swing.JPanel {
     private Set<ScanResultPanelUpdateListener> updateListener = new HashSet<>();
     private final byte[] initialValue;
 
-    public ScanResultPanel(ScanResultPanelFetcher retriever, byte[] initialValue) {
+    public ScanResultPanel(ScanResultPanelFetcher retriever,
+            byte[] initialValue,
+            boolean autoSaveImageData) {
         this.initComponents();
         this.retriever = retriever;
         this.initialValue = initialValue;
-        reset();
+        reset0();
+        if(autoSaveImageData) {
+            save();
+        }
     }
 
     public void addUpdateListerner(ScanResultPanelUpdateListener updateListener) {
@@ -46,9 +51,9 @@ public class ScanResultPanel extends javax.swing.JPanel {
 
     private void handleScanDataUpdate() {
         if(this.scanData != null) {
-            this.scanResultLabel.setText(String.format("%d bytes of data scanned", this.scanData.length));
+            this.label.setText(String.format("%d bytes of data scanned", this.scanData.length));
         }else {
-            this.scanResultLabel.setText(LABEL_DEFAULT_TEXT);
+            this.label.setText(LABEL_DEFAULT_TEXT);
         }
     }
 
@@ -74,23 +79,23 @@ public class ScanResultPanel extends javax.swing.JPanel {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        scanResultScanButton = new javax.swing.JButton();
-        scanResultLabel = new javax.swing.JLabel();
-        scanResultDeleteButton = new javax.swing.JButton();
+        saveButton = new javax.swing.JButton();
+        label = new javax.swing.JLabel();
+        deleteButton = new javax.swing.JButton();
 
-        scanResultScanButton.setText("Save image data");
-        scanResultScanButton.addActionListener(new java.awt.event.ActionListener() {
+        saveButton.setText("Save image data");
+        saveButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                scanResultScanButtonActionPerformed(evt);
+                saveButtonActionPerformed(evt);
             }
         });
 
-        scanResultLabel.setText(LABEL_DEFAULT_TEXT);
+        label.setText(LABEL_DEFAULT_TEXT);
 
-        scanResultDeleteButton.setText("Delete");
-        scanResultDeleteButton.addActionListener(new java.awt.event.ActionListener() {
+        deleteButton.setText("Delete");
+        deleteButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                scanResultDeleteButtonActionPerformed(evt);
+                deleteButtonActionPerformed(evt);
             }
         });
 
@@ -100,11 +105,11 @@ public class ScanResultPanel extends javax.swing.JPanel {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(scanResultLabel, javax.swing.GroupLayout.DEFAULT_SIZE, 175, Short.MAX_VALUE)
+                .addComponent(label, javax.swing.GroupLayout.DEFAULT_SIZE, 175, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(scanResultScanButton)
+                .addComponent(saveButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(scanResultDeleteButton)
+                .addComponent(deleteButton)
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -112,32 +117,36 @@ public class ScanResultPanel extends javax.swing.JPanel {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(scanResultScanButton)
-                    .addComponent(scanResultLabel)
-                    .addComponent(scanResultDeleteButton))
+                    .addComponent(saveButton)
+                    .addComponent(label)
+                    .addComponent(deleteButton))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
-    private void scanResultScanButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_scanResultScanButtonActionPerformed
+    private void save() {
         this.scanData = this.retriever.fetch();
         for(ScanResultPanelUpdateListener updateListener : this.updateListener) {
             updateListener.onUpdate(new ScanResultPanelUpdateEvent(scanData));
         }
         handleScanDataUpdate();
-    }//GEN-LAST:event_scanResultScanButtonActionPerformed
+    }
 
-    private void scanResultDeleteButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_scanResultDeleteButtonActionPerformed
+    private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveButtonActionPerformed
+        save();
+    }//GEN-LAST:event_saveButtonActionPerformed
+
+    private void deleteButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteButtonActionPerformed
         this.scanData = null;
         for(ScanResultPanelUpdateListener updateListener : this.updateListener) {
             updateListener.onUpdate(new ScanResultPanelUpdateEvent(scanData));
         }
         handleScanDataUpdate();
-    }//GEN-LAST:event_scanResultDeleteButtonActionPerformed
+    }//GEN-LAST:event_deleteButtonActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton scanResultDeleteButton;
-    private javax.swing.JLabel scanResultLabel;
-    private javax.swing.JButton scanResultScanButton;
+    private javax.swing.JButton deleteButton;
+    private javax.swing.JLabel label;
+    private javax.swing.JButton saveButton;
     // End of variables declaration//GEN-END:variables
 }

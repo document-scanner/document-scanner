@@ -26,71 +26,37 @@ import javax.imageio.ImageIO;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import richtercloud.document.scanner.gui.TesseractNotFoundException;
 
 /**
  * A {@link OCREngine} which uses tesseract in inter-process communication
  * because no Java-bindings exist.
+ *
+ * Prior to processing the image is passed through {@code unpaper} which is the
+ * idea of {@code pdfsandwich} which sadly doesn't provide text output (only
+ * PDF).
+ *
  * @author richter
  */
-public class TesseractOCREngine implements OCREngine {
+public class TesseractOCREngine extends ProcessOCREngine {
     /**
      * the default name of the tesseract binary
      */
     public final static String TESSERACT_DEFAULT = "tesseract";
     private static final Logger LOGGER = LoggerFactory.getLogger(TesseractOCREngine.class);
 
-    /**
-     * checks whether the specified {@code tesseract} command is available and
-     * accessible/executable
-     * @param tesseract the command to check
-     * @return the {@link IOException} which is presumed to have cause the
-     * absence of the tesseact binary {@code tesseract}
-     * @throws InterruptedException if an {@code InterruptedException} occurs during {@link Runtime#exec(java.lang.String) }
-     */
-    /*
-    internal implementation notes:
-    - returns the exception which is presumed to indicate the absense of the
-    binary. This allows to examine the exception by callers and eventually to
-    distinguish
-    IOExceptions which are proof of absense of the binary and unrelated
-    IOExceptions which might be thrown and need to be handled by caller
-     */
-    public static IOException checkTesseractAvailable(String tesseract) throws InterruptedException {
-        try {
-            new ProcessBuilder(tesseract).start().waitFor();
-            return null;
-        }catch(IOException ex) {
-            return ex;
-        }
-    }
-
-    public static void checkTesseractAvailableExceptions(String tesseract) throws TesseractNotFoundException {
-        IOException exception;
-        try {
-            exception = checkTesseractAvailable(tesseract);
-        } catch (InterruptedException ex) {
-            throw new RuntimeException(String.format("An unexpected exception occured during the search of the tesseract binary '%s' because the process has been interrupted (see nested exception for details)", tesseract), ex);
-        }
-        if(exception != null) {
-            throw new TesseractNotFoundException(tesseract, exception);
-        }
-    }
     private final Lock lock = new ReentrantLock();
-    private String tesseract = TESSERACT_DEFAULT;
     private List<String> languages;
-    private Process tesseractProcess;
 
     public TesseractOCREngine(List<String> languages) {
+        this(TESSERACT_DEFAULT, languages);
+    }
+
+    public TesseractOCREngine(String tesseractCmd, List<String> languages) {
+        super(tesseractCmd);
         if(languages == null || languages.isEmpty()) {
             throw new IllegalArgumentException("languages mustn't be null or empty");
         }
         this.languages = languages;
-    }
-
-    public TesseractOCREngine(String tesseractCmd, List<String> languages) {
-        this(languages);
-        this.tesseract = tesseractCmd;
     }
 
     public void setLanguages(List<String> languages) {
@@ -110,16 +76,7 @@ public class TesseractOCREngine implements OCREngine {
      * @return {@code null} if the recognition has been canceled using {@link #cancelRecognizeImage() } or the recognition process crashed or the recognition result otherwise
      */
     @Override
-    public String recognizeImage(BufferedImage image) throws IllegalStateException {
-        if(image == null) {
-            throw new IllegalArgumentException("image mustn't be null");
-        }
-        try {
-            checkTesseractAvailableExceptions(this.tesseract);
-        }catch(TesseractNotFoundException ex) {
-            throw new RuntimeException("tesseract not available (see nested exception for details)", ex);
-        }
-        LOGGER.debug("tesseract binary '{}' found and executable", this.tesseract);
+    public String recognizeImage0(BufferedImage image) throws IllegalStateException {
         if(!lock.tryLock()) {
             throw new IllegalStateException("This tesseract OCR engine is already used from another thread.");
         }
@@ -129,9 +86,10 @@ public class TesseractOCREngine implements OCREngine {
             while(languagesItr.hasNext()) {
                 lanuguageString += "+"+languagesItr.next();
             }
-            ProcessBuilder tesseractProcessBuilder = new ProcessBuilder(this.tesseract, "-l", lanuguageString, "stdin", "stdout")
+            ProcessBuilder tesseractProcessBuilder = new ProcessBuilder(this.getBinary(), "-l", lanuguageString, "stdin", "stdout")
                     .redirectOutput(ProcessBuilder.Redirect.PIPE);
-            tesseractProcess = tesseractProcessBuilder.start();
+            Process tesseractProcess = tesseractProcessBuilder.start();
+            setBinaryProcess(tesseractProcess);
             ImageIO.write(image, "png", tesseractProcess.getOutputStream());
             tesseractProcess.getOutputStream().flush();
             tesseractProcess.getOutputStream().close(); //sending EOF not an option because it's not documented what is expected (sending -1 once or twice doesn't have any effect, also with flush)
@@ -157,17 +115,6 @@ public class TesseractOCREngine implements OCREngine {
             throw new RuntimeException(ex);
         }finally {
             lock.unlock();
-        }
-    }
-
-    @Override
-    public void cancelRecognizeImage() {
-        if(this.tesseractProcess != null) {
-            this.tesseractProcess.destroy(); // there's no way of cleanly shutting
-                //down a process in Java process API<ref>http://stackoverflow.com/questions/6339861/how-to-pass-sigint-to-a-process-created-in-java</ref>
-                //(something less severe than SIGTERM). It shouldn't matter
-                //because tesseract propably won't do more than opening some
-                // process pipes
         }
     }
 }

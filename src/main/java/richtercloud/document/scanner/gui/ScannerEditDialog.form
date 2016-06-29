@@ -27,19 +27,21 @@
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
                   <Group type="102" attributes="0">
+                      <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
+                      <Component id="closeButton" min="-2" max="-2" attributes="0"/>
+                  </Group>
+                  <Group type="102" attributes="0">
                       <Group type="103" groupAlignment="0" attributes="0">
                           <Component id="resolutionComboBoxLabel" alignment="0" min="-2" max="-2" attributes="0"/>
                           <Component id="modeComboBoxLabel" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="documentSourceComboBoxLabel" alignment="0" min="-2" max="-2" attributes="0"/>
                       </Group>
-                      <EmptySpace type="separate" max="-2" attributes="0"/>
+                      <EmptySpace min="-2" pref="18" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="modeComboBox" pref="283" max="32767" attributes="0"/>
+                          <Component id="documentSourceComboBox" pref="228" max="32767" attributes="0"/>
                           <Component id="resolutionComboBox" max="32767" attributes="0"/>
+                          <Component id="modeComboBox" max="32767" attributes="0"/>
                       </Group>
-                  </Group>
-                  <Group type="102" alignment="1" attributes="0">
-                      <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
-                      <Component id="closeButton" min="-2" max="-2" attributes="0"/>
                   </Group>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
@@ -58,6 +60,11 @@
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="resolutionComboBox" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="resolutionComboBoxLabel" alignment="3" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="3" attributes="0">
+                  <Component id="documentSourceComboBox" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="documentSourceComboBoxLabel" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace max="32767" attributes="0"/>
               <Component id="closeButton" min="-2" max="-2" attributes="0"/>
@@ -104,6 +111,21 @@
       <Events>
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="closeButtonActionPerformed"/>
       </Events>
+    </Component>
+    <Component class="javax.swing.JComboBox" name="documentSourceComboBox">
+      <Properties>
+        <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+          <Connection code="documentSourceComboBoxModel" type="code"/>
+        </Property>
+      </Properties>
+      <AuxValues>
+        <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;String&gt;"/>
+      </AuxValues>
+    </Component>
+    <Component class="javax.swing.JLabel" name="documentSourceComboBoxLabel">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Document source"/>
+      </Properties>
     </Component>
   </SubComponents>
 </Form>

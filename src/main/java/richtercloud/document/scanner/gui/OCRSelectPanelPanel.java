@@ -91,13 +91,18 @@ public class OCRSelectPanelPanel extends JPanel implements Scrollable {
      * causes pages to be displayed in horizontal arrangement
      */
     private void updatePreferredSize() {
-        int preferredWidth = 0, preferredHeight = 0;
-        for(OCRSelectPanel panel : oCRSelectPanels) {
-            preferredHeight += panel.getImage().getHeight();
-            preferredWidth = Math.max(preferredWidth, panel.getImage().getWidth());
+        Dimension newValue;
+        if(oCRSelectPanels.isEmpty()) {
+            newValue = new Dimension(0, 0);
+        }else {
+            int preferredWidth = 0, preferredHeight = 0;
+            for(OCRSelectPanel panel : oCRSelectPanels) {
+                preferredHeight += panel.getImage().getHeight();
+                preferredWidth = Math.max(preferredWidth, panel.getImage().getWidth());
+            }
+            newValue = new Dimension((int)(preferredWidth*zoomLevel),
+                    (int)(preferredHeight*zoomLevel));
         }
-        Dimension newValue = new Dimension((int)(preferredWidth*zoomLevel),
-                (int)(preferredHeight*zoomLevel));
         this.setPreferredSize(newValue);
     }
 

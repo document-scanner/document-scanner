@@ -29,7 +29,7 @@ import richtercloud.reflection.form.builder.FieldInfo;
  * @author richter
  */
 @MappedSuperclass
-public abstract class AbstractDocument extends CommunicationItem {
+public abstract class AbstractDocument extends WorkflowItem {
     private static final long serialVersionUID = 1L;
     /**
      * The date and time (timestamp) of the actual reception.
@@ -53,17 +53,32 @@ public abstract class AbstractDocument extends CommunicationItem {
      * {@code false}.
      */
     @Basic(fetch = FetchType.EAGER)
-    @FieldInfo(name = "Original lost", description = "A flag indicating the that the original is lost")
+    @FieldInfo(name = "Original lost", description = "A flag indicating that the original is lost")
     private boolean originalLost = false;
+    /**
+     * Whether this is a digital document only.
+     */
+    @Basic(fetch = FetchType.EAGER)
+    @FieldInfo(name = "Digital only", description = "A flag indicating that "
+            + "the document initially exists in digital form only")
+    private boolean digitalOnly = false;
 
     protected AbstractDocument() {
     }
 
-    public AbstractDocument(Date receptionDate, Date theDate, Location originalLocation, boolean originalLost, Long id, Company sender, Company recipient) {
+    public AbstractDocument(Date receptionDate,
+            Date theDate,
+            Location originalLocation,
+            boolean originalLost,
+            boolean digitalOnly,
+            Long id,
+            Company sender,
+            Company recipient) {
         super(id, sender, recipient, theDate);
         this.receptionDate = receptionDate;
         this.originalLocation = originalLocation;
         this.originalLost = originalLost;
+        this.digitalOnly = digitalOnly;
     }
 
     /**
@@ -106,5 +121,19 @@ public abstract class AbstractDocument extends CommunicationItem {
      */
     public void setOriginalLost(boolean originalLost) {
         this.originalLost = originalLost;
+    }
+
+    /**
+     * @return the digitalOnly
+     */
+    public boolean isDigitalOnly() {
+        return digitalOnly;
+    }
+
+    /**
+     * @param digitalOnly the digitalOnly to set
+     */
+    public void setDigitalOnly(boolean digitalOnly) {
+        this.digitalOnly = digitalOnly;
     }
 }

@@ -28,7 +28,7 @@ internal implementation notes:
 discard button it's unnecessary to listen to value changes of components because
 they can be retrieved when returning the new configuration instance
 */
-public class DocumentScannerOptionsDialog extends javax.swing.JDialog {
+public class DocumentScannerConfDialog extends javax.swing.JDialog {
     private static final long serialVersionUID = 1L;
     private DocumentScannerConf documentScannerConf;
 
@@ -39,7 +39,7 @@ public class DocumentScannerOptionsDialog extends javax.swing.JDialog {
      * @param documentScannerConf a reference to a {@link DocumentScannerConf}
      * to be updated when values of components change
      */
-    public DocumentScannerOptionsDialog(java.awt.Frame parent,
+    public DocumentScannerConfDialog(java.awt.Frame parent,
             DocumentScannerConf documentScannerConf) {
         super(parent,
                 true //always modal
@@ -47,6 +47,8 @@ public class DocumentScannerOptionsDialog extends javax.swing.JDialog {
         this.documentScannerConf = documentScannerConf;
         initComponents();
         this.autoGenerateIDsCheckBox.setSelected(documentScannerConf.isAutoGenerateIDs());
+        this.autoSaveImageDataCheckBox.setSelected(documentScannerConf.isAutoSaveImageData());
+        this.autoSaveOCRDataCheckBox.setSelected(documentScannerConf.isAutoSaveOCRData());
     }
 
     /**
@@ -61,6 +63,8 @@ public class DocumentScannerOptionsDialog extends javax.swing.JDialog {
         autoGenerateIDsCheckBox = new javax.swing.JCheckBox();
         saveButton = new javax.swing.JButton();
         discardButton = new javax.swing.JButton();
+        autoSaveImageDataCheckBox = new javax.swing.JCheckBox();
+        autoSaveOCRDataCheckBox = new javax.swing.JCheckBox();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setModal(true);
@@ -81,6 +85,10 @@ public class DocumentScannerOptionsDialog extends javax.swing.JDialog {
             }
         });
 
+        autoSaveImageDataCheckBox.setText("Automatically generate image data");
+
+        autoSaveOCRDataCheckBox.setText("Automatically generate OCR data");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -93,7 +101,9 @@ public class DocumentScannerOptionsDialog extends javax.swing.JDialog {
                         .addGap(0, 0, Short.MAX_VALUE)
                         .addComponent(discardButton)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(saveButton)))
+                        .addComponent(saveButton))
+                    .addComponent(autoSaveImageDataCheckBox, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(autoSaveOCRDataCheckBox, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -101,7 +111,11 @@ public class DocumentScannerOptionsDialog extends javax.swing.JDialog {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(autoGenerateIDsCheckBox)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 222, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(autoSaveImageDataCheckBox)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(autoSaveOCRDataCheckBox)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 162, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(saveButton)
                     .addComponent(discardButton))
@@ -113,6 +127,8 @@ public class DocumentScannerOptionsDialog extends javax.swing.JDialog {
 
     private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveButtonActionPerformed
         this.documentScannerConf.setAutoGenerateIDs(this.autoGenerateIDsCheckBox.isSelected());
+        this.documentScannerConf.setAutoSaveImageData(this.autoSaveImageDataCheckBox.isSelected());
+        this.documentScannerConf.setAutoSaveOCRData(this.autoSaveOCRDataCheckBox.isSelected());
         this.setVisible(false);
     }//GEN-LAST:event_saveButtonActionPerformed
 
@@ -122,6 +138,8 @@ public class DocumentScannerOptionsDialog extends javax.swing.JDialog {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JCheckBox autoGenerateIDsCheckBox;
+    private javax.swing.JCheckBox autoSaveImageDataCheckBox;
+    private javax.swing.JCheckBox autoSaveOCRDataCheckBox;
     private javax.swing.JButton discardButton;
     private javax.swing.JButton saveButton;
     // End of variables declaration//GEN-END:variables

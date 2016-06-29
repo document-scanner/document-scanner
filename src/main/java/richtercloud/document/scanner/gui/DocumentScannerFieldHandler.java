@@ -14,6 +14,7 @@
  */
 package richtercloud.document.scanner.gui;
 
+import java.awt.Window;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
@@ -31,7 +32,8 @@ import richtercloud.document.scanner.components.ScanResultPanelUpdateEvent;
 import richtercloud.document.scanner.components.ScanResultPanelUpdateListener;
 import richtercloud.document.scanner.components.annotations.OCRResult;
 import richtercloud.document.scanner.components.annotations.ScanResult;
-import richtercloud.reflection.form.builder.ComponentResettable;
+import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
+import richtercloud.reflection.form.builder.ComponentHandler;
 import richtercloud.reflection.form.builder.FieldRetriever;
 import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
 import richtercloud.reflection.form.builder.fieldhandler.FieldHandlingException;
@@ -50,13 +52,13 @@ import richtercloud.reflection.form.builder.message.MessageHandler;
  * @author richter
  */
 public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, FieldUpdateEvent<Object>> {
-    private final static ComponentResettable<OCRResultPanel> OCR_RESULT_PANEL_COMPONENT_RESETTABLE = new ComponentResettable<OCRResultPanel>() {
+    private final static ComponentHandler<OCRResultPanel> OCR_RESULT_PANEL_COMPONENT_RESETTABLE = new ComponentHandler<OCRResultPanel>() {
         @Override
         public void reset(OCRResultPanel component) {
             component.reset();
         }
     };
-    private final static ComponentResettable<ScanResultPanel> SCAN_RESULT_PANEL_COMPONENT_RESETTABLE = new ComponentResettable<ScanResultPanel>() {
+    private final static ComponentHandler<ScanResultPanel> SCAN_RESULT_PANEL_COMPONENT_RESETTABLE = new ComponentHandler<ScanResultPanel>() {
         @Override
         public void reset(ScanResultPanel component) {
             component.reset();
@@ -64,6 +66,8 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
     };
     private final OCRResultPanelFetcher oCRResultPanelFetcher;
     private final ScanResultPanelFetcher scanResultPanelFetcher;
+    private final DocumentScannerConf documentScannerConf;
+    private final Window oCRProgressMonitorParent;
 
     public DocumentScannerFieldHandler(Map<Type, FieldHandler<?, ?, ?, ?>> classMapping,
             Map<Type, FieldHandler<?, ?, ?, ?>> embeddableMapping,
@@ -75,7 +79,9 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
             MessageHandler messageHandler,
             FieldRetriever fieldRetriever,
             OCRResultPanelFetcher oCRResultPanelFetcher,
-            ScanResultPanelFetcher scanResultPanelFetcher) {
+            ScanResultPanelFetcher scanResultPanelFetcher,
+            DocumentScannerConf documentScannerConf,
+            Window oCRProgressMonitorParent) {
         super(classMapping,
                 embeddableMapping,
                 primitiveMapping,
@@ -87,10 +93,12 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
                 fieldRetriever);
         this.oCRResultPanelFetcher = oCRResultPanelFetcher;
         this.scanResultPanelFetcher = scanResultPanelFetcher;
+        this.documentScannerConf = documentScannerConf;
+        this.oCRProgressMonitorParent = oCRProgressMonitorParent;
     }
 
     @Override
-    protected Pair<JComponent, ComponentResettable<?>> handle0(Field field,
+    protected Pair<JComponent, ComponentHandler<?>> handle0(Field field,
             Object instance,
             final FieldUpdateListener updateListener,
             JPAReflectionFormBuilder reflectionFormBuilder) throws IllegalArgumentException,
@@ -106,14 +114,16 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
             String fieldValue = (String) field.get(instance);
             OCRResultPanel retValue = new OCRResultPanel(oCRResultPanelFetcher,
                     fieldValue,
-                    getMessageHandler());
+                    getMessageHandler(),
+                    this.documentScannerConf.isAutoSaveOCRData(),
+                    oCRProgressMonitorParent);
             retValue.addUpdateListener(new OCRResultPanelUpdateListener() {
                 @Override
                 public void onUpdate(OCRResultPanelUpdateEvent event) {
                     updateListener.onUpdate(new FieldUpdateEvent<>(event.getNewValue()));
                 }
             });
-            return new ImmutablePair<JComponent, ComponentResettable<?>>(retValue,
+            return new ImmutablePair<JComponent, ComponentHandler<?>>(retValue,
                     OCR_RESULT_PANEL_COMPONENT_RESETTABLE);
         }
         if(field.getAnnotation(ScanResult.class) != null) {
@@ -121,14 +131,16 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
                 throw new IllegalArgumentException("fieldClass mustn't be null");
             }
             byte[] fieldValue = (byte[]) field.get(instance);
-            ScanResultPanel retValue = new ScanResultPanel(scanResultPanelFetcher, fieldValue);
+            ScanResultPanel retValue = new ScanResultPanel(scanResultPanelFetcher,
+                    fieldValue,
+                    this.documentScannerConf.isAutoSaveImageData());
             retValue.addUpdateListerner(new ScanResultPanelUpdateListener() {
                 @Override
                 public void onUpdate(ScanResultPanelUpdateEvent event) {
                     updateListener.onUpdate(new FieldUpdateEvent<>(event.getNewValue()));
                 }
             });
-            return new ImmutablePair<JComponent, ComponentResettable<?>>(retValue,
+            return new ImmutablePair<JComponent, ComponentHandler<?>>(retValue,
                     SCAN_RESULT_PANEL_COMPONENT_RESETTABLE);
         }
         return super.handle0(field, instance, updateListener, reflectionFormBuilder);

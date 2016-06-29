@@ -14,10 +14,31 @@
  */
 package richtercloud.document.scanner.components;
 
+import java.awt.image.BufferedImage;
+import java.util.List;
+import richtercloud.document.scanner.gui.OCRSelectPanelPanel;
+
 /**
  *
  * @author richter
  */
+/*
+internal implementation notes:
+- Keeping fetch and recreate action in different interfaces in order to keep
+code of MainPanel as untouched as possible (implementations necessarily need a
+reference to OCRSelectPanelPanel which makes creation of
+ScanResultPanelRecreator inconvenient (because the reference can't be immutable)
+and separating the function is most elegant.
+- Since this interface is only used in DocumentScanner it's
+ok to define it with reference to resources (OCRSelectPanelPanel) which need to
+be defined properly by implementors.
+*/
 public interface ScanResultPanelFetcher {
+
+    /**
+     * Fetches binary data from a {@link ScanResultPanel} which is retrieved
+     * from internal references (e.g. to {@link OCRSelectPanelPanel}).
+     * @return the fetched binary data
+     */
     byte[] fetch();
 }

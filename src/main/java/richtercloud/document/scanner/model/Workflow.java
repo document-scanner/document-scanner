@@ -14,9 +14,12 @@
  */
 package richtercloud.document.scanner.model;
 
-import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
 import javax.persistence.Entity;
 import javax.persistence.Inheritance;
+import javax.persistence.OneToMany;
+import richtercloud.reflection.form.builder.ClassInfo;
 
 /**
  *
@@ -24,28 +27,26 @@ import javax.persistence.Inheritance;
  */
 @Entity
 @Inheritance
-public class Leaflet extends AbstractDocument {
+@ClassInfo(name="Workflow")
+public class Workflow extends Identifiable {
     private static final long serialVersionUID = 1L;
+    @OneToMany
+    private List<WorkflowItem> items = new LinkedList<>();
 
-    protected Leaflet() {
+    protected Workflow() {
     }
 
-    public Leaflet(Date date,
-            Date receptionDate,
-            Location originalLocation,
-            boolean originalLost,
-            boolean digitalOnly,
-            Long id,
-            Company sender,
-            Company recipient) {
-        super(date,
-                receptionDate,
-                originalLocation,
-                originalLost,
-                digitalOnly,
-                id,
-                sender,
-                recipient);
+    /**
+     * @return the items
+     */
+    public List<WorkflowItem> getItems() {
+        return items;
     }
 
+    /**
+     * @param items the items to set
+     */
+    public void setItems(List<WorkflowItem> items) {
+        this.items = items;
+    }
 }

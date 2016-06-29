@@ -80,6 +80,7 @@ public class Document extends AbstractDocument {
             Date receptionDate,
             Location originalLocation,
             boolean originalLost,
+            boolean digitalOnly,
             Long id,
             Company sender,
             Company recipient) {
@@ -87,6 +88,7 @@ public class Document extends AbstractDocument {
                 receptionDate,
                 originalLocation,
                 originalLost,
+                digitalOnly,
                 id,
                 sender,
                 recipient);

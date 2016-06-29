@@ -65,6 +65,7 @@ import javax.swing.DefaultListModel;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
@@ -94,6 +95,7 @@ import richtercloud.document.scanner.model.APackage;
 import richtercloud.document.scanner.model.Bill;
 import richtercloud.document.scanner.model.Company;
 import richtercloud.document.scanner.model.Document;
+import richtercloud.document.scanner.model.Email;
 import richtercloud.document.scanner.model.EmailAddress;
 import richtercloud.document.scanner.model.Employment;
 import richtercloud.document.scanner.model.FinanceAccount;
@@ -105,6 +107,9 @@ import richtercloud.document.scanner.model.Shipping;
 import richtercloud.document.scanner.model.TelephoneCall;
 import richtercloud.document.scanner.model.Transport;
 import richtercloud.document.scanner.model.TransportTicket;
+import richtercloud.document.scanner.model.Withdrawal;
+import richtercloud.document.scanner.model.Workflow;
+import richtercloud.document.scanner.ocr.BinaryNotFoundException;
 import richtercloud.document.scanner.ocr.OCREngine;
 import richtercloud.document.scanner.ocr.OCREngineConfInfo;
 import richtercloud.document.scanner.ocr.OCREngineFactory;
@@ -125,13 +130,19 @@ import richtercloud.reflection.form.builder.components.AmountMoneyUsageStatistic
 import richtercloud.reflection.form.builder.components.FileAmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.FileAmountMoneyUsageStatisticsStorage;
 import richtercloud.reflection.form.builder.components.FixerAmountMoneyExchangeRateRetriever;
+import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
+import richtercloud.reflection.form.builder.fieldhandler.MappingFieldHandler;
+import richtercloud.reflection.form.builder.fieldhandler.factory.AmountMoneyMappingFieldHandlerFactory;
 import richtercloud.reflection.form.builder.jpa.IdGenerator;
 import richtercloud.reflection.form.builder.jpa.JPACachedFieldRetriever;
+import richtercloud.reflection.form.builder.jpa.fieldhandler.factory.JPAAmountMoneyMappingFieldHandlerFactory;
 import richtercloud.reflection.form.builder.jpa.panels.LongIdPanel;
 import richtercloud.reflection.form.builder.jpa.panels.StringAutoCompletePanel;
+import richtercloud.reflection.form.builder.jpa.typehandler.ElementCollectionTypeHandler;
 import richtercloud.reflection.form.builder.jpa.typehandler.JPAEntityListTypeHandler;
+import richtercloud.reflection.form.builder.jpa.typehandler.ToManyTypeHandler;
+import richtercloud.reflection.form.builder.jpa.typehandler.ToOneTypeHandler;
 import richtercloud.reflection.form.builder.jpa.typehandler.factory.JPAAmountMoneyMappingTypeHandlerFactory;
-import richtercloud.reflection.form.builder.message.DialogMessage;
 import richtercloud.reflection.form.builder.message.DialogMessageHandler;
 import richtercloud.reflection.form.builder.message.Message;
 import richtercloud.reflection.form.builder.message.MessageHandler;
@@ -205,6 +216,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                     Bill.class,
                     Company.class,
                     Document.class,
+                    Email.class,
                     EmailAddress.class,
                     Employment.class,
                     FinanceAccount.class,
@@ -215,7 +227,10 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                     Shipping.class,
                     TelephoneCall.class,
                     Transport.class,
-                    TransportTicket.class)));
+                    TransportTicket.class,
+                    Withdrawal.class,
+                    Workflow.class)));
+    private final static Class<?> PRIMARY_CLASS_SELECTION = Document.class;
     public static final String DATABASE_DIR_NAME_DEFAULT = "databases";
     /*
     internal implementation notes:
@@ -225,7 +240,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private EntityManager entityManager;
     private Connection conn;
     private final static int EXIT_SUCCESS = 0;
-    private DocumentScannerConf conf;
+    private DocumentScannerConf documentScannerConf;
     private boolean debug = false;
     private DocumentScannerCommandParser cmd = new DocumentScannerCommandParser();
     private final static String PROPERTY_KEY_DEBUG = "document.scanner.debug";
@@ -299,7 +314,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             + "appropriate privileges in order to restart saned and try again"
             + "</html>";
 
-
     /**
      * Parses the command line and evaluates system properties. Command line
      * arguments superseed properties.
@@ -328,26 +342,28 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         XStream xStream = new XStream();
         xStream.registerConverter(DOCUMENT_SCANNER_CONF_CONVERTER);
         try {
-            this.conf = (DocumentScannerConf)xStream.fromXML(new FileInputStream(this.configFile));
+            this.documentScannerConf = (DocumentScannerConf)xStream.fromXML(new FileInputStream(this.configFile));
         } catch (FileNotFoundException ex) {
             throw new RuntimeException(ex);
         }
         //if a scanner address and device name is in persisted conf check if
         //it's accessible and treat it as selected scanner silently
         try {
-            InetAddress address = InetAddress.getByName(this.conf.getScannerSaneAddress());
+            InetAddress address = InetAddress.getByName(this.documentScannerConf.getScannerSaneAddress());
             SaneSession saneSession = SaneSession.withRemoteSane(address);
-            this.device = saneSession.getDevice(this.conf.getScannerName());
-            afterScannerSelection(this.conf.getScannerSaneAddress(),
+            this.device = getDevice(this.documentScannerConf.getScannerName(),
+                    saneSession,
+                    nameDeviceMap);
+            afterScannerSelection(this.documentScannerConf.getScannerSaneAddress(),
                     device);
         } catch (IOException ex) {
             String text = handleSearchScannerException("An exception during the setup of "
                     + "previously selected scanner occured: ",
                     ex,
                     SANED_BUG_INFO);
-            messageHandler.handle(new DialogMessage("Exception during setup of previously selected scanner",
-                    text,
-                    JOptionPane.WARNING_MESSAGE));
+            messageHandler.handle(new Message(String.format("Exception during setup of previously selected scanner: %s\n%s", ExceptionUtils.getRootCauseMessage(ex), text),
+                    JOptionPane.WARNING_MESSAGE,
+                    "Exception occured"));
         }
     }
 
@@ -411,14 +427,16 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         this.device = device;
         try {
             ScannerEditDialog.configureDefaultOptionValues(device,
-                    this.conf.getChangedOptions(),
+                    this.documentScannerConf.getChangedOptions(),
                     false //overwrite (might have been changed in edit dialog)
             );
         } catch (IOException | SaneException | IllegalArgumentException ex) {
-            this.messageHandler.handle(new DialogMessage("Exception during setup of scanner default options occured", ex, JOptionPane.ERROR_MESSAGE));
+            this.messageHandler.handle(new Message(String.format("Exception during setup of scanner default options occured: %s", ExceptionUtils.getRootCauseMessage(ex)),
+                    JOptionPane.ERROR_MESSAGE,
+                    "Exception occured"));
         }
-        this.conf.setScannerName(device.getName());
-        this.conf.setScannerSaneAddress(address);
+        this.documentScannerConf.setScannerName(device.getName());
+        this.documentScannerConf.setScannerSaneAddress(address);
         this.scanMenuItem.setEnabled(true);
         this.scanMenuItem.getParent().revalidate();
     }
@@ -451,15 +469,15 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
      */
     private void shutdownHook() {
         LOGGER.info("running {} shutdown hooks", DocumentScanner.class);
-        if (this.conf != null) {
+        if (this.documentScannerConf != null) {
             try {
                 XStream xStream = new XStream();
                 xStream.registerConverter(DOCUMENT_SCANNER_CONF_CONVERTER);
-                xStream.toXML(this.conf, new FileOutputStream(this.configFile));
+                xStream.toXML(this.documentScannerConf, new FileOutputStream(this.configFile));
             } catch (FileNotFoundException ex) {
                 LOGGER.warn("an unexpected exception occured during save of configurations into file '{}', changes most likely lost", this.configFile.getAbsolutePath());
             }
-            this.conf = null;
+            this.documentScannerConf = null;
         }
     }
 
@@ -477,7 +495,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     internal implementation notes:
     - resources are opened in init methods only (see https://richtercloud.de:446/doku.php?id=programming:java#resource_handling for details)
     */
-    public DocumentScanner() throws TesseractNotFoundException {
+    public DocumentScanner() throws BinaryNotFoundException {
         this.parseArguments();
         assert HOME_DIR.exists();
         if (!CONFIG_DIR.exists()) {
@@ -499,7 +517,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             this.loadProperties(); //initializes this.conf
         } else {
             try {
-                this.conf = new DocumentScannerConf(entityManager,
+                this.documentScannerConf = new DocumentScannerConf(entityManager,
                         messageHandler,
                         ENTITY_CLASSES,
                         derbyPersistenceStorageSchemeChecksumFile,
@@ -512,7 +530,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
 
         //after loading DocumentScannerConf
-        for(StorageConf<?,?> availableStorageConf : this.conf.getAvailableStorageConfs()) {
+        for(StorageConf<?,?> availableStorageConf : this.documentScannerConf.getAvailableStorageConfs()) {
             this.storageListModel.addElement(availableStorageConf);
         }
 
@@ -611,7 +629,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         ); //@TODO: replace with classpath annotation discovery
         this.storageConfPanelMap.put(DerbyPersistenceStorageConf.class, derbyStorageConfPanel);
         this.mainPanel = new MainPanel(ENTITY_CLASSES,
-                Document.class,
+                PRIMARY_CLASS_SELECTION,
                 entityManager,
                 amountMoneyUsageStatisticsStorage,
                 amountMoneyCurrencyStorage,
@@ -619,10 +637,11 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 messageHandler,
                 this,
                 oCREngineFactory,
-                conf.getoCREngineConf(),
+                documentScannerConf.getoCREngineConf(),
                 typeHandlerMapping,
-                conf,
-                this);
+                documentScannerConf,
+                this //oCRProgressMonitorParent
+        );
         mainPanelPanel.add(this.mainPanel);
     }
 
@@ -712,6 +731,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         knownScannersMenuItemSeparator = new javax.swing.JPopupMenu.Separator();
         scanMenuItem = new javax.swing.JMenuItem();
         openMenuItem = new javax.swing.JMenuItem();
+        editEntryMenuItem = new javax.swing.JMenuItem();
         oCRMenuSeparator = new javax.swing.JPopupMenu.Separator();
         oCRMenuItem = new javax.swing.JMenuItem();
         databaseMenuSeparator = new javax.swing.JPopupMenu.Separator();
@@ -1116,6 +1136,14 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             }
         });
         fileMenu.add(openMenuItem);
+
+        editEntryMenuItem.setText("Edit entry...");
+        editEntryMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                editEntryMenuItemActionPerformed(evt);
+            }
+        });
+        fileMenu.add(editEntryMenuItem);
         fileMenu.add(oCRMenuSeparator);
 
         oCRMenuItem.setText("Configure OCR engines");
@@ -1214,8 +1242,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         ScannerSelectionDialog scannerSelectionDialog = new ScannerSelectionDialog(this,
                 messageHandler,
                 nameDeviceMap,
-                this.conf.getChangedOptions(),
-                this.conf.getScannerSaneAddress());
+                this.documentScannerConf.getChangedOptions(),
+                this.documentScannerConf.getScannerSaneAddress());
         scannerSelectionDialog.pack();
         scannerSelectionDialog.setLocationRelativeTo(this);
         scannerSelectionDialog.setVisible(true);//blocks
@@ -1285,8 +1313,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         StorageConfPanel<?> responsibleStorageConfPanel = this.storageConfPanelMap.get(clazz);
         StorageConf<?,?> createdStorageConf = responsibleStorageConfPanel.getStorageConf();
         this.storageListModel.addElement(createdStorageConf);
-        this.conf.getAvailableStorageConfs().add(createdStorageConf);
-        this.conf.setStorageConf(createdStorageConf);
+        this.documentScannerConf.getAvailableStorageConfs().add(createdStorageConf);
+        this.documentScannerConf.setStorageConf(createdStorageConf);
     }//GEN-LAST:event_storageCreateDialogSaveButtonActionPerformed
 
     private void storageCreateDialogCancelDialogActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_storageCreateDialogCancelDialogActionPerformed
@@ -1300,7 +1328,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private void storageDialogSelectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_storageDialogSelectButtonActionPerformed
         StorageConf<?,?> selectedStorage = this.storageList.getSelectedValue();
         assert selectedStorage != null;
-        this.conf.setStorageConf(selectedStorage);
+        this.documentScannerConf.setStorageConf(selectedStorage);
     }//GEN-LAST:event_storageDialogSelectButtonActionPerformed
 
     private void storageDialogNewButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_storageDialogNewButtonActionPerformed
@@ -1338,9 +1366,24 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     }//GEN-LAST:event_openMenuItemActionPerformed
 
     private void optionsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_optionsMenuItemActionPerformed
-        DocumentScannerOptionsDialog documentScannerOptionsDialog = new DocumentScannerOptionsDialog(this, conf);
-        documentScannerOptionsDialog.setVisible(true);
+        DocumentScannerConfDialog documentScannerConfDialog = new DocumentScannerConfDialog(this, documentScannerConf);
+        documentScannerConfDialog.setVisible(true);
     }//GEN-LAST:event_optionsMenuItemActionPerformed
+
+    private void editEntryMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_editEntryMenuItemActionPerformed
+        EntityEditingDialog entityEditingDialog = new EntityEditingDialog(this,
+                ENTITY_CLASSES,
+                PRIMARY_CLASS_SELECTION,
+                entityManager,
+                messageHandler);
+        entityEditingDialog.setVisible(true);
+        Object selectedEntity = entityEditingDialog.getSelectedEntity();
+        try {
+            this.mainPanel.addDocument(selectedEntity);
+        } catch (DocumentAddException ex) {
+            handleException(ex, "Exception during adding new document");
+        }
+    }//GEN-LAST:event_editEntryMenuItemActionPerformed
 
     /**
      * connects to an OrientDB database using the current values of the text
@@ -1390,20 +1433,20 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
 
     private void handleException(Throwable ex, String title) {
         LOGGER.info("handling exception {}", ex);
-        this.messageHandler.handle(new DialogMessage(generateApplicationWindowTitle(title, APP_NAME, APP_VERSION),
-                ex,
-                JOptionPane.ERROR_MESSAGE));
+        this.messageHandler.handle(new Message(String.format("The following exception occured: %s", ExceptionUtils.getRootCauseMessage(ex)),
+                JOptionPane.ERROR_MESSAGE,
+                "Exception occured"));
     }
 
     private OCREngine retrieveOCREngine() {
-        if (this.conf.getoCREngineConf() == null) {
+        if (this.documentScannerConf.getoCREngineConf() == null) {
             JOptionPane.showMessageDialog(this, //parent
                     "OCREngine isn't set up",
                     DocumentScanner.generateApplicationWindowTitle("Warning", APP_NAME, APP_VERSION),
                     JOptionPane.ERROR_MESSAGE);
             return null;
         }
-        return this.conf.getoCREngineConf().getOCREngine();
+        return this.documentScannerConf.getoCREngineConf().getOCREngine();
     }
 
     /**
@@ -1442,7 +1485,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         //resource closing routines need to be handled in event
                         //handling and shutdown hooks since this doesn't block
                         //and there's no way of acchieving that without trouble
-                } catch (TesseractNotFoundException ex) {
+                } catch (BinaryNotFoundException ex) {
                     String message = "The tesseract binary isn't available. Install it on your system and make sure it's executable (in doubt check if tesseract runs on the console)";
                     LOGGER.error(message);
                     JOptionPane.showMessageDialog(null, //parent
@@ -1500,6 +1543,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private javax.swing.JPasswordField databasePasswordTextField;
     private javax.swing.JLabel databaseUsernameLabel;
     private javax.swing.JTextField databaseUsernameTextField;
+    private javax.swing.JMenuItem editEntryMenuItem;
     private javax.swing.JMenuItem exitMenuItem;
     private javax.swing.JPopupMenu.Separator exitMenuItemSeparator;
     private javax.swing.JMenu fileMenu;

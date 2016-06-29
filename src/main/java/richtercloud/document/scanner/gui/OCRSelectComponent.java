@@ -49,11 +49,17 @@ public class OCRSelectComponent extends JPanel {
                 new OCRSelectPanelPanelScrollPane(oCRSelectPanelPanel);
         this.setLayout(groupLayout);
         groupLayout.setVerticalGroup(groupLayout.createSequentialGroup()
-                .addComponent(oCRSelectPanelPanelScrollPane)
-                .addComponent(toolbar));
+                .addComponent(oCRSelectPanelPanelScrollPane, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE)
+                .addComponent(toolbar,
+                        GroupLayout.PREFERRED_SIZE,
+                        GroupLayout.DEFAULT_SIZE,
+                        GroupLayout.PREFERRED_SIZE));
         groupLayout.setHorizontalGroup(groupLayout.createParallelGroup()
-                .addComponent(oCRSelectPanelPanelScrollPane)
-                .addComponent(toolbar));
+                .addComponent(oCRSelectPanelPanelScrollPane, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE)
+                .addComponent(toolbar,
+                        GroupLayout.PREFERRED_SIZE,
+                        GroupLayout.DEFAULT_SIZE,
+                        GroupLayout.PREFERRED_SIZE));
 
         zoomInButton.addActionListener(new ActionListener() {
             @Override

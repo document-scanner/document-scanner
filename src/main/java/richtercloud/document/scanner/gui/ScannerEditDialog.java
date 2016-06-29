@@ -24,16 +24,16 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JDialog;
-import javax.swing.JOptionPane;
 import javax.swing.MutableComboBoxModel;
-import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import richtercloud.reflection.form.builder.message.DialogMessage;
 import richtercloud.reflection.form.builder.message.MessageHandler;
 
 /**
@@ -46,13 +46,16 @@ import richtercloud.reflection.form.builder.message.MessageHandler;
  * @author richter
  */
 public class ScannerEditDialog extends javax.swing.JDialog {
+    private static final long serialVersionUID = 1L;
     private MutableComboBoxModel<String> modeComboBoxModel = new DefaultComboBoxModel<>();
     private MutableComboBoxModel<String> resolutionComboBoxModel = new DefaultComboBoxModel<>();
+    private MutableComboBoxModel<String> documentSourceComboBoxModel = new DefaultComboBoxModel<>();
     private final static Logger LOGGER = LoggerFactory.getLogger(ScannerEditDialog.class);
     private final SaneDevice device;
     private final MessageHandler messageHandler;
     private final static String MODE_OPTION_NAME = "mode";
     private final static String RESOLUTION_OPTION_NAME = "resolution";
+    public final static String DOCUMENT_SOURCE_OPTION_NAME = "source";
 
     public ScannerEditDialog(Dialog parent,
             final SaneDevice device,
@@ -74,6 +77,10 @@ public class ScannerEditDialog extends javax.swing.JDialog {
 
     /**
      * Creates new form ScannerEditDialog
+     * @param parent
+     * @param device
+     * @param changedOptions
+     * @param messageHandler
      * @throws java.io.IOException if {@link SaneDevice#open() } fails
      * @throws au.com.southsky.jfreesane.SaneException if
      * {@link SaneDevice#open() } fails
@@ -102,21 +109,29 @@ public class ScannerEditDialog extends javax.swing.JDialog {
         if(!device.isOpen()) {
             device.open();
         }
-        Pair<String, Integer> defaultValuePair = configureDefaultOptionValues(device, changedOptions, false);
+        Triple<String, Integer, String> defaultValuePair = configureDefaultOptionValues(device, changedOptions, false);
         for(String mode : device.getOption("mode").getStringConstraints()) {
             modeComboBoxModel.addElement(mode);
         }
-        this.modeComboBox.setSelectedItem(defaultValuePair.getKey());
+        this.modeComboBox.setSelectedItem(defaultValuePair.getLeft());
         for(SaneWord resolution : device.getOption("resolution").getWordConstraints()) {
             resolutionComboBoxModel.addElement(String.valueOf(resolution.integerValue()));
         }
-        this.resolutionComboBox.setSelectedItem(String.valueOf(defaultValuePair.getValue()));
+        this.resolutionComboBox.setSelectedItem(String.valueOf(defaultValuePair.getMiddle()));
+        List<String> documentSourceConstraints = device.getOption("source").getStringConstraints();
+        for(String documentSource : documentSourceConstraints) {
+            this.documentSourceComboBoxModel.addElement(documentSource);
+        }
+        if(documentSourceConstraints.contains("Automatic Document Feeder")) {
+            this.documentSourceComboBox.setSelectedItem("Automatic Document Feeder");
+        }
         //add ItemListener after setup
         this.modeComboBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
                 try {
-                    device.getOption("mode").setStringValue((String) ScannerEditDialog.this.modeComboBox.getSelectedItem());
+                    String mode = (String) ScannerEditDialog.this.modeComboBox.getSelectedItem();
+                    ScannerEditDialog.this.device.getOption("mode").setStringValue(mode);
                 } catch (IOException | SaneException ex) {
                     //not supposed to happen
                     throw new RuntimeException(ex);
@@ -127,9 +142,21 @@ public class ScannerEditDialog extends javax.swing.JDialog {
             @Override
             public void itemStateChanged(ItemEvent e) {
                 try {
-                    device.getOption("resolution").setIntegerValue(Integer.valueOf((String)ScannerEditDialog.this.resolutionComboBox.getSelectedItem()));
+                    int resolution = Integer.valueOf((String)ScannerEditDialog.this.resolutionComboBox.getSelectedItem());
+                    ScannerEditDialog.this.device.getOption("resolution").setIntegerValue(resolution);
                 } catch (IOException | SaneException ex) {
                     //not supposed to happen
+                    throw new RuntimeException(ex);
+                }
+            }
+        });
+        this.documentSourceComboBox.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                try {
+                    String documentSource = (String) ScannerEditDialog.this.documentSourceComboBox.getSelectedItem();
+                    ScannerEditDialog.this.device.getOption("source").setStringValue(documentSource);
+                } catch (IOException | SaneException ex) {
                     throw new RuntimeException(ex);
                 }
             }
@@ -155,9 +182,9 @@ public class ScannerEditDialog extends javax.swing.JDialog {
      * @throws IllegalArgumentException if the option denoted by
      * {@link #MODE_OPTION_NAME} or {@link #RESOLUTION_OPTION_NAME} isn't
      * readable or writable
-     * @return the mode and resolution in a {@link Pair}
+     * @return the mode, resolution and document source in a {@link Triple}
      */
-    public static Pair<String, Integer> configureDefaultOptionValues(SaneDevice device,
+    public static Triple<String, Integer, String> configureDefaultOptionValues(SaneDevice device,
             Map<SaneDevice, Map<SaneOption, Object>> changedOptions,
             boolean overwrite) throws IOException, SaneException {
         Map<SaneOption, Object> changedOptionsDeviceMap = changedOptions.get(device);
@@ -223,7 +250,36 @@ public class ScannerEditDialog extends javax.swing.JDialog {
             resolutionOption.setIntegerValue(resolution);
             changedOptionsDeviceMap.put(resolutionOption, resolution);
         }
-        return new ImmutablePair<>(mode, resolution);
+        SaneOption documentSourceOption = device.getOption(DOCUMENT_SOURCE_OPTION_NAME);
+        if(!documentSourceOption.isReadable()) {
+            throw new IllegalArgumentException(String.format("Option '%s' isn't readable.", DOCUMENT_SOURCE_OPTION_NAME));
+        }
+        if(!documentSourceOption.getType().equals(OptionValueType.STRING)) {
+            throw new IllegalArgumentException(String.format("Option '%s' "
+                    + "isn't of type STRING. This indicates an errornous SANE "
+                    + "implementation. Can't proceed.",
+                    DOCUMENT_SOURCE_OPTION_NAME));
+        }
+        String documentSource = (String) changedOptionsDeviceMap.get(documentSourceOption);
+        if(overwrite || documentSource == null) {
+            for(String documentSourceConstraint : documentSourceOption.getStringConstraints()) {
+                if(documentSourceConstraint.equalsIgnoreCase("ADF") || documentSourceConstraint.equalsIgnoreCase("Automatic document feeder")) {
+                    documentSource = documentSourceConstraint;
+                    break;
+                }
+            }
+            if(documentSource == null) {
+                documentSource = documentSourceOption.getStringConstraints().get(0);
+            }
+            assert documentSource != null;
+            if(!documentSourceOption.isWriteable()) {
+                throw new IllegalArgumentException(String.format("option '%s' isn't writable", DOCUMENT_SOURCE_OPTION_NAME));
+            }
+            LOGGER.debug(String.format("setting default document source '%d' on device '%s'", documentSource, device));
+            documentSourceOption.setStringValue(documentSource);
+            changedOptionsDeviceMap.put(documentSourceOption, documentSource);
+        }
+        return new ImmutableTriple<>(mode, resolution, documentSource);
     }
 
     /**
@@ -240,6 +296,8 @@ public class ScannerEditDialog extends javax.swing.JDialog {
         resolutionComboBox = new javax.swing.JComboBox<>();
         resolutionComboBoxLabel = new javax.swing.JLabel();
         closeButton = new javax.swing.JButton();
+        documentSourceComboBox = new javax.swing.JComboBox<>();
+        documentSourceComboBoxLabel = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
@@ -258,6 +316,10 @@ public class ScannerEditDialog extends javax.swing.JDialog {
             }
         });
 
+        documentSourceComboBox.setModel(documentSourceComboBoxModel);
+
+        documentSourceComboBoxLabel.setText("Document source");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -266,16 +328,18 @@ public class ScannerEditDialog extends javax.swing.JDialog {
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
+                        .addGap(0, 0, Short.MAX_VALUE)
+                        .addComponent(closeButton))
+                    .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(resolutionComboBoxLabel)
-                            .addComponent(modeComboBoxLabel))
+                            .addComponent(modeComboBoxLabel)
+                            .addComponent(documentSourceComboBoxLabel))
                         .addGap(18, 18, 18)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(modeComboBox, 0, 283, Short.MAX_VALUE)
-                            .addComponent(resolutionComboBox, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
-                        .addComponent(closeButton)))
+                            .addComponent(documentSourceComboBox, 0, 228, Short.MAX_VALUE)
+                            .addComponent(resolutionComboBox, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(modeComboBox, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -289,6 +353,10 @@ public class ScannerEditDialog extends javax.swing.JDialog {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(resolutionComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(resolutionComboBoxLabel))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(documentSourceComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(documentSourceComboBoxLabel))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(closeButton)
                 .addContainerGap())
@@ -298,20 +366,13 @@ public class ScannerEditDialog extends javax.swing.JDialog {
     }// </editor-fold>//GEN-END:initComponents
 
     private void closeButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_closeButtonActionPerformed
-        if(this.device.isOpen()) {
-            try {
-                this.device.close();
-            } catch (IOException ex) {
-                this.messageHandler.handle(new DialogMessage("An exception during closing scanner device occured",
-                        ex,
-                        JOptionPane.ERROR_MESSAGE));
-            }
-        }
         this.setVisible(false);
     }//GEN-LAST:event_closeButtonActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton closeButton;
+    private javax.swing.JComboBox<String> documentSourceComboBox;
+    private javax.swing.JLabel documentSourceComboBoxLabel;
     private javax.swing.JComboBox<String> modeComboBox;
     private javax.swing.JLabel modeComboBoxLabel;
     private javax.swing.JComboBox<String> resolutionComboBox;

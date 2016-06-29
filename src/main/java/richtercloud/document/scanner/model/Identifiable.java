@@ -3,18 +3,20 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package richtercloud.document.scanner.model;
 
 import java.io.Serializable;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.MappedSuperclass;
@@ -24,6 +26,7 @@ import richtercloud.reflection.form.builder.FieldInfo;
 /**
  * A superclass for all entities which allows management of {@link Id} annotated
  * property.
+ *
  * @author richter
  */
 /*
@@ -40,10 +43,11 @@ code gets very ugly and duplicating the hierarchy manually is an inacceptable
 source of mistakes) -> keep the factory code in a central factory class (which
 is IdGenerator and subclasses) and manage dependencies of id generation there
 and only there.
-*/
+ */
 @MappedSuperclass
 @Inheritance
 public abstract class Identifiable implements Serializable {
+
     private static final long serialVersionUID = 1L;
     @Id
     @NotNull

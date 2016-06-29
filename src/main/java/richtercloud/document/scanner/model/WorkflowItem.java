@@ -16,36 +16,23 @@ package richtercloud.document.scanner.model;
 
 import java.util.Date;
 import javax.persistence.Entity;
-import javax.persistence.Inheritance;
 
 /**
  *
  * @author richter
  */
+/*
+internal implementation notes:
+- needs to be an Entity in order to be referencable in Workflow
+*/
 @Entity
-@Inheritance
-public class Leaflet extends AbstractDocument {
+public abstract class WorkflowItem extends CommunicationItem {
     private static final long serialVersionUID = 1L;
 
-    protected Leaflet() {
+    protected WorkflowItem() {
     }
 
-    public Leaflet(Date date,
-            Date receptionDate,
-            Location originalLocation,
-            boolean originalLost,
-            boolean digitalOnly,
-            Long id,
-            Company sender,
-            Company recipient) {
-        super(date,
-                receptionDate,
-                originalLocation,
-                originalLost,
-                digitalOnly,
-                id,
-                sender,
-                recipient);
+    public WorkflowItem(Long id, Company sender, Company recipient, Date theDate) {
+        super(id, sender, recipient, theDate);
     }
-
 }

@@ -23,6 +23,8 @@ import java.util.Scanner;
 import javax.swing.DefaultListModel;
 import richtercloud.document.scanner.gui.conf.TesseractOCREngineConf;
 import richtercloud.document.scanner.gui.engineconf.OCREngineConfPanel;
+import richtercloud.document.scanner.ocr.BinaryNotFoundException;
+import richtercloud.document.scanner.ocr.ProcessOCREngine;
 import richtercloud.document.scanner.ocr.TesseractOCREngine;
 
 /**
@@ -40,14 +42,14 @@ public class TesseractOCREngineConfPanel extends OCREngineConfPanel<TesseractOCR
      * @throws java.lang.InterruptedException
      * @throws richtercloud.document.scanner.gui.TesseractNotFoundException
      */
-    public TesseractOCREngineConfPanel() throws IOException, InterruptedException, TesseractNotFoundException {
+    public TesseractOCREngineConfPanel() throws IOException, InterruptedException, BinaryNotFoundException {
         this(new TesseractOCREngineConf());
     }
 
-    public TesseractOCREngineConfPanel(TesseractOCREngineConf conf) throws IOException, InterruptedException, TesseractNotFoundException {
+    public TesseractOCREngineConfPanel(TesseractOCREngineConf conf) throws IOException, InterruptedException, BinaryNotFoundException {
         this.initComponents();
         this.conf = conf;
-        TesseractOCREngine.checkTesseractAvailableExceptions(this.conf.getTesseract());
+        ProcessOCREngine.checkBinaryAvailableExceptions(this.conf.getTesseract());
         ProcessBuilder tesseractProcessBuilder = new ProcessBuilder(this.conf.getTesseract(), "--list-langs");
         Process tesseractProcess = tesseractProcessBuilder.redirectOutput(ProcessBuilder.Redirect.PIPE).start();
         int tesseractProcessReturnCode = tesseractProcess.waitFor();

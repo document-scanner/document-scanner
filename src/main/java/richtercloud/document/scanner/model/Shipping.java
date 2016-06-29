@@ -17,10 +17,15 @@ package richtercloud.document.scanner.model;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import javax.persistence.Basic;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Inheritance;
 import javax.persistence.ManyToMany;
+import javax.persistence.OneToMany;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import richtercloud.reflection.form.builder.FieldInfo;
 
@@ -30,12 +35,21 @@ import richtercloud.reflection.form.builder.FieldInfo;
  */
 @Entity
 @Inheritance
-public class Shipping extends CommunicationItem {
+public class Shipping extends WorkflowItem {
     private static final long serialVersionUID = 1L;
-    @ManyToMany(mappedBy = "shippings", fetch = FetchType.EAGER)
     @Size(min = 1) //otherwise creating a shipping doesn't make sense
     @FieldInfo(name = "Packages", description = "A list of packages which make this shipping")
+    @OneToMany(mappedBy = "shipping", fetch = FetchType.EAGER)
     private List<APackage> packages;
+    /**
+     * The date and time (timestamp) of the deliveryDate (by the delivery
+     * service) (time is optional, but will be persisted when specified).
+     */
+    @Temporal(TemporalType.TIMESTAMP)
+    @NotNull
+    @Basic(fetch = FetchType.EAGER)
+    @FieldInfo(name = "Delivery", description = "The date of the delivery as specified by the delivery service")
+    private Date deliveryDate;
 
     protected Shipping() {
     }
@@ -43,6 +57,14 @@ public class Shipping extends CommunicationItem {
     public Shipping(List<APackage> packages, Long id, Company sender, Company recipient, Date theDate, Date received) {
         super(id, sender, recipient, theDate);
         this.packages = packages;
+    }
+
+    public Date getDeliveryDate() {
+        return deliveryDate;
+    }
+
+    public void setDeliveryDate(Date deliveryDate) {
+        this.deliveryDate = deliveryDate;
     }
 
     /**

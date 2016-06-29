@@ -31,7 +31,7 @@ import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
  * @author richter
  */
 @MappedSuperclass
-public abstract class CommunicationItem extends Identifiable {
+public abstract class CommunicationItem extends Identifiable  {
     private static final long serialVersionUID = 1L;
     @ManyToOne(fetch = FetchType.EAGER)
     @NotNull(groups = {Default.class, IdGenerationValidation.class})

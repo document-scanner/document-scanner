@@ -21,6 +21,8 @@ import au.com.southsky.jfreesane.SaneSession;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import javax.swing.JOptionPane;
@@ -29,7 +31,8 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
-import richtercloud.reflection.form.builder.message.DialogMessage;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import richtercloud.reflection.form.builder.message.Message;
 import richtercloud.reflection.form.builder.message.MessageHandler;
 
 /**
@@ -44,7 +47,76 @@ import richtercloud.reflection.form.builder.message.MessageHandler;
 public class ScannerSelectionDialog extends javax.swing.JDialog {
     private static final String SCANNER_ADDRESS_DEFAULT = "localhost";
     private static final long serialVersionUID = 1L;
-    private final DefaultTableModel scannerDialogTableModel = new DefaultTableModel();
+    private class SelectionTableModel extends DefaultTableModel {
+        private static final long serialVersionUID = 1L;
+        private final List<SaneDevice> devices;
+
+        SelectionTableModel(List<SaneDevice> devices) {
+            super(new String[] {"Name", "Model", "Type", "Vendor"}, 0);
+            this.devices = devices;
+        }
+
+        @Override
+        public Object getValueAt(int row, int column) {
+            if(column == 0) {
+                return devices.get(row).getName();
+            }else if(column == 1) {
+                return devices.get(row).getModel();
+            }else if(column == 2) {
+                return devices.get(row).getType();
+            }else if(column == 3) {
+                return devices.get(row).getVendor();
+            }else {
+                throw new IllegalArgumentException();
+            }
+        }
+
+        public void addDevices(List<SaneDevice> devices) {
+            int lastRow = this.devices.size();
+            this.devices.addAll(devices);
+            fireTableRowsInserted(lastRow, this.devices.size());
+        }
+
+        public void addDevice(SaneDevice device) {
+            this.devices.add(device);
+            fireTableRowsInserted(devices.size(), devices.size());
+        }
+
+        public void clear() {
+            int rowCount = this.devices.size();
+            this.devices.clear();
+            fireTableRowsDeleted(0, rowCount);
+        }
+
+        @Override
+        public int getRowCount() {
+            if(this.devices == null) {
+                //during initialization (this is inefficient, but due to the bad design of DefaultTableModel
+                return 0;
+            }
+            return this.devices.size();
+        }
+
+        @Override
+        public int getColumnCount() {
+            return 4;
+        }
+
+        @Override
+        public Class<?> getColumnClass(int columnIndex) {
+            return String.class;
+        }
+
+        @Override
+        public boolean isCellEditable(int rowIndex, int columnIndex) {
+            return false;
+        }
+
+        public List<SaneDevice> getDevices() {
+            return Collections.unmodifiableList(devices);
+        }
+    }
+    private final SelectionTableModel tableModel = new SelectionTableModel(new LinkedList<SaneDevice>());
     private SaneSession scannerDialogSaneSession;
     private final TableModelListener scannerDialogTableModelListener = new TableModelListener() {
         @Override
@@ -73,6 +145,11 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
 
     /**
      * Creates new form ScannerSelectionDialog
+     * @param parent
+     * @param messageHandler
+     * @param nameDeviceMap
+     * @param changedOptions
+     * @param initialAddress
      */
     public ScannerSelectionDialog(java.awt.Frame parent,
             MessageHandler messageHandler,
@@ -95,11 +172,7 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
         }
         this.changedOptions = changedOptions;
         initComponents();
-        this.scannerDialogTableModel.addColumn("Name");
-        this.scannerDialogTableModel.addColumn("Model");
-        this.scannerDialogTableModel.addColumn("Type");
-        this.scannerDialogTableModel.addColumn("Vendor");
-        this.scannerDialogTableModel.addTableModelListener(this.scannerDialogTableModelListener);
+        this.tableModel.addTableModelListener(this.scannerDialogTableModelListener);
         this.scannerDialogTable.getSelectionModel().addListSelectionListener(this.scannerDialogTableSelectionListener);
         this.scannerDialogAddressTextField.setText(initialAddress);
     }
@@ -113,7 +186,7 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
     }
 
     private boolean scannerDialogSelectButtonEnabled() {
-        return this.scannerDialogTableModel.getDataVector().size() > 0
+        return this.tableModel.getRowCount() > 0
                 && this.scannerDialogTable.getSelectedRowCount() > 0;
     }
 
@@ -125,9 +198,7 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
             address0 = InetAddress.getByName(addressString);
             this.scannerDialogSaneSession = SaneSession.withRemoteSane(address0);
             List<SaneDevice> availableDevices = this.scannerDialogSaneSession.listDevices();
-            for (SaneDevice available : availableDevices) {
-                this.scannerDialogTableModel.addRow(new Object[]{available.getName(), available.getModel(), available.getType(), available.getVendor()});
-            }
+            this.tableModel.addDevices(availableDevices);
             this.scannerDialogStatusLabel.setText(" ");
             this.address = addressString;
         } catch (ConnectException ex) {
@@ -135,19 +206,6 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
                     DocumentScanner.SANED_BUG_INFO);
         } catch (IOException | SaneException ex) {
             this.handleSearchScannerException(ex, "");
-        }
-    }
-
-    private void selectScanner() {
-        String selectedName = (String) ((List) this.scannerDialogTableModel.getDataVector().get(this.scannerDialogTable.getSelectedRow())).get(0);
-        try {
-            this.selectedDevice = DocumentScanner.getDevice(selectedName,
-                    this.scannerDialogSaneSession,
-                    this.nameDeviceMap);
-        } catch (IOException ex) {
-            this.messageHandler.handle(new DialogMessage("Exception during scanner selection",
-                    ex,
-                    JOptionPane.ERROR_MESSAGE));
         }
     }
 
@@ -195,7 +253,7 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
             }
         });
 
-        scannerDialogTable.setModel(scannerDialogTableModel);
+        scannerDialogTable.setModel(tableModel);
         scannerDialogScrollPane.setViewportView(scannerDialogTable);
 
         scannerDialogCancelButton.setText("Cancel");
@@ -284,23 +342,14 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
     }//GEN-LAST:event_scannerDialogCancelButtonActionPerformed
 
     private void scannerDialogSelectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_scannerDialogSelectButtonActionPerformed
-        this.selectScanner();
+        assert this.scannerDialogTable.getSelectedRow() != -1;
+        this.selectedDevice = this.tableModel.getDevices().get(this.scannerDialogTable.getSelectedRow());
         this.setVisible(false);
     }//GEN-LAST:event_scannerDialogSelectButtonActionPerformed
 
     private void scannerDialogEditButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_scannerDialogEditButtonActionPerformed
-        SaneDevice device = null;
-        String selectedDeviceName = (String) this.scannerDialogTableModel.getValueAt(this.scannerDialogTable.getSelectedRow(), 0);
-        try {
-            device = DocumentScanner.getDevice(selectedDeviceName,
-                    this.scannerDialogSaneSession,
-                    this.nameDeviceMap);
-        } catch (IOException ex) {
-            this.messageHandler.handle(new DialogMessage("Exception during scanner device selection", ex, JOptionPane.ERROR_MESSAGE));
-        }
-        if(device == null) {
-            return;
-        }
+        assert this.scannerDialogTable.getSelectedRow() != -1;
+        SaneDevice device = this.tableModel.getDevices().get(this.scannerDialogTable.getSelectedRow());
         ScannerEditDialog scannerEditDialog;
         try {
             ScannerEditDialog.configureDefaultOptionValues(device,
@@ -312,9 +361,9 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
                 this.messageHandler);
             scannerEditDialog.setVisible(true);
         } catch (IOException | SaneException ex) {
-            this.messageHandler.handle(new DialogMessage("Exception during scanner configuration",
-                    ex,
-                    JOptionPane.ERROR_MESSAGE));
+            this.messageHandler.handle(new Message(String.format("Exception during scanner configuration", ExceptionUtils.getRootCauseMessage(ex)),
+                    JOptionPane.ERROR_MESSAGE,
+                    "Exception occured"));
         }
     }//GEN-LAST:event_scannerDialogEditButtonActionPerformed
 

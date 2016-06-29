@@ -16,32 +16,27 @@ package richtercloud.document.scanner.model;
 
 import java.util.Date;
 import java.util.List;
-import javax.persistence.Basic;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.Inheritance;
-import javax.validation.constraints.NotNull;
-import org.jscience.economics.money.Money;
-import org.jscience.physics.amount.Amount;
-import richtercloud.reflection.form.builder.FieldInfo;
+import javax.persistence.OneToOne;
+import richtercloud.reflection.form.builder.ClassInfo;
 
 /**
- *
+ * Wraps the relationship between {@link Employment} and {@link Document}.
  * @author richter
  */
 @Entity
 @Inheritance
-public class Bill extends Document {
+@ClassInfo(name="Withdrawal")
+public class Withdrawal extends Document {
     private static final long serialVersionUID = 1L;
-    @NotNull
-    @Basic(fetch = FetchType.EAGER)
-    @FieldInfo(name = "Amount", description = "The amount and currency of the bill")
-    private Amount<Money> amount;
+    @OneToOne
+    private Employment employment;
 
-    protected Bill() {
+    protected Withdrawal() {
     }
 
-    public Bill(Amount<Money> amount,
+    public Withdrawal(Employment employment,
             String comment,
             String identifier,
             byte[] scanData,
@@ -68,20 +63,20 @@ public class Bill extends Document {
                 id,
                 sender,
                 recipient);
-        this.amount = amount;
+        this.employment = employment;
     }
 
     /**
-     * @return the amount
+     * @return the employment
      */
-    public Amount<Money> getAmount() {
-        return this.amount;
+    public Employment getEmployment() {
+        return employment;
     }
 
     /**
-     * @param amount the amount to set
+     * @param employment the employment to set
      */
-    public void setAmount(Amount<Money> amount) {
-        this.amount = amount;
+    public void setEmployment(Employment employment) {
+        this.employment = employment;
     }
 }

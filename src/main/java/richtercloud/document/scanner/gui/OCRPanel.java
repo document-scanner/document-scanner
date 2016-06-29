@@ -283,7 +283,8 @@ public class OCRPanel extends javax.swing.JPanel {
                         + "following exception occured while setting the "
                         + "selected value on the field: %s",
                         ExceptionUtils.getRootCauseMessage(ex)),
-                        JOptionPane.ERROR_MESSAGE));
+                        JOptionPane.ERROR_MESSAGE,
+                        "Exception occured"));
             }
         }
     }

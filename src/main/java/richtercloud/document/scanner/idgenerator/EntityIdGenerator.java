@@ -14,11 +14,13 @@
  */
 package richtercloud.document.scanner.idgenerator;
 
+import com.google.common.base.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.model.CommunicationItem;
 import richtercloud.document.scanner.model.Company;
 import richtercloud.document.scanner.model.Document;
+import richtercloud.document.scanner.model.Email;
 import richtercloud.document.scanner.model.EmailAddress;
 import richtercloud.document.scanner.model.Employment;
 import richtercloud.document.scanner.model.FinanceAccount;
@@ -27,6 +29,7 @@ import richtercloud.document.scanner.model.Payment;
 import richtercloud.document.scanner.model.Person;
 import richtercloud.document.scanner.model.Transport;
 import richtercloud.document.scanner.model.TransportTicket;
+import richtercloud.document.scanner.model.Workflow;
 import richtercloud.reflection.form.builder.jpa.SequentialIdGenerator;
 
 /**
@@ -107,7 +110,16 @@ public class EntityIdGenerator extends SequentialIdGenerator {
             retValue = transportTicket.getTheDate().hashCode()
                     * transportTicket.getWaypoints().hashCode()
                     * transportTicket.getTransportCompany().hashCode(); //theDate is only sufficient to distungish if it is precise. In order to allow to specify a vague date in conjunction with waypoints and/or transportCompany, use all properties for hash code.
-        }else {
+        } else if (instance instanceof Workflow) {
+            Workflow workflow = (Workflow) instance;
+            retValue = Objects.hashCode(workflow.getItems());
+            return retValue;
+        } else if( instance instanceof Email) {
+            Email email = (Email)instance;
+            retValue = Objects.hashCode(email.getSenderAddress())
+                    * email.getTheDate().hashCode();
+            return retValue;
+        } else {
             throw new IllegalArgumentException(String.format("type '%s' not supported", instance.getClass()));
         }
         return retValue;

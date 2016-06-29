@@ -41,9 +41,8 @@ import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
 @ClassInfo(name="Finance account")
 public class FinanceAccount extends Identifiable {
     private static final long serialVersionUID = 1L;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @NotNull
-    @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Owner", description = "The owner of the account")
     private Company owner;
     /**

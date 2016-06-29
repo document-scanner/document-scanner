@@ -12,7 +12,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.gui;
+package richtercloud.document.scanner.ocr;
 
 import java.io.IOException;
 
@@ -20,10 +20,10 @@ import java.io.IOException;
  *
  * @author richter
  */
-public class TesseractNotFoundException extends Exception {
+public class BinaryNotFoundException extends Exception {
     private static final long serialVersionUID = 1L;
 
-    public TesseractNotFoundException(String tesseract, IOException cause) {
+    public BinaryNotFoundException(String tesseract, IOException cause) {
         super(String.format("The tesseract binary '%s' isn't available or inaccessible (see nested exception for details)", tesseract), cause);
     }
 

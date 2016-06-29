@@ -14,14 +14,12 @@
  */
 package richtercloud.document.scanner.model;
 
-import java.util.Collections;
 import java.util.Date;
-import java.util.List;
 import javax.persistence.Basic;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Inheritance;
-import javax.persistence.ManyToMany;
+import javax.persistence.ManyToOne;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
@@ -29,7 +27,8 @@ import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.reflection.form.builder.FieldInfo;
 
 /**
- *
+ * Describes part of a {@link Shipping} and is not itself a
+ * {@link CommunicationItem} because {@link Shipping} already is.
  * @author richter
  */
 /*
@@ -39,51 +38,40 @@ internal implementation notes:
 @Entity
 @Inheritance
 @ClassInfo(name="Package")
-public class APackage extends CommunicationItem {
+public class APackage extends Identifiable {
     private static final long serialVersionUID = 1L;
     /**
-     * the date and time (timestamp) of the receptionDate (time is optional, but
- will be persisted when specified)
-     */
-    @Temporal(TemporalType.TIMESTAMP)
-    @NotNull
-    @Basic(fetch = FetchType.EAGER)
-    @FieldInfo(name = "Reception", description = "The date of the reception (not necessarily the date of the reception)")
-    private Date receptionDate;
-    /**
-     * the date and time (timestamp) of the deliveryDate (by the deliveryDate service)
- (time is optional, but will be persisted when specified)
+     * The date and time (timestamp) of the delivery (by the delivery
+     * service) (time is optional, but will be persisted when specified). This
+     * property is used to specify different delivery times of a shipping with
+     * more than one package and delivery at differnt times. The delivery time
+     * of shipping should indicate the delivery of the last package in this
+     * (rare) case.
      */
     @Temporal(TemporalType.TIMESTAMP)
     @NotNull
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Delivery", description = "The date of the delivery as specified by the delivery service")
     private Date deliveryDate;
-    @ManyToMany(fetch = FetchType.EAGER)
-    @FieldInfo(name = "Shippings", description = "A list of separate shippings")
-    private List<Shipping> shippings;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @FieldInfo(name = "Shipping", description = "The shipping of the package")
+    private Shipping shipping;
 
     protected APackage() {
     }
 
-    public APackage(Long id, Company sender, Company receiver, Date receptionDate, Date theDate, Date deliveryDate) {
-        super(id, sender, receiver, theDate);
-        this.receptionDate = receptionDate;
+    public APackage(Long id, Date deliveryDate, Shipping shipping) {
+        super(id);
         this.deliveryDate = deliveryDate;
+        this.shipping = shipping;
     }
 
-    /**
-     * @return the receptionDate
-     */
-    public Date getReceptionDate() {
-        return this.receptionDate;
+    public Shipping getShipping() {
+        return shipping;
     }
 
-    /**
-     * @param receptionDate the receptionDate to set
-     */
-    public void setReceptionDate(Date receptionDate) {
-        this.receptionDate = receptionDate;
+    public void setShipping(Shipping shipping) {
+        this.shipping = shipping;
     }
 
     /**
@@ -98,13 +86,5 @@ public class APackage extends CommunicationItem {
      */
     public void setDeliveryDate(Date deliveryDate) {
         this.deliveryDate = deliveryDate;
-    }
-
-    public List<Shipping> getShippings() {
-        return Collections.unmodifiableList(this.shippings);
-    }
-
-    public void setShippings(List<Shipping> shippings) {
-        this.shippings = shippings;
     }
 }

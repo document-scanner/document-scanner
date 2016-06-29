@@ -23,15 +23,19 @@ import bibliothek.gui.dock.common.intern.CDockable;
 import bibliothek.gui.dock.util.DockUtilities;
 import java.awt.BorderLayout;
 import java.awt.HeadlessException;
+import java.awt.Window;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -44,6 +48,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
+import java.util.logging.Level;
 import javax.imageio.ImageIO;
 import javax.persistence.EntityManager;
 import javax.swing.JComponent;
@@ -65,6 +70,8 @@ import richtercloud.document.scanner.components.OCRResultPanelFetcher;
 import richtercloud.document.scanner.components.OCRResultPanelFetcherProgressEvent;
 import richtercloud.document.scanner.components.OCRResultPanelFetcherProgressListener;
 import richtercloud.document.scanner.components.ScanResultPanelFetcher;
+import richtercloud.document.scanner.components.ScanResultPanelRecreator;
+import richtercloud.document.scanner.components.annotations.ScanResult;
 import static richtercloud.document.scanner.gui.DocumentScanner.APP_NAME;
 import static richtercloud.document.scanner.gui.DocumentScanner.APP_VERSION;
 import static richtercloud.document.scanner.gui.DocumentScanner.BIDIRECTIONAL_HELP_DIALOG_TITLE;
@@ -173,7 +180,7 @@ public class MainPanel extends javax.swing.JPanel {
     private final Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping;
     private final EntityManager entityManager;
     private final MessageHandler messageHandler;
-    private final ReflectionFormBuilder reflectionFormBuilder;
+    private final JPAReflectionFormBuilder reflectionFormBuilder;
     private final AmountMoneyUsageStatisticsStorage amountMoneyUsageStatisticsStorage;
     private final AmountMoneyCurrencyStorage amountMoneyCurrencyStorage;
     private final AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever;
@@ -194,6 +201,7 @@ public class MainPanel extends javax.swing.JPanel {
     private final CControl control;
     private final Map<JComponent, MultipleCDockable> dockableMap = new HashMap<>();
     private final Map<CDockable, OCRSelectComponent> componentMap = new HashMap<>();
+    private final Window oCRProgressMonitorParent;
 
     public MainPanel(Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
@@ -207,7 +215,7 @@ public class MainPanel extends javax.swing.JPanel {
             OCREngineConf oCREngineConf,
             Map<java.lang.reflect.Type, TypeHandler<?, ?,?, ?>> typeHandlerMapping,
             DocumentScannerConf documentScannerConf,
-            JFrame parentFrame) {
+            Window oCRProgressMonitorParent) {
         this(entityClasses,
                 primaryClassSelection,
                 DocumentScanner.VALUE_SETTER_MAPPING_DEFAULT,
@@ -221,7 +229,7 @@ public class MainPanel extends javax.swing.JPanel {
                 oCREngineConf,
                 typeHandlerMapping,
                 documentScannerConf,
-                parentFrame);
+                oCRProgressMonitorParent);
     }
 
     public MainPanel(Set<Class<?>> entityClasses,
@@ -237,7 +245,7 @@ public class MainPanel extends javax.swing.JPanel {
             OCREngineConf oCREngineConf,
             Map<java.lang.reflect.Type, TypeHandler<?, ?,?, ?>> typeHandlerMapping,
             DocumentScannerConf documentScannerConf,
-            JFrame parentFrame) {
+            Window oCRProgressMonitorParent) {
         if(messageHandler == null) {
             throw new IllegalArgumentException("messageHandler mustn't be null");
         }
@@ -255,7 +263,7 @@ public class MainPanel extends javax.swing.JPanel {
         this.amountMoneyCurrencyStorage = amountMoneyCurrencyStorage;
         this.amountMoneyExchangeRateRetriever = amountMoneyExchangeRateRetriever;
         this.typeHandlerMapping = typeHandlerMapping;
-        this.control = new CControl (parentFrame);
+        this.control = new CControl (dockingControlFrame);
         this.reflectionFormBuilder = new JPAReflectionFormBuilder(entityManager,
                 DocumentScanner.generateApplicationWindowTitle("Field description",
                         DocumentScanner.APP_NAME,
@@ -288,6 +296,7 @@ public class MainPanel extends javax.swing.JPanel {
         });
         this.oCREngineFactory = oCREngineFactory;
         this.oCREngineConf = oCREngineConf;
+        this.oCRProgressMonitorParent = oCRProgressMonitorParent;
     }
 
     /**
@@ -353,23 +362,90 @@ public class MainPanel extends javax.swing.JPanel {
     }
 
     /**
+     * In order to honour the fact that storing scan data (currently only
+     * performed with {@link ScanResult} annotation) is optional, check the
+     * determinants for storage of scan data and retrieve necessary data from
+     * those.
+     * @param entityToEdit the instance determining the initial state of
+     * components
+     */
+    public void addDocument(Object entityToEdit) throws DocumentAddException {
+        MainPanelScanResultPanelRecreator mainPanelScanResultPanelRecreator =
+                new MainPanelScanResultPanelRecreator();
+        List<Field> entityClassFields = reflectionFormBuilder.getFieldRetriever().retrieveRelevantFields(entityToEdit.getClass());
+        Field entityToEditScanResultField = null;
+        for(Field entityClassField : entityClassFields) {
+            ScanResult scanResult = entityClassField.getAnnotation(ScanResult.class);
+            if(scanResult != null) {
+                if(entityToEditScanResultField != null) {
+                    throw new IllegalArgumentException(String.format("class %s "
+                            + "of entityToEdit contains more than one field "
+                            + "with annotation %s",
+                            entityToEdit.getClass(),
+                            ScanResult.class));
+                }
+                entityToEditScanResultField = entityClassField;
+            }
+        }
+        List<BufferedImage> images = null;
+        if(entityToEditScanResultField != null) {
+            if(!entityToEditScanResultField.getType().equals(byte[].class)) {
+                throw new IllegalArgumentException(String.format("field %s "
+                        + "of class %s annotated with %s, but not of type "
+                        + "%s",
+                        entityToEditScanResultField.getName(),
+                        entityToEdit.getClass(),
+                        ScanResult.class,
+                        byte[].class));
+            }
+            try {
+                byte[] scanData = (byte[]) entityToEditScanResultField.get(entityToEdit);
+                if(scanData == null) {
+                    LOGGER.debug(String.format("scanData of instance of %s "
+                            + "is null, assuming that no data has been "
+                            + "persisted",
+                            entityToEdit.getClass()));
+                }else {
+                    images = mainPanelScanResultPanelRecreator.recreate(scanData);
+                }
+            } catch (IllegalArgumentException | IllegalAccessException ex) {
+                throw new DocumentAddException(ex);
+            }
+        }
+        addDocument(images,
+                null, //documentFile
+                entityToEdit
+        );
+    }
+
+    public void addDocument (final List<BufferedImage> images,
+            final File documentFile) throws DocumentAddException {
+        addDocument(images,
+                documentFile,
+                null //entityToEdit
+        );
+    }
+
+    /**
      *
-     * @param images
+     * @param images images to be transformed into a {@link OCRSelectPanelPanel}
+     * or {@code null} indicating that no scan data was persisted when opening a
+     * persisted entry
      * @param documentFile The {@link File} the document is stored in.
      * {@code null} indicates that the document has not been saved yet (e.g. if
      * the {@link OCRSelectComponent} represents scan data).
      * @throws DocumentAddException
      */
-    public void addDocument (final List<BufferedImage> images, final File documentFile) throws DocumentAddException {
-        if(images == null) {
-            throw new IllegalArgumentException("images mustn't be null");
-        }
+    public void addDocument (final List<BufferedImage> images,
+            final File documentFile,
+            final Object entityToEdit) throws DocumentAddException {
         if(ADD_DOCUMENT_ASYNC) {
-            final ProgressMonitor progressMonitor = new ProgressMonitor(this,
+            final ProgressMonitor progressMonitor = new ProgressMonitor(this, //parent
                     "Generating new document tab", //message
                     null, //note
-                    0,
-                    100);
+                    0, //min
+                    100 //max
+            );
             progressMonitor.setMillisToPopup(0);
             progressMonitor.setMillisToDecideToPopup(0);
             final SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
@@ -377,9 +453,14 @@ public class MainPanel extends javax.swing.JPanel {
 
                 @Override
                 protected Void doInBackground() throws Exception {
-                    this.createdOCRSelectComponentScrollPane = addDocumentRoutine(images,
-                            documentFile,
-                            progressMonitor);
+                    try {
+                        this.createdOCRSelectComponentScrollPane = addDocumentRoutine(images,
+                                documentFile,
+                                entityToEdit,
+                                progressMonitor);
+                    }catch(Exception ex) {
+                        ex.printStackTrace();
+                    }
                     return null;
                 }
 
@@ -395,6 +476,7 @@ public class MainPanel extends javax.swing.JPanel {
         }else {
             OCRSelectComponent oCRSelectComponentScrollPane = addDocumentRoutine(images,
                     documentFile,
+                    entityToEdit,
                     null //progressMonitor
             );
             addDocumentDone(oCRSelectComponentScrollPane);
@@ -422,22 +504,25 @@ public class MainPanel extends javax.swing.JPanel {
      */
     private OCRSelectComponent addDocumentRoutine(List<BufferedImage> images,
             File documentFile,
+            Object entityToEdit,
             ProgressMonitor progressMonitor) throws DocumentAddException {
         OCRSelectComponent retValue = null;
         try {
             List<OCRSelectPanel> panels = new LinkedList<>();
-            for (BufferedImage image : images) {
-                @SuppressWarnings("serial")
-                OCRSelectPanel panel = new OCRSelectPanel(image) {
-                    @Override
-                    public void mouseReleased(MouseEvent evt) {
-                        super.mouseReleased(evt);
-                        if (this.getDragStart() != null && !this.getDragStart().equals(this.getDragEnd())) {
-                            MainPanel.this.handleOCRSelection();
+            if(images != null) {
+                for (BufferedImage image : images) {
+                    @SuppressWarnings("serial")
+                    OCRSelectPanel panel = new OCRSelectPanel(image) {
+                        @Override
+                        public void mouseReleased(MouseEvent evt) {
+                            super.mouseReleased(evt);
+                            if (this.getDragStart() != null && !this.getDragStart().equals(this.getDragEnd())) {
+                                MainPanel.this.handleOCRSelection();
+                            }
                         }
-                    }
-                };
-                panels.add(panel);
+                    };
+                    panels.add(panel);
+                }
             }
 
             OCRSelectPanelPanel oCRSelectPanelPanel = new OCRSelectPanelPanel(panels,
@@ -445,7 +530,7 @@ public class MainPanel extends javax.swing.JPanel {
 
             OCRResultPanelFetcher oCRResultPanelFetcher = new DocumentTabOCRResultPanelFetcher(oCRSelectPanelPanel,
                     oCREngineFactory);
-            ScanResultPanelFetcher scanResultPanelFetcher = new DocumentTabScanResultPanelFetcher(oCRSelectPanelPanel);
+            ScanResultPanelFetcher scanResultPanelFetcher = new MainPanelScanResultPanelFetcher(oCRSelectPanelPanel);
 
             AmountMoneyMappingFieldHandlerFactory embeddableFieldHandlerFactory = new AmountMoneyMappingFieldHandlerFactory(amountMoneyUsageStatisticsStorage,
                     amountMoneyCurrencyStorage,
@@ -482,50 +567,63 @@ public class MainPanel extends javax.swing.JPanel {
                     messageHandler,
                     fieldRetriever,
                     oCRResultPanelFetcher,
-                    scanResultPanelFetcher);
+                    scanResultPanelFetcher,
+                    this.documentScannerConf,
+                    oCRProgressMonitorParent //oCRProgressMonitorParent
+            );
 
             Map<Class<?>, ReflectionFormPanel<?>> reflectionFormPanelMap = new HashMap<>();
-            for(Class<?> entityClass : entityClasses) {
-                ReflectionFormPanel reflectionFormPanel;
-                try {
-                    reflectionFormPanel = reflectionFormBuilder.transformEntityClass(entityClass,
-                            null, //entityToUpdate
-                            fieldHandler
-                    );
-                    reflectionFormPanelMap.put(entityClass, reflectionFormPanel);
-                } catch (FieldHandlingException ex) {
-                    String message = String.format("An exception during creation of components occured (details: %s)",
-                            ex.getMessage());
-                    JOptionPane.showMessageDialog(MainPanel.this,
-                            message,
-                            DocumentScanner.generateApplicationWindowTitle("Exception",
-                                    DocumentScanner.APP_NAME,
-                                    DocumentScanner.APP_VERSION),
-                            JOptionPane.WARNING_MESSAGE);
-                    LOGGER.error(message, ex);
-                    throw ex;
+            Set<Class<?>> entityClasses0;
+            if(entityToEdit == null) {
+                for(Class<?> entityClass : entityClasses) {
+                    ReflectionFormPanel reflectionFormPanel;
+                    try {
+                        reflectionFormPanel = reflectionFormBuilder.transformEntityClass(entityClass,
+                                null, //entityToUpdate
+                                false, //editingMode
+                                fieldHandler
+                        );
+                        reflectionFormPanelMap.put(entityClass, reflectionFormPanel);
+                    } catch (FieldHandlingException ex) {
+                        String message = String.format("An exception during creation of components occured (details: %s)",
+                                ex.getMessage());
+                        JOptionPane.showMessageDialog(MainPanel.this,
+                                message,
+                                DocumentScanner.generateApplicationWindowTitle("Exception",
+                                        DocumentScanner.APP_NAME,
+                                        DocumentScanner.APP_VERSION),
+                                JOptionPane.WARNING_MESSAGE);
+                        LOGGER.error(message, ex);
+                        throw ex;
+                    }
                 }
+                entityClasses0 = entityClasses;
+            }else {
+                ReflectionFormPanel reflectionFormPanel = reflectionFormBuilder.transformEntityClass(entityToEdit.getClass(),
+                        entityToEdit,
+                        true, //editingMode
+                        fieldHandler
+                );
+                reflectionFormPanelMap.put(entityToEdit.getClass(), reflectionFormPanel);
+                entityClasses0 = new HashSet<Class<?>>(Arrays.asList(entityToEdit.getClass()));
             }
 
             retValue = new OCRSelectComponent(oCRSelectPanelPanel);
-            OCRPanel oCRPanel = new OCRPanel(entityClasses,
+            OCRPanel oCRPanel = new OCRPanel(entityClasses0,
                     reflectionFormPanelMap,
                     valueSetterMapping,
                     entityManager,
                     messageHandler,
                     reflectionFormBuilder,
                     documentScannerConf);
-            EntityPanel entityPanel = new EntityPanel(entityClasses,
+            EntityPanel entityPanel = new EntityPanel(entityClasses0,
                     primaryClassSelection,
                     reflectionFormPanelMap,
-                    fieldHandler,
                     valueSetterMapping,
-                    entityManager,
                     oCRResultPanelFetcher,
                     scanResultPanelFetcher,
                     amountMoneyUsageStatisticsStorage,
-                    amountMoneyCurrencyStorage,
-                    messageHandler);
+                    amountMoneyCurrencyStorage);
             if(progressMonitor == null || !progressMonitor.isCanceled()) {
                 documentSwitchingMap.put(retValue,
                         new ImmutablePair<>(oCRPanel, entityPanel));
@@ -827,26 +925,51 @@ public class MainPanel extends javax.swing.JPanel {
         }
     }
 
-    private class DocumentTabScanResultPanelFetcher implements ScanResultPanelFetcher {
+    private class MainPanelScanResultPanelFetcher implements ScanResultPanelFetcher {
         private final OCRSelectPanelPanel oCRSelectComponent;
 
-        DocumentTabScanResultPanelFetcher(OCRSelectPanelPanel oCRSelectComponent) {
+        MainPanelScanResultPanelFetcher(OCRSelectPanelPanel oCRSelectComponent) {
             this.oCRSelectComponent = oCRSelectComponent;
         }
 
+        /**
+         * Uses {@link ImageIO#write(java.awt.image.RenderedImage, java.lang.String, java.io.OutputStream) }
+         * assuming that {@link ImageIO#read(java.io.InputStream) } allows
+         * re-reading data correctly.
+         * @return the fetched binary data
+         */
         @Override
         public byte[] fetch() {
             ByteArrayOutputStream retValueStream = new ByteArrayOutputStream();
-            for (OCRSelectPanel imagePanel : this.oCRSelectComponent.getoCRSelectPanels()) {
-                try {
+            try {
+                for (OCRSelectPanel imagePanel : this.oCRSelectComponent.getoCRSelectPanels()) {
                     if (!ImageIO.write(imagePanel.getImage(), "png", retValueStream)) {
                         throw new IllegalStateException("writing image data to output stream failed");
                     }
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
                 }
+                return retValueStream.toByteArray();
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
             }
-            return retValueStream.toByteArray();
+        }
+    }
+
+    private class MainPanelScanResultPanelRecreator implements ScanResultPanelRecreator {
+
+        @Override
+        public List<BufferedImage> recreate(byte[] data) {
+            List<BufferedImage> retValue = new LinkedList<>();
+            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(data);
+            try {
+                BufferedImage image = ImageIO.read(byteArrayInputStream);
+                while(image != null) {
+                    retValue.add(image);
+                    image = ImageIO.read(byteArrayInputStream);
+                }
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+            return retValue;
         }
     }
 
