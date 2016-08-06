@@ -19,6 +19,7 @@ import au.com.southsky.jfreesane.SaneDevice;
 import au.com.southsky.jfreesane.SaneException;
 import au.com.southsky.jfreesane.SaneOption;
 import au.com.southsky.jfreesane.SaneSession;
+import au.com.southsky.jfreesane.SaneStatus;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import com.google.common.reflect.TypeToken;
@@ -42,6 +43,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -193,7 +195,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     public static final String APP_VERSION = "1.0";
     public static final String UNSAVED_NAME = "unsaved";
     public static final String BUG_URL = "https://github.com/krichter722/document-scanner";
-    private SaneDevice device;
+    private SaneDevice scannerDevice;
     private ODatabaseDocumentTx db;
     private final MutableComboBoxModel<Class<? extends OCREngineConf<?>>> oCREngineComboBoxModel = new DefaultComboBoxModel<>();
     private OCREngineConfPanel<?> currentOCREngineConfPanel;
@@ -308,7 +310,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
      * configuration settings, keep a reference to once retrieved
      * {@link SaneDevice}.
      */
-    private final Map<String, SaneDevice> nameDeviceMap = new HashMap<>();
+    private final static Map<String, SaneDevice> NAME_DEVICE_MAP = new HashMap<>();
     public final static String SANED_BUG_INFO = "<br/>You might suffer from a "
             + "saned bug, try <tt>/usr/sbin/saned -d -s -a saned</tt> with "
             + "appropriate privileges in order to restart saned and try again"
@@ -335,6 +337,21 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
     }
 
+    public static SaneDevice getScannerDevice(String scannerName,
+            SaneSession saneSession,
+            Map<String, Map<String, Object>> changedValues) throws IOException, SaneException {
+        SaneDevice retValue = NAME_DEVICE_MAP.get(scannerName);
+        if(retValue == null) {
+            retValue = saneSession.getDevice(scannerName);
+            NAME_DEVICE_MAP.put(scannerName, retValue);
+            ScannerEditDialog.configureDefaultOptionValues(retValue,
+                    changedValues,
+                    false
+            );
+        }
+        return retValue;
+    }
+
     /**
      * Fills {@code conf} from configuration file.
      */
@@ -351,12 +368,15 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         try {
             InetAddress address = InetAddress.getByName(this.documentScannerConf.getScannerSaneAddress());
             SaneSession saneSession = SaneSession.withRemoteSane(address);
-            this.device = getDevice(this.documentScannerConf.getScannerName(),
-                    saneSession,
-                    nameDeviceMap);
+            String scannerName = this.documentScannerConf.getScannerName();
+            this.scannerDevice = saneSession.getDevice(scannerName);
+            ScannerEditDialog.configureDefaultOptionValues(scannerDevice,
+                    documentScannerConf.getScannerChangedOptions(),
+                    false //don't overwrite with generated values
+            );
             afterScannerSelection(this.documentScannerConf.getScannerSaneAddress(),
-                    device);
-        } catch (IOException ex) {
+                    scannerDevice);
+        } catch (IOException | SaneException ex) {
             String text = handleSearchScannerException("An exception during the setup of "
                     + "previously selected scanner occured: ",
                     ex,
@@ -378,20 +398,9 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         return retValue;
     }
 
-    public static SaneDevice getDevice(String name,
-            SaneSession saneSession,
-            Map<String, SaneDevice> nameDeviceMap) throws IOException {
-        SaneDevice retValue = nameDeviceMap.get(name);
-        if(retValue == null) {
-            retValue = saneSession.getDevice(name);
-            nameDeviceMap.put(name, retValue);
-        }
-        return retValue;
-    }
-
     private void onDeviceSet() {
-        assert this.device != null;
-        this.scannerLabel.setText(this.device.toString());
+        assert this.scannerDevice != null;
+        this.scannerLabel.setText(this.scannerDevice.toString());
         GroupLayout layout = new GroupLayout(this.statusBar);
         GroupLayout.SequentialGroup hGroup = layout.createSequentialGroup();
         hGroup.addGroup(layout.createParallelGroup().
@@ -407,7 +416,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     }
 
     private void onDeviceUnset() {
-        assert this.device == null;
+        assert this.scannerDevice == null;
         GroupLayout layout = new GroupLayout(this.statusBar);
         GroupLayout.SequentialGroup hGroup = layout.createSequentialGroup();
         hGroup.addGroup(layout.createParallelGroup().
@@ -422,12 +431,12 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         this.invalidate();
     }
 
-    private void afterScannerSelection(String address, SaneDevice device) {
-        assert device != null;
-        this.device = device;
+    private void afterScannerSelection(String address, SaneDevice scannerDevice) {
+        assert scannerDevice != null;
+        this.scannerDevice = scannerDevice;
         try {
-            ScannerEditDialog.configureDefaultOptionValues(device,
-                    this.documentScannerConf.getChangedOptions(),
+            ScannerEditDialog.configureDefaultOptionValues(scannerDevice,
+                    documentScannerConf.getScannerChangedOptions(),
                     false //overwrite (might have been changed in edit dialog)
             );
         } catch (IOException | SaneException | IllegalArgumentException ex) {
@@ -435,7 +444,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                     JOptionPane.ERROR_MESSAGE,
                     "Exception occured"));
         }
-        this.documentScannerConf.setScannerName(device.getName());
+        this.documentScannerConf.setScannerName(scannerDevice.getName());
         this.documentScannerConf.setScannerSaneAddress(address);
         this.scanMenuItem.setEnabled(true);
         this.scanMenuItem.getParent().revalidate();
@@ -652,13 +661,13 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
 
         //DocumentScanner doesn't necessarily need to manage device. It'd be
         //more elegant if that was done by a manager or conf class.
-        if (this.device != null && this.device.isOpen()) {
+        if (this.scannerDevice != null && this.scannerDevice.isOpen()) {
             try {
-                this.device.close();
+                this.scannerDevice.close();
             } catch (IOException ex) {
                 LOGGER.error("an exception during shutdown of scanner device occured", ex);
             }
-            this.device = null;
+            this.scannerDevice = null;
         }
         if (this.db != null) {
             this.db.close();
@@ -1239,11 +1248,16 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     }//GEN-LAST:event_scanMenuItemActionPerformed
 
     private void selectScannerMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectScannerMenuItemActionPerformed
-        ScannerSelectionDialog scannerSelectionDialog = new ScannerSelectionDialog(this,
-                messageHandler,
-                nameDeviceMap,
-                this.documentScannerConf.getChangedOptions(),
-                this.documentScannerConf.getScannerSaneAddress());
+        ScannerSelectionDialog scannerSelectionDialog;
+        try {
+            scannerSelectionDialog = new ScannerSelectionDialog(this,
+                    messageHandler,
+                    this.documentScannerConf.getScannerChangedOptions(),
+                    this.documentScannerConf.getScannerSaneAddress());
+        } catch (IOException | SaneException ex) {
+            handleException(ex, "Unexpected exception");
+            return;
+        }
         scannerSelectionDialog.pack();
         scannerSelectionDialog.setLocationRelativeTo(this);
         scannerSelectionDialog.setVisible(true);//blocks
@@ -1407,28 +1421,84 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         this.saveMenuItem.getParent().revalidate();
     }
 
+    /**
+     * Different document sources of the scanner require different scann
+     * routines, e.g. calling {@link SaneDevice#acquireImage() } until a
+     * {@link SaneException} with {@link SaneStatus#STATUS_NO_DOCS} occurs for
+     * an ADF.
+     * @return {@code true} if the loop described above has to be used for
+     * scanning
+     */
+    private boolean scannerDocumentSourceRequiresLoop() throws IOException, SaneException {
+        String documentSource = this.scannerDevice.getOption(ScannerEditDialog.DOCUMENT_SOURCE_OPTION_NAME).getStringValue();
+        boolean retValue = documentSource.equalsIgnoreCase("ADF")
+                || documentSource.equalsIgnoreCase("Automatic document feeder")
+                || documentSource.equalsIgnoreCase("Duplex");
+        return retValue;
+    }
+
     private void scan() {
-        assert this.device != null;
+        assert this.scannerDevice != null;
         try {
-            if(!this.device.isOpen()) {
-                this.device.open();
+            if(!this.scannerDevice.isOpen()) {
+                this.scannerDevice.open();
             }
-            BufferedImage image = this.device.acquireImage();
-            this.mainPanel.addDocument(new LinkedList<>(Arrays.asList(image)),
-                    null //documentFile
-            );
-            this.validate();
+            List<BufferedImage> scannedImages = new LinkedList<>();
+            if(scannerDocumentSourceRequiresLoop()) {
+                //using ADF according to https://github.com/sjamesr/jfreesane/blob/master/README.md
+                ScannerPageSelectDialog scannerPageSelectDialog = new ScannerPageSelectDialog(this);
+                scannerPageSelectDialog.setVisible(true);
+                if(scannerPageSelectDialog.isCanceled()) {
+                    return;
+                }
+                if(scannerPageSelectDialog.isScanAll()) {
+                    while (true) {
+                        try {
+                            BufferedImage scannedImage = scannerDevice.acquireImage();
+                            scannedImages.add(scannedImage);
+                        } catch (SaneException e) {
+                            if (e.getStatus() == SaneStatus.STATUS_NO_DOCS) {
+                                // this is the out of paper condition that we expect
+                                break;
+                            } else {
+                                // some other exception that was not expected
+                                throw e;
+                            }
+                        }
+                    }
+                }else {
+                    int scannedPagesCount = 0;
+                    while(scannedPagesCount < scannerPageSelectDialog.getPageCount()) {
+                        try {
+                            BufferedImage scannedImage = scannerDevice.acquireImage();
+                            scannedImages.add(scannedImage);
+                        } catch (SaneException e) {
+                            if (e.getStatus() == SaneStatus.STATUS_NO_DOCS) {
+                                // this is the out of paper condition that we expect
+                                break;
+                            } else {
+                                // some other exception that was not expected
+                                throw e;
+                            }
+                        }
+                        scannedPagesCount += 1;
+                    }
+                    scannerDevice.cancel(); //scanner remains in scan mode otherwise
+                }
+            }else {
+                BufferedImage scannedImage = this.scannerDevice.acquireImage();
+                scannedImages.add(scannedImage);
+            }
+            if(!scannedImages.isEmpty()) {
+                this.mainPanel.addDocument(scannedImages,
+                        null //documentFile
+                );
+                this.validate();
+            }
         } catch (SaneException | IOException | IllegalArgumentException | IllegalStateException | DocumentAddException ex) {
             this.handleException(ex, "Exception during scanning");
-        } finally {
-            if (this.device != null && this.device.isOpen()) {
-                try {
-                    this.device.close();
-                } catch (IOException ex) {
-                    this.handleException(ex, "Exception during closing of scanner");
-                }
-            }
         }
+        //Don't call device.close because it resets all options
     }
 
     private void handleException(Throwable ex, String title) {

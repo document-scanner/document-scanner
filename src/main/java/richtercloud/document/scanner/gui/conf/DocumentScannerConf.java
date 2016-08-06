@@ -90,7 +90,7 @@ public class DocumentScannerConf implements Serializable {
      * Stores information about changed SANE options because {@link SaneDevice}
      * and {@link SaneOption} don't provide a way to do that.
      */
-    private Map<SaneDevice, Map<SaneOption, Object>> changedOptions = new HashMap<>();
+    private Map<String, Map<String, Object>> scannerChangedOptions = new HashMap<>();
 
     protected DocumentScannerConf() {
     }
@@ -134,12 +134,12 @@ public class DocumentScannerConf implements Serializable {
                 documentScannerConf.isAutoSaveOCRData());
     }
 
-    public Map<SaneDevice, Map<SaneOption, Object>> getChangedOptions() {
-        return changedOptions;
+    public Map<String, Map<String, Object>> getScannerChangedOptions() {
+        return scannerChangedOptions;
     }
 
-    public void setChangedOptions(Map<SaneDevice, Map<SaneOption, Object>> changedOptions) {
-        this.changedOptions = changedOptions;
+    public void setScannerChangedOptions(Map<String, Map<String, Object>> scannerChangedOptions) {
+        this.scannerChangedOptions = scannerChangedOptions;
     }
 
     /**

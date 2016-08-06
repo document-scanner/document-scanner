@@ -21,6 +21,7 @@ import au.com.southsky.jfreesane.SaneSession;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -117,7 +118,7 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
         }
     }
     private final SelectionTableModel tableModel = new SelectionTableModel(new LinkedList<SaneDevice>());
-    private SaneSession scannerDialogSaneSession;
+    private SaneSession saneSession;
     private final TableModelListener scannerDialogTableModelListener = new TableModelListener() {
         @Override
         public void tableChanged(TableModelEvent e) {
@@ -140,33 +141,33 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
      */
     private String address;
     private final MessageHandler messageHandler;
-    private final Map<String, SaneDevice> nameDeviceMap;
-    private final Map<SaneDevice, Map<SaneOption, Object>> changedOptions;
+    private final Map<String, Map<String, Object>> changedOptions;
 
     /**
-     * Creates new form ScannerSelectionDialog
+     * Creates new scanner selection dialog. Scanners referenced (by name) in
+     * {@code changedOptions} will be added to the list/table of selectable
+     * devices if they're accessible in a {@link SaneSession} created with
+     * {@code initialAddress}.
+     *
      * @param parent
      * @param messageHandler
-     * @param nameDeviceMap
      * @param changedOptions
      * @param initialAddress
      */
     public ScannerSelectionDialog(java.awt.Frame parent,
             MessageHandler messageHandler,
-            Map<String, SaneDevice> nameDeviceMap,
-            Map<SaneDevice, Map<SaneOption, Object>> changedOptions,
-            String initialAddress) {
+            Map<String, Map<String, Object>> changedOptions,
+            String initialAddress) throws UnknownHostException, IOException, SaneException {
         super(parent,
+                DocumentScanner.generateApplicationWindowTitle("Select scanner",
+                        DocumentScanner.APP_NAME,
+                        DocumentScanner.APP_VERSION),
                 true //modal
         );
         if(messageHandler == null) {
             throw new IllegalArgumentException("messageHandler mustn't be null");
         }
         this.messageHandler = messageHandler;
-        if(nameDeviceMap == null) {
-            throw new IllegalArgumentException("nameDeviceMap mustn't be null");
-        }
-        this.nameDeviceMap = nameDeviceMap;
         if(changedOptions == null) {
             throw new IllegalArgumentException("changedOptions mustn't be null");
         }
@@ -175,6 +176,14 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
         this.tableModel.addTableModelListener(this.scannerDialogTableModelListener);
         this.scannerDialogTable.getSelectionModel().addListSelectionListener(this.scannerDialogTableSelectionListener);
         this.scannerDialogAddressTextField.setText(initialAddress);
+        InetAddress address0 = InetAddress.getByName(initialAddress);
+        this.saneSession = SaneSession.withRemoteSane(address0);
+        for(String scannerName : changedOptions.keySet()) {
+            SaneDevice existingDevice = DocumentScanner.getScannerDevice(scannerName,
+                    saneSession,
+                    changedOptions);
+            tableModel.addDevice(existingDevice);
+        }
     }
 
     public SaneDevice getSelectedDevice() {
@@ -196,9 +205,16 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
         this.scannerDialogStatusLabel.setText("Searching...");
         try {
             address0 = InetAddress.getByName(addressString);
-            this.scannerDialogSaneSession = SaneSession.withRemoteSane(address0);
-            List<SaneDevice> availableDevices = this.scannerDialogSaneSession.listDevices();
-            this.tableModel.addDevices(availableDevices);
+            this.saneSession = SaneSession.withRemoteSane(address0);
+            List<SaneDevice> availableDevices = this.saneSession.listDevices();
+            for(SaneDevice availableDevice : availableDevices) {
+                if(!changedOptions.keySet().contains(availableDevice.getName())) {
+                    SaneDevice cachedAvailableDevice = DocumentScanner.getScannerDevice(availableDevice.getName(),
+                            saneSession,
+                            changedOptions); //otherwise option changes are lost
+                    this.tableModel.addDevice(cachedAvailableDevice);
+                }
+            }
             this.scannerDialogStatusLabel.setText(" ");
             this.address = addressString;
         } catch (ConnectException ex) {

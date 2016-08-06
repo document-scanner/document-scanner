@@ -15,7 +15,7 @@
         <dependency>
             <groupId>com.googlecode.jfreesane</groupId>
             <artifactId>jfreesane</artifactId>
-            <version>0.96-SNAPSHOT</version>
+            <version>0.96</version>
             <type>jar</type>
         </dependency>
         <dependency>

@@ -439,6 +439,9 @@ public class MainPanel extends javax.swing.JPanel {
     public void addDocument (final List<BufferedImage> images,
             final File documentFile,
             final Object entityToEdit) throws DocumentAddException {
+        if(images == null || images.isEmpty()) {
+            throw new IllegalArgumentException("images mustn't be null or empty");
+        }
         if(ADD_DOCUMENT_ASYNC) {
             final ProgressMonitor progressMonitor = new ProgressMonitor(this, //parent
                     "Generating new document tab", //message
