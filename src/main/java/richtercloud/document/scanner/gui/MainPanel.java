@@ -469,8 +469,14 @@ public class MainPanel extends javax.swing.JPanel {
 
                 @Override
                 protected void done() {
-                    progressMonitor.close();
-                    addDocumentDone(this.createdOCRSelectComponentScrollPane);
+                    if(!progressMonitor.isCanceled()) {
+                        addDocumentDone(this.createdOCRSelectComponentScrollPane);
+                    }
+                    progressMonitor.close(); //- need to close explicitly
+                        //because progress isn't set
+                        //- only close after document has actually has been
+                        //added (pressing the cancel button then has no effect,
+                        //but that should be fine)
                 }
             };
             worker.execute();
