@@ -20,6 +20,8 @@ import javax.persistence.Basic;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Inheritance;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
 import org.jscience.economics.money.Money;
 import org.jscience.physics.amount.Amount;
@@ -37,6 +39,14 @@ public class Bill extends Document {
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Amount", description = "The amount and currency of the bill")
     private Amount<Money> amount;
+    /**
+     * The date when this bill has been paid. {@code null} indicates that this
+     * bill hasn't been paid yet.
+     */
+    @Basic(fetch = FetchType.EAGER)
+    @FieldInfo(name = "Paid date", description = "The date when this bill has been paid")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date paidDate = null;
 
     protected Bill() {
     }
@@ -83,5 +93,13 @@ public class Bill extends Document {
      */
     public void setAmount(Amount<Money> amount) {
         this.amount = amount;
+    }
+
+    public Date getPaidDate() {
+        return paidDate;
+    }
+
+    public void setPaidDate(Date paidDate) {
+        this.paidDate = paidDate;
     }
 }
