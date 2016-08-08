@@ -28,7 +28,8 @@ import org.jscience.physics.amount.Amount;
 import richtercloud.reflection.form.builder.FieldInfo;
 
 /**
- *
+ * Encapsulates a bill. The date when the bill has been paid is indicated by the
+ * date of associated payments (see {@link Document#getPayments() }).
  * @author richter
  */
 @Entity
@@ -39,14 +40,6 @@ public class Bill extends Document {
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Amount", description = "The amount and currency of the bill")
     private Amount<Money> amount;
-    /**
-     * The date when this bill has been paid. {@code null} indicates that this
-     * bill hasn't been paid yet.
-     */
-    @Basic(fetch = FetchType.EAGER)
-    @FieldInfo(name = "Paid date", description = "The date when this bill has been paid")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date paidDate = null;
 
     protected Bill() {
     }
@@ -93,13 +86,5 @@ public class Bill extends Document {
      */
     public void setAmount(Amount<Money> amount) {
         this.amount = amount;
-    }
-
-    public Date getPaidDate() {
-        return paidDate;
-    }
-
-    public void setPaidDate(Date paidDate) {
-        this.paidDate = paidDate;
     }
 }
