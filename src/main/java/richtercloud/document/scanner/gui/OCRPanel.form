@@ -15,29 +15,17 @@
         </Menu>
       </SubComponents>
     </Container>
-    <Container class="javax.swing.JPopupMenu" name="numberFormatPopup">
-
-      <Layout class="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout">
-        <Property name="useNullLayout" type="boolean" value="true"/>
-      </Layout>
-    </Container>
     <Component class="javax.swing.ButtonGroup" name="numberFormatPopupButtonGroup">
     </Component>
-    <Container class="javax.swing.JPopupMenu" name="percentFormatPopup">
-
-      <Layout class="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout">
-        <Property name="useNullLayout" type="boolean" value="true"/>
-      </Layout>
-    </Container>
-    <Container class="javax.swing.JPopupMenu" name="currencyFormatPopup">
-
-      <Layout class="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout">
-        <Property name="useNullLayout" type="boolean" value="true"/>
-      </Layout>
-    </Container>
     <Component class="javax.swing.ButtonGroup" name="percentFormatPopupButtonGroup">
     </Component>
     <Component class="javax.swing.ButtonGroup" name="currencyFormatPopupButtonGroup">
+    </Component>
+    <Component class="javax.swing.ButtonGroup" name="dateFormatPopupButtonGroup">
+    </Component>
+    <Component class="javax.swing.ButtonGroup" name="timeFormatPopupButtonGroup">
+    </Component>
+    <Component class="javax.swing.ButtonGroup" name="dateTimeFormatPopupButtonGroup">
     </Component>
   </NonVisualComponents>
   <AuxValues>
@@ -75,7 +63,7 @@
               <EmptySpace min="-2" max="-2" attributes="0"/>
               <Component id="oCRResultLabel" min="-2" max="-2" attributes="0"/>
               <EmptySpace type="unrelated" min="-2" max="-2" attributes="0"/>
-              <Component id="oCRResultTextAreaScrollPane" pref="141" max="32767" attributes="0"/>
+              <Component id="oCRResultTextAreaScrollPane" pref="226" max="32767" attributes="0"/>
               <EmptySpace type="unrelated" min="-2" max="-2" attributes="0"/>
               <Component id="toolbar" min="-2" pref="25" max="-2" attributes="0"/>
           </Group>
@@ -145,6 +133,39 @@
           </Properties>
           <Events>
             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="currencyFormatButtonActionPerformed"/>
+          </Events>
+        </Component>
+        <Component class="javax.swing.JButton" name="dateFormatButton">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Date"/>
+            <Property name="focusable" type="boolean" value="false"/>
+            <Property name="horizontalTextPosition" type="int" value="0"/>
+            <Property name="verticalTextPosition" type="int" value="3"/>
+          </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="dateFormatButtonActionPerformed"/>
+          </Events>
+        </Component>
+        <Component class="javax.swing.JButton" name="timeFormatButton">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Time"/>
+            <Property name="focusable" type="boolean" value="false"/>
+            <Property name="horizontalTextPosition" type="int" value="0"/>
+            <Property name="verticalTextPosition" type="int" value="3"/>
+          </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="timeFormatButtonActionPerformed"/>
+          </Events>
+        </Component>
+        <Component class="javax.swing.JButton" name="dateTimeFormatButton">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Date and Time"/>
+            <Property name="focusable" type="boolean" value="false"/>
+            <Property name="horizontalTextPosition" type="int" value="0"/>
+            <Property name="verticalTextPosition" type="int" value="3"/>
+          </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="dateTimeFormatButtonActionPerformed"/>
           </Events>
         </Component>
       </SubComponents>

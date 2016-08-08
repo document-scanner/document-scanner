@@ -91,6 +91,10 @@ public class DocumentScannerConf implements Serializable {
      * and {@link SaneOption} don't provide a way to do that.
      */
     private Map<String, Map<String, Object>> scannerChangedOptions = new HashMap<>();
+    /**
+     * Whether to select automatic selection of format or locale format
+     * intially.*/
+    private boolean automaticFormatInitiallySelected = true;
 
     protected DocumentScannerConf() {
     }
@@ -262,5 +266,13 @@ public class DocumentScannerConf implements Serializable {
      */
     public void setAutoSaveOCRData(boolean autoSaveOCRData) {
         this.autoSaveOCRData = autoSaveOCRData;
+    }
+
+    public boolean isAutomaticFormatInitiallySelected() {
+        return automaticFormatInitiallySelected;
+    }
+
+    public void setAutomaticFormatInitiallySelected(boolean automaticFormatInitiallySelected) {
+        this.automaticFormatInitiallySelected = automaticFormatInitiallySelected;
     }
 }

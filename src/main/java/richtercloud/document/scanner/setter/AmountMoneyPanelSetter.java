@@ -14,7 +14,9 @@
  */
 package richtercloud.document.scanner.setter;
 
+import java.text.NumberFormat;
 import java.text.ParseException;
+import java.util.Locale;
 import org.jscience.economics.money.Currency;
 import org.jscience.economics.money.Money;
 import org.jscience.physics.amount.Amount;
@@ -34,15 +36,30 @@ public class AmountMoneyPanelSetter implements ValueSetter<FormatOCRResult, Amou
 
     @Override
     public void setValue(FormatOCRResult value, AmountMoneyPanel comp) {
-        Number number;
-        try {
-            //don't parse with percent format because it doesn't make sense
-            number = value.getCurrencyFormat().parse(value.getoCRResult());
-        } catch (ParseException ex) {
+        Number number = null;
+        //don't parse with percent format because it doesn't make sense
+        if(value.getCurrencyFormat() == null) {
+            //automatic
+            for(Locale locale : Locale.getAvailableLocales()) {
+                try {
+                    number = NumberFormat.getCurrencyInstance(locale).parse(value.getoCRResult());
+                    break; //first match is the chosen one
+                }catch(ParseException ex) {
+                    //skip to next locale
+                }
+            }
+            if(number == null) {
+                throw new IllegalArgumentException("No number format of any locale succeeds to parse the OCR selection");
+            }
+        }else {
             try {
-                number = value.getNumberFormat().parse(value.getoCRResult());
-            }catch(ParseException ex1) {
-                throw new IllegalArgumentException(ex);
+                number = value.getCurrencyFormat().parse(value.getoCRResult());
+            } catch (ParseException ex) {
+                try {
+                    number = value.getNumberFormat().parse(value.getoCRResult());
+                }catch(ParseException ex1) {
+                    throw new IllegalArgumentException(ex);
+                }
             }
         }
         Amount<Money> amountMoney = Amount.valueOf(number.doubleValue(),

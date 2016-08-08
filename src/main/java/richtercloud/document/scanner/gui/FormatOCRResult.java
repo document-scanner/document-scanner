@@ -14,7 +14,9 @@
  */
 package richtercloud.document.scanner.gui;
 
+import java.text.DateFormat;
 import java.text.NumberFormat;
+import richtercloud.document.scanner.setter.ValueSetter;
 
 /**
  *
@@ -24,21 +26,40 @@ public class FormatOCRResult extends OCRResult {
     private final NumberFormat numberFormat;
     private final NumberFormat percentFormat;
     private final NumberFormat currencyFormat;
+    private final DateFormat dateFormat;
+    private final DateFormat timeFormat;
+    private final DateFormat dateTimeFormat;
 
-    public FormatOCRResult(NumberFormat numberFormat, NumberFormat percentFormat, NumberFormat currencyFormat, String oCRResult) {
+    /**
+     *
+     * @param numberFormat the selected number format to be used in
+     * {@link ValueSetter} ({@code null} indicates automatic parsing)
+     * @param percentFormat the selected percent format to be used in
+     * {@link ValueSetter} ({@code null} indicates automatic parsing)
+     * @param currencyFormat the selected currency format to be used in
+     * {@link ValueSetter} ({@code null} indicates automatic parsing)
+     * @param dateFormat the selected date format to be used in
+     * {@link ValueSetter} ({@code null} indicates automatic parsing)
+     * @param timeFormat the selected time format to be used in
+     * {@link ValueSetter} ({@code null} indicates automatic parsing)
+     * @param dateTimeFormat the date-time number format to be used in
+     * {@link ValueSetter} ({@code null} indicates automatic parsing)
+     * @param oCRResult the OCR result to be used in {@link ValueSetter}
+     */
+    public FormatOCRResult(NumberFormat numberFormat,
+            NumberFormat percentFormat,
+            NumberFormat currencyFormat,
+            DateFormat dateFormat,
+            DateFormat timeFormat,
+            DateFormat dateTimeFormat,
+            String oCRResult) {
         super(oCRResult);
-        if(numberFormat == null) {
-            throw new IllegalArgumentException("numberFormat mustn't be null");
-        }
         this.numberFormat = numberFormat;
-        if(percentFormat == null) {
-            throw new IllegalArgumentException("percentFormat mustn't be null");
-        }
         this.percentFormat = percentFormat;
-        if(currencyFormat == null) {
-            throw new IllegalArgumentException("currencyFormat mustn't be null");
-        }
         this.currencyFormat = currencyFormat;
+        this.dateFormat = dateFormat;
+        this.timeFormat = timeFormat;
+        this.dateTimeFormat = dateTimeFormat;
     }
 
     public NumberFormat getNumberFormat() {
@@ -51,5 +72,17 @@ public class FormatOCRResult extends OCRResult {
 
     public NumberFormat getCurrencyFormat() {
         return currencyFormat;
+    }
+
+    public DateFormat getDateFormat() {
+        return dateFormat;
+    }
+
+    public DateFormat getTimeFormat() {
+        return timeFormat;
+    }
+
+    public DateFormat getDateTimeFormat() {
+        return dateTimeFormat;
     }
 }

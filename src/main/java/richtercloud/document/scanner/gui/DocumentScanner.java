@@ -14,10 +14,8 @@
  */
 package richtercloud.document.scanner.gui;
 
-import au.com.southsky.jfreesane.OptionValueType;
 import au.com.southsky.jfreesane.SaneDevice;
 import au.com.southsky.jfreesane.SaneException;
-import au.com.southsky.jfreesane.SaneOption;
 import au.com.southsky.jfreesane.SaneSession;
 import au.com.southsky.jfreesane.SaneStatus;
 import ch.qos.logback.classic.Level;
@@ -41,9 +39,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.ConnectException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -67,7 +63,6 @@ import javax.swing.DefaultListModel;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.JComponent;
-import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
@@ -77,10 +72,7 @@ import javax.swing.ListCellRenderer;
 import javax.swing.MutableComboBoxModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.table.DefaultTableModel;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -121,6 +113,7 @@ import richtercloud.document.scanner.setter.LongIdPanelSetter;
 import richtercloud.document.scanner.setter.SpinnerSetter;
 import richtercloud.document.scanner.setter.StringAutoCompletePanelSetter;
 import richtercloud.document.scanner.setter.TextFieldSetter;
+import richtercloud.document.scanner.setter.UtilDatePickerSetter;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.reflection.form.builder.AnyType;
 import richtercloud.reflection.form.builder.FieldRetriever;
@@ -132,22 +125,15 @@ import richtercloud.reflection.form.builder.components.AmountMoneyUsageStatistic
 import richtercloud.reflection.form.builder.components.FileAmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.FileAmountMoneyUsageStatisticsStorage;
 import richtercloud.reflection.form.builder.components.FixerAmountMoneyExchangeRateRetriever;
-import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
-import richtercloud.reflection.form.builder.fieldhandler.MappingFieldHandler;
-import richtercloud.reflection.form.builder.fieldhandler.factory.AmountMoneyMappingFieldHandlerFactory;
+import richtercloud.reflection.form.builder.components.UtilDatePicker;
 import richtercloud.reflection.form.builder.jpa.IdGenerator;
 import richtercloud.reflection.form.builder.jpa.JPACachedFieldRetriever;
-import richtercloud.reflection.form.builder.jpa.fieldhandler.factory.JPAAmountMoneyMappingFieldHandlerFactory;
 import richtercloud.reflection.form.builder.jpa.panels.LongIdPanel;
 import richtercloud.reflection.form.builder.jpa.panels.StringAutoCompletePanel;
-import richtercloud.reflection.form.builder.jpa.typehandler.ElementCollectionTypeHandler;
 import richtercloud.reflection.form.builder.jpa.typehandler.JPAEntityListTypeHandler;
-import richtercloud.reflection.form.builder.jpa.typehandler.ToManyTypeHandler;
-import richtercloud.reflection.form.builder.jpa.typehandler.ToOneTypeHandler;
 import richtercloud.reflection.form.builder.jpa.typehandler.factory.JPAAmountMoneyMappingTypeHandlerFactory;
 import richtercloud.reflection.form.builder.message.DialogMessageHandler;
 import richtercloud.reflection.form.builder.message.Message;
-import richtercloud.reflection.form.builder.message.MessageHandler;
 import richtercloud.reflection.form.builder.typehandler.TypeHandler;
 
 /**
@@ -260,6 +246,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 StringAutoCompletePanelSetter.getInstance());
         valueSetterMappingDefault.put(AmountMoneyPanel.class,
                 AmountMoneyPanelSetter.getInstance());
+        valueSetterMappingDefault.put(UtilDatePicker.class,
+                UtilDatePickerSetter.getInstance());
         VALUE_SETTER_MAPPING_DEFAULT = valueSetterMappingDefault;
     }
     private final AmountMoneyUsageStatisticsStorage amountMoneyUsageStatisticsStorage;
@@ -487,6 +475,16 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 LOGGER.warn("an unexpected exception occured during save of configurations into file '{}', changes most likely lost", this.configFile.getAbsolutePath());
             }
             this.documentScannerConf = null;
+        }
+        if(this.scannerDevice != null) {
+            if(this.scannerDevice.isOpen()) {
+                try {
+                    this.scannerDevice.close();
+                } catch (IOException ex) {
+                    LOGGER.warn(String.format("an unexpected exception occured during closing the scanner device '%s'",
+                            this.scannerDevice.getName()));
+                }
+            }
         }
     }
 

@@ -18,10 +18,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.lang.reflect.Field;
+import java.text.DateFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -55,6 +57,14 @@ import richtercloud.reflection.form.builder.message.MessageHandler;
  * The counterpart of every {@link OCRSelectPanel} which contains a text field
  * to display OCR selection results and a toolbar with buttons and popup menus
  * to select different number formats for setting OCR selections on fields.
+ *
+ * If one or two of the date formats are selected and the other(s) are on
+ * automatic the OCR selection is processed in the order date time, time and
+ * date nevertheless.
+ *
+ * If nothing is selected and setting a value on a field with context menu is
+ * requested, the complete content of the OCR text area is used.
+ *
  * @author richter
  */
 /*
@@ -76,7 +86,15 @@ public class OCRPanel extends javax.swing.JPanel {
     private final static Logger LOGGER = LoggerFactory.getLogger(OCRPanel.class);
     private final MessageHandler messageHandler;
     private final DocumentScannerConf documentScannerConf;
-    private final static double FORMAT_VALUE = -12345.987;
+    private final static double NUMBER_FORMAT_VALUE = -12345.987;
+    private final static Date DATE_FORMAT_VALUE = new Date();
+    public final static Set<Integer> DATE_FORMAT_INTS = new HashSet<>(Arrays.asList(DateFormat.FULL, DateFormat.LONG, DateFormat.MEDIUM, DateFormat.SHORT));
+    private final JScrollPopupMenu currencyFormatPopup = new JScrollPopupMenu("Currency");
+    private final JScrollPopupMenu dateFormatPopup = new JScrollPopupMenu("Date");
+    private final JScrollPopupMenu dateTimeFormatPopup = new JScrollPopupMenu("Date and time");
+    private final JScrollPopupMenu numberFormatPopup = new JScrollPopupMenu("Number");
+    private final JScrollPopupMenu percentFormatPopup = new JScrollPopupMenu("Percent");
+    private final JScrollPopupMenu timeFormatPopup = new JScrollPopupMenu("Time");
 
     /**
      * Creates new form OCRResultPanel
@@ -134,14 +152,21 @@ public class OCRPanel extends javax.swing.JPanel {
             }
             this.oCRResultPopupPasteIntoMenu.add(entityClassMenu);
         }
+        /*
+        Formats are compared by the formatted output, i.e. two formats are
+        considered equals if the formatted output is equals
+        */
         Map<String, Pair<NumberFormat, Set<Locale>>> numberFormats = new HashMap<>();
         Map<String, Pair<NumberFormat, Set<Locale>>> percentFormats = new HashMap<>();
         Map<String, Pair<NumberFormat, Set<Locale>>> currencyFormats = new HashMap<>();
+        Map<String, Pair<DateFormat, Set<Locale>>> dateFormats = new HashMap<>();
+        Map<String, Pair<DateFormat, Set<Locale>>> timeFormats = new HashMap<>();
+        Map<String, Pair<DateFormat, Set<Locale>>> dateTimeFormats = new HashMap<>();
         Iterator<Locale> localeIterator = new ArrayList<>(Arrays.asList(Locale.getAvailableLocales())).iterator();
         Locale firstLocale = localeIterator.next();
-        String numberString = NumberFormat.getNumberInstance(firstLocale).format(FORMAT_VALUE);
-        String percentString = NumberFormat.getPercentInstance(firstLocale).format(FORMAT_VALUE);
-        String currencyString = NumberFormat.getCurrencyInstance(firstLocale).format(FORMAT_VALUE);
+        String numberString = NumberFormat.getNumberInstance(firstLocale).format(NUMBER_FORMAT_VALUE);
+        String percentString = NumberFormat.getPercentInstance(firstLocale).format(NUMBER_FORMAT_VALUE);
+        String currencyString = NumberFormat.getCurrencyInstance(firstLocale).format(NUMBER_FORMAT_VALUE);
         numberFormats.put(numberString,
                 new ImmutablePair<NumberFormat, Set<Locale>>(NumberFormat.getNumberInstance(firstLocale),
                         new HashSet<>(Arrays.asList(firstLocale))));
@@ -151,11 +176,27 @@ public class OCRPanel extends javax.swing.JPanel {
         currencyFormats.put(currencyString,
                 new ImmutablePair<NumberFormat, Set<Locale>>(NumberFormat.getCurrencyInstance(firstLocale),
                         new HashSet<>(Arrays.asList(firstLocale))));
+        for(int formatInt : DATE_FORMAT_INTS) {
+            String dateString = DateFormat.getDateInstance(formatInt, firstLocale).format(DATE_FORMAT_VALUE);
+            dateFormats.put(dateString,
+                    new ImmutablePair<DateFormat, Set<Locale>>(DateFormat.getDateInstance(formatInt, firstLocale),
+                            new HashSet<>(Arrays.asList(firstLocale))));
+            String timeString = DateFormat.getTimeInstance(formatInt, firstLocale).format(DATE_FORMAT_VALUE);
+            timeFormats.put(timeString,
+                    new ImmutablePair<DateFormat, Set<Locale>>(DateFormat.getTimeInstance(formatInt, firstLocale),
+                            new HashSet<>(Arrays.asList(firstLocale))));
+            for(int formatInt1 : DATE_FORMAT_INTS) {
+                String dateTimeString = DateFormat.getDateTimeInstance(formatInt, formatInt1, firstLocale).format(DATE_FORMAT_VALUE);
+                dateTimeFormats.put(dateTimeString,
+                        new ImmutablePair<DateFormat, Set<Locale>>(DateFormat.getDateTimeInstance(formatInt, formatInt1, firstLocale),
+                                new HashSet<>(Arrays.asList(firstLocale))));
+            }
+        }
         while(localeIterator.hasNext()) {
             Locale locale = localeIterator.next();
-            numberString = NumberFormat.getNumberInstance(locale).format(FORMAT_VALUE);
-            percentString = NumberFormat.getPercentInstance(locale).format(FORMAT_VALUE);
-            currencyString = NumberFormat.getCurrencyInstance(locale).format(FORMAT_VALUE);
+            numberString = NumberFormat.getNumberInstance(locale).format(NUMBER_FORMAT_VALUE);
+            percentString = NumberFormat.getPercentInstance(locale).format(NUMBER_FORMAT_VALUE);
+            currencyString = NumberFormat.getCurrencyInstance(locale).format(NUMBER_FORMAT_VALUE);
             Pair<NumberFormat, Set<Locale>> numberFormatsPair = numberFormats.get(numberString);
             if(numberFormatsPair == null) {
                 numberFormatsPair = new ImmutablePair<NumberFormat, Set<Locale>>(NumberFormat.getNumberInstance(locale),
@@ -180,40 +221,160 @@ public class OCRPanel extends javax.swing.JPanel {
             }
             Set<Locale> currencyFormatsLocales = currencyFormatsPair.getValue();
             currencyFormatsLocales.add(locale);
+            for(int formatInt : DATE_FORMAT_INTS) {
+                String dateString = DateFormat.getDateInstance(formatInt, locale).format(DATE_FORMAT_VALUE);
+                Pair<DateFormat, Set<Locale>> dateFormatsPair = dateFormats.get(dateString);
+                if(dateFormatsPair == null) {
+                    dateFormatsPair = new ImmutablePair<DateFormat, Set<Locale>>(DateFormat.getDateInstance(formatInt, locale),
+                            new HashSet<Locale>());
+                    dateFormats.put(dateString, dateFormatsPair);
+                }
+                Set<Locale> dateFormatsLocales = dateFormatsPair.getValue();
+                dateFormatsLocales.add(locale);
+                String timeString = DateFormat.getTimeInstance(formatInt, locale).format(DATE_FORMAT_VALUE);
+                Pair<DateFormat, Set<Locale>> timeFormatsPair = timeFormats.get(timeString);
+                if(timeFormatsPair == null) {
+                    timeFormatsPair = new ImmutablePair<DateFormat, Set<Locale>>(DateFormat.getTimeInstance(formatInt, locale),
+                            new HashSet<Locale>());
+                    timeFormats.put(timeString, timeFormatsPair);
+                }
+                Set<Locale> timeFormatsLocales = timeFormatsPair.getValue();
+                timeFormatsLocales.add(locale);
+                for(int formatInt1 : DATE_FORMAT_INTS) {
+                    String dateTimeString = DateFormat.getDateTimeInstance(formatInt, formatInt1, locale).format(DATE_FORMAT_VALUE);
+                    Pair<DateFormat, Set<Locale>> dateTimeFormatsPair = dateTimeFormats.get(dateTimeString);
+                    if(dateTimeFormatsPair == null) {
+                        dateTimeFormatsPair = new ImmutablePair<DateFormat, Set<Locale>>(DateFormat.getDateTimeInstance(formatInt, formatInt1, locale),
+                                new HashSet<Locale>());
+                        dateTimeFormats.put(dateTimeString, dateTimeFormatsPair);
+                    }
+                    Set<Locale> dateTimeFormatsLocales = dateTimeFormatsPair.getValue();
+                    dateTimeFormatsLocales.add(locale);
+                }
+            }
+        }
+        //add an automatic menu item (first) and menu items for each distinct
+        //format (all entries in numberFormat, percentFormat, etc. has to be
+        //distinct)
+        JRadioButtonMenuItem numberFormatAutomaticMenuItem = new NumberFormatMenuItem(null);
+        numberFormatPopup.add(numberFormatAutomaticMenuItem);
+        numberFormatPopupButtonGroup.add(numberFormatAutomaticMenuItem);
+        if(this.documentScannerConf.isAutomaticFormatInitiallySelected()) {
+            numberFormatAutomaticMenuItem.setSelected(true);
         }
         for(Map.Entry<String, Pair<NumberFormat, Set<Locale>>> numberFormat : numberFormats.entrySet()) {
             JRadioButtonMenuItem menuItem = new NumberFormatMenuItem(numberFormat.getValue().getKey());
             numberFormatPopup.add(menuItem);
             numberFormatPopupButtonGroup.add(menuItem);
-            if(numberFormat.getValue().getValue().contains(this.documentScannerConf.getLocale())) {
-                menuItem.setSelected(true);
+            if(!this.documentScannerConf.isAutomaticFormatInitiallySelected()) {
+                if(numberFormat.getValue().getValue().contains(this.documentScannerConf.getLocale())) {
+                    menuItem.setSelected(true);
+                }
             }
+        }
+        JRadioButtonMenuItem percentFormatAutomaticMenuItem = new NumberFormatMenuItem(null);
+        percentFormatPopup.add(percentFormatAutomaticMenuItem);
+        percentFormatPopupButtonGroup.add(percentFormatAutomaticMenuItem);
+        if(this.documentScannerConf.isAutomaticFormatInitiallySelected()) {
+            percentFormatAutomaticMenuItem.setSelected(true);
         }
         for(Map.Entry<String, Pair<NumberFormat, Set<Locale>>> percentFormat : percentFormats.entrySet()) {
             JRadioButtonMenuItem menuItem = new NumberFormatMenuItem(percentFormat.getValue().getKey());
             percentFormatPopup.add(menuItem);
             percentFormatPopupButtonGroup.add(menuItem);
-            if(percentFormat.getValue().getValue().contains(this.documentScannerConf.getLocale())) {
-                menuItem.setSelected(true);
+            if(!this.documentScannerConf.isAutomaticFormatInitiallySelected()) {
+                if(percentFormat.getValue().getValue().contains(this.documentScannerConf.getLocale())) {
+                    menuItem.setSelected(true);
+                }
             }
+        }
+        JRadioButtonMenuItem currencyFormatAutomaticMenuItem = new NumberFormatMenuItem(null);
+        currencyFormatPopup.add(currencyFormatAutomaticMenuItem);
+        currencyFormatPopupButtonGroup.add(currencyFormatAutomaticMenuItem);
+        if(this.documentScannerConf.isAutomaticFormatInitiallySelected()) {
+            currencyFormatAutomaticMenuItem.setSelected(true);
         }
         for(Map.Entry<String, Pair<NumberFormat, Set<Locale>>> currencyFormat : currencyFormats.entrySet()) {
             JRadioButtonMenuItem menuItem = new NumberFormatMenuItem(currencyFormat.getValue().getKey());
             currencyFormatPopup.add(menuItem);
             currencyFormatPopupButtonGroup.add(menuItem);
-            if(currencyFormat.getValue().getValue().contains(this.documentScannerConf.getLocale())) {
-                menuItem.setSelected(true);
+            if(!this.documentScannerConf.isAutomaticFormatInitiallySelected()) {
+                if(currencyFormat.getValue().getValue().contains(this.documentScannerConf.getLocale())) {
+                    menuItem.setSelected(true);
+                }
+            }
+        }
+        JRadioButtonMenuItem dateFormatAutomaticMenuItem = new DateFormatMenuItem(null);
+        dateFormatPopup.add(dateFormatAutomaticMenuItem);
+        dateFormatPopupButtonGroup.add(dateFormatAutomaticMenuItem);
+        if(this.documentScannerConf.isAutomaticFormatInitiallySelected()) {
+            dateFormatAutomaticMenuItem.setSelected(true);
+        }
+        for(Map.Entry<String, Pair<DateFormat, Set<Locale>>> dateFormat : dateFormats.entrySet()) {
+            JRadioButtonMenuItem menuItem = new DateFormatMenuItem(dateFormat.getValue().getKey());
+            dateFormatPopup.add(menuItem);
+            dateFormatPopupButtonGroup.add(menuItem);
+            if(!this.documentScannerConf.isAutomaticFormatInitiallySelected()) {
+                if(dateFormat.getValue().getValue().contains(this.documentScannerConf.getLocale())) {
+                    menuItem.setSelected(true);
+                }
+            }
+        }
+        JRadioButtonMenuItem timeFormatAutomaticMenuItem = new DateFormatMenuItem(null);
+        timeFormatPopup.add(timeFormatAutomaticMenuItem);
+        timeFormatPopupButtonGroup.add(timeFormatAutomaticMenuItem);
+        if(this.documentScannerConf.isAutomaticFormatInitiallySelected()) {
+            timeFormatAutomaticMenuItem.setSelected(true);
+        }
+        for(Map.Entry<String, Pair<DateFormat, Set<Locale>>> timeFormat : timeFormats.entrySet()) {
+            JRadioButtonMenuItem menuItem = new DateFormatMenuItem(timeFormat.getValue().getKey());
+            timeFormatPopup.add(menuItem);
+            timeFormatPopupButtonGroup.add(menuItem);
+            if(!this.documentScannerConf.isAutomaticFormatInitiallySelected()) {
+                if(timeFormat.getValue().getValue().contains(this.documentScannerConf.getLocale())) {
+                    menuItem.setSelected(true);
+                }
+            }
+        }
+        JRadioButtonMenuItem dateTimeFormatAutomaticMenuItem = new DateFormatMenuItem(null);
+        dateTimeFormatPopup.add(dateTimeFormatAutomaticMenuItem);
+        dateTimeFormatPopupButtonGroup.add(dateTimeFormatAutomaticMenuItem);
+        if(this.documentScannerConf.isAutomaticFormatInitiallySelected()) {
+            dateTimeFormatAutomaticMenuItem.setSelected(true);
+        }
+        for(Map.Entry<String, Pair<DateFormat, Set<Locale>>> dateTimeFormat : dateTimeFormats.entrySet()) {
+            JRadioButtonMenuItem menuItem = new DateFormatMenuItem(dateTimeFormat.getValue().getKey());
+            dateTimeFormatPopup.add(menuItem);
+            dateTimeFormatPopupButtonGroup.add(menuItem);
+            if(!this.documentScannerConf.isAutomaticFormatInitiallySelected()) {
+                if(dateTimeFormat.getValue().getValue().contains(this.documentScannerConf.getLocale())) {
+                    menuItem.setSelected(true);
+                }
             }
         }
     }
 
     private class NumberFormatMenuItem extends JRadioButtonMenuItem {
         private static final long serialVersionUID = 1L;
+        /**
+         * The format the user selected in the popup. {@code null} indicates
+         * automatic parsing (i.e. try all formats).
+         */
         private final NumberFormat numberFormat;
 
         NumberFormatMenuItem(NumberFormat numberFormat) {
-            super(numberFormat.format(FORMAT_VALUE));
+            super(numberFormat != null ? numberFormat.format(NUMBER_FORMAT_VALUE) : "Automatic");
             this.numberFormat = numberFormat;
+        }
+    }
+
+    private class DateFormatMenuItem extends JRadioButtonMenuItem {
+        private static final long serialVersionUID = 1L;
+        private final DateFormat dateFormat;
+
+        DateFormatMenuItem(DateFormat dateFormat) {
+            super(dateFormat != null ? dateFormat.format(DATE_FORMAT_VALUE) : "Automatic");
+            this.dateFormat = dateFormat;
         }
     }
 
@@ -221,6 +382,11 @@ public class OCRPanel extends javax.swing.JPanel {
         return this.oCRResultTextArea;
     }
 
+    /**
+     * Handles click on menu items in the OCR text area popup menu which cause
+     * values (selected text or the complete text area content if no text is
+     * selected) to be set on the field which corresponds to the menu item.
+     */
     private class FieldActionListener implements ActionListener {
         private final Field field;
         private final ReflectionFormPanel reflectionFormPanel;
@@ -236,6 +402,13 @@ public class OCRPanel extends javax.swing.JPanel {
         public void actionPerformed(ActionEvent e) {
             JComponent comp = this.reflectionFormPanel.getComponentByField(this.field);
             String oCRSelection = OCRPanel.this.oCRResultTextArea.getSelectedText();
+            if(oCRSelection == null) {
+                //if no text is selected use the complete content of the OCR
+                //text area
+                oCRSelection = OCRPanel.this.oCRResultTextArea.getText();
+                    //leave trimming the text of whitespace to ValueSetters
+                    //(you might never know what might be needed)
+            }
             ValueSetter valueSetter = this.valueSetterMapping.get(comp.getClass());
             if(valueSetter == null) {
                 throw new IllegalArgumentException(String.format("No %s mapped "
@@ -249,6 +422,11 @@ public class OCRPanel extends javax.swing.JPanel {
             NumberFormat numberFormat = null;
             NumberFormat percentFormat = null;
             NumberFormat currencyFormat = null;
+            DateFormat dateFormat = null;
+            DateFormat timeFormat = null;
+            DateFormat dateTimeFormat = null;
+            //There's no better way to get the selected button from a
+            //JButtonGroup
             for(AbstractButton button : Collections.list(numberFormatPopupButtonGroup.getElements())) {
                 NumberFormatMenuItem menuItem = (NumberFormatMenuItem) button;
                 if(menuItem.isSelected()) {
@@ -270,10 +448,34 @@ public class OCRPanel extends javax.swing.JPanel {
                     break;
                 }
             }
+            for(AbstractButton button : Collections.list(dateFormatPopupButtonGroup.getElements())) {
+                DateFormatMenuItem menuItem = (DateFormatMenuItem) button;
+                if(menuItem.isSelected()) {
+                    dateFormat = menuItem.dateFormat;
+                    break;
+                }
+            }
+            for(AbstractButton button : Collections.list(timeFormatPopupButtonGroup.getElements())) {
+                DateFormatMenuItem menuItem = (DateFormatMenuItem) button;
+                if(menuItem.isSelected()) {
+                    timeFormat = menuItem.dateFormat;
+                    break;
+                }
+            }
+            for(AbstractButton button : Collections.list(dateTimeFormatPopupButtonGroup.getElements())) {
+                DateFormatMenuItem menuItem = (DateFormatMenuItem) button;
+                if(menuItem.isSelected()) {
+                    dateTimeFormat = menuItem.dateFormat;
+                    break;
+                }
+            }
             try {
                 valueSetter.setValue(new FormatOCRResult(numberFormat,
                         percentFormat,
                         currencyFormat,
+                        dateFormat,
+                        timeFormat,
+                        dateTimeFormat,
                         oCRSelection),
                         comp);
             }catch(Exception ex) {
@@ -300,12 +502,12 @@ public class OCRPanel extends javax.swing.JPanel {
 
         oCRResultPopup = new javax.swing.JPopupMenu();
         oCRResultPopupPasteIntoMenu = new javax.swing.JMenu();
-        numberFormatPopup = new javax.swing.JPopupMenu();
         numberFormatPopupButtonGroup = new javax.swing.ButtonGroup();
-        percentFormatPopup = new javax.swing.JPopupMenu();
-        currencyFormatPopup = new javax.swing.JPopupMenu();
         percentFormatPopupButtonGroup = new javax.swing.ButtonGroup();
         currencyFormatPopupButtonGroup = new javax.swing.ButtonGroup();
+        dateFormatPopupButtonGroup = new javax.swing.ButtonGroup();
+        timeFormatPopupButtonGroup = new javax.swing.ButtonGroup();
+        dateTimeFormatPopupButtonGroup = new javax.swing.ButtonGroup();
         oCRResultLabel = new javax.swing.JLabel();
         oCRResultTextAreaScrollPane = new javax.swing.JScrollPane();
         oCRResultTextArea = new javax.swing.JTextArea();
@@ -313,6 +515,9 @@ public class OCRPanel extends javax.swing.JPanel {
         numberFormatButton = new javax.swing.JButton();
         percentFormatButton = new javax.swing.JButton();
         currencyFormatButton = new javax.swing.JButton();
+        dateFormatButton = new javax.swing.JButton();
+        timeFormatButton = new javax.swing.JButton();
+        dateTimeFormatButton = new javax.swing.JButton();
 
         oCRResultPopupPasteIntoMenu.setText("Paste into");
         oCRResultPopup.add(oCRResultPopupPasteIntoMenu);
@@ -364,6 +569,39 @@ public class OCRPanel extends javax.swing.JPanel {
         });
         toolbar.add(currencyFormatButton);
 
+        dateFormatButton.setText("Date");
+        dateFormatButton.setFocusable(false);
+        dateFormatButton.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        dateFormatButton.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        dateFormatButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                dateFormatButtonActionPerformed(evt);
+            }
+        });
+        toolbar.add(dateFormatButton);
+
+        timeFormatButton.setText("Time");
+        timeFormatButton.setFocusable(false);
+        timeFormatButton.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        timeFormatButton.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        timeFormatButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                timeFormatButtonActionPerformed(evt);
+            }
+        });
+        toolbar.add(timeFormatButton);
+
+        dateTimeFormatButton.setText("Date and Time");
+        dateTimeFormatButton.setFocusable(false);
+        dateTimeFormatButton.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        dateTimeFormatButton.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        dateTimeFormatButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                dateTimeFormatButtonActionPerformed(evt);
+            }
+        });
+        toolbar.add(dateTimeFormatButton);
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -384,7 +622,7 @@ public class OCRPanel extends javax.swing.JPanel {
                 .addContainerGap()
                 .addComponent(oCRResultLabel)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(oCRResultTextAreaScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 141, Short.MAX_VALUE)
+                .addComponent(oCRResultTextAreaScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 226, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(toolbar, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
@@ -409,12 +647,26 @@ public class OCRPanel extends javax.swing.JPanel {
         currencyFormatPopup.show(toolbar, 0, 0);
     }//GEN-LAST:event_currencyFormatButtonActionPerformed
 
+    private void dateFormatButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_dateFormatButtonActionPerformed
+        dateFormatPopup.show(toolbar, 0, 0);
+    }//GEN-LAST:event_dateFormatButtonActionPerformed
+
+    private void timeFormatButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_timeFormatButtonActionPerformed
+        timeFormatPopup.show(toolbar, 0, 0);
+    }//GEN-LAST:event_timeFormatButtonActionPerformed
+
+    private void dateTimeFormatButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_dateTimeFormatButtonActionPerformed
+        dateTimeFormatPopup.show(toolbar, 0, 0);
+    }//GEN-LAST:event_dateTimeFormatButtonActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton currencyFormatButton;
-    private javax.swing.JPopupMenu currencyFormatPopup;
     private javax.swing.ButtonGroup currencyFormatPopupButtonGroup;
+    private javax.swing.JButton dateFormatButton;
+    private javax.swing.ButtonGroup dateFormatPopupButtonGroup;
+    private javax.swing.JButton dateTimeFormatButton;
+    private javax.swing.ButtonGroup dateTimeFormatPopupButtonGroup;
     private javax.swing.JButton numberFormatButton;
-    private javax.swing.JPopupMenu numberFormatPopup;
     private javax.swing.ButtonGroup numberFormatPopupButtonGroup;
     private javax.swing.JLabel oCRResultLabel;
     private javax.swing.JPopupMenu oCRResultPopup;
@@ -422,8 +674,9 @@ public class OCRPanel extends javax.swing.JPanel {
     private javax.swing.JTextArea oCRResultTextArea;
     private javax.swing.JScrollPane oCRResultTextAreaScrollPane;
     private javax.swing.JButton percentFormatButton;
-    private javax.swing.JPopupMenu percentFormatPopup;
     private javax.swing.ButtonGroup percentFormatPopupButtonGroup;
+    private javax.swing.JButton timeFormatButton;
+    private javax.swing.ButtonGroup timeFormatPopupButtonGroup;
     private javax.swing.JToolBar toolbar;
     // End of variables declaration//GEN-END:variables
 }
