@@ -16,7 +16,6 @@ package richtercloud.document.scanner.gui.engineconf;
 
 import javax.swing.JPanel;
 import richtercloud.document.scanner.gui.conf.OCREngineConf;
-import richtercloud.document.scanner.ocr.OCREngine;
 
 /**
  * allows management of (eventually completely) different configuration

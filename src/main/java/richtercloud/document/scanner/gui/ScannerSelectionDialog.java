@@ -16,7 +16,6 @@ package richtercloud.document.scanner.gui;
 
 import au.com.southsky.jfreesane.SaneDevice;
 import au.com.southsky.jfreesane.SaneException;
-import au.com.southsky.jfreesane.SaneOption;
 import au.com.southsky.jfreesane.SaneSession;
 import java.io.IOException;
 import java.net.ConnectException;

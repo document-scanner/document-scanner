@@ -14,8 +14,6 @@
  */
 package richtercloud.document.scanner.gui.conf;
 
-import au.com.southsky.jfreesane.SaneDevice;
-import au.com.southsky.jfreesane.SaneOption;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -26,7 +24,6 @@ import java.util.Map;
 import java.util.Set;
 import javax.persistence.EntityManager;
 import org.jscience.economics.money.Currency;
-import richtercloud.document.scanner.model.Bill;
 import richtercloud.reflection.form.builder.message.MessageHandler;
 
 /**

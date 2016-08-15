@@ -16,7 +16,6 @@ package richtercloud.document.scanner.gui;
 
 import java.text.DateFormat;
 import java.text.NumberFormat;
-import richtercloud.document.scanner.setter.ValueSetter;
 
 /**
  *

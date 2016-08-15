@@ -14,10 +14,6 @@
  */
 package richtercloud.document.scanner.components;
 
-import java.awt.image.BufferedImage;
-import java.util.List;
-import richtercloud.document.scanner.gui.OCRSelectPanelPanel;
-
 /**
  *
  * @author richter

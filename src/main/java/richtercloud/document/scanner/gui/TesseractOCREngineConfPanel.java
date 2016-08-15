@@ -25,7 +25,6 @@ import richtercloud.document.scanner.gui.conf.TesseractOCREngineConf;
 import richtercloud.document.scanner.gui.engineconf.OCREngineConfPanel;
 import richtercloud.document.scanner.ocr.BinaryNotFoundException;
 import richtercloud.document.scanner.ocr.ProcessOCREngine;
-import richtercloud.document.scanner.ocr.TesseractOCREngine;
 
 /**
  *
