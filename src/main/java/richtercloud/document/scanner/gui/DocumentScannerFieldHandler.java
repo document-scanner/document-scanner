@@ -108,6 +108,8 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
             NoSuchMethodException,
             InstantiationException {
         if(field.getAnnotation(OCRResult.class) != null) {
+            //keep field == null test here because it's unlikely to be
+            //executed very often
             if(field == null) {
                 throw new IllegalArgumentException("field mustn't be null");
             }
@@ -127,6 +129,8 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
                     OCR_RESULT_PANEL_COMPONENT_RESETTABLE);
         }
         if(field.getAnnotation(ScanResult.class) != null) {
+            //keep field == null test here because it's unlikely to be
+            //executed very often
             if(field == null) {
                 throw new IllegalArgumentException("fieldClass mustn't be null");
             }
