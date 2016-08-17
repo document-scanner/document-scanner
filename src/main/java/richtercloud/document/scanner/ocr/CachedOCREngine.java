@@ -34,8 +34,8 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author richter
  */
 public abstract class CachedOCREngine implements OCREngine {
-    private final Map<BufferedImage, String> cache = new HashMap<>();
-    private final Map<BufferedImage, Lock> lockMap = new HashMap<>();
+    private final transient Map<BufferedImage, String> cache = new HashMap<>();
+    private final transient Map<BufferedImage, Lock> lockMap = new HashMap<>();
 
     @Override
     public String recognizeImage(BufferedImage image) {

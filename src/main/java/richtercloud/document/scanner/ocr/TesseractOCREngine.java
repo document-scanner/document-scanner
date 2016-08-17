@@ -44,7 +44,7 @@ public class TesseractOCREngine extends ProcessOCREngine {
     public final static String TESSERACT_DEFAULT = "tesseract";
     private static final Logger LOGGER = LoggerFactory.getLogger(TesseractOCREngine.class);
 
-    private final Lock lock = new ReentrantLock();
+    private final transient Lock lock = new ReentrantLock();
     private List<String> languages;
 
     public TesseractOCREngine(List<String> languages) {
