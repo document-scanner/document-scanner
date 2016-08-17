@@ -12,28 +12,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.setter;
+package richtercloud.document.scanner.gui;
 
-import javax.swing.JSpinner;
-import richtercloud.document.scanner.gui.StringOCRResult;
+import java.util.Date;
 
 /**
  *
  * @author richter
  */
-public class SpinnerSetter implements ValueSetter<StringOCRResult, JSpinner> {
-    private final static SpinnerSetter INSTANCE = new SpinnerSetter();
+public class DateOCRResult extends BaseOCRResult<Date> {
 
-    public static SpinnerSetter getInstance() {
-        return INSTANCE;
+    public DateOCRResult(Date oCRResult) {
+        super(oCRResult);
     }
-
-    protected SpinnerSetter() {
-    }
-
-    @Override
-    public void setValue(StringOCRResult value, JSpinner comp) {
-        comp.setValue(Double.valueOf(value.getoCRResult()));
-    }
-
 }

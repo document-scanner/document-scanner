@@ -76,7 +76,7 @@ public class TesseractOCREngine extends ProcessOCREngine {
      * @return {@code null} if the recognition has been canceled using {@link #cancelRecognizeImage() } or the recognition process crashed or the recognition result otherwise
      */
     @Override
-    public String recognizeImage0(BufferedImage image) throws IllegalStateException {
+    public String recognizeImage1(BufferedImage image) throws IllegalStateException {
         if(!lock.tryLock()) {
             throw new IllegalStateException("This tesseract OCR engine is already used from another thread.");
         }

@@ -21,7 +21,8 @@ import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.FormatOCRResult;
-import richtercloud.document.scanner.gui.OCRPanel;
+import richtercloud.document.scanner.gui.FormatUtils;
+import richtercloud.document.scanner.gui.OCRResult;
 import richtercloud.reflection.form.builder.components.UtilDatePicker;
 
 /**
@@ -29,7 +30,7 @@ import richtercloud.reflection.form.builder.components.UtilDatePicker;
  *
  * @author richter
  */
-public class UtilDatePickerSetter implements ValueSetter<FormatOCRResult, UtilDatePicker> {
+public class UtilDatePickerSetter implements ValueSetter<OCRResult<Date>, UtilDatePicker> {
     private final static UtilDatePickerSetter INSTANCE = new UtilDatePickerSetter();
     private final static Logger LOGGER = LoggerFactory.getLogger(UtilDatePickerSetter.class);
 
@@ -38,82 +39,90 @@ public class UtilDatePickerSetter implements ValueSetter<FormatOCRResult, UtilDa
     }
 
     @Override
-    public void setValue(FormatOCRResult value, UtilDatePicker comp) {
-        Date date = null;
-        //order date time, date and time (see OCRPanel) and the fact that one
-        //of them is automatic or not in the chain doesn't matter (see OCRPanel)
-        if(value.getDateTimeFormat() == null) {
-            //automatic
-            for(Locale locale : Locale.getAvailableLocales()) {
-                for(int formatInt : OCRPanel.DATE_FORMAT_INTS) {
-                    for(int formatInt1 : OCRPanel.DATE_FORMAT_INTS) {
-                        try {
-                            date = DateFormat.getDateTimeInstance(formatInt, formatInt1, locale).parse(value.getoCRResult());
-                            break; //first match is the chosen one
-                        }catch(ParseException ex) {
-                            //skip to next locale
-                        }
-                    }
-                }
-            }
-            if(date == null) {
-                if(value.getDateFormat() == null) {
-                    //automatic
-                    for(Locale locale : Locale.getAvailableLocales()) {
-                        for(int formatInt : OCRPanel.DATE_FORMAT_INTS) {
+    public void setValue(OCRResult<Date> value, UtilDatePicker comp) {
+        if(value instanceof FormatOCRResult) {
+            FormatOCRResult formatOCRResult = (FormatOCRResult) value;
+            Date date = null;
+            //order date time, date and time (see OCRPanel) and the fact that one
+            //of them is automatic or not in the chain doesn't matter (see OCRPanel)
+            if(formatOCRResult.getDateTimeFormat() == null) {
+                //automatic
+                for(Locale locale : Locale.getAvailableLocales()) {
+                    for(int formatInt : FormatUtils.DATE_FORMAT_INTS) {
+                        for(int formatInt1 : FormatUtils.DATE_FORMAT_INTS) {
                             try {
-                                date = DateFormat.getDateInstance(formatInt, locale).parse(value.getoCRResult());
+                                date = DateFormat.getDateTimeInstance(formatInt, formatInt1, locale).parse(formatOCRResult.getoCRResult());
+                                break; //first match is the chosen one
                             }catch(ParseException ex) {
                                 //skip to next locale
                             }
                         }
                     }
-                    if(date == null) {
-                        if(value.getTimeFormat() == null) {
-                            //automatic
-                            for(Locale locale : Locale.getAvailableLocales()) {
-                                for(int formatInt : OCRPanel.DATE_FORMAT_INTS) {
-                                    try {
-                                        date = DateFormat.getTimeInstance(formatInt, locale).parse(value.getoCRResult());
-                                    }catch(ParseException ex) {
-                                        //skip to next locale
-                                    }
+                }
+                if(date == null) {
+                    if(formatOCRResult.getDateFormat() == null) {
+                        //automatic
+                        for(Locale locale : Locale.getAvailableLocales()) {
+                            for(int formatInt : FormatUtils.DATE_FORMAT_INTS) {
+                                try {
+                                    date = DateFormat.getDateInstance(formatInt, locale).parse(formatOCRResult.getoCRResult());
+                                }catch(ParseException ex) {
+                                    //skip to next locale
                                 }
                             }
-                            if(date == null) {
-                                //all three automatic formats failed
-                                throw new IllegalArgumentException(String.format("No date, time and date-time format of any locale succeeds to parse the OCR result '%s'",
-                                        value.getoCRResult()));
-                            }
-                        } else {
-                            try {
-                                date = value.getTimeFormat().parse(value.getoCRResult());
-                            }catch(ParseException ex) {
-                                throw new IllegalArgumentException(String.format("Failed to parse OCR result '%s'",
-                                        value.getoCRResult()));
+                        }
+                        if(date == null) {
+                            if(formatOCRResult.getTimeFormat() == null) {
+                                //automatic
+                                for(Locale locale : Locale.getAvailableLocales()) {
+                                    for(int formatInt : FormatUtils.DATE_FORMAT_INTS) {
+                                        try {
+                                            date = DateFormat.getTimeInstance(formatInt, locale).parse(formatOCRResult.getoCRResult());
+                                        }catch(ParseException ex) {
+                                            //skip to next locale
+                                        }
+                                    }
+                                }
+                                if(date == null) {
+                                    //all three automatic formats failed
+                                    throw new IllegalArgumentException(String.format("No date, time and date-time format of any locale succeeds to parse the OCR result '%s'",
+                                            formatOCRResult.getoCRResult()));
+                                }
+                            } else {
+                                try {
+                                    date = formatOCRResult.getTimeFormat().parse(formatOCRResult.getoCRResult());
+                                }catch(ParseException ex) {
+                                    throw new IllegalArgumentException(String.format("Failed to parse OCR result '%s'",
+                                            formatOCRResult.getoCRResult()));
+                                }
                             }
                         }
-                    }
-                }else {
-                    try {
-                        date = value.getDateFormat().parse(value.getoCRResult());
-                    }catch(ParseException ex) {
-                        throw new IllegalArgumentException(String.format("Failed to parse OCR result '%s'",
-                                value.getoCRResult()));
+                    }else {
+                        try {
+                            date = formatOCRResult.getDateFormat().parse(formatOCRResult.getoCRResult());
+                        }catch(ParseException ex) {
+                            throw new IllegalArgumentException(String.format("Failed to parse OCR result '%s'",
+                                    formatOCRResult.getoCRResult()));
+                        }
                     }
                 }
+            }else {
+                try {
+                    date = formatOCRResult.getDateTimeFormat().parse(formatOCRResult.getoCRResult());
+                } catch (ParseException ex) {
+                    throw new IllegalArgumentException(String.format("Failed to parse OCR result '%s'",
+                            formatOCRResult.getoCRResult()));
+                }
             }
+            LOGGER.debug(String.format("Setting OCR result '%s' as date '%s'",
+                    formatOCRResult.getoCRResult(),
+                    date));
+            comp.getModel().setValue(date); //correctly updates the displayed value
         }else {
-            try {
-                date = value.getDateTimeFormat().parse(value.getoCRResult());
-            } catch (ParseException ex) {
-                throw new IllegalArgumentException(String.format("Failed to parse OCR result '%s'",
-                        value.getoCRResult()));
-            }
+            //Can't check for concrete type here because a BaseOCRResult might
+            //have been passed from AutoOCRValueDetectionDialog
+            Date date = value.getoCRResult();
+            comp.getModel().setValue(date);
         }
-        LOGGER.debug(String.format("Setting OCR result '%s' as date '%s'",
-                value.getoCRResult(),
-                date));
-        comp.getModel().setValue(date); //correctly updates the displayed value
     }
 }

@@ -20,6 +20,8 @@ import javax.swing.GroupLayout;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
+import richtercloud.document.scanner.gui.conf.OCREngineConf;
+import richtercloud.document.scanner.ocr.OCREngineFactory;
 
 /**
  *
@@ -31,18 +33,31 @@ public class OCRSelectComponent extends JPanel {
     private final JToolBar toolbar = new JToolBar();
     private final JButton zoomInButton = new JButton(" + ");
     private final JButton zoomOutButton = new JButton(" - ");
+    private final JButton autoOCRValueDetectionResultsButton = new JButton("Auto detection results");
+    private final JButton autoOCRValueDetectionButton = new JButton("(Re-)Run auto detection");
     private float zoomLevel = 1;
+    private final EntityPanel entityPanel;
+    private final OCREngineFactory oCREngineFactory;
+    private final OCREngineConf oCREngineConf;
 
     /**
      *
      * @param oCRSelectPanelPanel will be wrapped in a
      * {@link OCRSelectPanelPanelScrollPane}
      */
-    public OCRSelectComponent(OCRSelectPanelPanel oCRSelectPanelPanel) {
+    public OCRSelectComponent(OCRSelectPanelPanel oCRSelectPanelPanel,
+            EntityPanel entityPanel,
+            OCREngineFactory oCREngineFactory,
+            OCREngineConf oCREngineConf) {
         this.oCRSelectPanelPanel = oCRSelectPanelPanel;
+        this.entityPanel = entityPanel;
+        this.oCREngineFactory = oCREngineFactory;
+        this.oCREngineConf = oCREngineConf;
 
         toolbar.add(zoomInButton);
         toolbar.add(zoomOutButton);
+        toolbar.add(autoOCRValueDetectionResultsButton);
+        toolbar.add(autoOCRValueDetectionButton);
 
         GroupLayout groupLayout = new GroupLayout(this);
         OCRSelectPanelPanelScrollPane oCRSelectPanelPanelScrollPane =
@@ -78,6 +93,26 @@ public class OCRSelectComponent extends JPanel {
                     //zooming out requires a scroll event to occur in order to
                     //paint other pages than the first only; revalidate doesn't
                     //help
+            }
+        });
+        autoOCRValueDetectionResultsButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                OCRSelectComponent.this.entityPanel.autoOCRValueDetection(new OCRSelectPanelPanelFetcher(OCRSelectComponent.this.getoCRSelectPanelPanel(),
+                        OCRSelectComponent.this.oCREngineFactory,
+                        OCRSelectComponent.this.oCREngineConf),
+                        false //forceRenewal
+                );
+            }
+        });
+        autoOCRValueDetectionButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                OCRSelectComponent.this.entityPanel.autoOCRValueDetection(new OCRSelectPanelPanelFetcher(OCRSelectComponent.this.getoCRSelectPanelPanel(),
+                        OCRSelectComponent.this.oCREngineFactory,
+                        OCRSelectComponent.this.oCREngineConf),
+                        true //forceRenewal
+                );
             }
         });
     }

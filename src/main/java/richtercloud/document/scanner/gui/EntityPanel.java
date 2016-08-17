@@ -22,17 +22,26 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JScrollPane;
+import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.components.OCRResultPanelFetcher;
 import richtercloud.document.scanner.components.ScanResultPanelFetcher;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.reflection.form.builder.ClassInfo;
+import richtercloud.reflection.form.builder.ReflectionFormBuilder;
 import richtercloud.reflection.form.builder.ReflectionFormPanel;
 import richtercloud.reflection.form.builder.components.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.AmountMoneyUsageStatisticsStorage;
+import richtercloud.reflection.form.builder.message.MessageHandler;
+import richtercloud.swing.worker.get.wait.dialog.SwingWorkerCompletionWaiter;
+import richtercloud.swing.worker.get.wait.dialog.SwingWorkerGetWaitDialog;
 
 /**
  * Contains the {@link ReflectionFormPanel}s to
@@ -51,6 +60,13 @@ between them
 */
 public class EntityPanel extends javax.swing.JPanel {
     private static final long serialVersionUID = 1L;
+    private final static Logger LOGGER = LoggerFactory.getLogger(EntityPanel.class);
+    private final DelegatingAutoOCRValueDetectionService autoOCRValueDetectionService;
+    private final Set<Class<?>> entityClasses;
+    private final ReflectionFormBuilder reflectionFormBuilder;
+    private final Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping;
+    private final MessageHandler messageHandler;
+    private final Map<Class<?>, ReflectionFormPanel<?>> reflectionFormPanelMap;
 
     /**
      * Creates new form EntityPanel
@@ -64,7 +80,9 @@ public class EntityPanel extends javax.swing.JPanel {
             final OCRResultPanelFetcher oCRResultPanelRetriever,
             final ScanResultPanelFetcher scanResultPanelRetriever,
             AmountMoneyUsageStatisticsStorage amountMoneyUsageStatisticsStorage,
-            AmountMoneyCurrencyStorage amountMoneyAdditionalCurrencyStorage) throws InstantiationException,
+            AmountMoneyCurrencyStorage amountMoneyAdditionalCurrencyStorage,
+            ReflectionFormBuilder reflectionFormBuilder,
+            MessageHandler messageHandler) throws InstantiationException,
             IllegalAccessException,
             IllegalArgumentException,
             InvocationTargetException,
@@ -79,6 +97,21 @@ public class EntityPanel extends javax.swing.JPanel {
         if(!entityClasses.contains(primaryClassSelection)) {
             throw new IllegalArgumentException(String.format("primaryClassSelection '%s' has to be contained in entityClasses", primaryClassSelection));
         }
+        this.entityClasses = entityClasses;
+        if(reflectionFormBuilder == null) {
+            throw new IllegalArgumentException("reflectionFormBuilder mustn't be null");
+        }
+        this.reflectionFormBuilder = reflectionFormBuilder;
+        if(valueSetterMapping == null) {
+            throw new IllegalArgumentException("valueSetterMapping mustn't be null");
+        }
+        this.valueSetterMapping = valueSetterMapping;
+        if(messageHandler == null) {
+            throw new IllegalArgumentException("messageHandler mustn't be null");
+        }
+        this.messageHandler = messageHandler;
+        this.reflectionFormPanelMap = reflectionFormPanelMap;
+        this.autoOCRValueDetectionService = new DelegatingAutoOCRValueDetectionService(amountMoneyAdditionalCurrencyStorage);
         List<Class<?>> entityClassesSort = sortEntityClasses(entityClasses);
         for(Class<?> entityClass : entityClassesSort) {
             ReflectionFormPanel reflectionFormPanel = reflectionFormPanelMap.get(entityClass);
@@ -120,6 +153,64 @@ public class EntityPanel extends javax.swing.JPanel {
             retValue = entityClass.getSimpleName();
         }
         return retValue;
+    }
+
+    /**
+     * Store for the last results of
+     * {@link #autoOCRValueDetection(richtercloud.document.scanner.gui.OCRSelectPanelPanelFetcher, boolean) }
+     * which one might display without retrieving them again from the OCR
+     * result.
+     */
+    private List<AutoOCRValueDetectionResult<?>> detectionResults;
+
+    public void autoOCRValueDetection(OCRSelectPanelPanelFetcher oCRSelectPanelPanelFetcher,
+            boolean forceRenewal) {
+        if(detectionResults == null || forceRenewal == true) {
+            final String oCRResult = oCRSelectPanelPanelFetcher.fetch();
+            final SwingWorkerGetWaitDialog dialog = new SwingWorkerGetWaitDialog(SwingUtilities.getWindowAncestor(this),
+                    DocumentScanner.generateApplicationWindowTitle("Auto OCR value detection",
+                            DocumentScanner.APP_NAME,
+                            DocumentScanner.APP_VERSION),
+                    "Auto OCR detection value",
+                    "Searching values in input");
+            SwingWorkerCompletionWaiter swingWorkerCompletionWaiter = new SwingWorkerCompletionWaiter(dialog);
+            SwingWorker<List<AutoOCRValueDetectionResult<?>>, Void> worker = new SwingWorker<List<AutoOCRValueDetectionResult<?>>, Void>() {
+                @Override
+                protected List<AutoOCRValueDetectionResult<?>> doInBackground() throws Exception {
+                    List<AutoOCRValueDetectionResult<?>> retValue = EntityPanel.this.autoOCRValueDetectionService.fetchResults(oCRResult);
+                    return retValue;
+                }
+
+                @Override
+                protected void done() {
+                    dialog.setVisible(false);
+                }
+            };
+            this.autoOCRValueDetectionService.addUpdateListener(new AutoOCRValueDetectionServiceUpdateListener() {
+                @Override
+                public void onUpdate(AutoOCRValueDetectionServiceUpdateEvent event) {
+                    LOGGER.debug(String.format("Received update event with values %d/%d", event.getWordNumber(), event.getWordCount()));
+                    dialog.getProgressBar().getModel().setValue((int)((double)event.getWordNumber()/event.getWordCount()*100.0));
+                }
+            });
+            worker.addPropertyChangeListener(swingWorkerCompletionWaiter);
+            worker.execute();
+            //the dialog will be visible until the SwingWorker is done
+            dialog.setVisible(true);
+            try {
+                detectionResults = worker.get();
+            } catch (InterruptedException | ExecutionException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+        AutoOCRValueDetectionDialog autoOCRValueDetectionDialog = new AutoOCRValueDetectionDialog(SwingUtilities.getWindowAncestor(this),
+                detectionResults,
+                entityClasses,
+                reflectionFormPanelMap,
+                reflectionFormBuilder,
+                valueSetterMapping,
+                messageHandler);
+        autoOCRValueDetectionDialog.setVisible(true);
     }
 
     protected static List<Class<?>> sortEntityClasses(Set<Class<?>> entityClasses) {

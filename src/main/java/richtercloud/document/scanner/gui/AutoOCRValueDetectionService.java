@@ -14,11 +14,29 @@
  */
 package richtercloud.document.scanner.gui;
 
+import java.util.List;
+
 /**
+ * Abstraction for different implementations for auto-OCR-value-detection.
  *
  * @author richter
  */
-public interface OCRResult<T> {
+public interface AutoOCRValueDetectionService {
 
-    T getoCRResult();
+    /**
+     * Fetches results in the form of {@link AutoOCRValueDetectionResult}s from
+     * {@code input}.
+     * @param input
+     * @return the fetched results
+     */
+    List<AutoOCRValueDetectionResult<?>> fetchResults(String input);
+
+    /**
+     * Cancels a previously started {@link #fetchResults(java.lang.String) }.
+     */
+    void cancelFetch();
+
+    void addUpdateListener(AutoOCRValueDetectionServiceUpdateListener listener);
+
+    void removeUpdateListener(AutoOCRValueDetectionServiceUpdateListener listener);
 }

@@ -739,6 +739,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         scanMenuItem = new javax.swing.JMenuItem();
         openMenuItem = new javax.swing.JMenuItem();
         editEntryMenuItem = new javax.swing.JMenuItem();
+        autoOCRValueDetection = new javax.swing.JMenuItem();
         oCRMenuSeparator = new javax.swing.JPopupMenu.Separator();
         oCRMenuItem = new javax.swing.JMenuItem();
         databaseMenuSeparator = new javax.swing.JPopupMenu.Separator();
@@ -1151,6 +1152,9 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             }
         });
         fileMenu.add(editEntryMenuItem);
+
+        autoOCRValueDetection.setText("Auto OCR value detection...");
+        fileMenu.add(autoOCRValueDetection);
         fileMenu.add(oCRMenuSeparator);
 
         oCRMenuItem.setText("Configure OCR engines");
@@ -1600,6 +1604,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenuItem aboutMenuItem;
+    private javax.swing.JMenuItem autoOCRValueDetection;
     private javax.swing.JButton databaseCancelButton;
     private javax.swing.JButton databaseConnectButton;
     private javax.swing.JLabel databaseConnectionFailureLabel;

@@ -34,20 +34,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.FutureTask;
 import javax.imageio.ImageIO;
 import javax.persistence.EntityManager;
 import javax.swing.JComponent;
@@ -59,7 +53,6 @@ import javax.swing.SwingWorker;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.math4.stat.descriptive.DescriptiveStatistics;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.slf4j.Logger;
@@ -449,7 +442,7 @@ public class MainPanel extends javax.swing.JPanel {
             progressMonitor.setMillisToPopup(0);
             progressMonitor.setMillisToDecideToPopup(0);
             final SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
-                private OCRSelectComponent createdOCRSelectComponentScrollPane;
+                private Pair<OCRSelectComponent, EntityPanel> createdOCRSelectComponentScrollPane;
 
                 @Override
                 protected Void doInBackground() throws Exception {
@@ -467,7 +460,8 @@ public class MainPanel extends javax.swing.JPanel {
                 @Override
                 protected void done() {
                     if(!progressMonitor.isCanceled()) {
-                        addDocumentDone(this.createdOCRSelectComponentScrollPane);
+                        addDocumentDone(this.createdOCRSelectComponentScrollPane.getKey(),
+                                this.createdOCRSelectComponentScrollPane.getValue());
                     }
                     progressMonitor.close(); //- need to close explicitly
                         //because progress isn't set
@@ -477,19 +471,22 @@ public class MainPanel extends javax.swing.JPanel {
                 }
             };
             worker.execute();
-            progressMonitor.setProgress(1); //ProgressMonitor dialog blocks until SwingWorker.done
-                //is invoked
+            progressMonitor.setProgress(1); //ProgressMonitor dialog doesn't
+                //block the thread, but the GUI until SwingWorker.done is
+                //invoked (automatically)
         }else {
-            OCRSelectComponent oCRSelectComponentScrollPane = addDocumentRoutine(images,
+            Pair<OCRSelectComponent, EntityPanel> oCRSelectComponentScrollPane = addDocumentRoutine(images,
                     documentFile,
                     entityToEdit,
                     null //progressMonitor
             );
-            addDocumentDone(oCRSelectComponentScrollPane);
+            addDocumentDone(oCRSelectComponentScrollPane.getKey(),
+                    oCRSelectComponentScrollPane.getValue());
         }
     }
 
-    private void addDocumentDone(OCRSelectComponent oCRSelectComponentScrollPane) {
+    private void addDocumentDone(OCRSelectComponent oCRSelectComponentScrollPane,
+            EntityPanel entityPanel) {
         addDocumentDockable(MainPanel.this.oCRSelectComponentScrollPane,
                 oCRSelectComponentScrollPane);
         if(MainPanel.this.oCRSelectComponentScrollPane == null) {
@@ -497,6 +494,14 @@ public class MainPanel extends javax.swing.JPanel {
             //triggered
             switchDocument(MainPanel.this.oCRSelectComponentScrollPane,
                     oCRSelectComponentScrollPane);
+        }
+        if(this.documentScannerConf.isAutoOCRValueDetection()) {
+            entityPanel.autoOCRValueDetection(new OCRSelectPanelPanelFetcher(oCRSelectComponentScrollPane.getoCRSelectPanelPanel(),
+                    oCREngineFactory,
+                    oCREngineConf),
+                    false //forceRenewal (shouldn't matter here since the
+                        //initial list of results has to be empty)
+            );
         }
     }
 
@@ -506,13 +511,16 @@ public class MainPanel extends javax.swing.JPanel {
      * or not.
      * @param images
      * @param documentFile
+     * @param entityToEdit {@code null} if setup ought to occur for all entities
+     * in {@code entityClasses} or not {@code null} if the setup ought to occur
+     * for editing a specified entity
      * @return the created {@link OCRSelectComponentScrollPane}
      */
-    private OCRSelectComponent addDocumentRoutine(List<BufferedImage> images,
+    private Pair<OCRSelectComponent, EntityPanel> addDocumentRoutine(List<BufferedImage> images,
             File documentFile,
             Object entityToEdit,
             ProgressMonitor progressMonitor) throws DocumentAddException {
-        OCRSelectComponent retValue = null;
+        Pair<OCRSelectComponent, EntityPanel> retValue = null;
         try {
             List<OCRSelectPanel> panels = new LinkedList<>();
             if(images != null) {
@@ -530,13 +538,15 @@ public class MainPanel extends javax.swing.JPanel {
                     panels.add(panel);
                 }
             }
-
             OCRSelectPanelPanel oCRSelectPanelPanel = new OCRSelectPanelPanel(panels,
-                    documentFile);
+                    documentFile,
+                    oCREngineFactory,
+                    oCREngineConf);
 
-            OCRResultPanelFetcher oCRResultPanelFetcher = new DocumentTabOCRResultPanelFetcher(oCRSelectPanelPanel,
-                    oCREngineFactory);
-            ScanResultPanelFetcher scanResultPanelFetcher = new MainPanelScanResultPanelFetcher(oCRSelectPanelPanel);
+            DocumentTabOCRResultPanelFetcher oCRResultPanelFetcher = new DocumentTabOCRResultPanelFetcher(oCRSelectPanelPanel //oCRSelectPanelPanel
+                    );
+            MainPanelScanResultPanelFetcher scanResultPanelFetcher = new MainPanelScanResultPanelFetcher(oCRSelectPanelPanel //oCRSelectPanelPanel
+                    );
 
             AmountMoneyMappingFieldHandlerFactory embeddableFieldHandlerFactory = new AmountMoneyMappingFieldHandlerFactory(amountMoneyUsageStatisticsStorage,
                     amountMoneyCurrencyStorage,
@@ -614,7 +624,6 @@ public class MainPanel extends javax.swing.JPanel {
                 entityClasses0 = new HashSet<Class<?>>(Arrays.asList(entityToEdit.getClass()));
             }
 
-            retValue = new OCRSelectComponent(oCRSelectPanelPanel);
             OCRPanel oCRPanel = new OCRPanel(entityClasses0,
                     reflectionFormPanelMap,
                     valueSetterMapping,
@@ -629,9 +638,16 @@ public class MainPanel extends javax.swing.JPanel {
                     oCRResultPanelFetcher,
                     scanResultPanelFetcher,
                     amountMoneyUsageStatisticsStorage,
-                    amountMoneyCurrencyStorage);
+                    amountMoneyCurrencyStorage,
+                    reflectionFormBuilder,
+                    messageHandler);
+            OCRSelectComponent oCRSelectComponent = new OCRSelectComponent(oCRSelectPanelPanel,
+                    entityPanel,
+                    oCREngineFactory,
+                    oCREngineConf);
+            retValue = new ImmutablePair<>(oCRSelectComponent, entityPanel);
             if(progressMonitor == null || !progressMonitor.isCanceled()) {
-                documentSwitchingMap.put(retValue,
+                documentSwitchingMap.put(oCRSelectComponent,
                         new ImmutablePair<>(oCRPanel, entityPanel));
             }
             return retValue;
@@ -806,135 +822,68 @@ public class MainPanel extends javax.swing.JPanel {
      * fetching of OCR results.
      */
     private class DocumentTabOCRResultPanelFetcher implements OCRResultPanelFetcher {
-        private final List<Double> stringBufferLengths = new ArrayList<>();
-        private final OCRSelectPanelPanel oCRSelectComponent;
-        private final Set<OCRResultPanelFetcherProgressListener> progressListeners = new HashSet<>();
-        private boolean cancelRequested = false;
-        /**
-         * Since {@link OCRSelectPanel} has an immutable {@code image} property
-         * it can be used well as cache map key.
-         */
-        private final Map<OCRSelectPanel, String> fetchCache = new HashMap<>();
-        /**
-         * Record all used {@link OCREngine}s in order to be able to cancel if
-         * {@link #cancelFetch() } is invoked.
-         */
-        /*
-        internal implementation notes:
-        - is a Queue in order to be able to cancel as fast as possible
-        */
-        private Queue<OCREngine> usedEngines = new LinkedList<>();
-        /**
-         * The factory to create one or multiple {@link OCREngine}s for linear
-         * or parallel fetching.
-         */
-        private final OCREngineFactory oCREngineFactory;
+        private final OCRSelectPanelPanelFetcher oCRSelectPanelPanelFetcher;
+        private final Map<OCRResultPanelFetcherProgressListener, OCRSelectPanelPanelFetcherProgressListener> listenerMap = new HashMap<>();
 
-        DocumentTabOCRResultPanelFetcher(OCRSelectPanelPanel oCRSelectComponent,
-                OCREngineFactory oCREngineFactory) {
-            this.oCRSelectComponent = oCRSelectComponent;
-            this.oCREngineFactory = oCREngineFactory;
+        /**
+         * Creates a new {@code DocumentTabOCRResultPanelFetcher}
+         * @param oCRSelectPanelPanelFetcher the {@link OCRSelectPanelPanel} where to
+         * fetch the OCR results (might be {@code null} in order to avoid
+         * cyclic dependencies, but needs to be set up with {@link #setoCRSelectPanelPanelFetcher(richtercloud.document.scanner.gui.OCRSelectPanelPanelFetcher) }
+         * before {@link #fetch() } works.
+         */
+        DocumentTabOCRResultPanelFetcher(OCRSelectPanelPanel oCRSelectPanelPanel) {
+            this.oCRSelectPanelPanelFetcher = new OCRSelectPanelPanelFetcher(oCRSelectPanelPanel,
+                    oCREngineFactory,
+                    oCREngineConf);
         }
 
         @Override
         public String fetch() {
-            //estimate the initial StringBuilder size based on the median
-            //of all prior OCR results (string length) (and 1000 initially)
-            int stringBufferLengh;
-            cancelRequested = false;
-            if (this.stringBufferLengths.isEmpty()) {
-                stringBufferLengh = 1_000;
-            } else {
-                DescriptiveStatistics descriptiveStatistics = new DescriptiveStatistics(this.stringBufferLengths.toArray(new Double[this.stringBufferLengths.size()]));
-                stringBufferLengh = ((int) descriptiveStatistics.getPercentile(.5)) + 1;
-            }
-            this.stringBufferLengths.add((double) stringBufferLengh);
-            StringBuilder retValueBuilder = new StringBuilder(stringBufferLengh);
-            int i=0;
-            List<OCRSelectPanel> imagePanels = oCRSelectComponent.getoCRSelectPanels();
-            Queue<Pair<OCRSelectPanel, FutureTask<String>>> threadQueue = new LinkedList<>();
-            Executor executor = Executors.newCachedThreadPool();
-            //check in loop whether cache can be used, otherwise enqueue started
-            //SwingWorkers; after loop wait for SwingWorkers until queue is
-            //empty and append to retValueBuilder (if cache has been used
-            //(partially) queue will be empty)
-            for (final OCRSelectPanel imagePanel : imagePanels) {
-                if(cancelRequested) {
-                    //no need to notify progress listener
-                    break;
-                }
-                String oCRResult = fetchCache.get(imagePanel);
-                if(oCRResult != null) {
-                    LOGGER.info(String.format("using cached OCR result for image %d of current OCR select component", i));
-                    retValueBuilder.append(oCRResult);
-                    for(OCRResultPanelFetcherProgressListener progressListener: progressListeners) {
-                        progressListener.onProgressUpdate(new OCRResultPanelFetcherProgressEvent(oCRResult, i/imagePanels.size()));
-                    }
-                    i += 1;
-                }else {
-                    FutureTask<String> worker = new FutureTask<>(new Callable<String>() {
-                        @Override
-                        public String call() throws Exception {
-                            OCREngine oCREngine = oCREngineFactory.create(oCREngineConf);
-                            usedEngines.add(oCREngine);
-                            String oCRResult = oCREngine.recognizeImage(imagePanel.getImage());
-                            if(oCRResult == null) {
-                                //indicates that the OCREngine.recognizeImage has been aborted
-                                if(cancelRequested) {
-                                    //no need to notify progress listener
-                                    return null;
-                                }
-                            }
-                            return oCRResult;
-                        }
-                    });
-                    executor.execute(worker);
-                    threadQueue.add(new ImmutablePair<>(imagePanel, worker));
-                }
-            }
-            while(!threadQueue.isEmpty()) {
-                Pair<OCRSelectPanel, FutureTask<String>> threadQueueHead = threadQueue.poll();
-                String oCRResult;
-                try {
-                    oCRResult = threadQueueHead.getValue().get();
-                } catch (InterruptedException | ExecutionException ex) {
-                    throw new RuntimeException(ex);
-                }
-                retValueBuilder.append(oCRResult);
-                fetchCache.put(threadQueueHead.getKey(), oCRResult);
-                for(OCRResultPanelFetcherProgressListener progressListener: progressListeners) {
-                    progressListener.onProgressUpdate(new OCRResultPanelFetcherProgressEvent(oCRResult, i/imagePanels.size()));
-                }
-                i += 1;
-            }
-            String retValue = retValueBuilder.toString();
-            return retValue;
+            return oCRSelectPanelPanelFetcher.fetch();
         }
 
         @Override
-        public void cancelFetch() {
-            this.cancelRequested = true;
-            while(!usedEngines.isEmpty()) {
-                OCREngine usedEngine = usedEngines.poll();
-                usedEngine.cancelRecognizeImage();
-            }
+        public void cancelFetch() throws UnsupportedOperationException {
+            oCRSelectPanelPanelFetcher.cancelFetch();
         }
 
         @Override
-        public void addProgressListener(OCRResultPanelFetcherProgressListener progressListener) {
-            this.progressListeners.add(progressListener);
+        public void addProgressListener(final OCRResultPanelFetcherProgressListener progressListener) {
+            OCRSelectPanelPanelFetcherProgressListener progressListener0 = new OCRSelectPanelPanelFetcherProgressListener() {
+                @Override
+                public void onProgressUpdate(OCRSelectPanelPanelFetcherProgressEvent progressEvent) {
+                    progressListener.onProgressUpdate(new OCRResultPanelFetcherProgressEvent(progressEvent.getNewValue(),
+                            progressEvent.getProgress()));
+                }
+            };
+            this.oCRSelectPanelPanelFetcher.addProgressListener(progressListener0);
+            listenerMap.put(progressListener, progressListener0);
         }
 
         @Override
         public void removeProgressListener(OCRResultPanelFetcherProgressListener progressListener) {
-            this.progressListeners.remove(progressListener);
+            OCRSelectPanelPanelFetcherProgressListener progressListener0 = listenerMap.get(progressListener);
+            this.oCRSelectPanelPanelFetcher.removeProgressListener(progressListener0);
+            this.listenerMap.remove(progressListener);
         }
     }
 
     private class MainPanelScanResultPanelFetcher implements ScanResultPanelFetcher {
-        private final OCRSelectPanelPanel oCRSelectComponent;
+        private OCRSelectPanelPanel oCRSelectComponent;
 
+        /**
+         * Creates a {@code MainPanelScanResultPanelFetcher}.
+         * @param oCRSelectComponent the {@link OCRSelectPanelPanel} where to
+         * fetch the OCR results (might be {@code null} in order to avoid
+         * cyclic dependencies, but needs to be set up with {@link #setoCRSelectComponent(richtercloud.document.scanner.gui.OCRSelectPanelPanel) }
+         * before {@link #fetch() } works.
+         */
         MainPanelScanResultPanelFetcher(OCRSelectPanelPanel oCRSelectComponent) {
+            this.oCRSelectComponent = oCRSelectComponent;
+        }
+
+        public void setoCRSelectComponent(OCRSelectPanelPanel oCRSelectComponent) {
             this.oCRSelectComponent = oCRSelectComponent;
         }
 

@@ -21,13 +21,14 @@ import org.jscience.economics.money.Currency;
 import org.jscience.economics.money.Money;
 import org.jscience.physics.amount.Amount;
 import richtercloud.document.scanner.gui.FormatOCRResult;
+import richtercloud.document.scanner.gui.OCRResult;
 import richtercloud.reflection.form.builder.components.AmountMoneyPanel;
 
 /**
  *
  * @author richter
  */
-public class AmountMoneyPanelSetter implements ValueSetter<FormatOCRResult, AmountMoneyPanel> {
+public class AmountMoneyPanelSetter implements ValueSetter<OCRResult<Amount<Money>>, AmountMoneyPanel> {
     private final static AmountMoneyPanelSetter INSTANCE = new AmountMoneyPanelSetter();
 
     public static AmountMoneyPanelSetter getInstance() {
@@ -35,35 +36,41 @@ public class AmountMoneyPanelSetter implements ValueSetter<FormatOCRResult, Amou
     }
 
     @Override
-    public void setValue(FormatOCRResult value, AmountMoneyPanel comp) {
-        Number number = null;
-        //don't parse with percent format because it doesn't make sense
-        if(value.getCurrencyFormat() == null) {
-            //automatic
-            for(Locale locale : Locale.getAvailableLocales()) {
+    public void setValue(OCRResult<Amount<Money>> value, AmountMoneyPanel comp) {
+        if(value instanceof FormatOCRResult) {
+            FormatOCRResult formatOCRResult = (FormatOCRResult) value;
+            Number number = null;
+            //don't parse with percent format because it doesn't make sense
+            if(formatOCRResult.getCurrencyFormat() == null) {
+                //automatic
+                for(Locale locale : Locale.getAvailableLocales()) {
+                    try {
+                        number = NumberFormat.getCurrencyInstance(locale).parse(formatOCRResult.getoCRResult());
+                        break; //first match is the chosen one
+                    }catch(ParseException ex) {
+                        //skip to next locale
+                    }
+                }
+                if(number == null) {
+                    throw new IllegalArgumentException("No number format of any locale succeeds to parse the OCR selection");
+                }
+            }else {
                 try {
-                    number = NumberFormat.getCurrencyInstance(locale).parse(value.getoCRResult());
-                    break; //first match is the chosen one
-                }catch(ParseException ex) {
-                    //skip to next locale
+                    number = formatOCRResult.getCurrencyFormat().parse(formatOCRResult.getoCRResult());
+                } catch (ParseException ex) {
+                    try {
+                        number = formatOCRResult.getNumberFormat().parse(formatOCRResult.getoCRResult());
+                    }catch(ParseException ex1) {
+                        throw new IllegalArgumentException(ex);
+                    }
                 }
             }
-            if(number == null) {
-                throw new IllegalArgumentException("No number format of any locale succeeds to parse the OCR selection");
-            }
+            Amount<Money> amountMoney = Amount.valueOf(number.doubleValue(),
+                    new Currency(formatOCRResult.getCurrencyFormat().getCurrency().getCurrencyCode()));
+            comp.setValue(amountMoney);
         }else {
-            try {
-                number = value.getCurrencyFormat().parse(value.getoCRResult());
-            } catch (ParseException ex) {
-                try {
-                    number = value.getNumberFormat().parse(value.getoCRResult());
-                }catch(ParseException ex1) {
-                    throw new IllegalArgumentException(ex);
-                }
-            }
+            Amount<Money> amountMoney = value.getoCRResult();
+            comp.setValue(amountMoney);
         }
-        Amount<Money> amountMoney = Amount.valueOf(number.doubleValue(),
-                new Currency(value.getCurrencyFormat().getCurrency().getCurrencyCode()));
-        comp.setValue(amountMoney);
     }
 }

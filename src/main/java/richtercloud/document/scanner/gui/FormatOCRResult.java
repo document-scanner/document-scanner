@@ -21,7 +21,7 @@ import java.text.NumberFormat;
  *
  * @author richter
  */
-public class FormatOCRResult extends OCRResult {
+public class FormatOCRResult extends StringOCRResult {
     private final NumberFormat numberFormat;
     private final NumberFormat percentFormat;
     private final NumberFormat currencyFormat;

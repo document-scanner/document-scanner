@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author richter
  */
-public abstract class ProcessOCREngine implements OCREngine {
+public abstract class ProcessOCREngine extends CachedOCREngine {
     private final static Logger LOGGER = LoggerFactory.getLogger(ProcessOCREngine.class);
 
     /**
@@ -83,7 +83,7 @@ public abstract class ProcessOCREngine implements OCREngine {
     }
 
     @Override
-    public String recognizeImage(BufferedImage image) throws IllegalStateException {
+    public String recognizeImage0(BufferedImage image) throws IllegalStateException {
         if(image == null) {
             throw new IllegalArgumentException("image mustn't be null");
         }
@@ -93,10 +93,10 @@ public abstract class ProcessOCREngine implements OCREngine {
             throw new RuntimeException("tesseract not available (see nested exception for details)", ex);
         }
         LOGGER.debug("tesseract binary '{}' found and executable", this.binary);
-        return recognizeImage0(image);
+        return recognizeImage1(image);
     }
 
-    protected abstract String recognizeImage0(BufferedImage image) throws IllegalStateException;
+    protected abstract String recognizeImage1(BufferedImage image) throws IllegalStateException;
 
     @Override
     public void cancelRecognizeImage() {

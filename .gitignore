@@ -1,3 +1,4 @@
 target/
 derby.log
 /nbproject/
+dependency-reduced-pom.xml

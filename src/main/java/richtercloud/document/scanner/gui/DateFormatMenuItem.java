@@ -12,28 +12,30 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.setter;
+package richtercloud.document.scanner.gui;
 
-import javax.swing.JSpinner;
-import richtercloud.document.scanner.gui.StringOCRResult;
+import java.text.DateFormat;
+import javax.swing.JRadioButtonMenuItem;
 
 /**
  *
  * @author richter
  */
-public class SpinnerSetter implements ValueSetter<StringOCRResult, JSpinner> {
-    private final static SpinnerSetter INSTANCE = new SpinnerSetter();
+public class DateFormatMenuItem extends JRadioButtonMenuItem {
 
-    public static SpinnerSetter getInstance() {
-        return INSTANCE;
+    private static final long serialVersionUID = 1L;
+    /**
+     * The format the user selected in the popup. {@code null} indicates
+     * automatic parsing (i.e. try all formats).
+     */
+    private final DateFormat dateFormat;
+
+    DateFormatMenuItem(DateFormat dateFormat) {
+        super(dateFormat != null ? dateFormat.format(FormatUtils.DATE_FORMAT_VALUE) : "Automatic");
+        this.dateFormat = dateFormat;
     }
 
-    protected SpinnerSetter() {
+    public DateFormat getDateFormat() {
+        return dateFormat;
     }
-
-    @Override
-    public void setValue(StringOCRResult value, JSpinner comp) {
-        comp.setValue(Double.valueOf(value.getoCRResult()));
-    }
-
 }

@@ -24,6 +24,12 @@ internal implementation notes:
 it handles resources like started OS processes -> implement manually with
 return values or exceptions (use exceptions only if necessary, i.e. if return
 value null is needed for something else)
+- Although function (even implementations) has been moved to OCRSelectPanelPanel
+it's fine to keep OCRResultPanelFetcher in order to match with the symmetry of
+ScanResultPanelFetcher and ScanResultPanelRecreator (even though
+OCRResultPanelFetcher doesn't have a symmetric counterpart)
+- makes sense to once remove OCRResultPanelFetcherProgressListener because do
+nothing, but delegate to OCRSelectPanelPanelFetcherProgressListener
 */
 public interface OCRResultPanelFetcher {
 

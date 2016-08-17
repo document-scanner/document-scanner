@@ -28,6 +28,8 @@ import javax.swing.Scrollable;
 import javax.swing.SwingConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.gui.conf.OCREngineConf;
+import richtercloud.document.scanner.ocr.OCREngineFactory;
 
 /**
  * Arranges multiple (or one) images in different selection panel and handles
@@ -35,6 +37,10 @@ import org.slf4j.LoggerFactory;
  *
  * No cross image selection are supported. Starting a selection on one panel
  * removes the selection on another.
+ *
+ * Auto-OCR-value-detection is handled in this class because it allows handling
+ * of values which reach across multiple pages.
+ *
  * @author richter
  */
 /*
@@ -64,18 +70,20 @@ public class OCRSelectPanelPanel extends JPanel implements Scrollable {
     private File documentFile;
     private float zoomLevel = 1;
 
-    protected OCRSelectPanelPanel() {
-    }
-
     public OCRSelectPanelPanel(OCRSelectPanel panel,
-            File documentFile) {
+            File documentFile,
+            OCREngineFactory oCREngineFactory,
+            OCREngineConf oCREngineConf) {
         this(new LinkedList<>(Arrays.asList(panel)),
-                documentFile);
+                documentFile,
+                oCREngineFactory,
+                oCREngineConf);
     }
 
     public OCRSelectPanelPanel(List<OCRSelectPanel> panels,
-            File documentFile) {
-        this();
+            File documentFile,
+            OCREngineFactory oCREngineFactory,
+            OCREngineConf oCREngineConf) {
         this.documentFile = documentFile;
         FlowLayout layout = new FlowLayout(FlowLayout.CENTER, 5, 5);
         this.setLayout(layout);

@@ -43,7 +43,7 @@ public class PdfsandwichOCREngine extends ProcessOCREngine {
      * @return
      */
     @Override
-    protected String recognizeImage0(BufferedImage image) {
+    protected String recognizeImage1(BufferedImage image) {
         try {
             LOGGER.debug(String.format("using prefix '%s' for pdfsandwich input temp file name", INPUT_TEMP_FILE_PREFIX));
             File inputFile = File.createTempFile(INPUT_TEMP_FILE_PREFIX,

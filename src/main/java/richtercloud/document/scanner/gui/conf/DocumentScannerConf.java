@@ -92,6 +92,11 @@ public class DocumentScannerConf implements Serializable {
      * Whether to select automatic selection of format or locale format
      * intially.*/
     private boolean automaticFormatInitiallySelected = true;
+    /**
+     * Whether to try to automatically check OCR for values (dates, amounts,
+     * etc.) after a document has been added.
+     */
+    private boolean autoOCRValueDetection = true;
 
     protected DocumentScannerConf() {
     }
@@ -271,5 +276,13 @@ public class DocumentScannerConf implements Serializable {
 
     public void setAutomaticFormatInitiallySelected(boolean automaticFormatInitiallySelected) {
         this.automaticFormatInitiallySelected = automaticFormatInitiallySelected;
+    }
+
+    public boolean isAutoOCRValueDetection() {
+        return autoOCRValueDetection;
+    }
+
+    public void setAutoOCRValueDetection(boolean autoOCRValueDetection) {
+        this.autoOCRValueDetection = autoOCRValueDetection;
     }
 }
