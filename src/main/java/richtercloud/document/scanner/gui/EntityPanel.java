@@ -203,14 +203,16 @@ public class EntityPanel extends javax.swing.JPanel {
                 throw new RuntimeException(ex);
             }
         }
-        AutoOCRValueDetectionDialog autoOCRValueDetectionDialog = new AutoOCRValueDetectionDialog(SwingUtilities.getWindowAncestor(this),
-                detectionResults,
-                entityClasses,
-                reflectionFormPanelMap,
-                reflectionFormBuilder,
-                valueSetterMapping,
-                messageHandler);
-        autoOCRValueDetectionDialog.setVisible(true);
+        if(!detectionResults.isEmpty()) {
+            AutoOCRValueDetectionDialog autoOCRValueDetectionDialog = new AutoOCRValueDetectionDialog(SwingUtilities.getWindowAncestor(this),
+                    detectionResults,
+                    entityClasses,
+                    reflectionFormPanelMap,
+                    reflectionFormBuilder,
+                    valueSetterMapping,
+                    messageHandler);
+            autoOCRValueDetectionDialog.setVisible(true);
+        }
     }
 
     protected static List<Class<?>> sortEntityClasses(Set<Class<?>> entityClasses) {
