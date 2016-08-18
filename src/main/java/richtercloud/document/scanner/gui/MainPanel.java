@@ -645,7 +645,8 @@ public class MainPanel extends javax.swing.JPanel {
             OCRSelectComponent oCRSelectComponent = new OCRSelectComponent(oCRSelectPanelPanel,
                     entityPanel,
                     oCREngineFactory,
-                    oCREngineConf);
+                    oCREngineConf,
+                    documentScannerConf);
             retValue = new ImmutablePair<>(oCRSelectComponent, entityPanel);
             if(progressMonitor == null || !progressMonitor.isCanceled()) {
                 documentSwitchingMap.put(oCRSelectComponent,

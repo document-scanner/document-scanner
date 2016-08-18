@@ -20,6 +20,7 @@ import javax.swing.GroupLayout;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
+import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.gui.conf.OCREngineConf;
 import richtercloud.document.scanner.ocr.OCREngineFactory;
 
@@ -39,6 +40,7 @@ public class OCRSelectComponent extends JPanel {
     private final EntityPanel entityPanel;
     private final OCREngineFactory oCREngineFactory;
     private final OCREngineConf oCREngineConf;
+    private final DocumentScannerConf documentScannerConf;
 
     /**
      *
@@ -48,11 +50,13 @@ public class OCRSelectComponent extends JPanel {
     public OCRSelectComponent(OCRSelectPanelPanel oCRSelectPanelPanel,
             EntityPanel entityPanel,
             OCREngineFactory oCREngineFactory,
-            OCREngineConf oCREngineConf) {
+            OCREngineConf oCREngineConf,
+            DocumentScannerConf documentScannerConf) {
         this.oCRSelectPanelPanel = oCRSelectPanelPanel;
         this.entityPanel = entityPanel;
         this.oCREngineFactory = oCREngineFactory;
         this.oCREngineConf = oCREngineConf;
+        this.documentScannerConf = documentScannerConf;
 
         toolbar.add(zoomInButton);
         toolbar.add(zoomOutButton);
@@ -79,7 +83,7 @@ public class OCRSelectComponent extends JPanel {
         zoomInButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                OCRSelectComponent.this.zoomLevel *= 2;
+                OCRSelectComponent.this.zoomLevel *= OCRSelectComponent.this.documentScannerConf.getZoomLevelMultiplier();
                 OCRSelectComponent.this.oCRSelectPanelPanel.setZoomLevels(OCRSelectComponent.this.zoomLevel);
                 OCRSelectComponent.this.repaint();
             }
@@ -87,7 +91,7 @@ public class OCRSelectComponent extends JPanel {
         zoomOutButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                OCRSelectComponent.this.zoomLevel /= 2;
+                OCRSelectComponent.this.zoomLevel /= OCRSelectComponent.this.documentScannerConf.getZoomLevelMultiplier();
                 OCRSelectComponent.this.oCRSelectPanelPanel.setZoomLevels(OCRSelectComponent.this.zoomLevel);
                 OCRSelectComponent.this.repaint();
                     //zooming out requires a scroll event to occur in order to

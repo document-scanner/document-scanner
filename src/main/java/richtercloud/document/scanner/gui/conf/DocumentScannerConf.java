@@ -40,6 +40,7 @@ public class DocumentScannerConf implements Serializable {
     private final static boolean AUTO_GENERATE_IDS_DEFAULT = true;
     private final static boolean AUTO_SAVE_IMAGE_DATA_DEFAULT = true;
     private final static boolean AUTO_SAVE_OCR_DATA_DEFAULT = true;
+    private final static float ZOOM_LEVEL_MULTIPLIER_DEFAULT = 1.33f;
 
     private static Set<StorageConf<?,?>> generateAvailableStorageConfsDefault(EntityManager entityManager,
             MessageHandler messageHandler,
@@ -97,6 +98,7 @@ public class DocumentScannerConf implements Serializable {
      * Mapping between scanner name and it's {@link ScannerConf}.
      */
     private Map<String, ScannerConf> scannerConfMap;
+    private float zoomLevelMultiplier = ZOOM_LEVEL_MULTIPLIER_DEFAULT;
 
     protected DocumentScannerConf() {
     }
@@ -118,7 +120,8 @@ public class DocumentScannerConf implements Serializable {
                 AUTO_GENERATE_IDS_DEFAULT,
                 AUTO_SAVE_IMAGE_DATA_DEFAULT,
                 AUTO_SAVE_OCR_DATA_DEFAULT,
-                new HashMap<String, ScannerConf>());
+                new HashMap<String, ScannerConf>(),
+                ZOOM_LEVEL_MULTIPLIER_DEFAULT);
     }
 
     public DocumentScannerConf(StorageConf storageConf,
@@ -126,13 +129,15 @@ public class DocumentScannerConf implements Serializable {
             boolean autoGenerateIDs,
             boolean autoSaveImageData,
             boolean autoSaveOCRData,
-            Map<String, ScannerConf> scannerConfMap) {
+            Map<String, ScannerConf> scannerConfMap,
+            float zoomLevelMultiplier) {
         this.storageConf = storageConf;
         this.availableStorageConfs = availableStorageConfs;
         this.autoGenerateIDs = autoGenerateIDs;
         this.autoSaveImageData = autoSaveImageData;
         this.autoSaveOCRData = autoSaveOCRData;
         this.scannerConfMap = scannerConfMap;
+        this.zoomLevelMultiplier = zoomLevelMultiplier;
     }
 
     public DocumentScannerConf(DocumentScannerConf documentScannerConf) {
@@ -141,8 +146,17 @@ public class DocumentScannerConf implements Serializable {
                 documentScannerConf.isAutoGenerateIDs(),
                 documentScannerConf.isAutoSaveImageData(),
                 documentScannerConf.isAutoSaveOCRData(),
-                documentScannerConf.getScannerConfMap()
+                documentScannerConf.getScannerConfMap(),
+                documentScannerConf.getZoomLevelMultiplier()
         );
+    }
+
+    public float getZoomLevelMultiplier() {
+        return zoomLevelMultiplier;
+    }
+
+    public void setZoomLevelMultiplier(float zoomLevelMultiplier) {
+        this.zoomLevelMultiplier = zoomLevelMultiplier;
     }
 
     public Map<String, ScannerConf> getScannerConfMap() {
