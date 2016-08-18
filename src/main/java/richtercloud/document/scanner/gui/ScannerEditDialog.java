@@ -237,13 +237,13 @@ public class ScannerEditDialog extends javax.swing.JDialog {
             if(mode == null) {
                 mode = modeOption.getStringConstraints().get(0);
             }
-            if(!modeOption.isWriteable()) {
-                throw new IllegalArgumentException(String.format("Option '%s' isn't writable.", MODE_OPTION_NAME));
-            }
-            LOGGER.debug(String.format("setting default mode '%s' on device '%s'", mode, device));
-            modeOption.setStringValue(mode);
             scannerConf.setMode(mode);
         }
+        if(!modeOption.isWriteable()) {
+            throw new IllegalArgumentException(String.format("Option '%s' isn't writable.", MODE_OPTION_NAME));
+        }
+        LOGGER.debug(String.format("setting default mode '%s' on device '%s'", mode, device));
+        modeOption.setStringValue(mode);
         SaneOption resolutionOption = device.getOption(RESOLUTION_OPTION_NAME);
         if(!resolutionOption.isReadable()) {
             throw new IllegalArgumentException(String.format("Option '%s' isn't readable.", RESOLUTION_OPTION_NAME));
@@ -267,13 +267,13 @@ public class ScannerEditDialog extends javax.swing.JDialog {
                 }
             }
             assert resolution != null;
-            if(!resolutionOption.isWriteable()) {
-                throw new IllegalArgumentException(String.format("option '%s' isn't writable", RESOLUTION_OPTION_NAME));
-            }
-            LOGGER.debug(String.format("setting default resolution '%d' on device '%s'", resolution, device));
-            resolutionOption.setIntegerValue(resolution);
             scannerConf.setResolution(resolution);
         }
+        if(!resolutionOption.isWriteable()) {
+            throw new IllegalArgumentException(String.format("option '%s' isn't writable", RESOLUTION_OPTION_NAME));
+        }
+        LOGGER.debug(String.format("setting default resolution '%d' on device '%s'", resolution, device));
+        resolutionOption.setIntegerValue(resolution);
         SaneOption documentSourceOption = device.getOption(DOCUMENT_SOURCE_OPTION_NAME);
         if(!documentSourceOption.isReadable()) {
             throw new IllegalArgumentException(String.format("Option '%s' isn't readable.", DOCUMENT_SOURCE_OPTION_NAME));
@@ -288,13 +288,13 @@ public class ScannerEditDialog extends javax.swing.JDialog {
         if(documentSource == null) {
             documentSource = selectBestDocumentSource(documentSourceOption.getStringConstraints());
             assert documentSource != null;
-            if(!documentSourceOption.isWriteable()) {
-                throw new IllegalArgumentException(String.format("option '%s' isn't writable", DOCUMENT_SOURCE_OPTION_NAME));
-            }
-            LOGGER.debug(String.format("setting default document source '%s' on device '%s'", documentSource, device));
-            documentSourceOption.setStringValue(documentSource);
             scannerConf.setSource(documentSource);
         }
+        if(!documentSourceOption.isWriteable()) {
+            throw new IllegalArgumentException(String.format("option '%s' isn't writable", DOCUMENT_SOURCE_OPTION_NAME));
+        }
+        LOGGER.debug(String.format("setting default document source '%s' on device '%s'", documentSource, device));
+        documentSourceOption.setStringValue(documentSource);
     }
 
     /**

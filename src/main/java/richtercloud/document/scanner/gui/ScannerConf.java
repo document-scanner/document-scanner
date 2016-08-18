@@ -39,11 +39,12 @@ public class ScannerConf implements Serializable {
      * Creates an empty {@code ScannerConf} (in case the application has been
      * started for the first time or the configuration file has been deleted).
      */
-    public ScannerConf() {
+    public ScannerConf(String scannerName) {
+        this.scannerName = scannerName;
     }
 
     public ScannerConf(String scannerName, String scannerAddress, Integer resolution, String mode, String source) {
-        this.scannerName = scannerName;
+        this(scannerName);
         this.scannerAddress = scannerAddress;
         this.resolution = resolution;
         this.mode = mode;

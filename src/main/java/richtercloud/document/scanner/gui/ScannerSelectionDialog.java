@@ -190,16 +190,15 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
         String addressString = this.scannerDialogAddressTextField.getText();
         InetAddress address0;
         this.scannerDialogStatusLabel.setText("Searching...");
+        this.tableModel.clear();
         try {
             address0 = InetAddress.getByName(addressString);
             this.saneSession = SaneSession.withRemoteSane(address0);
             List<SaneDevice> availableDevices = this.saneSession.listDevices();
             for(SaneDevice availableDevice : availableDevices) {
-                if(!documentScannerConf.getScannerConfMap().keySet().contains(availableDevice.getName())) {
-                    SaneDevice cachedAvailableDevice = DocumentScanner.getScannerDevice(availableDevice.getName(),
-                            documentScannerConf.getScannerConfMap()); //otherwise option changes are lost
-                    this.tableModel.addDevice(cachedAvailableDevice);
-                }
+                SaneDevice cachedAvailableDevice = DocumentScanner.getScannerDevice(availableDevice.getName(),
+                        documentScannerConf.getScannerConfMap()); //otherwise option changes are lost
+                this.tableModel.addDevice(cachedAvailableDevice);
             }
             this.scannerDialogStatusLabel.setText(" ");
             this.address = addressString;

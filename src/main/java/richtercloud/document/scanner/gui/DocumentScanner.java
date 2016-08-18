@@ -336,14 +336,19 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         if(retValue == null) {
             ScannerConf scannerConf = scannerConfMap.get(scannerName);
             if(scannerConf == null) {
-                scannerConf = new ScannerConf();
+                scannerConf = new ScannerConf(scannerName);
                 scannerConfMap.put(scannerName, scannerConf);
             }
             SaneSession saneSession = ADDRESS_SESSION_MAP.get(scannerConf.getScannerAddress());
             if(saneSession == null) {
-                InetAddress scannerInetAddress = InetAddress.getByName(scannerConf.getScannerAddress());
+                String scannerAddress = scannerConf.getScannerAddress();
+                if(scannerAddress == null) {
+                    scannerAddress = "localhost";
+                }
+                InetAddress scannerInetAddress = InetAddress.getByName(scannerAddress);
                 saneSession = SaneSession.withRemoteSane(scannerInetAddress);
                 ADDRESS_SESSION_MAP.put(scannerConf.getScannerAddress(), saneSession);
+                scannerConf.setScannerAddress(scannerAddress);
             }
             retValue = saneSession.getDevice(scannerName);
             NAME_DEVICE_MAP.put(scannerName, retValue);
