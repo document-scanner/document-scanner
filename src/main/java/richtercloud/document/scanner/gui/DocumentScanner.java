@@ -299,6 +299,11 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
      * {@link SaneDevice}.
      */
     private final static Map<String, SaneDevice> NAME_DEVICE_MAP = new HashMap<>();
+    /**
+     * Uses the string representation stored in {@link ScannerConf} in order to
+     * avoid confusion with equality of {@link InetAddress}es.
+     */
+    private final static Map<String, SaneSession> ADDRESS_SESSION_MAP = new HashMap<>();
     public final static String SANED_BUG_INFO = "<br/>You might suffer from a "
             + "saned bug, try <tt>/usr/sbin/saned -d -s -a saned</tt> with "
             + "appropriate privileges in order to restart saned and try again"
@@ -326,15 +331,24 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     }
 
     public static SaneDevice getScannerDevice(String scannerName,
-            SaneSession saneSession,
-            Map<String, Map<String, Object>> changedValues) throws IOException, SaneException {
+            Map<String, ScannerConf> scannerConfMap) throws IOException, SaneException {
         SaneDevice retValue = NAME_DEVICE_MAP.get(scannerName);
         if(retValue == null) {
+            ScannerConf scannerConf = scannerConfMap.get(scannerName);
+            if(scannerConf == null) {
+                scannerConf = new ScannerConf();
+                scannerConfMap.put(scannerName, scannerConf);
+            }
+            SaneSession saneSession = ADDRESS_SESSION_MAP.get(scannerConf.getScannerAddress());
+            if(saneSession == null) {
+                InetAddress scannerInetAddress = InetAddress.getByName(scannerConf.getScannerAddress());
+                saneSession = SaneSession.withRemoteSane(scannerInetAddress);
+                ADDRESS_SESSION_MAP.put(scannerConf.getScannerAddress(), saneSession);
+            }
             retValue = saneSession.getDevice(scannerName);
             NAME_DEVICE_MAP.put(scannerName, retValue);
             ScannerEditDialog.configureDefaultOptionValues(retValue,
-                    changedValues,
-                    false
+                    scannerConf
             );
         }
         return retValue;
@@ -354,16 +368,10 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         //if a scanner address and device name is in persisted conf check if
         //it's accessible and treat it as selected scanner silently
         try {
-            InetAddress address = InetAddress.getByName(this.documentScannerConf.getScannerSaneAddress());
-            SaneSession saneSession = SaneSession.withRemoteSane(address);
             String scannerName = this.documentScannerConf.getScannerName();
-            this.scannerDevice = saneSession.getDevice(scannerName);
-            ScannerEditDialog.configureDefaultOptionValues(scannerDevice,
-                    documentScannerConf.getScannerChangedOptions(),
-                    false //don't overwrite with generated values
-            );
-            afterScannerSelection(this.documentScannerConf.getScannerSaneAddress(),
-                    scannerDevice);
+            this.scannerDevice = getScannerDevice(scannerName,
+                    this.documentScannerConf.getScannerConfMap());
+            afterScannerSelection();
         } catch (IOException | SaneException ex) {
             String text = handleSearchScannerException("An exception during the setup of "
                     + "previously selected scanner occured: ",
@@ -419,21 +427,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         this.invalidate();
     }
 
-    private void afterScannerSelection(String address, SaneDevice scannerDevice) {
-        assert scannerDevice != null;
-        this.scannerDevice = scannerDevice;
-        try {
-            ScannerEditDialog.configureDefaultOptionValues(scannerDevice,
-                    documentScannerConf.getScannerChangedOptions(),
-                    false //overwrite (might have been changed in edit dialog)
-            );
-        } catch (IOException | SaneException | IllegalArgumentException ex) {
-            this.messageHandler.handle(new Message(String.format("Exception during setup of scanner default options occured: %s", ExceptionUtils.getRootCauseMessage(ex)),
-                    JOptionPane.ERROR_MESSAGE,
-                    "Exception occured"));
-        }
-        this.documentScannerConf.setScannerName(scannerDevice.getName());
-        this.documentScannerConf.setScannerSaneAddress(address);
+    private void afterScannerSelection() {
         this.scanMenuItem.setEnabled(true);
         this.scanMenuItem.getParent().revalidate();
     }
@@ -1254,23 +1248,28 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         try {
             scannerSelectionDialog = new ScannerSelectionDialog(this,
                     messageHandler,
-                    this.documentScannerConf.getScannerChangedOptions(),
-                    this.documentScannerConf.getScannerSaneAddress());
+                    this.documentScannerConf);
         } catch (IOException | SaneException ex) {
             handleException(ex, "Unexpected exception");
             return;
         }
         scannerSelectionDialog.pack();
         scannerSelectionDialog.setLocationRelativeTo(this);
-        scannerSelectionDialog.setVisible(true);//blocks
+        scannerSelectionDialog.setVisible(true);//blocks and updates
+            //documentScannerConf
 
-        String scannerAddress = scannerSelectionDialog.getAddress();
-        SaneDevice selectedDevice = scannerSelectionDialog.getSelectedDevice();
-        if(selectedDevice == null) {
-            //dialog has been canceled
+        if(this.documentScannerConf.getScannerName() == null) {
+            //dialog has been canceled (previously selected dialog remains or
+            //null
             return;
         }
-        afterScannerSelection(scannerAddress, selectedDevice);
+        try {
+            this.scannerDevice = getScannerDevice(documentScannerConf.getScannerName(),
+                    documentScannerConf.getScannerConfMap());
+        } catch (IOException | SaneException ex) {
+            throw new RuntimeException(ex);
+        }
+        afterScannerSelection();
     }//GEN-LAST:event_selectScannerMenuItemActionPerformed
 
     private void storageSelectionMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_storageSelectionMenuItemActionPerformed

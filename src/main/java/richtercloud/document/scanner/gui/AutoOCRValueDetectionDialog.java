@@ -17,6 +17,9 @@ package richtercloud.document.scanner.gui;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.DateFormat;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -32,7 +35,12 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.WindowConstants;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableRowSorter;
+import org.jscience.physics.amount.Amount;
+import org.jscience.physics.amount.AmountFormat;
+import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.reflection.form.builder.ReflectionFormBuilder;
 import richtercloud.reflection.form.builder.ReflectionFormPanel;
@@ -48,6 +56,10 @@ import richtercloud.reflection.form.builder.message.MessageHandler;
  * Don't provide a close button because it'd have to be placed next to the
  * "Set on field" button which is strange because they belong to the table and
  * to the window so that they shouldn't be next to each other.
+ *
+ * The displaying of dates with the default {@link DateFormat} causes the value
+ * to start with the day of the week and is almost unreadable. It's overkill to
+ * allow configuration of the date format in settings, though.
  *
  * @author richter
  */
@@ -71,7 +83,7 @@ public class AutoOCRValueDetectionDialog extends JDialog {
         @Override
         public Class<?> getColumnClass(int column) {
             if(column == 0) {
-                //type
+                //simple class name
                 return String.class;
             }else if(column == 1) {
                 //result
@@ -95,14 +107,27 @@ public class AutoOCRValueDetectionDialog extends JDialog {
      */
     private final JPopupMenu setButtonPopupMenu = new JPopupMenu();
     private final AbstractFieldPopupMenuFactory fieldPopupMenuFactory;
+    private final DateFormat tableDateFormat;
+    private final DocumentScannerConf documentScannerConf;
 
+    /**
+     * Creates a new {@code AutoOCRValueDetectionDialog}.
+     * @param parent
+     * @param detectionResults
+     * @param entityClasses
+     * @param reflectionFormPanelMap
+     * @param reflectionFormBuilder
+     * @param valueSetterMapping
+     * @param messageHandler
+     */
     public AutoOCRValueDetectionDialog(Window parent,
             List<AutoOCRValueDetectionResult<?>> detectionResults,
             Set<Class<?>> entityClasses,
             Map<Class<?>, ReflectionFormPanel<?>> reflectionFormPanelMap,
             ReflectionFormBuilder reflectionFormBuilder,
             Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping,
-            MessageHandler messageHandler) {
+            MessageHandler messageHandler,
+            DocumentScannerConf documentScannerConf) {
         super(parent,
                 DocumentScanner.generateApplicationWindowTitle("Auto OCR value detection results", DocumentScanner.APP_NAME, DocumentScanner.APP_VERSION),
                 ModalityType.APPLICATION_MODAL //modalityType
@@ -114,6 +139,17 @@ public class AutoOCRValueDetectionDialog extends JDialog {
         if(detectionResults.isEmpty()) {
             throw new IllegalArgumentException("detectionResults mustn't be empty");
         }
+        if(documentScannerConf == null) {
+            throw new IllegalArgumentException("documentScannerConf mustn't be empty");
+        }
+        this.documentScannerConf = documentScannerConf;
+        this.tableDateFormat = DateFormat.getDateTimeInstance(DateFormat.MEDIUM,
+                    //DateFormat.FULL causes day of week to be displayed at the
+                    //beginning, DateFormat.LONG causes month to be displayed as
+                    //work
+                DateFormat.MEDIUM, //DateFormat.LONG causes timezone to be
+                    //displayed
+                documentScannerConf.getLocale());
         this.fieldPopupMenuFactory = new AutoOCRValueDetectionFieldPopupMenuFactory(table,
                 messageHandler,
                 valueSetterMapping);
@@ -129,7 +165,6 @@ public class AutoOCRValueDetectionDialog extends JDialog {
                 .addComponent(tableLabel)
                 .addComponent(tableScrollPane)
                 .addComponent(setButton));
-        pack();
 
         tableModel.addColumn("Type");
         tableModel.addColumn("Result");
@@ -141,6 +176,43 @@ public class AutoOCRValueDetectionDialog extends JDialog {
         }
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.addRowSelectionInterval(0, 0);
+        table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            private static final long serialVersionUID = 1L;
+            @Override
+            public void setValue(Object value) {
+                if(String.class.equals(value.getClass())) {
+                    setText((String)value);
+                }else if(Date.class.equals(value.getClass())) {
+                    setText(AutoOCRValueDetectionDialog.this.tableDateFormat.format(value));
+                }else if(Amount.class.equals(value.getClass())) {
+                    String valueFormatted = AmountFormat.getInstance().format((Amount)value).toString();
+                    setText(valueFormatted);
+                }
+            }
+        });
+        TableRowSorter<DefaultTableModel> tableRowSorter = new TableRowSorter<>(tableModel);
+        tableRowSorter.setComparator(0, new Comparator<String>() {
+            @Override
+            public int compare(String o1, String o2) {
+                return o1.compareTo(o2);
+            }
+        } );
+        tableRowSorter.setComparator(1, new Comparator<Object>() {
+            @Override
+            public int compare(Object o1, Object o2) {
+                //Provide stable sorting first on type, then on value
+                if(!o1.getClass().equals(o2.getClass())) {
+                    return o1.getClass().getSimpleName().compareTo(o2.getClass().getSimpleName());
+                }
+                if(o1 instanceof Comparable) {
+                    return ((Comparable)o1).compareTo(o2);
+                }else {
+                    //not comparable
+                    return -1;
+                }
+            }
+        });
+        table.setRowSorter(tableRowSorter);
 
         List<Class<?>> entityClassesSort = EntityPanel.sortEntityClasses(entityClasses);
         List<JMenuItem> setButtonPopupMenuItems = this.fieldPopupMenuFactory.createFieldPopupMenuItems(entityClassesSort,
@@ -162,5 +234,6 @@ public class AutoOCRValueDetectionDialog extends JDialog {
                 setButtonPopupMenu.show(setButton, 0, 0);
             }
         });
+        pack();
     }
 }

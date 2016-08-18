@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.components.OCRResultPanelFetcher;
 import richtercloud.document.scanner.components.ScanResultPanelFetcher;
+import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.reflection.form.builder.ReflectionFormBuilder;
@@ -67,6 +68,7 @@ public class EntityPanel extends javax.swing.JPanel {
     private final Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping;
     private final MessageHandler messageHandler;
     private final Map<Class<?>, ReflectionFormPanel<?>> reflectionFormPanelMap;
+    private final DocumentScannerConf documentScannerConf;
 
     /**
      * Creates new form EntityPanel
@@ -82,7 +84,8 @@ public class EntityPanel extends javax.swing.JPanel {
             AmountMoneyUsageStatisticsStorage amountMoneyUsageStatisticsStorage,
             AmountMoneyCurrencyStorage amountMoneyAdditionalCurrencyStorage,
             ReflectionFormBuilder reflectionFormBuilder,
-            MessageHandler messageHandler) throws InstantiationException,
+            MessageHandler messageHandler,
+            DocumentScannerConf documentScannerConf) throws InstantiationException,
             IllegalAccessException,
             IllegalArgumentException,
             InvocationTargetException,
@@ -111,6 +114,10 @@ public class EntityPanel extends javax.swing.JPanel {
         }
         this.messageHandler = messageHandler;
         this.reflectionFormPanelMap = reflectionFormPanelMap;
+        if(documentScannerConf == null) {
+            throw new IllegalArgumentException("documentScannerConf mustn't be null");
+        }
+        this.documentScannerConf = documentScannerConf;
         this.autoOCRValueDetectionService = new DelegatingAutoOCRValueDetectionService(amountMoneyAdditionalCurrencyStorage);
         List<Class<?>> entityClassesSort = sortEntityClasses(entityClasses);
         for(Class<?> entityClass : entityClassesSort) {
@@ -197,6 +204,10 @@ public class EntityPanel extends javax.swing.JPanel {
             worker.execute();
             //the dialog will be visible until the SwingWorker is done
             dialog.setVisible(true);
+            if(dialog.isCanceled()) {
+                EntityPanel.this.autoOCRValueDetectionService.cancelFetch();
+                return;
+            }
             try {
                 detectionResults = worker.get();
             } catch (InterruptedException | ExecutionException ex) {
@@ -210,7 +221,8 @@ public class EntityPanel extends javax.swing.JPanel {
                     reflectionFormPanelMap,
                     reflectionFormBuilder,
                     valueSetterMapping,
-                    messageHandler);
+                    messageHandler,
+                    documentScannerConf);
             autoOCRValueDetectionDialog.setVisible(true);
         }
     }

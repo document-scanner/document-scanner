@@ -63,7 +63,7 @@ public abstract class AbstractFormatAutoOCRValueDetectionService extends Abstrac
      */
     @Override
     public List<AutoOCRValueDetectionResult<?>> fetchResults0(String input) {
-        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()*2 //2 threads per processor seems sane
+        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() //2 threads per processor cause only 50 % CPU usage, 1 per CPU reaches 80-90 %
                 );
             //Executors.newCachedThreadPool() causes OutOfMemeoryException
         final List<AutoOCRValueDetectionResult<?>> retValues = new LinkedList<>();

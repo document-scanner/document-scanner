@@ -23,13 +23,9 @@ import java.awt.Dialog;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.MutableComboBoxModel;
-import org.apache.commons.lang3.tuple.ImmutableTriple;
-import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.reflection.form.builder.message.MessageHandler;
@@ -46,7 +42,7 @@ import richtercloud.reflection.form.builder.message.MessageHandler;
 public class ScannerEditDialog extends javax.swing.JDialog {
     private static final long serialVersionUID = 1L;
     private MutableComboBoxModel<String> modeComboBoxModel = new DefaultComboBoxModel<>();
-    private MutableComboBoxModel<String> resolutionComboBoxModel = new DefaultComboBoxModel<>();
+    private MutableComboBoxModel<Integer> resolutionComboBoxModel = new DefaultComboBoxModel<>();
     private MutableComboBoxModel<String> documentSourceComboBoxModel = new DefaultComboBoxModel<>();
     private final static Logger LOGGER = LoggerFactory.getLogger(ScannerEditDialog.class);
     private final SaneDevice device;
@@ -54,11 +50,11 @@ public class ScannerEditDialog extends javax.swing.JDialog {
     private final static String MODE_OPTION_NAME = "mode";
     private final static String RESOLUTION_OPTION_NAME = "resolution";
     public final static String DOCUMENT_SOURCE_OPTION_NAME = "source";
-    private final Map<String, Map<String, Object>> changedOptions;
+    private final ScannerConf scannerConf;
 
     public ScannerEditDialog(Dialog parent,
             final SaneDevice device,
-            Map<String, Map<String, Object>> changedOptions,
+            ScannerConf scannerConf,
             MessageHandler messageHandler) throws IOException, SaneException {
         super(parent,
                 true //modal
@@ -70,16 +66,17 @@ public class ScannerEditDialog extends javax.swing.JDialog {
         if(messageHandler == null) {
             throw new IllegalArgumentException("messageHandler mustn't be null");
         }
-        this.changedOptions = changedOptions;
+        this.scannerConf = scannerConf;
         this.messageHandler = messageHandler;
-        init(device, changedOptions);
+        init(device,
+                scannerConf);
     }
 
     /**
      * Creates new form ScannerEditDialog
      * @param parent
      * @param device
-     * @param changedOptions
+     * @param scannerConf
      * @param messageHandler
      * @throws java.io.IOException if {@link SaneDevice#open() } fails
      * @throws au.com.southsky.jfreesane.SaneException if
@@ -87,7 +84,7 @@ public class ScannerEditDialog extends javax.swing.JDialog {
      */
     public ScannerEditDialog(java.awt.Frame parent,
             final SaneDevice device,
-            Map<String, Map<String, Object>> changedOptions,
+            ScannerConf scannerConf,
             MessageHandler messageHandler) throws IOException, SaneException {
         super(parent,
                 DocumentScanner.generateApplicationWindowTitle(String.format("Editing scanner settings of %s", device.toString()),
@@ -102,44 +99,35 @@ public class ScannerEditDialog extends javax.swing.JDialog {
         if(messageHandler == null) {
             throw new IllegalArgumentException("messageHandler mustn't be null");
         }
-        this.changedOptions = changedOptions;
+        this.scannerConf = scannerConf;
         this.messageHandler = messageHandler;
-        init(device, changedOptions);
+        init(device,
+                scannerConf);
     }
 
     private void init(final SaneDevice device,
-            Map<String, Map<String, Object>> changedOptions) throws IOException, SaneException {
+            final ScannerConf scannerConf) throws IOException, SaneException {
         initComponents();
         if(!device.isOpen()) {
             device.open();
         }
-        Triple<String, Integer, String> defaultValuePair = configureDefaultOptionValues(device, changedOptions, false);
-        Map<String, Object> deviceChangedOptions = changedOptions.get(device.getName());
+        configureDefaultOptionValues(device,
+                scannerConf);
+        //values in scannerConf should be != null after
+        //configureDefaultOptionValues
         for(String mode : device.getOption("mode").getStringConstraints()) {
             modeComboBoxModel.addElement(mode);
         }
-        if(deviceChangedOptions.keySet().contains("mode")) {
-            this.modeComboBox.setSelectedItem(deviceChangedOptions.get("mode"));
-        }else {
-            this.modeComboBox.setSelectedItem(defaultValuePair.getLeft());
-        }
+        this.modeComboBox.setSelectedItem(scannerConf.getMode());
         for(SaneWord resolution : device.getOption("resolution").getWordConstraints()) {
-            resolutionComboBoxModel.addElement(String.valueOf(resolution.integerValue()));
+            resolutionComboBoxModel.addElement(resolution.integerValue());
         }
-        if(deviceChangedOptions.keySet().contains("resolution")) {
-            this.resolutionComboBox.setSelectedItem(String.valueOf(deviceChangedOptions.get("resolution")));
-        }else {
-            this.resolutionComboBox.setSelectedItem(String.valueOf(defaultValuePair.getMiddle()));
-        }
+        this.resolutionComboBox.setSelectedItem(scannerConf.getResolution());
         List<String> documentSourceConstraints = device.getOption("source").getStringConstraints();
         for(String documentSource : documentSourceConstraints) {
             this.documentSourceComboBoxModel.addElement(documentSource);
         }
-        if(deviceChangedOptions.keySet().contains("source")) {
-            this.documentSourceComboBox.setSelectedItem(deviceChangedOptions.get("source"));
-        }else {
-            this.documentSourceComboBox.setSelectedItem(selectBestDocumentSource(documentSourceConstraints));
-        }
+        this.documentSourceComboBox.setSelectedItem(scannerConf.getSource());
         //add ItemListener after setup
         this.modeComboBox.addItemListener(new ItemListener() {
             @Override
@@ -148,17 +136,11 @@ public class ScannerEditDialog extends javax.swing.JDialog {
                 try {
                     mode = (String) ScannerEditDialog.this.modeComboBox.getSelectedItem();
                     ScannerEditDialog.this.device.getOption("mode").setStringValue(mode);
+                    scannerConf.setMode(mode);
                 } catch (IOException | SaneException ex) {
                     //not supposed to happen
                     throw new RuntimeException(ex);
                 }
-                Map<String, Object> deviceChangedOptions = ScannerEditDialog.this.changedOptions.get(device.getName());
-                if(deviceChangedOptions == null) {
-                    deviceChangedOptions = new HashMap<>();
-                    ScannerEditDialog.this.changedOptions.put(device.getName(),
-                            deviceChangedOptions);
-                }
-                deviceChangedOptions.put("mode", mode);
             }
         });
         this.resolutionComboBox.addItemListener(new ItemListener() {
@@ -168,17 +150,11 @@ public class ScannerEditDialog extends javax.swing.JDialog {
                 try {
                     resolution = Integer.valueOf((String)ScannerEditDialog.this.resolutionComboBox.getSelectedItem());
                     ScannerEditDialog.this.device.getOption("resolution").setIntegerValue(resolution);
+                    scannerConf.setResolution(resolution);
                 } catch (IOException | SaneException ex) {
                     //not supposed to happen
                     throw new RuntimeException(ex);
                 }
-                Map<String, Object> deviceChangedOptions = ScannerEditDialog.this.changedOptions.get(device.getName());
-                if(deviceChangedOptions == null) {
-                    deviceChangedOptions = new HashMap<>();
-                    ScannerEditDialog.this.changedOptions.put(device.getName(),
-                            deviceChangedOptions);
-                }
-                deviceChangedOptions.put("resolution", resolution);
             }
         });
         this.documentSourceComboBox.addItemListener(new ItemListener() {
@@ -188,16 +164,10 @@ public class ScannerEditDialog extends javax.swing.JDialog {
                 try {
                     documentSource = (String) ScannerEditDialog.this.documentSourceComboBox.getSelectedItem();
                     ScannerEditDialog.this.device.getOption("source").setStringValue(documentSource);
+                    scannerConf.setSource(documentSource);
                 } catch (IOException | SaneException ex) {
                     throw new RuntimeException(ex);
                 }
-                Map<String, Object> deviceChangedOptions = ScannerEditDialog.this.changedOptions.get(device.getName());
-                if(deviceChangedOptions == null) {
-                    deviceChangedOptions = new HashMap<>();
-                    ScannerEditDialog.this.changedOptions.put(device.getName(),
-                            deviceChangedOptions);
-                }
-                deviceChangedOptions.put("source", documentSource);
             }
         });
     }
@@ -236,24 +206,16 @@ public class ScannerEditDialog extends javax.swing.JDialog {
      * http://www.sane-project.org/html/doc014.html.
      *
      * @param device
-     * @param changedOptions
-     * @param overwrite overwrite values with automatically calculated/chosen
-     * ones which have already been set according to {@code changedOptions}
+     * @param scannerConf the {@link ScannerConf} to retrieve eventually
+     * existing values from (e.g. persisted values from previous runs)
      * @throws IOException
      * @throws SaneException
      * @throws IllegalArgumentException if the option denoted by
      * {@link #MODE_OPTION_NAME} or {@link #RESOLUTION_OPTION_NAME} isn't
      * readable or writable
-     * @return the mode, resolution and document source in a {@link Triple}
      */
-    public static Triple<String, Integer, String> configureDefaultOptionValues(SaneDevice device,
-            Map<String, Map<String, Object>> changedOptions,
-            boolean overwrite) throws IOException, SaneException {
-        Map<String, Object> changedOptionsDeviceMap = changedOptions.get(device.getName());
-        if(changedOptionsDeviceMap == null) {
-            changedOptionsDeviceMap = new HashMap<>();
-            changedOptions.put(device.getName(), changedOptionsDeviceMap);
-        }
+    public static void configureDefaultOptionValues(SaneDevice device,
+            ScannerConf scannerConf) throws IOException, SaneException {
         if(!device.isOpen()) {
             device.open();
         }
@@ -264,8 +226,8 @@ public class ScannerEditDialog extends javax.swing.JDialog {
         if(!modeOption.getType().equals(OptionValueType.STRING)) {
             throw new IllegalArgumentException(String.format("Option '%s' isn't of type STRING. This indicates an errornous SANE implementation. Can't proceed.", MODE_OPTION_NAME));
         }
-        String mode = (String) changedOptionsDeviceMap.get(modeOption.getName());
-        if(overwrite || mode == null) {
+        String mode = scannerConf.getMode();
+        if(mode == null) {
             for(String modeConstraint : modeOption.getStringConstraints()) {
                 if("color".equalsIgnoreCase(modeConstraint.trim())) {
                     mode = modeConstraint;
@@ -280,6 +242,7 @@ public class ScannerEditDialog extends javax.swing.JDialog {
             }
             LOGGER.debug(String.format("setting default mode '%s' on device '%s'", mode, device));
             modeOption.setStringValue(mode);
+            scannerConf.setMode(mode);
         }
         SaneOption resolutionOption = device.getOption(RESOLUTION_OPTION_NAME);
         if(!resolutionOption.isReadable()) {
@@ -288,8 +251,8 @@ public class ScannerEditDialog extends javax.swing.JDialog {
         if(!resolutionOption.getType().equals(OptionValueType.INT)) {
             throw new IllegalArgumentException(String.format("Option '%s' isn't of type INT. This indicates an errornous SANE implementation. Can't proceed.", RESOLUTION_OPTION_NAME));
         }
-        Integer resolution = (Integer) changedOptionsDeviceMap.get(resolutionOption.getName());
-        if(overwrite || resolution == null) {
+        Integer resolution = scannerConf.getResolution();
+        if(resolution == null) {
             int resolutionDifference = Integer.MAX_VALUE, resolutionWish = 300;
             for(SaneWord resolutionConstraint : resolutionOption.getWordConstraints()) {
                 int resolutionConstraintValue = resolutionConstraint.integerValue();
@@ -309,7 +272,7 @@ public class ScannerEditDialog extends javax.swing.JDialog {
             }
             LOGGER.debug(String.format("setting default resolution '%d' on device '%s'", resolution, device));
             resolutionOption.setIntegerValue(resolution);
-            changedOptionsDeviceMap.put(resolutionOption.getName(), resolution);
+            scannerConf.setResolution(resolution);
         }
         SaneOption documentSourceOption = device.getOption(DOCUMENT_SOURCE_OPTION_NAME);
         if(!documentSourceOption.isReadable()) {
@@ -321,8 +284,8 @@ public class ScannerEditDialog extends javax.swing.JDialog {
                     + "implementation. Can't proceed.",
                     DOCUMENT_SOURCE_OPTION_NAME));
         }
-        String documentSource = (String) changedOptionsDeviceMap.get(documentSourceOption.getName());
-        if(overwrite || documentSource == null) {
+        String documentSource = scannerConf.getSource();
+        if(documentSource == null) {
             documentSource = selectBestDocumentSource(documentSourceOption.getStringConstraints());
             assert documentSource != null;
             if(!documentSourceOption.isWriteable()) {
@@ -330,9 +293,8 @@ public class ScannerEditDialog extends javax.swing.JDialog {
             }
             LOGGER.debug(String.format("setting default document source '%s' on device '%s'", documentSource, device));
             documentSourceOption.setStringValue(documentSource);
-            changedOptionsDeviceMap.put(documentSourceOption.getName(), documentSource);
+            scannerConf.setSource(documentSource);
         }
-        return new ImmutableTriple<>(mode, resolution, documentSource);
     }
 
     /**
@@ -428,7 +390,7 @@ public class ScannerEditDialog extends javax.swing.JDialog {
     private javax.swing.JLabel documentSourceComboBoxLabel;
     private javax.swing.JComboBox<String> modeComboBox;
     private javax.swing.JLabel modeComboBoxLabel;
-    private javax.swing.JComboBox<String> resolutionComboBox;
+    private javax.swing.JComboBox<Integer> resolutionComboBox;
     private javax.swing.JLabel resolutionComboBoxLabel;
     // End of variables declaration//GEN-END:variables
 }

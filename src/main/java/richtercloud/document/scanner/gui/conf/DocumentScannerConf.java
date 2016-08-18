@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import javax.persistence.EntityManager;
 import org.jscience.economics.money.Currency;
+import richtercloud.document.scanner.gui.ScannerConf;
 import richtercloud.reflection.form.builder.message.MessageHandler;
 
 /**
@@ -84,11 +85,6 @@ public class DocumentScannerConf implements Serializable {
     private boolean autoSaveImageData;
     private boolean autoSaveOCRData;
     /**
-     * Stores information about changed SANE options because {@link SaneDevice}
-     * and {@link SaneOption} don't provide a way to do that.
-     */
-    private Map<String, Map<String, Object>> scannerChangedOptions = new HashMap<>();
-    /**
      * Whether to select automatic selection of format or locale format
      * intially.*/
     private boolean automaticFormatInitiallySelected = true;
@@ -97,6 +93,10 @@ public class DocumentScannerConf implements Serializable {
      * etc.) after a document has been added.
      */
     private boolean autoOCRValueDetection = true;
+    /**
+     * Mapping between scanner name and it's {@link ScannerConf}.
+     */
+    private Map<String, ScannerConf> scannerConfMap;
 
     protected DocumentScannerConf() {
     }
@@ -117,19 +117,22 @@ public class DocumentScannerConf implements Serializable {
                         xMLStorageFile),
                 AUTO_GENERATE_IDS_DEFAULT,
                 AUTO_SAVE_IMAGE_DATA_DEFAULT,
-                AUTO_SAVE_OCR_DATA_DEFAULT);
+                AUTO_SAVE_OCR_DATA_DEFAULT,
+                new HashMap<String, ScannerConf>());
     }
 
     public DocumentScannerConf(StorageConf storageConf,
             Set<StorageConf<?,?>> availableStorageConfs,
             boolean autoGenerateIDs,
             boolean autoSaveImageData,
-            boolean autoSaveOCRData) {
+            boolean autoSaveOCRData,
+            Map<String, ScannerConf> scannerConfMap) {
         this.storageConf = storageConf;
         this.availableStorageConfs = availableStorageConfs;
         this.autoGenerateIDs = autoGenerateIDs;
         this.autoSaveImageData = autoSaveImageData;
         this.autoSaveOCRData = autoSaveOCRData;
+        this.scannerConfMap = scannerConfMap;
     }
 
     public DocumentScannerConf(DocumentScannerConf documentScannerConf) {
@@ -137,15 +140,17 @@ public class DocumentScannerConf implements Serializable {
                 documentScannerConf.getAvailableStorageConfs(),
                 documentScannerConf.isAutoGenerateIDs(),
                 documentScannerConf.isAutoSaveImageData(),
-                documentScannerConf.isAutoSaveOCRData());
+                documentScannerConf.isAutoSaveOCRData(),
+                documentScannerConf.getScannerConfMap()
+        );
     }
 
-    public Map<String, Map<String, Object>> getScannerChangedOptions() {
-        return scannerChangedOptions;
+    public Map<String, ScannerConf> getScannerConfMap() {
+        return scannerConfMap;
     }
 
-    public void setScannerChangedOptions(Map<String, Map<String, Object>> scannerChangedOptions) {
-        this.scannerChangedOptions = scannerChangedOptions;
+    public void setScannerConf(Map<String, ScannerConf> scannerConfMap) {
+        this.scannerConfMap = scannerConfMap;
     }
 
     /**

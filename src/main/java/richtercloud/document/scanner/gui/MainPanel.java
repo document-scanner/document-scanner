@@ -640,7 +640,8 @@ public class MainPanel extends javax.swing.JPanel {
                     amountMoneyUsageStatisticsStorage,
                     amountMoneyCurrencyStorage,
                     reflectionFormBuilder,
-                    messageHandler);
+                    messageHandler,
+                    documentScannerConf);
             OCRSelectComponent oCRSelectComponent = new OCRSelectComponent(oCRSelectPanelPanel,
                     entityPanel,
                     oCREngineFactory,

@@ -24,7 +24,6 @@ import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import javax.swing.JOptionPane;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -32,6 +31,7 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.reflection.form.builder.message.Message;
 import richtercloud.reflection.form.builder.message.MessageHandler;
 
@@ -140,23 +140,20 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
      */
     private String address;
     private final MessageHandler messageHandler;
-    private final Map<String, Map<String, Object>> changedOptions;
+    private final DocumentScannerConf documentScannerConf;
 
     /**
-     * Creates new scanner selection dialog. Scanners referenced (by name) in
-     * {@code changedOptions} will be added to the list/table of selectable
-     * devices if they're accessible in a {@link SaneSession} created with
-     * {@code initialAddress}.
+     * Creates new scanner selection dialog. The selection result and initial
+     * parameters like the initial scanner search address will be updated in and
+     * retrieved from {@code documentScannerConf}.
      *
      * @param parent
      * @param messageHandler
-     * @param changedOptions
-     * @param initialAddress
+     * @param documentScannerConf
      */
     public ScannerSelectionDialog(java.awt.Frame parent,
             MessageHandler messageHandler,
-            Map<String, Map<String, Object>> changedOptions,
-            String initialAddress) throws UnknownHostException, IOException, SaneException {
+            DocumentScannerConf documentScannerConf) throws UnknownHostException, IOException, SaneException {
         super(parent,
                 DocumentScanner.generateApplicationWindowTitle("Select scanner",
                         DocumentScanner.APP_NAME,
@@ -167,30 +164,21 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
             throw new IllegalArgumentException("messageHandler mustn't be null");
         }
         this.messageHandler = messageHandler;
-        if(changedOptions == null) {
-            throw new IllegalArgumentException("changedOptions mustn't be null");
+        if(documentScannerConf == null) {
+            throw new IllegalArgumentException("documentScannerConf mustn't be null");
         }
-        this.changedOptions = changedOptions;
+        this.documentScannerConf = documentScannerConf;
         initComponents();
         this.tableModel.addTableModelListener(this.scannerDialogTableModelListener);
         this.scannerDialogTable.getSelectionModel().addListSelectionListener(this.scannerDialogTableSelectionListener);
-        this.scannerDialogAddressTextField.setText(initialAddress);
-        InetAddress address0 = InetAddress.getByName(initialAddress);
+        this.scannerDialogAddressTextField.setText(documentScannerConf.getScannerSaneAddress());
+        InetAddress address0 = InetAddress.getByName(documentScannerConf.getScannerSaneAddress());
         this.saneSession = SaneSession.withRemoteSane(address0);
-        for(String scannerName : changedOptions.keySet()) {
+        for(String scannerName : documentScannerConf.getScannerConfMap().keySet()) {
             SaneDevice existingDevice = DocumentScanner.getScannerDevice(scannerName,
-                    saneSession,
-                    changedOptions);
+                    documentScannerConf.getScannerConfMap());
             tableModel.addDevice(existingDevice);
         }
-    }
-
-    public SaneDevice getSelectedDevice() {
-        return selectedDevice;
-    }
-
-    public String getAddress() {
-        return address;
     }
 
     private boolean scannerDialogSelectButtonEnabled() {
@@ -207,10 +195,9 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
             this.saneSession = SaneSession.withRemoteSane(address0);
             List<SaneDevice> availableDevices = this.saneSession.listDevices();
             for(SaneDevice availableDevice : availableDevices) {
-                if(!changedOptions.keySet().contains(availableDevice.getName())) {
+                if(!documentScannerConf.getScannerConfMap().keySet().contains(availableDevice.getName())) {
                     SaneDevice cachedAvailableDevice = DocumentScanner.getScannerDevice(availableDevice.getName(),
-                            saneSession,
-                            changedOptions); //otherwise option changes are lost
+                            documentScannerConf.getScannerConfMap()); //otherwise option changes are lost
                     this.tableModel.addDevice(cachedAvailableDevice);
                 }
             }
@@ -359,6 +346,8 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
     private void scannerDialogSelectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_scannerDialogSelectButtonActionPerformed
         assert this.scannerDialogTable.getSelectedRow() != -1;
         this.selectedDevice = this.tableModel.getDevices().get(this.scannerDialogTable.getSelectedRow());
+        this.documentScannerConf.setScannerName(this.selectedDevice.getName());
+        this.documentScannerConf.setScannerSaneAddress(address);
         this.setVisible(false);
     }//GEN-LAST:event_scannerDialogSelectButtonActionPerformed
 
@@ -366,13 +355,13 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
         assert this.scannerDialogTable.getSelectedRow() != -1;
         SaneDevice device = this.tableModel.getDevices().get(this.scannerDialogTable.getSelectedRow());
         ScannerEditDialog scannerEditDialog;
+        ScannerConf scannerConf = this.documentScannerConf.getScannerConfMap().get(device.getName());
         try {
             ScannerEditDialog.configureDefaultOptionValues(device,
-                this.changedOptions,
-                false);
+                scannerConf);
             scannerEditDialog = new ScannerEditDialog(this,
                 device,
-                this.changedOptions,
+                scannerConf,
                 this.messageHandler);
             scannerEditDialog.setVisible(true);
         } catch (IOException | SaneException ex) {
