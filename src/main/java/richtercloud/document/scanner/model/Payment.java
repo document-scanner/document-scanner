@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import javax.persistence.Basic;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Inheritance;
@@ -36,17 +37,21 @@ import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
  *
  * @author richter
  */
+/*
+internal implementation notes:
+- There're been an account field of type FinanceAccount with description "The
+account which has been used to send or receive this payment". It has been
+removed because it's unclear and wasn't specified why this isn't covered by
+sender and recipient properties.
+*/
 @Entity
 @Inheritance
 public class Payment extends Identifiable {
     private static final long serialVersionUID = 1L;
-    @OneToOne(fetch = FetchType.EAGER)
-    @NotNull
-    @FieldInfo(name = "Account", description = "The account which has been used to send or receive this payment")
-    private FinanceAccount account;
     @NotNull
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Amount", description = "The amount and currency of the payment")
+    @Column(length = 8191) //avoid truncation error
     private Amount<Money> amount;
     /**
      * The exact date and time of (the transfer) of the payment.
@@ -95,27 +100,12 @@ public class Payment extends Identifiable {
     protected Payment() {
     }
 
-    public Payment(Long id, FinanceAccount account, Amount<Money> amount, Date date, FinanceAccount sender, FinanceAccount recipient) {
+    public Payment(Long id, Amount<Money> amount, Date date, FinanceAccount sender, FinanceAccount recipient) {
         super(id);
-        this.account = account;
         this.amount = amount;
         this.theDate = date;
         this.sender = sender;
         this.recipient = recipient;
-    }
-
-    /**
-     * @return the account
-     */
-    public FinanceAccount getAccount() {
-        return this.account;
-    }
-
-    /**
-     * @param account the account to set
-     */
-    public void setAccount(FinanceAccount account) {
-        this.account = account;
     }
 
     /**
@@ -184,6 +174,6 @@ public class Payment extends Identifiable {
 
     @Override
     public String toString() {
-        return String.format("%s: %s -> %s: %s", this.getAccount(), this.getSender(), this.getRecipient(), this.getAmount());
+        return String.format("%s -> %s: %s", this.getSender(), this.getRecipient(), this.getAmount());
     }
 }

@@ -81,7 +81,7 @@ public class PaymentTest extends AbstractTest {
                         new LinkedList<>(Arrays.asList(new EmailAddress(getRandom().nextLong(), "address", null))),
                         new LinkedList<>(Arrays.asList(new TelephoneNumber(getRandom().nextLong(), 40, 123, 456789, null, TelephoneNumber.TYPE_LANDLINE)))));
         Amount<Money> amount = Amount.valueOf(10, Money.BASE_UNIT);
-        Payment instance = new Payment(getRandom().nextLong(), account, amount,
+        Payment instance = new Payment(getRandom().nextLong(), amount,
                 new Date(), sender, recipient);
         String expResult = account+": "+sender+" -> "+recipient+": "+amount;
         String result = instance.toString();
