@@ -32,9 +32,7 @@ public class PersonValidator implements ConstraintValidator<ValidPerson, Person>
 
     @Override
     public boolean isValid(Person value, ConstraintValidatorContext context) {
-        context.buildConstraintViolationWithTemplate(MESSAGE_DEFAULT).addNode("bla1").addPropertyNode("bla");
-
-                //addConstraintViolation();
+        context.buildConstraintViolationWithTemplate(MESSAGE_DEFAULT);
         return value.getFirstnames().size() > 0 || value.getLastnames().size() > 0;
     }
 
