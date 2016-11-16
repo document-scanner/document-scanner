@@ -30,6 +30,15 @@ import richtercloud.document.scanner.model.WorkflowItem;
 public class WorkflowItemValidator implements ConstraintValidator<ValidWorkflowItem, WorkflowItem> {
 
     public static void validate(WorkflowItem value) throws WorkflowItemValidationException {
+        //validate that value isn't contained in the list of previous or
+        //following items/doesn't reference itself
+        if(value.getFollowingItems().contains(value)) {
+            throw new WorkflowItemValidationException(String.format("workflow item '%s' is contained in its list of following items", value));
+        }
+        if(value.getPreviousItems().contains(value)) {
+            throw new WorkflowItemValidationException(String.format("workflow item '%s' is contained in its list of previous items", value));
+        }
+
         //validate that all previous items of each item list them in their lists
         //of following items
         Queue<WorkflowItem> itemQueue = new LinkedList<>(Arrays.asList(value));
@@ -59,7 +68,7 @@ public class WorkflowItemValidator implements ConstraintValidator<ValidWorkflowI
         while(!itemQueue.isEmpty()) {
             WorkflowItem head = itemQueue.poll();
             for(WorkflowItem headFollowing : head.getFollowingItems()) {
-                if(!headFollowing.getFollowingItems().contains(head)) {
+                if(!headFollowing.getPreviousItems().contains(head)) {
                     throw new WorkflowItemValidationException(String.format(
                             "following workflow item %s of item %s is not "
                                     + "contained in list of previous items of "
