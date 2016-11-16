@@ -20,15 +20,15 @@ import java.util.Locale;
 import org.jscience.economics.money.Currency;
 import org.jscience.economics.money.Money;
 import org.jscience.physics.amount.Amount;
-import richtercloud.document.scanner.gui.FormatOCRResult;
-import richtercloud.document.scanner.gui.OCRResult;
-import richtercloud.reflection.form.builder.components.AmountMoneyPanel;
+import richtercloud.document.scanner.gui.ocrresult.FormatOCRResult;
+import richtercloud.document.scanner.gui.ocrresult.OCRResult;
+import richtercloud.reflection.form.builder.components.money.AmountMoneyPanel;
 
 /**
  *
  * @author richter
  */
-public class AmountMoneyPanelSetter implements ValueSetter<OCRResult<Amount<Money>>, AmountMoneyPanel> {
+public class AmountMoneyPanelSetter implements ValueSetter<Amount<Money>, AmountMoneyPanel> {
     private final static AmountMoneyPanelSetter INSTANCE = new AmountMoneyPanelSetter();
 
     public static AmountMoneyPanelSetter getInstance() {
@@ -36,7 +36,12 @@ public class AmountMoneyPanelSetter implements ValueSetter<OCRResult<Amount<Mone
     }
 
     @Override
-    public void setValue(OCRResult<Amount<Money>> value, AmountMoneyPanel comp) {
+    public void setValue(Amount<Money> value, AmountMoneyPanel comp) {
+        comp.setValue(value);
+    }
+
+    @Override
+    public void setOCRResult(OCRResult value, AmountMoneyPanel comp) {
         if(value instanceof FormatOCRResult) {
             FormatOCRResult formatOCRResult = (FormatOCRResult) value;
             Number number = null;
@@ -69,8 +74,7 @@ public class AmountMoneyPanelSetter implements ValueSetter<OCRResult<Amount<Mone
                     new Currency(formatOCRResult.getCurrencyFormat().getCurrency().getCurrencyCode()));
             comp.setValue(amountMoney);
         }else {
-            Amount<Money> amountMoney = value.getoCRResult();
-            comp.setValue(amountMoney);
+            //@TODO
         }
     }
 }

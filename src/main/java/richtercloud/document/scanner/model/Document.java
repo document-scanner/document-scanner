@@ -16,6 +16,7 @@ package richtercloud.document.scanner.model;
 
 import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import javax.persistence.Basic;
 import javax.persistence.Column;
@@ -73,6 +74,29 @@ public class Document extends AbstractDocument {
 
     public Document(String comment,
             String identifier,
+            Date date,
+            Date receptionDate,
+            Location originalLocation,
+            boolean originalLost,
+            boolean digitalOnly,
+            Company sender,
+            Company recipient) {
+        this(comment,
+                identifier,
+                null,
+                null,
+                new LinkedList<Payment>(),
+                date,
+                receptionDate,
+                originalLocation,
+                originalLost,
+                digitalOnly,
+                sender,
+                recipient);
+    }
+
+    public Document(String comment,
+            String identifier,
             byte[] scanData,
             String scanOCRText,
             List<Payment> payments,
@@ -81,7 +105,6 @@ public class Document extends AbstractDocument {
             Location originalLocation,
             boolean originalLost,
             boolean digitalOnly,
-            Long id,
             Company sender,
             Company recipient) {
         super(date,
@@ -89,7 +112,6 @@ public class Document extends AbstractDocument {
                 originalLocation,
                 originalLost,
                 digitalOnly,
-                id,
                 sender,
                 recipient);
         this.comment = comment;

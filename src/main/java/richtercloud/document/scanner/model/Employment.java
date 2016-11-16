@@ -53,8 +53,9 @@ public class Employment extends Identifiable {
     protected Employment() {
     }
 
-    public Employment(Long id, Company company, Date begin, Date end) {
-        super(id);
+    public Employment(Company company,
+            Date begin,
+            Date end) {
         this.company = company;
         this.theBegin = begin;
         this.theEnd = end;

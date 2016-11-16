@@ -20,7 +20,6 @@ import javax.persistence.Basic;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Inheritance;
-import javax.validation.constraints.NotNull;
 import org.jscience.economics.money.Money;
 import org.jscience.physics.amount.Amount;
 import richtercloud.reflection.form.builder.FieldInfo;
@@ -34,12 +33,37 @@ import richtercloud.reflection.form.builder.FieldInfo;
 @Inheritance
 public class Bill extends Document {
     private static final long serialVersionUID = 1L;
-    @NotNull
+    /**
+     * The amount of the bill. Is allowed to be {@code null} because there're
+     * strange bills and this allows to manage things like boarding passes
+     * without a value on it.
+     */
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Amount", description = "The amount and currency of the bill")
     private Amount<Money> amount;
 
     protected Bill() {
+    }
+
+    public Bill(Amount<Money> amount,
+            String comment,
+            String identifier,
+            Date date,
+            Date receptionDate,
+            Location originalLocation,
+            boolean originalLost,
+            boolean digitalOnly,
+            Company sender,
+            Company recipient) {
+        super(comment,
+                identifier,
+                date,
+                receptionDate,
+                originalLocation,
+                originalLost,
+                digitalOnly,
+                sender,
+                recipient);
     }
 
     public Bill(Amount<Money> amount,
@@ -53,7 +77,6 @@ public class Bill extends Document {
             Location originalLocation,
             boolean originalLost,
             boolean digitalOnly,
-            Long id,
             Company sender,
             Company recipient) {
         super(comment,
@@ -66,7 +89,6 @@ public class Bill extends Document {
                 originalLocation,
                 originalLost,
                 digitalOnly,
-                id,
                 sender,
                 recipient);
         this.amount = amount;

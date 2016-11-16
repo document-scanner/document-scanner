@@ -39,16 +39,25 @@ public class ScanResultPanel extends javax.swing.JPanel {
     private Set<ScanResultPanelUpdateListener> updateListener = new HashSet<>();
     private final byte[] initialValue;
 
+    /**
+     * Creates a new {@code ScanResultPanel}.
+     * @param retriever
+     * @param initialValue
+     */
+    /*
+    internal implementation notes:
+    - having a flag whether scan data ought to be retrieved from fetch at
+    creation only makes sense if listeners are passed to constructor which is
+    not so elegant; the component doesn't need to handle action which serve
+    callers
+    */
     public ScanResultPanel(ScanResultPanelFetcher retriever,
-            byte[] initialValue,
-            boolean autoSaveImageData) {
+            byte[] initialValue) {
         this.initComponents();
         this.retriever = retriever;
         this.initialValue = initialValue;
         reset0();
-        if(autoSaveImageData) {
-            save();
-        }
+        setValue(initialValue);
     }
 
     public void addUpdateListerner(ScanResultPanelUpdateListener updateListener) {
@@ -78,6 +87,14 @@ public class ScanResultPanel extends javax.swing.JPanel {
 
     public void reset() {
         reset0();
+    }
+
+    public void setValue(byte[] value) {
+        this.scanData = value;
+        for(ScanResultPanelUpdateListener updateListener : this.updateListener) {
+            updateListener.onUpdate(new ScanResultPanelUpdateEvent(scanData));
+        }
+        handleScanDataUpdate();
     }
 
     /**
@@ -134,12 +151,9 @@ public class ScanResultPanel extends javax.swing.JPanel {
         );
     }// </editor-fold>//GEN-END:initComponents
 
-    private void save() {
+    public void save() {
         this.scanData = this.retriever.fetch();
-        for(ScanResultPanelUpdateListener updateListener : this.updateListener) {
-            updateListener.onUpdate(new ScanResultPanelUpdateEvent(scanData));
-        }
-        handleScanDataUpdate();
+        setValue(scanData);
     }
 
     private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveButtonActionPerformed
@@ -147,11 +161,7 @@ public class ScanResultPanel extends javax.swing.JPanel {
     }//GEN-LAST:event_saveButtonActionPerformed
 
     private void deleteButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteButtonActionPerformed
-        this.scanData = null;
-        for(ScanResultPanelUpdateListener updateListener : this.updateListener) {
-            updateListener.onUpdate(new ScanResultPanelUpdateEvent(scanData));
-        }
-        handleScanDataUpdate();
+        setValue(null);
     }//GEN-LAST:event_deleteButtonActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

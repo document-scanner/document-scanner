@@ -14,12 +14,16 @@
  */
 package richtercloud.document.scanner.gui.conf;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import org.apache.commons.io.IOUtils;
+import richtercloud.document.scanner.ocr.BinaryNotFoundException;
 import richtercloud.document.scanner.ocr.OCREngineConfInfo;
+import richtercloud.document.scanner.ocr.ProcessOCREngine;
 import richtercloud.document.scanner.ocr.TesseractOCREngine;
 
 /**
@@ -44,6 +48,24 @@ public class TesseractOCREngineConf implements Serializable, OCREngineConf<Tesse
     public TesseractOCREngineConf() {
     }
 
+    protected TesseractOCREngineConf(String tesseract,
+            List<String> selectedLanguages,
+            TesseractOCREngine oCREngine) {
+        this.tesseract = tesseract;
+        this.selectedLanguages = selectedLanguages;
+        this.oCREngine = oCREngine;
+    }
+
+    /**
+     * Cloning constructor of {@code TesseractOCREngineConf}.
+     * @param conf the {@link TesseractOCREngineConf} to clone
+     */
+    public TesseractOCREngineConf(TesseractOCREngineConf conf) {
+        this(conf.getTesseract(),
+                conf.getSelectedLanguages(),
+                conf.getOCREngine());
+    }
+
     /**
      * @return the selectedLanguages
      */
@@ -66,11 +88,50 @@ public class TesseractOCREngineConf implements Serializable, OCREngineConf<Tesse
         return oCREngine;
     }
 
+    /**
+     * The {@code tesseract} binary which is used in this configuration.
+     * @return
+     */
     public String getTesseract() {
         return this.tesseract;
     }
 
     public void setTesseract(String tesseract) {
         this.tesseract = tesseract;
+    }
+
+    /**
+     *
+     * @return
+     * @throws IllegalStateException if {@code tesseract} binary invoked with
+     * {@code --list-langs} returns a code {@code != 0}
+     */
+    public List<String> getAvailableLanguages() throws IllegalStateException, IOException, InterruptedException {
+        ProcessBuilder tesseractProcessBuilder = new ProcessBuilder(this.getTesseract(), "--list-langs");
+        Process tesseractProcess = tesseractProcessBuilder.redirectOutput(ProcessBuilder.Redirect.PIPE).start();
+        int tesseractProcessReturnCode = tesseractProcess.waitFor();
+        String tesseractProcessStdout = IOUtils.toString(tesseractProcess.getInputStream());
+        String tesseractProcessStderr = IOUtils.toString(tesseractProcess.getErrorStream());
+        if(tesseractProcessReturnCode != 0) {
+            throw new IllegalStateException(String.format("The tesseract process '%s' unexpectedly returned with non-zero return code %d and output '%s' (stdout) and '%s' (stderr).", this.getTesseract(), tesseractProcessReturnCode, tesseractProcessStdout, tesseractProcessStderr));
+        }
+        //tesseract --list-langs prints to stderr, reported as https://bugs.launchpad.net/ubuntu/+source/tesseract/+bug/1481015
+        List<String> langs = new LinkedList<>();
+        for(String lang : tesseractProcessStderr.split("\n")) {
+            if(!lang.startsWith("List of available languages")) {
+                langs.add(lang);
+            }
+        }
+        Collections.sort(langs, String.CASE_INSENSITIVE_ORDER);
+        return langs;
+    }
+
+    public void validate() throws BinaryNotFoundException, IllegalStateException {
+        ProcessOCREngine.checkBinaryAvailableExceptions(this.getTesseract());
+        try {
+            getAvailableLanguages();
+        } catch (IOException | InterruptedException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 }

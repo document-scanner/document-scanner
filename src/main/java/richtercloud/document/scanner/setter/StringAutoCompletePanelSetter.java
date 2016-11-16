@@ -14,7 +14,7 @@
  */
 package richtercloud.document.scanner.setter;
 
-import richtercloud.document.scanner.gui.OCRResult;
+import richtercloud.document.scanner.gui.ocrresult.OCRResult;
 import richtercloud.reflection.form.builder.jpa.panels.StringAutoCompletePanel;
 
 /**
@@ -31,5 +31,10 @@ public class StringAutoCompletePanelSetter implements ValueSetter<OCRResult, Str
     @Override
     public void setValue(OCRResult value, StringAutoCompletePanel<?> comp) {
         comp.getComboBox().setSelectedItem(value.getoCRResult());
+    }
+
+    @Override
+    public void setOCRResult(OCRResult oCRResult, StringAutoCompletePanel<?> comp) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

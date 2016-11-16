@@ -21,7 +21,7 @@ import javax.persistence.EntityManager;
 import richtercloud.document.scanner.gui.conf.DerbyPersistenceStorageConf;
 import richtercloud.document.scanner.gui.conf.DerbyPersistenceStorageConfInitializationException;
 import richtercloud.document.scanner.gui.storageconf.StorageConfPanel;
-import richtercloud.reflection.form.builder.message.MessageHandler;
+import richtercloud.message.handler.MessageHandler;
 
 /**
  *

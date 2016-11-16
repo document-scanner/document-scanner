@@ -46,22 +46,19 @@ public class AbstractTest {
         List<EmailAddress> emails = new LinkedList<>();
         int emailCount = random.nextInt(3);
         for(int i=0; i<emailCount; i++) {
-            emails.add(new EmailAddress(random.nextLong(),
-                    random.nextInt()+"@bla.com",
+            emails.add(new EmailAddress(random.nextInt()+"@bla.com",
                     new LinkedList<>(Arrays.asList(String.valueOf(random.nextInt())))));
         }
         List<TelephoneNumber> telephoneNumbers = new LinkedList<>();
         int telephoneNumberCount = random.nextInt(3);
         for(int i=0; i<telephoneNumberCount; i++) {
-            telephoneNumbers.add(new TelephoneNumber(random.nextLong(),
-                    random.nextInt(100),
+            telephoneNumbers.add(new TelephoneNumber(random.nextInt(100),
                     random.nextInt(999),
                     random.nextInt(10000),
                     null,
                     TelephoneNumber.TYPE_LANDLINE));
         }
-        Company retValue = new Company(random.nextLong(),
-                "name"+random.nextInt(),
+        Company retValue = new Company("name"+random.nextInt(),
                 allNames,
                 addresses, emails, telephoneNumbers);
         return retValue;

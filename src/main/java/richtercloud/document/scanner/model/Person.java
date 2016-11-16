@@ -48,8 +48,18 @@ public class Person extends Company {
     protected Person() {
     }
 
-    public Person(Long id, List<String> firstnames, List<String> lastnames, String name, List<String> allNames, List<Address> addresses, List<EmailAddress> emails, List<TelephoneNumber> telephoneNumbers) {
-        super(id, name, allNames, addresses, emails, telephoneNumbers);
+    public Person(List<String> firstnames,
+            List<String> lastnames,
+            String name,
+            List<String> allNames,
+            List<Address> addresses,
+            List<EmailAddress> emails,
+            List<TelephoneNumber> telephoneNumbers) {
+        super(name,
+                allNames,
+                addresses,
+                emails,
+                telephoneNumbers);
         this.firstnames = firstnames;
         this.lastnames = lastnames;
     }

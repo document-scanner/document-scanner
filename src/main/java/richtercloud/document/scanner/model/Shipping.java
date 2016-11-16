@@ -53,8 +53,14 @@ public class Shipping extends WorkflowItem {
     protected Shipping() {
     }
 
-    public Shipping(List<APackage> packages, Long id, Company sender, Company recipient, Date theDate, Date received) {
-        super(id, sender, recipient, theDate);
+    public Shipping(List<APackage> packages,
+            Company sender,
+            Company recipient,
+            Date theDate,
+            Date received) {
+        super(sender,
+                recipient,
+                theDate);
         this.packages = packages;
     }
 

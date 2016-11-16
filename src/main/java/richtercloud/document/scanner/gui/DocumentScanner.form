@@ -563,6 +563,14 @@
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="openMenuItemActionPerformed"/>
               </Events>
             </MenuItem>
+            <MenuItem class="javax.swing.JMenuItem" name="openSelectionMenuItem">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Open scan for selection..."/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="openSelectionMenuItemActionPerformed"/>
+              </Events>
+            </MenuItem>
             <MenuItem class="javax.swing.JMenuItem" name="editEntryMenuItem">
               <Properties>
                 <Property name="text" type="java.lang.String" value="Edit entry..."/>
@@ -571,7 +579,7 @@
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="editEntryMenuItemActionPerformed"/>
               </Events>
             </MenuItem>
-            <MenuItem class="javax.swing.JMenuItem" name="autoOCRValueDetection">
+            <MenuItem class="javax.swing.JMenuItem" name="autoOCRValueDetectionMenuItem">
               <Properties>
                 <Property name="text" type="java.lang.String" value="Auto OCR value detection..."/>
               </Properties>

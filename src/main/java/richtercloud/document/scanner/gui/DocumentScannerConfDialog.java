@@ -49,6 +49,7 @@ public class DocumentScannerConfDialog extends javax.swing.JDialog {
         this.autoGenerateIDsCheckBox.setSelected(documentScannerConf.isAutoGenerateIDs());
         this.autoSaveImageDataCheckBox.setSelected(documentScannerConf.isAutoSaveImageData());
         this.autoSaveOCRDataCheckBox.setSelected(documentScannerConf.isAutoSaveOCRData());
+        this.autoOCRValueDetectionCheckBox.setSelected(documentScannerConf.isAutoOCRValueDetection());
     }
 
     /**
@@ -65,6 +66,7 @@ public class DocumentScannerConfDialog extends javax.swing.JDialog {
         discardButton = new javax.swing.JButton();
         autoSaveImageDataCheckBox = new javax.swing.JCheckBox();
         autoSaveOCRDataCheckBox = new javax.swing.JCheckBox();
+        autoOCRValueDetectionCheckBox = new javax.swing.JCheckBox();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setModal(true);
@@ -89,6 +91,8 @@ public class DocumentScannerConfDialog extends javax.swing.JDialog {
 
         autoSaveOCRDataCheckBox.setText("Automatically generate OCR data");
 
+        autoOCRValueDetectionCheckBox.setText("Automatically detect OCR values (might be slow)");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -96,14 +100,17 @@ public class DocumentScannerConfDialog extends javax.swing.JDialog {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(autoGenerateIDsCheckBox, javax.swing.GroupLayout.DEFAULT_SIZE, 376, Short.MAX_VALUE)
+                    .addComponent(autoGenerateIDsCheckBox, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addGap(0, 0, Short.MAX_VALUE)
                         .addComponent(discardButton)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(saveButton))
                     .addComponent(autoSaveImageDataCheckBox, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(autoSaveOCRDataCheckBox, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(autoSaveOCRDataCheckBox, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(autoOCRValueDetectionCheckBox)
+                        .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -115,7 +122,9 @@ public class DocumentScannerConfDialog extends javax.swing.JDialog {
                 .addComponent(autoSaveImageDataCheckBox)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(autoSaveOCRDataCheckBox)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 162, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(autoOCRValueDetectionCheckBox)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(saveButton)
                     .addComponent(discardButton))
@@ -129,6 +138,7 @@ public class DocumentScannerConfDialog extends javax.swing.JDialog {
         this.documentScannerConf.setAutoGenerateIDs(this.autoGenerateIDsCheckBox.isSelected());
         this.documentScannerConf.setAutoSaveImageData(this.autoSaveImageDataCheckBox.isSelected());
         this.documentScannerConf.setAutoSaveOCRData(this.autoSaveOCRDataCheckBox.isSelected());
+        this.documentScannerConf.setAutoOCRValueDetection(this.autoOCRValueDetectionCheckBox.isSelected());
         this.setVisible(false);
     }//GEN-LAST:event_saveButtonActionPerformed
 
@@ -138,6 +148,7 @@ public class DocumentScannerConfDialog extends javax.swing.JDialog {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JCheckBox autoGenerateIDsCheckBox;
+    private javax.swing.JCheckBox autoOCRValueDetectionCheckBox;
     private javax.swing.JCheckBox autoSaveImageDataCheckBox;
     private javax.swing.JCheckBox autoSaveOCRDataCheckBox;
     private javax.swing.JButton discardButton;

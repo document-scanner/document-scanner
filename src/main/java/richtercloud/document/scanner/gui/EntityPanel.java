@@ -14,6 +14,7 @@
  */
 package richtercloud.document.scanner.gui;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.Collections;
@@ -23,24 +24,31 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
+import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
-import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.components.AutoOCRValueDetectionReflectionFormBuilder;
 import richtercloud.document.scanner.components.OCRResultPanelFetcher;
 import richtercloud.document.scanner.components.ScanResultPanelFetcher;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.setter.ValueSetter;
+import richtercloud.document.scanner.valuedetectionservice.AutoOCRValueDetectionResult;
+import richtercloud.document.scanner.valuedetectionservice.AutoOCRValueDetectionServiceUpdateEvent;
+import richtercloud.document.scanner.valuedetectionservice.AutoOCRValueDetectionServiceUpdateListener;
+import richtercloud.document.scanner.valuedetectionservice.DelegatingAutoOCRValueDetectionService;
+import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.ClassInfo;
-import richtercloud.reflection.form.builder.ReflectionFormBuilder;
 import richtercloud.reflection.form.builder.ReflectionFormPanel;
-import richtercloud.reflection.form.builder.components.AmountMoneyCurrencyStorage;
-import richtercloud.reflection.form.builder.components.AmountMoneyUsageStatisticsStorage;
-import richtercloud.reflection.form.builder.message.MessageHandler;
+import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorage;
+import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
+import richtercloud.reflection.form.builder.components.money.AmountMoneyUsageStatisticsStorage;
 import richtercloud.swing.worker.get.wait.dialog.SwingWorkerCompletionWaiter;
 import richtercloud.swing.worker.get.wait.dialog.SwingWorkerGetWaitDialog;
 
@@ -64,7 +72,7 @@ public class EntityPanel extends javax.swing.JPanel {
     private final static Logger LOGGER = LoggerFactory.getLogger(EntityPanel.class);
     private final DelegatingAutoOCRValueDetectionService autoOCRValueDetectionService;
     private final Set<Class<?>> entityClasses;
-    private final ReflectionFormBuilder reflectionFormBuilder;
+    private final AutoOCRValueDetectionReflectionFormBuilder reflectionFormBuilder;
     private final Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping;
     private final MessageHandler messageHandler;
     private final Map<Class<?>, ReflectionFormPanel<?>> reflectionFormPanelMap;
@@ -83,7 +91,8 @@ public class EntityPanel extends javax.swing.JPanel {
             final ScanResultPanelFetcher scanResultPanelRetriever,
             AmountMoneyUsageStatisticsStorage amountMoneyUsageStatisticsStorage,
             AmountMoneyCurrencyStorage amountMoneyAdditionalCurrencyStorage,
-            ReflectionFormBuilder reflectionFormBuilder,
+            AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever,
+            AutoOCRValueDetectionReflectionFormBuilder reflectionFormBuilder,
             MessageHandler messageHandler,
             DocumentScannerConf documentScannerConf) throws InstantiationException,
             IllegalAccessException,
@@ -118,7 +127,8 @@ public class EntityPanel extends javax.swing.JPanel {
             throw new IllegalArgumentException("documentScannerConf mustn't be null");
         }
         this.documentScannerConf = documentScannerConf;
-        this.autoOCRValueDetectionService = new DelegatingAutoOCRValueDetectionService(amountMoneyAdditionalCurrencyStorage);
+        this.autoOCRValueDetectionService = new DelegatingAutoOCRValueDetectionService(amountMoneyAdditionalCurrencyStorage,
+                amountMoneyExchangeRateRetriever);
         List<Class<?>> entityClassesSort = sortEntityClasses(entityClasses);
         for(Class<?> entityClass : entityClassesSort) {
             ReflectionFormPanel reflectionFormPanel = reflectionFormPanelMap.get(entityClass);
@@ -174,7 +184,7 @@ public class EntityPanel extends javax.swing.JPanel {
             boolean forceRenewal) {
         if(detectionResults == null || forceRenewal == true) {
             final String oCRResult = oCRSelectPanelPanelFetcher.fetch();
-            final SwingWorkerGetWaitDialog dialog = new SwingWorkerGetWaitDialog(SwingUtilities.getWindowAncestor(this),
+            final SwingWorkerGetWaitDialog dialog = new SwingWorkerGetWaitDialog(JOptionPane.getFrameForComponent(this),
                     DocumentScanner.generateApplicationWindowTitle("Auto OCR value detection",
                             DocumentScanner.APP_NAME,
                             DocumentScanner.APP_VERSION),
@@ -215,19 +225,22 @@ public class EntityPanel extends javax.swing.JPanel {
             }
         }
         if(!detectionResults.isEmpty()) {
-            AutoOCRValueDetectionDialog autoOCRValueDetectionDialog = new AutoOCRValueDetectionDialog(SwingUtilities.getWindowAncestor(this),
-                    detectionResults,
-                    entityClasses,
-                    reflectionFormPanelMap,
-                    reflectionFormBuilder,
-                    valueSetterMapping,
-                    messageHandler,
-                    documentScannerConf);
-            autoOCRValueDetectionDialog.setVisible(true);
+            for(Pair<Class, Field> pair : this.reflectionFormBuilder.getComboBoxModelMap().keySet()) {
+                DefaultComboBoxModel<AutoOCRValueDetectionResult<?>> comboBoxModel = this.reflectionFormBuilder.getComboBoxModelMap().get(pair);
+                Field field = pair.getValue();
+                comboBoxModel.removeAllElements();
+                comboBoxModel.addElement(null);
+                for(AutoOCRValueDetectionResult<?> detectionResult : detectionResults) {
+                    if(detectionResult.getValue().getClass().isAssignableFrom(field.getType())) {
+                        comboBoxModel.addElement(detectionResult);
+                    }
+                }
+                comboBoxModel.setSelectedItem(null);
+            }
         }
     }
 
-    protected static List<Class<?>> sortEntityClasses(Set<Class<?>> entityClasses) {
+    public static List<Class<?>> sortEntityClasses(Set<Class<?>> entityClasses) {
         List<Class<?>> entityClassesSort = new LinkedList<>(entityClasses);
         Collections.sort(entityClassesSort, new Comparator<Class<?>>() {
             @Override

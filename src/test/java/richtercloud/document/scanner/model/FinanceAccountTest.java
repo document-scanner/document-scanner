@@ -34,14 +34,22 @@ public class FinanceAccountTest extends AbstractTest {
         String iban = "iban";
         String number = "number";
         String blz = "blz";
-        Company owner = new Company(getRandom().nextLong(),
-                        "name",
+        Company owner = new Company("name",
                         new LinkedList<>(Arrays.asList("name")),
-                        new LinkedList<>(Arrays.asList(new Address("street", "number", "zipcode", "region", "city", "country"))),
-                        new LinkedList<>(Arrays.asList(new EmailAddress(getRandom().nextLong(), "a@b.com", null))),
-                        new LinkedList<>(Arrays.asList(new TelephoneNumber(getRandom().nextLong(), 49, 123, 456789, null, TelephoneNumber.TYPE_LANDLINE))));
-        FinanceAccount instance = new FinanceAccount(getRandom().nextLong(),
-                bic,
+                        new LinkedList<>(Arrays.asList(new Address("street",
+                                "number",
+                                "zipcode",
+                                "region",
+                                "city",
+                                "country"))),
+                        new LinkedList<>(Arrays.asList(new EmailAddress("a@b.com",
+                                null))),
+                        new LinkedList<>(Arrays.asList(new TelephoneNumber(49,
+                                123,
+                                456789,
+                                null,
+                                TelephoneNumber.TYPE_LANDLINE))));
+        FinanceAccount instance = new FinanceAccount(bic,
                 iban,
                 blz,
                 number,

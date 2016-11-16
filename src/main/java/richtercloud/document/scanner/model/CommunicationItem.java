@@ -42,10 +42,10 @@ public abstract class CommunicationItem extends Identifiable  {
     @FieldInfo(name = "Recipient", description = "A reference to the recipient")
     private Company recipient;
     /**
-     * The data and time (timestamp) indicated on the document.
+     * The data and time (timestamp) indicated on the document. {@code null} if
+     * unknown.
      */
     @Temporal(TemporalType.TIMESTAMP)
-    @NotNull(groups = {Default.class, IdGenerationValidation.class})
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Date", description = "The date indicated on the document")
     private Date theDate;
@@ -53,8 +53,9 @@ public abstract class CommunicationItem extends Identifiable  {
     protected CommunicationItem() {
     }
 
-    public CommunicationItem(Long id, Company sender, Company recipient, Date theDate) {
-        super(id);
+    public CommunicationItem(Company sender,
+            Company recipient,
+            Date theDate) {
         this.sender = sender;
         this.recipient = recipient;
         this.theDate = theDate;

@@ -22,7 +22,6 @@ import javax.persistence.Inheritance;
 import javax.persistence.ManyToOne;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
-import javax.validation.constraints.NotNull;
 import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.reflection.form.builder.FieldInfo;
 
@@ -46,13 +45,15 @@ public class APackage extends Identifiable {
      * property is used to specify different delivery times of a shipping with
      * more than one package and delivery at differnt times. The delivery time
      * of shipping should indicate the delivery of the last package in this
-     * (rare) case.
+     * (rare) case. {@code null} if unknown.
      */
     @Temporal(TemporalType.TIMESTAMP)
-    @NotNull
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Delivery", description = "The date of the delivery as specified by the delivery service")
     private Date deliveryDate;
+    /**
+     * The shipping reference this package belong to.
+     */
     @ManyToOne(fetch = FetchType.EAGER)
     @FieldInfo(name = "Shipping", description = "The shipping of the package")
     private Shipping shipping;
@@ -60,8 +61,7 @@ public class APackage extends Identifiable {
     protected APackage() {
     }
 
-    public APackage(Long id, Date deliveryDate, Shipping shipping) {
-        super(id);
+    public APackage(Date deliveryDate, Shipping shipping) {
         this.deliveryDate = deliveryDate;
         this.shipping = shipping;
     }

@@ -69,8 +69,11 @@ public class FinanceAccount extends Identifiable {
     protected FinanceAccount() {
     }
 
-    public FinanceAccount(Long id, String bic, String iban, String blz, String number, List<Payment> payments, Company owner) {
-        super(id);
+    public FinanceAccount(String bic,
+            String iban,
+            String blz,
+            String number,
+            List<Payment> payments, Company owner) {
         this.bic = bic;
         this.iban = iban;
         this.blz = blz;

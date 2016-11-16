@@ -22,8 +22,10 @@ import javax.swing.JOptionPane;
 import javax.swing.ProgressMonitor;
 import javax.swing.SwingWorker;
 import org.apache.commons.lang.exception.ExceptionUtils;
-import richtercloud.reflection.form.builder.message.Message;
-import richtercloud.reflection.form.builder.message.MessageHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import richtercloud.message.handler.Message;
+import richtercloud.message.handler.MessageHandler;
 
 /**
  *
@@ -31,6 +33,7 @@ import richtercloud.reflection.form.builder.message.MessageHandler;
  */
 public class OCRResultPanel extends javax.swing.JPanel {
     private static final long serialVersionUID = 1L;
+    private final static Logger LOGGER = LoggerFactory.getLogger(OCRResultPanel.class);
     private OCRResultPanelFetcher oCRResultPanelFetcher;
     private final Set<OCRResultPanelUpdateListener> updateListeners = new HashSet<>();
     /**
@@ -46,13 +49,11 @@ public class OCRResultPanel extends javax.swing.JPanel {
     public OCRResultPanel(OCRResultPanelFetcher retriever,
             String initialValue,
             MessageHandler messageHandler,
-            boolean autoSaveOCRData,
             Window oCRProgressMonitorParent) {
         this(retriever,
                 initialValue,
                 true,
                 messageHandler,
-                autoSaveOCRData,
                 oCRProgressMonitorParent);
     }
 
@@ -69,12 +70,13 @@ public class OCRResultPanel extends javax.swing.JPanel {
     - It doesn't make sense to call start in constructor because a dialog needs
     to be displayed (at least if the OCR recognition is cancelable) which
     results in weird appearance if the OCRResultPanel isn't added to a parent.
+    - a flag to automatically start OCR recognition isn't added here for the
+    same reason it's not added to ScanResultPanel
     */
     public OCRResultPanel(OCRResultPanelFetcher retriever,
             String initialValue,
             boolean cancelable,
             MessageHandler messageHandler,
-            boolean autoSaveOCRData,
             Window oCRProgressMonitorParent) {
         this.initComponents();
         this.oCRResultPanelFetcher = retriever;
@@ -84,13 +86,18 @@ public class OCRResultPanel extends javax.swing.JPanel {
         this.messageHandler = messageHandler;
         this.oCRProgressMonitorParent = oCRProgressMonitorParent;
         reset0();
-        if(autoSaveOCRData) {
-            startOCR();
-        }
+        setValue(initialValue);
     }
 
-    public String retrieveText() {
+    public String getValue() {
         return oCRResultTextArea.getText();
+    }
+
+    public void setValue(String oCRText) {
+        this.oCRResultTextArea.setText(oCRText);
+        for(OCRResultPanelUpdateListener updateListener : updateListeners) {
+            updateListener.onUpdate(new OCRResultPanelUpdateEvent(oCRText));
+        }
     }
 
     public void addUpdateListener(OCRResultPanelUpdateListener updateListener) {
@@ -181,13 +188,16 @@ public class OCRResultPanel extends javax.swing.JPanel {
         progressMonitor.setMillisToDecideToPopup(0);
     }
 
+    /**
+     * Starts the OCR routine and sets the value on the field and the component.
+     */
     /*
     internal implementation notes:
     - There's no sense in checking whether OCR has been canceled with something
     different from the ProgressMonitor because it can only be canceled with the
     dialog, but a check for null has to be added.
     */
-    private void startOCR() {
+    public void startOCR() {
         String oCRResult = null;
         if(!cancelable) {
             oCRResult = this.oCRResultPanelFetcher.fetch();
@@ -230,6 +240,7 @@ public class OCRResultPanel extends javax.swing.JPanel {
                         return retValue;
                     }catch(Exception ex) {
                         progressMonitor.setProgress(101);
+                        LOGGER.error("An unexpected exception during fetching OCR result occured", ex);
                         messageHandler.handle(new Message(String.format("An exception during fetching OCR result occured: %s", ExceptionUtils.getRootCauseMessage(ex)),
                                 JOptionPane.ERROR_MESSAGE,
                                 "Exception occured"));
@@ -253,7 +264,7 @@ public class OCRResultPanel extends javax.swing.JPanel {
         if(oCRResult != null) {
             //might be null if fetch has been canceled (this check is
             //unnecessary for non-cancelable processing, but don't care
-            this.oCRResultTextArea.setText(oCRResult);
+            setValue(oCRResult);
         }
     }
 

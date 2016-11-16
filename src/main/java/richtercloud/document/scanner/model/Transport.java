@@ -41,8 +41,7 @@ public class Transport extends Identifiable {
     protected Transport() {
     }
 
-    public Transport(Long id, List<TransportTicket> tickets) {
-        super(id);
+    public Transport(List<TransportTicket> tickets) {
         this.tickets = tickets;
     }
 
@@ -67,7 +66,7 @@ public class Transport extends Identifiable {
         }
         assert !this.getTickets().contains(null);
         TransportTicket lastTicket = this.getTickets().get(this.getTickets().size()-1);
-        return String.format("%s: %s -> %s", this.getTickets().get(0).getTheDate(), this.getTickets().get(0).getWaypoints().get(0), lastTicket.getWaypoints().get(lastTicket.getWaypoints().size()-1));
+        return String.format("%s: %s -> %s", this.getTickets().get(0).getJourneyDate(), this.getTickets().get(0).getWaypoints().get(0), lastTicket.getWaypoints().get(lastTicket.getWaypoints().size()-1));
     }
 
 }

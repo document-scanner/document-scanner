@@ -10,6 +10,7 @@
 
     <logger name="richtercloud" level="DEBUG"/>
     <logger name="richtercloud.document.scanner.gui.DateFormatAutoOCRValueDetectionService" level="INFO"/><!--too much output-->
+    <logger name="richtercloud.document.scanner.gui.FormatUtils" level="INFO"/>
     <root level="INFO">
         <appender-ref ref="STDOUT" />
     </root>

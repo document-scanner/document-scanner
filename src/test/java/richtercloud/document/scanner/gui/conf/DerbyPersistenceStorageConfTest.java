@@ -33,8 +33,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.conf.model.TestClass;
 import richtercloud.document.scanner.storage.DerbyPersistenceStorage;
-import richtercloud.reflection.form.builder.message.LoggerMessageHandler;
-import richtercloud.reflection.form.builder.message.MessageHandler;
+import richtercloud.message.handler.LoggerMessageHandler;
+import richtercloud.message.handler.MessageHandler;
 
 /**
  *

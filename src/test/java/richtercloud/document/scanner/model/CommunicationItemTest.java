@@ -36,19 +36,19 @@ public class CommunicationItemTest extends AbstractTest {
         String senderName = "company";
         List<String> senderAllNames = new LinkedList<>(Arrays.asList("Some", "new", "company"));
         List<Address> senderAddresses = new LinkedList<>(Arrays.asList(new Address("street", "number", "zipcode", "region", "city", "country")));
-        List<EmailAddress> senderEmailAddresses = new LinkedList<>(Arrays.asList(new EmailAddress(getRandom().nextLong(), "company@bla.net", new LinkedList<String>())));
-        List<TelephoneNumber> senderTelephoneNumbers = new LinkedList<>(Arrays.asList(new TelephoneNumber(getRandom().nextLong(),
-                0,
+        List<EmailAddress> senderEmailAddresses = new LinkedList<>(Arrays.asList(new EmailAddress("company@bla.net",
+                new LinkedList<String>())));
+        List<TelephoneNumber> senderTelephoneNumbers = new LinkedList<>(Arrays.asList(new TelephoneNumber(0,
                 0,
                 0,
                 null, TelephoneNumber.TYPE_LANDLINE)));
-        Company sender = new Company(getRandom().nextLong(), senderName, senderAllNames, senderAddresses, senderEmailAddresses, senderTelephoneNumbers);
+        Company sender = new Company(senderName, senderAllNames, senderAddresses, senderEmailAddresses, senderTelephoneNumbers);
         List<Address> recipientAddresses = new LinkedList<>(Arrays.asList(new Address("street", "number", "zipcode", "region", "city", "country")));
-        List<EmailAddress> recipientEmailAddresses = new LinkedList<>(Arrays.asList(new EmailAddress(getRandom().nextLong(), "recipient@blu.net", new LinkedList<String>())));
-        List<TelephoneNumber> recipientTelephoneNumbers = new LinkedList<>(Arrays.asList(new TelephoneNumber(getRandom().nextLong(), 0, 0, 0, null, TelephoneNumber.TYPE_LANDLINE)));
-        Company recipient = new Company(getRandom().nextLong(), "recipientCompany", new LinkedList<>(Arrays.asList("Some", "other", "company")), recipientAddresses, recipientEmailAddresses, recipientTelephoneNumbers);
+        List<EmailAddress> recipientEmailAddresses = new LinkedList<>(Arrays.asList(new EmailAddress("recipient@blu.net", new LinkedList<String>())));
+        List<TelephoneNumber> recipientTelephoneNumbers = new LinkedList<>(Arrays.asList(new TelephoneNumber(0, 0, 0, null, TelephoneNumber.TYPE_LANDLINE)));
+        Company recipient = new Company("recipientCompany", new LinkedList<>(Arrays.asList("Some", "other", "company")), recipientAddresses, recipientEmailAddresses, recipientTelephoneNumbers);
         Date theDate = new Date();
-        CommunicationItem instance = new CommunicationItemImpl(id, sender, recipient, theDate);
+        CommunicationItem instance = new CommunicationItemImpl(sender, recipient, theDate);
         String expResult = theDate+": "+sender.toString()+" -> "+recipient.toString();
         String result = instance.toString();
         assertEquals(expResult, result);
@@ -57,8 +57,8 @@ public class CommunicationItemTest extends AbstractTest {
     private class CommunicationItemImpl extends CommunicationItem {
         private static final long serialVersionUID = 1L;
 
-        CommunicationItemImpl(Long id, Company sender, Company recipient, Date theDate) {
-            super(id, sender, recipient, theDate);
+        CommunicationItemImpl(Company sender, Company recipient, Date theDate) {
+            super(sender, recipient, theDate);
         }
 
     }

@@ -25,7 +25,7 @@ import java.util.Set;
 import javax.persistence.EntityManager;
 import org.jscience.economics.money.Currency;
 import richtercloud.document.scanner.gui.ScannerConf;
-import richtercloud.reflection.form.builder.message.MessageHandler;
+import richtercloud.message.handler.MessageHandler;
 
 /**
  *
@@ -33,7 +33,7 @@ import richtercloud.reflection.form.builder.message.MessageHandler;
  */
 public class DocumentScannerConf implements Serializable {
     private static final long serialVersionUID = 1L;
-    private final static String SCANNER_SANE_ADDRESS_DEFAULT = "localhost";
+    public final static String SCANNER_SANE_ADDRESS_DEFAULT = "localhost";
     private final static OCREngineConf<?> OCR_ENGINE_CONF_DEFAULT = new TesseractOCREngineConf();
     private static final Locale LOCALE_DEFAULT = Locale.getDefault();
     private static final Currency CURRENCY_DEFAULT = new Currency(java.util.Currency.getInstance(LOCALE_DEFAULT).getCurrencyCode());
@@ -57,6 +57,11 @@ public class DocumentScannerConf implements Serializable {
     }
 
     private String scannerName;
+    /**
+     * The last (or initial) address where to search scanners for. The address
+     * of the selected scanner is supposed to be retrieved from it's associated
+     * {@link ScannerConf} (see {@link #scannerConfMap}).
+     */
     private String scannerSaneAddress = SCANNER_SANE_ADDRESS_DEFAULT;
     /**
      * The selected storage configuration.

@@ -17,38 +17,39 @@ package richtercloud.document.scanner.model;
 import java.util.Date;
 import java.util.List;
 import javax.persistence.Basic;
-import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Inheritance;
-import javax.persistence.Lob;
-import javax.persistence.ManyToOne;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
-import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.validation.groups.Default;
-import richtercloud.document.scanner.components.annotations.OCRResult;
-import richtercloud.document.scanner.components.annotations.ScanResult;
+import org.jscience.economics.money.Money;
+import org.jscience.physics.amount.Amount;
 import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.reflection.form.builder.FieldInfo;
 import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
 
 /**
+ * Is a {@link Bill} mainly in order to reuse information, but in order to be
+ * able to manage transport tickets for other persons it's good to have the
+ * sender and recipient field to use them for the transport company and the
+ * other person.
+ *
+ * The date refers to the date of the ticket purchase because it's closer to the
+ * communication like in {@link Bill}. There's an extra field
+ * {@code journeyDate} to store the beginning of the journey. The end of the
+ * journey isn't worth being stored in the database and can be retrieved from
+ * looking at the scan.
  *
  * @author richter
  */
 @Entity
 @Inheritance
 @ClassInfo(name = "Transport ticket")
-public class TransportTicket extends Identifiable {
+public class TransportTicket extends Bill {
     private static final long serialVersionUID = 1L;
-    @NotNull(groups = {Default.class, IdGenerationValidation.class}) //used for
-            //id generation
-    @ManyToOne(fetch = FetchType.EAGER)
-    @FieldInfo(name = "Transport company", description = "A reference to the transport company (in form of contact information)")
-    private Company transportCompany;
     @Size(min=1, groups = {Default.class, IdGenerationValidation.class})
             //otherwise creation of TransportTicket doesn't make sense; used for
             //id generation
@@ -56,49 +57,46 @@ public class TransportTicket extends Identifiable {
     @ElementCollection(fetch = FetchType.EAGER)
     @FieldInfo(name = "Waypoints", description = "A list of waypoints of the ticket (stations, cities, coordinates")
     private List<String> waypoints;
-    @NotNull(groups = {Default.class, IdGenerationValidation.class})
+    /**
+     * The date of the journey.
+     */
     @Temporal(TemporalType.DATE)
     @Basic(fetch = FetchType.EAGER)
-    @FieldInfo(name = "Date", description="The date of ticket (begin of the journey")
-    private Date theDate;
-    @ScanResult
-    @Basic(fetch = FetchType.LAZY) //fetch lazy as long as no issue occur
-            //because this might quickly create performance impacts
-    @Lob
-    @FieldInfo(name = "Scan data", description = "The binary data of the scan")
-    private byte[] scanData;
-    @OCRResult
-    @Basic(fetch = FetchType.LAZY)//fetch lazy as long as no issue occur
-            //because this might quickly create performance impacts
-    @Lob
-    @Column(length = 1048576) //2^20; the column length needs to be set in order
-    //to avoid a truncation error where any type (VARCHAR, CLOB, etc.) is cut to
-    //length 255 which is the default
-    @FieldInfo(name= "Scan OCR text", description = "The text which has been retrieved by OCR")
-    private String scanOCRText;
+    @FieldInfo(name = "Journey date", description="The date of journey (if different from the date of buying the ticket)")
+    /*
+    internal implementation notes:
+    - is allowed to be null because there might be small tickets without date
+    information
+    */
+    private Date journeyDate;
 
     protected TransportTicket() {
     }
 
-    public TransportTicket(Long id, Company transportCompany, List<String> waypoints, Date theDate) {
-        super(id);
-        this.transportCompany = transportCompany;
+    public TransportTicket(List<String> waypoints,
+            Date journeyDate,
+            Amount<Money> amount,
+            String comment,
+            String identifier,
+            Date date,
+            Date receptionDate,
+            Location originalLocation,
+            boolean originalLost,
+            boolean digitalOnly,
+            Company sender,
+            Company recipient) {
+        super(amount,
+                comment,
+                identifier,
+                date,
+                receptionDate,
+                originalLocation,
+                originalLost,
+                digitalOnly,
+                sender,
+                recipient);
         this.waypoints = waypoints;
-        this.theDate = theDate;
-    }
-
-    /**
-     * @return the transportCompany
-     */
-    public Company getTransportCompany() {
-        return this.transportCompany;
-    }
-
-    /**
-     * @param transportCompany the transportCompany to set
-     */
-    public void setTransportCompany(Company transportCompany) {
-        this.transportCompany = transportCompany;
+        this.journeyDate = journeyDate;
     }
 
     /**
@@ -120,37 +118,21 @@ public class TransportTicket extends Identifiable {
     }
 
     /**
-     * @return the theDate
+     * @return the journeyDate
      */
-    public Date getTheDate() {
-        return this.theDate;
+    public Date getJourneyDate() {
+        return this.journeyDate;
     }
 
     /**
-     * @param theDate the theDate to set
+     * @param journeyDate the journeyDate to set
      */
-    public void setTheDate(Date theDate) {
-        this.theDate = theDate;
-    }
-
-    public void setScanOCRText(String scanOCRText) {
-        this.scanOCRText = scanOCRText;
-    }
-
-    public String getScanOCRText() {
-        return scanOCRText;
-    }
-
-    public void setScanData(byte[] scanData) {
-        this.scanData = scanData;
-    }
-
-    public byte[] getScanData() {
-        return scanData;
+    public void setJourneyDate(Date journeyDate) {
+        this.journeyDate = journeyDate;
     }
 
     @Override
     public String toString() {
-        return String.format("%s: %s -> %s", this.getTheDate(), this.getWaypoints().get(0), this.getWaypoints().get(this.getWaypoints().size()-1));
+        return String.format("%s: %s -> %s", this.getJourneyDate(), this.getWaypoints().get(0), this.getWaypoints().get(this.getWaypoints().size()-1));
     }
 }

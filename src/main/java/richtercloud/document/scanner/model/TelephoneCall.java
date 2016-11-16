@@ -15,6 +15,7 @@
 package richtercloud.document.scanner.model;
 
 import java.util.Date;
+import java.util.List;
 import javax.persistence.Basic;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -33,7 +34,7 @@ import richtercloud.reflection.form.builder.FieldInfo;
 @Entity
 @Inheritance
 @ClassInfo(name="Telephone call")
-public class TelephoneCall extends CommunicationItem {
+public class TelephoneCall extends WorkflowItem {
     private static final long serialVersionUID = 1L;
     @Temporal(TemporalType.TIMESTAMP)
     @NotNull
@@ -52,8 +53,31 @@ public class TelephoneCall extends CommunicationItem {
     protected TelephoneCall() {
     }
 
-    public TelephoneCall(Date begin, Date end, String transcription, Long id, Company sender, Company recipient, TelephoneNumber telephoneNumber) {
-        super(id, sender, recipient, begin);
+    public TelephoneCall(Date begin,
+            Date end,
+            String transcription,
+            TelephoneNumber telephoneNumber,
+            Company sender,
+            Company recipient) {
+        super(sender,
+                recipient,
+                begin);
+        this.theEnd = end;
+        this.transcription = transcription;
+        this.telephoneNumber = telephoneNumber;
+    }
+
+    public TelephoneCall(Date begin,
+            Date end,
+            String transcription,
+            TelephoneNumber telephoneNumber,
+            Company sender,
+            Company recipient,
+            List<WorkflowItem> inReplyTo) {
+        super(sender,
+                recipient,
+                begin,
+                inReplyTo);
         this.theEnd = end;
         this.transcription = transcription;
         this.telephoneNumber = telephoneNumber;

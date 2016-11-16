@@ -34,9 +34,18 @@ public class CompanyTest extends AbstractTest {
         String name = "company";
         List<String> allNames = new LinkedList<>(Arrays.asList("Some", "old", "company"));
         List<Address> addresses = new LinkedList<>(Arrays.asList(new Address("street", "number", "zipcode", "region", "city", "country")));
-        List<EmailAddress> emailAddresses = new LinkedList<>(Arrays.asList(new EmailAddress(getRandom().nextLong(), "comp@bli.net", new LinkedList<String>())));
-        List<TelephoneNumber> telephoneNumbers = new LinkedList<>(Arrays.asList(new TelephoneNumber(getRandom().nextLong(), 0, 0, 0, null, TelephoneNumber.TYPE_LANDLINE)));
-        Company instance = new Company(getRandom().nextLong(), "", allNames, addresses, emailAddresses, telephoneNumbers);
+        List<EmailAddress> emailAddresses = new LinkedList<>(Arrays.asList(new EmailAddress("comp@bli.net",
+                new LinkedList<String>())));
+        List<TelephoneNumber> telephoneNumbers = new LinkedList<>(Arrays.asList(new TelephoneNumber(0,
+                0,
+                0,
+                null,
+                TelephoneNumber.TYPE_LANDLINE)));
+        Company instance = new Company("",
+                allNames,
+                addresses,
+                emailAddresses,
+                telephoneNumbers);
         String expResult = "Some old company";
         String result = instance.toString();
         assertEquals(expResult, result);

@@ -19,8 +19,8 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JTextArea;
 import richtercloud.document.scanner.setter.ValueSetter;
+import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.ReflectionFormPanel;
-import richtercloud.reflection.form.builder.message.MessageHandler;
 
 /**
  *

@@ -29,7 +29,7 @@ would destroy data if two Companys intially share that same vague address
 entity)
 */
 @Embeddable
-public class Address implements Serializable {
+public class Address implements Serializable, Comparable<Address> {
     private static final long serialVersionUID = 1L;
     private String street;
     private String number;
@@ -161,5 +161,10 @@ public class Address implements Serializable {
                 this.getCity(),
                 regionString,
                 this.getCountry());
+    }
+
+    @Override
+    public int compareTo(Address o) {
+        return toString().compareTo(o.toString());
     }
 }

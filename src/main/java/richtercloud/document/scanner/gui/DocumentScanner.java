@@ -33,6 +33,8 @@ import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import java.awt.Component;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
@@ -40,7 +42,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -50,9 +51,12 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReentrantLock;
+import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
@@ -63,6 +67,7 @@ import javax.swing.DefaultListModel;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
@@ -76,6 +81,8 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.components.tag.FileTagStorage;
+import richtercloud.document.scanner.components.tag.TagStorage;
 import richtercloud.document.scanner.gui.conf.DerbyPersistenceStorageConf;
 import richtercloud.document.scanner.gui.conf.DerbyPersistenceStorageConfInitializationException;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
@@ -84,7 +91,6 @@ import richtercloud.document.scanner.gui.conf.StorageConf;
 import richtercloud.document.scanner.gui.conf.TesseractOCREngineConf;
 import richtercloud.document.scanner.gui.engineconf.OCREngineConfPanel;
 import richtercloud.document.scanner.gui.storageconf.StorageConfPanel;
-import richtercloud.document.scanner.idgenerator.EntityIdGenerator;
 import richtercloud.document.scanner.model.APackage;
 import richtercloud.document.scanner.model.Bill;
 import richtercloud.document.scanner.model.Company;
@@ -99,41 +105,50 @@ import richtercloud.document.scanner.model.Payment;
 import richtercloud.document.scanner.model.Person;
 import richtercloud.document.scanner.model.Shipping;
 import richtercloud.document.scanner.model.TelephoneCall;
+import richtercloud.document.scanner.model.TelephoneNumber;
 import richtercloud.document.scanner.model.Transport;
 import richtercloud.document.scanner.model.TransportTicket;
 import richtercloud.document.scanner.model.Withdrawal;
 import richtercloud.document.scanner.model.Workflow;
+import richtercloud.document.scanner.model.warninghandler.CompanyWarningHandler;
 import richtercloud.document.scanner.ocr.BinaryNotFoundException;
 import richtercloud.document.scanner.ocr.OCREngine;
 import richtercloud.document.scanner.ocr.OCREngineConfInfo;
 import richtercloud.document.scanner.ocr.OCREngineFactory;
 import richtercloud.document.scanner.ocr.TesseractOCREngineFactory;
 import richtercloud.document.scanner.setter.AmountMoneyPanelSetter;
+import richtercloud.document.scanner.setter.EmbeddableListPanelSetter;
 import richtercloud.document.scanner.setter.LongIdPanelSetter;
 import richtercloud.document.scanner.setter.SpinnerSetter;
 import richtercloud.document.scanner.setter.StringAutoCompletePanelSetter;
 import richtercloud.document.scanner.setter.TextFieldSetter;
 import richtercloud.document.scanner.setter.UtilDatePickerSetter;
 import richtercloud.document.scanner.setter.ValueSetter;
+import richtercloud.message.handler.ConfirmMessageHandler;
+import richtercloud.message.handler.DialogConfirmMessageHandler;
+import richtercloud.message.handler.DialogMessageHandler;
+import richtercloud.message.handler.Message;
+import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.AnyType;
 import richtercloud.reflection.form.builder.FieldRetriever;
 import richtercloud.reflection.form.builder.ReflectionFormPanel;
-import richtercloud.reflection.form.builder.components.AmountMoneyCurrencyStorage;
-import richtercloud.reflection.form.builder.components.AmountMoneyExchangeRateRetriever;
-import richtercloud.reflection.form.builder.components.AmountMoneyPanel;
-import richtercloud.reflection.form.builder.components.AmountMoneyUsageStatisticsStorage;
-import richtercloud.reflection.form.builder.components.FileAmountMoneyCurrencyStorage;
-import richtercloud.reflection.form.builder.components.FileAmountMoneyUsageStatisticsStorage;
-import richtercloud.reflection.form.builder.components.FixerAmountMoneyExchangeRateRetriever;
-import richtercloud.reflection.form.builder.components.UtilDatePicker;
-import richtercloud.reflection.form.builder.jpa.IdGenerator;
+import richtercloud.reflection.form.builder.components.date.UtilDatePicker;
+import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorage;
+import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
+import richtercloud.reflection.form.builder.components.money.AmountMoneyPanel;
+import richtercloud.reflection.form.builder.components.money.AmountMoneyUsageStatisticsStorage;
+import richtercloud.reflection.form.builder.components.money.FileAmountMoneyCurrencyStorage;
+import richtercloud.reflection.form.builder.components.money.FileAmountMoneyUsageStatisticsStorage;
+import richtercloud.reflection.form.builder.components.money.FixerAmountMoneyExchangeRateRetriever;
 import richtercloud.reflection.form.builder.jpa.JPACachedFieldRetriever;
+import richtercloud.reflection.form.builder.jpa.WarningHandler;
+import richtercloud.reflection.form.builder.jpa.idapplier.GeneratedValueIdApplier;
+import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
+import richtercloud.reflection.form.builder.jpa.panels.EmbeddableListPanel;
 import richtercloud.reflection.form.builder.jpa.panels.LongIdPanel;
 import richtercloud.reflection.form.builder.jpa.panels.StringAutoCompletePanel;
 import richtercloud.reflection.form.builder.jpa.typehandler.JPAEntityListTypeHandler;
 import richtercloud.reflection.form.builder.jpa.typehandler.factory.JPAAmountMoneyMappingTypeHandlerFactory;
-import richtercloud.reflection.form.builder.message.DialogMessageHandler;
-import richtercloud.reflection.form.builder.message.Message;
 import richtercloud.reflection.form.builder.typehandler.TypeHandler;
 
 /**
@@ -199,7 +214,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private MutableComboBoxModel<Class<? extends StorageConf<?,?>>> storageCreateDialogTypeComboBoxModel = new DefaultComboBoxModel<>();
     private Map<Class<? extends StorageConf<?,?>>, StorageConfPanel<?>> storageConfPanelMap = new HashMap<>();
     private DefaultListModel<StorageConf<?,?>> storageListModel = new DefaultListModel<>();
-    private final static Set<Class<?>> ENTITY_CLASSES = Collections.unmodifiableSet(new HashSet<Class<?>>(
+    public final static Set<Class<?>> ENTITY_CLASSES = Collections.unmodifiableSet(new HashSet<Class<?>>(
             Arrays.asList(APackage.class,
                     Bill.class,
                     Company.class,
@@ -214,26 +229,28 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                     Person.class,
                     Shipping.class,
                     TelephoneCall.class,
+                    TelephoneNumber.class,
                     Transport.class,
                     TransportTicket.class,
                     Withdrawal.class,
-                    Workflow.class)));
-    private final static Class<?> PRIMARY_CLASS_SELECTION = Document.class;
+                    Workflow.class
+//                    WorkflowItem.class // is an entity, but abstract
+                    )));
+    public final static Class<?> PRIMARY_CLASS_SELECTION = Document.class;
     public static final String DATABASE_DIR_NAME_DEFAULT = "databases";
     /*
     internal implementation notes:
-    - connection and EntityManagerFactory should both be either static or dynamic (due to the fact that there might be support for multiple instances at some point make it dynamic
+    - connection and EntityManagerFactory should both be either static or
+    dynamic (due to the fact that there might be support for multiple instances
+    at some point make it dynamic
      */
     private EntityManagerFactory entityManagerFactory;
     private EntityManager entityManager;
-    private Connection conn;
-    private final static int EXIT_SUCCESS = 0;
     private DocumentScannerConf documentScannerConf;
     private boolean debug = false;
     private DocumentScannerCommandParser cmd = new DocumentScannerCommandParser();
     private final static String PROPERTY_KEY_DEBUG = "document.scanner.debug";
     public final static Map<Class<? extends JComponent>, ValueSetter<?,?>> VALUE_SETTER_MAPPING_DEFAULT;
-
     static {
         Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMappingDefault = new HashMap<>();
         valueSetterMappingDefault.put(JTextField.class,
@@ -248,15 +265,27 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 AmountMoneyPanelSetter.getInstance());
         valueSetterMappingDefault.put(UtilDatePicker.class,
                 UtilDatePickerSetter.getInstance());
-        VALUE_SETTER_MAPPING_DEFAULT = valueSetterMappingDefault;
+        valueSetterMappingDefault.put(EmbeddableListPanel.class,
+                EmbeddableListPanelSetter.getInstance());
+        VALUE_SETTER_MAPPING_DEFAULT = Collections.unmodifiableMap(valueSetterMappingDefault);
     }
     private final AmountMoneyUsageStatisticsStorage amountMoneyUsageStatisticsStorage;
     private final AmountMoneyCurrencyStorage amountMoneyCurrencyStorage;
     private final AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever = new FixerAmountMoneyExchangeRateRetriever();
+    private final TagStorage tagStorage;
     private final static String AMOUNT_MONEY_USAGE_STATISTICS_STORAGE_FILE_NAME = "currency-usage-statistics.xml";
     private final static String AMOUNT_MONEY_CURRENCY_STORAGE_FILE_NAME = "currencies.xml";
+    private final static String TAG_STORAGE_FILE_NAME = "tags";
     private final Map<java.lang.reflect.Type, TypeHandler<?, ?,?, ?>> typeHandlerMapping;
-    private DialogMessageHandler messageHandler = new DialogMessageHandler(this);
+    private MessageHandler messageHandler = new DialogMessageHandler(this);
+    private ConfirmMessageHandler confirmMessageHandler = new DialogConfirmMessageHandler(this);
+    private final Map<Class<?>, WarningHandler<?>> warningHandlers = new HashMap<Class<?>, WarningHandler<?>>() {
+        private static final long serialVersionUID = 1L;
+        {
+            put(Company.class,
+                    new CompanyWarningHandler(entityManager, confirmMessageHandler));
+        }
+    };
     private ListCellRenderer<Object> oCRDialogEngineComboBoxRenderer = new DefaultListCellRenderer() {
         private static final long serialVersionUID = 1L;
 
@@ -284,7 +313,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     public static String generateApplicationWindowTitle(String title, String applicationName, String applicationVersion) {
         return String.format("%s - %s %s", title, applicationName, applicationVersion);
     }
-    private final IdGenerator idGenerator = EntityIdGenerator.getInstance();
     private final FieldRetriever fieldRetriever = new JPACachedFieldRetriever();
     /*
     internal implementation notes:
@@ -308,6 +336,13 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             + "saned bug, try <tt>/usr/sbin/saned -d -s -a saned</tt> with "
             + "appropriate privileges in order to restart saned and try again"
             + "</html>";
+    private final IdApplier<?> idApplier = new GeneratedValueIdApplier();
+    /**
+     * If multiple entities are selected in a {@link EntityEditingDialog} it
+     * might take a long time to open documents for all of them, so a warning is
+     * displayed if more documents than this value are about to be opened.
+     */
+    private final static int SELECTED_ENTITIES_EDIT_WARNING = 5;
 
     /**
      * Parses the command line and evaluates system properties. Command line
@@ -331,7 +366,11 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     }
 
     public static SaneDevice getScannerDevice(String scannerName,
-            Map<String, ScannerConf> scannerConfMap) throws IOException, SaneException {
+            Map<String, ScannerConf> scannerConfMap,
+            String scannerAddressFallback) throws IOException, SaneException {
+        if(scannerAddressFallback == null) {
+            throw new IllegalArgumentException("scannerAddressFallback mustn't be null");
+        }
         SaneDevice retValue = NAME_DEVICE_MAP.get(scannerName);
         if(retValue == null) {
             ScannerConf scannerConf = scannerConfMap.get(scannerName);
@@ -343,7 +382,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             if(saneSession == null) {
                 String scannerAddress = scannerConf.getScannerAddress();
                 if(scannerAddress == null) {
-                    scannerAddress = "localhost";
+                    scannerAddress = scannerAddressFallback;
                 }
                 InetAddress scannerInetAddress = InetAddress.getByName(scannerAddress);
                 saneSession = SaneSession.withRemoteSane(scannerInetAddress);
@@ -375,7 +414,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         try {
             String scannerName = this.documentScannerConf.getScannerName();
             this.scannerDevice = getScannerDevice(scannerName,
-                    this.documentScannerConf.getScannerConfMap());
+                    this.documentScannerConf.getScannerConfMap(),
+                    DocumentScannerConf.SCANNER_SANE_ADDRESS_DEFAULT);
             afterScannerSelection();
         } catch (IOException | SaneException ex) {
             String text = handleSearchScannerException("An exception during the setup of "
@@ -462,6 +502,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
      * Handles all non-resource related cleanup tasks (like persistence of
      * configuration). Sets all handled item references to {@code null} in order
      * to allow this to be run again by shutdown hook.
+     * @see #close()
      */
     private void shutdownHook() {
         LOGGER.info("running {} shutdown hooks", DocumentScanner.class);
@@ -485,6 +526,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 }
             }
         }
+        close();
     }
 
     private final static File HOME_DIR = new File(System.getProperty("user.home"));
@@ -508,11 +550,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             CONFIG_DIR.mkdir();
             LOGGER.info("created inexisting configuration directory '{}'", CONFIG_DIR_NAME);
         }
-        try {
-            this.tesseractOCREngineConfPanel = new TesseractOCREngineConfPanel();
-        } catch (IOException | InterruptedException ex) {
-            throw new RuntimeException(ex);
-        }
 
         this.initComponents();
 
@@ -533,6 +570,14 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             }
             LOGGER.info("no previous configuration found in configuration directry '{}', using default values", CONFIG_DIR.getAbsolutePath());
             //new configuration will be persisted in shutdownHook
+        }
+
+        try {
+            this.tesseractOCREngineConfPanel = new TesseractOCREngineConfPanel((TesseractOCREngineConf) this.documentScannerConf.getoCREngineConf(),
+                    this.messageHandler);
+                //validates the configured binary
+        } catch (IOException | InterruptedException ex) {
+            throw new RuntimeException(ex);
         }
 
         //after loading DocumentScannerConf
@@ -599,6 +644,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             throw new RuntimeException(ex);
         }
         this.amountMoneyCurrencyStorage = new FileAmountMoneyCurrencyStorage(amountMoneyCurrencyStorageFile);
+        File tagStorageFile = new File(CONFIG_DIR, TAG_STORAGE_FILE_NAME);
+        this.tagStorage = new FileTagStorage(tagStorageFile);
         JPAAmountMoneyMappingTypeHandlerFactory fieldHandlerFactory = new JPAAmountMoneyMappingTypeHandlerFactory(entityManager,
                 INITIAL_QUERY_LIMIT_DEFAULT,
                 messageHandler,
@@ -610,6 +657,14 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             }.getType(), new JPAEntityListTypeHandler(entityManager,
                     messageHandler,
                     BIDIRECTIONAL_HELP_DIALOG_TITLE));
+        //listen to window close button (x)
+        this.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                close();
+                shutdownHook();
+            }
+        });
     }
 
     /**
@@ -641,20 +696,34 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 amountMoneyCurrencyStorage,
                 amountMoneyExchangeRateRetriever,
                 messageHandler,
+                confirmMessageHandler,
                 this,
                 oCREngineFactory,
                 documentScannerConf.getoCREngineConf(),
                 typeHandlerMapping,
                 documentScannerConf,
-                this //oCRProgressMonitorParent
+                this, //oCRProgressMonitorParent
+                tagStorage,
+                idApplier,
+                warningHandlers
         );
         mainPanelPanel.add(this.mainPanel);
     }
 
+    /**
+     * Handles all resource-related shutdown tasks.
+     * @see #shutdownHook()
+     */
     @Override
     public void close() {
-        this.entityManager.close();
-        this.entityManagerFactory.close();
+        if(this.entityManager != null && this.entityManager.isOpen()) {
+            //might be null if an exception occured in Derby
+            this.entityManager.close();
+        }
+        if(this.entityManagerFactory != null && this.entityManagerFactory.isOpen()) {
+            //might be null if an exception occured in Derby
+            this.entityManagerFactory.close();
+        }
 
         //DocumentScanner doesn't necessarily need to manage device. It'd be
         //more elegant if that was done by a manager or conf class.
@@ -670,15 +739,17 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             this.db.close();
             this.db = null;
         }
-        if (DocumentScanner.this.conn != null) {
-            try {
-                DocumentScanner.this.conn.commit();
-                DocumentScanner.this.conn.close();
-                DriverManager.getConnection(String.format("%s;shutdown=true", DERBY_CONNECTION_URL));
-                DocumentScanner.this.conn = null;
-            } catch (SQLException ex) {
-                LOGGER.error("an exception during shutdown of the database connection occured", ex);
-            }
+        //call to DriverManager.getConnection(String.format("%s;shutdown=true", DERBY_CONNECTION_URL));
+        //fails due to `java.sql.SQLNonTransientConnectionException: Database '/home/richter/.document-scanner/databases' shutdown.`
+        //with cause `Caused by: org.apache.derby.iapi.error.StandardException: Database '/home/richter/.document-scanner/databases' shutdown.`
+        //(maybe EntityManagerFactory.close shuts down the database), but is
+        //somehow necessary in order to remove db.lck in the database directory.
+        try {
+            LOGGER.info("Shutting down database and database server");
+            DriverManager.getConnection(String.format("%s;shutdown=true", DERBY_CONNECTION_URL)); //shutdown the database
+            DriverManager.getConnection("jdbc:derby:;shutdown=true"); //shutdown Derby (supposed to remove db.lck<ref>http://db.apache.org/derby/docs/10.8/devguide/tdevdvlp40464.html#tdevdvlp40464</ref>, but doesn't)
+        } catch (SQLException ex) {
+            LOGGER.error("an exception during shutdown of the database connection occured", ex);
         }
     }
 
@@ -737,8 +808,9 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         knownScannersMenuItemSeparator = new javax.swing.JPopupMenu.Separator();
         scanMenuItem = new javax.swing.JMenuItem();
         openMenuItem = new javax.swing.JMenuItem();
+        openSelectionMenuItem = new javax.swing.JMenuItem();
         editEntryMenuItem = new javax.swing.JMenuItem();
-        autoOCRValueDetection = new javax.swing.JMenuItem();
+        autoOCRValueDetectionMenuItem = new javax.swing.JMenuItem();
         oCRMenuSeparator = new javax.swing.JPopupMenu.Separator();
         oCRMenuItem = new javax.swing.JMenuItem();
         databaseMenuSeparator = new javax.swing.JPopupMenu.Separator();
@@ -1144,6 +1216,14 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         });
         fileMenu.add(openMenuItem);
 
+        openSelectionMenuItem.setText("Open scan for selection...");
+        openSelectionMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                openSelectionMenuItemActionPerformed(evt);
+            }
+        });
+        fileMenu.add(openSelectionMenuItem);
+
         editEntryMenuItem.setText("Edit entry...");
         editEntryMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -1152,8 +1232,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         });
         fileMenu.add(editEntryMenuItem);
 
-        autoOCRValueDetection.setText("Auto OCR value detection...");
-        fileMenu.add(autoOCRValueDetection);
+        autoOCRValueDetectionMenuItem.setText("Auto OCR value detection...");
+        fileMenu.add(autoOCRValueDetectionMenuItem);
         fileMenu.add(oCRMenuSeparator);
 
         oCRMenuItem.setText("Configure OCR engines");
@@ -1237,7 +1317,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         this.close();
         this.shutdownHook();
         this.dispose();
-        System.exit(EXIT_SUCCESS);
     }//GEN-LAST:event_exitMenuItemActionPerformed
 
     private void selectScannerButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectScannerButtonActionPerformed
@@ -1270,7 +1349,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
         try {
             this.scannerDevice = getScannerDevice(documentScannerConf.getScannerName(),
-                    documentScannerConf.getScannerConfMap());
+                    documentScannerConf.getScannerConfMap(),
+                    DocumentScannerConf.SCANNER_SANE_ADDRESS_DEFAULT);
         } catch (IOException | SaneException ex) {
             throw new RuntimeException(ex);
         }
@@ -1395,15 +1475,83 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 ENTITY_CLASSES,
                 PRIMARY_CLASS_SELECTION,
                 entityManager,
-                messageHandler);
-        entityEditingDialog.setVisible(true);
-        Object selectedEntity = entityEditingDialog.getSelectedEntity();
-        try {
-            this.mainPanel.addDocument(selectedEntity);
-        } catch (DocumentAddException ex) {
-            handleException(ex, "Exception during adding new document");
+                messageHandler,
+                confirmMessageHandler,
+                idApplier,
+                warningHandlers);
+        entityEditingDialog.setVisible(true); //blocks
+        List<Object> selectedEntities = entityEditingDialog.getSelectedEntities();
+        if(selectedEntities.size() > SELECTED_ENTITIES_EDIT_WARNING) {
+            int answer = JOptionPane.showConfirmDialog(this,
+                    String.format("More than %d entities are supposed to be opened for editing. This might take a long time. Continue?", SELECTED_ENTITIES_EDIT_WARNING),
+                    DocumentScanner.generateApplicationWindowTitle("Open documents?", APP_NAME, APP_VERSION),
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE);
+            if(answer != JOptionPane.NO_OPTION) {
+                return;
+            }
+        }
+        for(Object selectedEntity : selectedEntities) {
+            try {
+                this.mainPanel.addDocument(selectedEntity);
+            } catch (DocumentAddException ex) {
+                handleException(ex, "Exception during adding new document");
+            }
         }
     }//GEN-LAST:event_editEntryMenuItemActionPerformed
+
+    private void openSelectionMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openSelectionMenuItemActionPerformed
+        JFileChooser chooser = new JFileChooser();
+        FileNameExtensionFilter filter = new FileNameExtensionFilter(
+                "PDF files", "pdf");
+        chooser.setFileFilter(filter);
+        int returnVal = chooser.showOpenDialog(this);
+        final File selectedFile = chooser.getSelectedFile();
+        if (returnVal != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+        OCREngine oCREngine = DocumentScanner.this.retrieveOCREngine();
+        if (oCREngine == null) {
+            //a warning in form of a dialog has been given
+            return;
+        }
+        try {
+            List<BufferedImage> images = this.mainPanel.retrieveImages(selectedFile);
+            if(images == null) {
+                LOGGER.debug("image retrieval has been canceled, discontinuing adding document");
+                return;
+            }
+            if(!images.isEmpty()) {
+                final List<List<BufferedImage>> scannerResults = new LinkedList<>();
+                JDialog invisibleWaitDialog = new JDialog();
+                    //working with Object.wait and Object.notify fails due to
+                    //java.lang.IllegalMonitorStateException
+                invisibleWaitDialog.setBounds(0, 0, 1, 1);
+                invisibleWaitDialog.setModal(true);
+                invisibleWaitDialog.setUndecorated(true);
+                new JFXPanel(); //necessary to initialize JavaFX and avoid
+                    //failure of Platform.runLater with
+                    //`java.lang.IllegalStateException: Toolkit not initialized`
+                Platform.runLater(() -> {
+                    ScannerResultDialog scannerResultDialog = new ScannerResultDialog(images);
+                    Optional<List<List<BufferedImage>>> dialogResult = scannerResultDialog.showAndWait();
+                    if(dialogResult.isPresent()) {
+                        scannerResults.addAll(scannerResultDialog.getResult());
+                    }
+                    invisibleWaitDialog.setVisible(false);
+                });
+                invisibleWaitDialog.setVisible(true);
+                for(List<BufferedImage> scannerResult : scannerResults) {
+                    this.mainPanel.addDocument(scannerResult,
+                            null //documentFile
+                    );
+                }
+                this.validate();
+            }
+        } catch (DocumentAddException | InterruptedException | ExecutionException ex) {
+            handleException(ex, "Exception during adding new document");
+        }
+    }//GEN-LAST:event_openSelectionMenuItemActionPerformed
 
     /**
      * connects to an OrientDB database using the current values of the text
@@ -1475,12 +1623,14 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 }else {
                     int scannedPagesCount = 0;
                     while(scannedPagesCount < scannerPageSelectDialog.getPageCount()) {
+                        LOGGER.info(String.format("requested scan of %d pages", scannerPageSelectDialog.getPageCount()));
                         try {
                             BufferedImage scannedImage = scannerDevice.acquireImage();
                             scannedImages.add(scannedImage);
                         } catch (SaneException e) {
                             if (e.getStatus() == SaneStatus.STATUS_NO_DOCS) {
                                 // this is the out of paper condition that we expect
+                                LOGGER.info("no pages left to scan");
                                 break;
                             } else {
                                 // some other exception that was not expected
@@ -1496,9 +1646,30 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 scannedImages.add(scannedImage);
             }
             if(!scannedImages.isEmpty()) {
-                this.mainPanel.addDocument(scannedImages,
-                        null //documentFile
-                );
+                final List<List<BufferedImage>> scannerResults = new LinkedList<>();
+                JDialog invisibleWaitDialog = new JDialog();
+                    //working with Object.wait and Object.notify fails due to
+                    //java.lang.IllegalMonitorStateException
+                invisibleWaitDialog.setBounds(0, 0, 1, 1);
+                invisibleWaitDialog.setModal(true);
+                invisibleWaitDialog.setUndecorated(true);
+                new JFXPanel(); //necessary to initialize JavaFX and avoid
+                    //failure of Platform.runLater with
+                    //`java.lang.IllegalStateException: Toolkit not initialized`
+                Platform.runLater(() -> {
+                    ScannerResultDialog scannerResultDialog = new ScannerResultDialog(scannedImages);
+                    Optional<List<List<BufferedImage>>> dialogResult = scannerResultDialog.showAndWait();
+                    if(dialogResult.isPresent()) {
+                        scannerResults.addAll(scannerResultDialog.getResult());
+                    }
+                    invisibleWaitDialog.setVisible(false);
+                });
+                invisibleWaitDialog.setVisible(true);
+                for(List<BufferedImage> scannerResult : scannerResults) {
+                    this.mainPanel.addDocument(scannerResult,
+                            null //documentFile
+                    );
+                }
                 this.validate();
             }
         } catch (SaneException | IOException | IllegalArgumentException | IllegalStateException | DocumentAddException ex) {
@@ -1608,7 +1779,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenuItem aboutMenuItem;
-    private javax.swing.JMenuItem autoOCRValueDetection;
+    private javax.swing.JMenuItem autoOCRValueDetectionMenuItem;
     private javax.swing.JButton databaseCancelButton;
     private javax.swing.JButton databaseConnectButton;
     private javax.swing.JLabel databaseConnectionFailureLabel;
@@ -1639,6 +1810,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private javax.swing.JMenuItem oCRMenuItem;
     private javax.swing.JPopupMenu.Separator oCRMenuSeparator;
     private javax.swing.JMenuItem openMenuItem;
+    private javax.swing.JMenuItem openSelectionMenuItem;
     private javax.swing.JMenuItem optionsMenuItem;
     private javax.swing.JMenuItem saveMenuItem;
     private javax.swing.JMenuItem scanMenuItem;

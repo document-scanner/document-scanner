@@ -29,6 +29,8 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Provides different {@link NumberFormat}s and {@link DateFormat}s in order to
@@ -44,8 +46,9 @@ import org.apache.commons.lang3.tuple.Pair;
  * @author richter
  */
 public class FormatUtils {
-    protected final static double NUMBER_FORMAT_VALUE = -12345.987;
-    protected final static Date DATE_FORMAT_VALUE = new Date();
+    private final static Logger LOGGER = LoggerFactory.getLogger(FormatUtils.class);
+    public final static double NUMBER_FORMAT_VALUE = -12345.987;
+    public final static Date DATE_FORMAT_VALUE = new Date();
     public final static Set<Integer> DATE_FORMAT_INTS = new HashSet<>(Arrays.asList(DateFormat.FULL, DateFormat.LONG, DateFormat.MEDIUM, DateFormat.SHORT));
     private static Set<DateFormat> allDateFormats = null;
     private static Set<DateFormat> allTimeFormats = null;
@@ -284,6 +287,7 @@ public class FormatUtils {
                     currencyFormatsLocales.add(locale);
                 }
             }
+            LOGGER.debug(Arrays.toString(currencyFormats.entrySet().toArray()));
             disjointCurrencyFormats = new HashMap<>();
             for(Pair<NumberFormat, Set<Locale>> currencyFormatsPair : currencyFormats.values()) {
                 disjointCurrencyFormats.put(currencyFormatsPair.getKey(),

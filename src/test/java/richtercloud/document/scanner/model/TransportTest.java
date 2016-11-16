@@ -17,6 +17,10 @@ package richtercloud.document.scanner.model;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedList;
+import java.util.List;
+import org.jscience.economics.money.Currency;
+import org.jscience.economics.money.Money;
+import org.jscience.physics.amount.Amount;
 import static org.junit.Assert.*;
 import org.junit.Test;
 
@@ -36,36 +40,55 @@ public class TransportTest extends AbstractTest {
         long startDateValue = System.currentTimeMillis()-1000;
         Date startDate = new Date(startDateValue);
         Date endDate = new Date(startDateValue+500);
-        TransportTicket start = new TransportTicket(getRandom().nextLong(),
-                new Company(getRandom().nextLong(),
-                        "name",
-                        new LinkedList<>(Arrays.asList("allNames")),
-                        new LinkedList<>(Arrays.asList(new Address("street", "number", "zipcode", "region", "city", "country"))),
-                        new LinkedList<>(Arrays.asList(new EmailAddress(getRandom().nextLong(), "kd@kdls.dkl", null))),
-                        new LinkedList<>(Arrays.asList(new TelephoneNumber(getRandom().nextLong(),
-                                1,
-                                2,
-                                3,
-                                null,
-                                TelephoneNumber.TYPE_FAX)))),
-                new LinkedList<>(Arrays.asList(startWaypoint,"2")),
-                startDate);
-        TransportTicket end = new TransportTicket(getRandom().nextLong(),
-                new Company(getRandom().nextLong(),
-                        "name",
-                        new LinkedList<>(Arrays.asList("allNames")),
-                        new LinkedList<>(Arrays.asList(new Address("street", "number", "zipcode", "region", "city", "country"))),
-                        new LinkedList<>(Arrays.asList(new EmailAddress(getRandom().nextLong(), "kd@kdls.dkl", null))),
-                        new LinkedList<>(Arrays.asList(new TelephoneNumber(getRandom().nextLong(),
-                                1,
-                                2,
-                                3,
-                                null,
-                                TelephoneNumber.TYPE_FAX)))),
-                new LinkedList<>(Arrays.asList("y",endWaypoint)),
-                endDate);
-        Transport instance = new Transport(getRandom().nextLong(),
-                new LinkedList<>(Arrays.asList(start, end)));
+        Company transportCompany = new Company("name",
+                new LinkedList<>(Arrays.asList("allName")),
+                new LinkedList<>(Arrays.asList(new Address("street", "number", "zipcode", "region", "city", "country"))),
+                new LinkedList<>(Arrays.asList(new EmailAddress("a@b.n",
+                        null))),
+                new LinkedList<>(Arrays.asList(new TelephoneNumber(1,
+                        2,
+                        3,
+                        null,
+                        TelephoneNumber.TYPE_LANDLINE))));
+        Company recipient = new Company("name1",
+                new LinkedList<>(Arrays.asList("allName")),
+                new LinkedList<>(Arrays.asList(new Address("street", "number", "zipcode", "region", "city", "country"))),
+                new LinkedList<>(Arrays.asList(new EmailAddress("a@b.n",
+                        null))),
+                new LinkedList<>(Arrays.asList(new TelephoneNumber(1,
+                        2,
+                        3,
+                        null,
+                        TelephoneNumber.TYPE_LANDLINE))));
+        List<String> waypoints = new LinkedList<>(Arrays.asList("1"));
+        Date journeyDate = new Date();
+        Amount<Money> amount = Amount.valueOf(1, Currency.EUR);
+        Location location = new Location("description");
+        TransportTicket start = new TransportTicket(waypoints,
+                journeyDate,
+                amount,
+                "comment",
+                "identifier",
+                endDate,
+                endDate,
+                location,
+                true,
+                true,
+                transportCompany,
+                recipient);
+        TransportTicket end = new TransportTicket(waypoints,
+                journeyDate,
+                amount,
+                "comment",
+                "identifier",
+                endDate,
+                endDate,
+                location,
+                true,
+                true,
+                transportCompany,
+                recipient);
+        Transport instance = new Transport( new LinkedList<>(Arrays.asList(start, end)));
         String expResult = startDate+": "+startWaypoint+" -> "+endWaypoint;
         String result = instance.toString();
         assertEquals(expResult, result);

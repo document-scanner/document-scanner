@@ -8,14 +8,14 @@
     <name>document-scanner</name>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.7</maven.compiler.source>
-        <maven.compiler.target>1.7</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
     <dependencies>
         <dependency>
             <groupId>com.googlecode.jfreesane</groupId>
             <artifactId>jfreesane</artifactId>
-            <version>0.96</version>
+            <version>0.97</version>
             <type>jar</type>
         </dependency>
         <dependency>
@@ -147,7 +147,7 @@
         <dependency>
             <groupId>org.dockingframes</groupId>
             <artifactId>docking-frames-common</artifactId>
-            <version>1.1.2-P16a</version><!-- 1.1.2-SNAPSHOT pointing to 1.1.2p16a-3-gf1bddbd causes
+            <version>1.1.2-P18a</version><!-- 1.1.2-SNAPSHOT pointing to 1.1.2p16a-3-gf1bddbd causes
             java.lang.IllegalStateException: During an operation the framework attempted to acquire the same lock twice. There are two possible explanations:
 1. In a multi-threaded application one or both operations are not executed in the EventDispatchThread, or
 2. The operations are calling each other, which should not happen. -->
@@ -156,6 +156,18 @@
         <dependency>
             <groupId>richtercloud</groupId>
             <artifactId>swing-worker-get-wait-dialog</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-core</artifactId>
+            <version>1.13</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>richtercloud</groupId>
+            <artifactId>message-handler</artifactId>
             <version>1.0-SNAPSHOT</version>
             <type>jar</type>
         </dependency>
@@ -170,6 +182,23 @@
             <artifactId>mockito-all</artifactId>
             <version>1.10.19</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>edu.stanford.nlp</groupId>
+            <artifactId>stanford-corenlp</artifactId>
+            <version>3.6.0</version>
+        </dependency>
+        <dependency>
+            <groupId>edu.stanford.nlp</groupId>
+            <artifactId>stanford-corenlp</artifactId>
+            <version>3.6.0</version>
+            <classifier>models</classifier>
+        </dependency>
+        <dependency>
+            <groupId>edu.stanford.nlp</groupId>
+            <artifactId>stanford-corenlp</artifactId>
+            <version>3.6.0</version>
+            <classifier>models-chinese</classifier>
         </dependency>
     </dependencies>
     <build>

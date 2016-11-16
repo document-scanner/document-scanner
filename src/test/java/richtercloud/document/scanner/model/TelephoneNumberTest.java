@@ -33,19 +33,17 @@ public class TelephoneNumberTest extends AbstractTest {
         int countryCode = 57;
         int prefix = 124;
         int number = 8383;
-        Company provider = new Company(getRandom().nextLong(),
-                "name",
+        Company provider = new Company("name",
                 new LinkedList<>(Arrays.asList("allNames")),
                 new LinkedList<>(Arrays.asList(new Address("street", "number", "zipcode", "region", "city", "country"))),
-                new LinkedList<>(Arrays.asList(new EmailAddress(getRandom().nextLong(), "ak@kfd.de", null))),
-                new LinkedList<>(Arrays.asList(new TelephoneNumber(getRandom().nextLong(),
-                        32,
+                new LinkedList<>(Arrays.asList(new EmailAddress("ak@kfd.de",
+                        null))),
+                new LinkedList<>(Arrays.asList(new TelephoneNumber(32,
                         543,
                         32,
                         null,
                         TelephoneNumber.TYPE_FAX))));
-        TelephoneNumber instance = new TelephoneNumber(getRandom().nextLong(),
-                countryCode,
+        TelephoneNumber instance = new TelephoneNumber(countryCode,
                 prefix,
                 number,
                 provider,

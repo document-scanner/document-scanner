@@ -18,7 +18,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Set;
 import javax.persistence.EntityManager;
-import richtercloud.reflection.form.builder.message.MessageHandler;
+import richtercloud.message.handler.MessageHandler;
 
 /**
  *

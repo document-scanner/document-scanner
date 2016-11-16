@@ -15,15 +15,24 @@
 package richtercloud.document.scanner.model;
 
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
+import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.MappedSuperclass;
-import javax.validation.constraints.NotNull;
+import richtercloud.document.scanner.components.annotations.Tags;
 import richtercloud.reflection.form.builder.FieldInfo;
 
 /**
  * A superclass for all entities which allows management of {@link Id} annotated
  * property.
+ *
+ * There's no large sense in giving the user the ability to determine the ID
+ * manually. It's simpler to provide GUI components which show the ID and
+ * changes to it, but don't allow editing it. There's also no usecase for
+ * retrieving instances with IDs based on properties and maintaining the
+ * programmatic creation of those is a huge effort and a large source of errors.
  *
  * @author richter
  */
@@ -41,6 +50,10 @@ code gets very ugly and duplicating the hierarchy manually is an inacceptable
 source of mistakes) -> keep the factory code in a central factory class (which
 is IdGenerator and subclasses) and manage dependencies of id generation there
 and only there.
+- Switching to @GeneratedValue caused the storage of entities with identical
+important properties to be possible (e.g. two companies with the same name).
+This is fine if it's handled well (including warnings for the user and internal
+checks). The switch should have been documented which apparently isn't the case.
  */
 @MappedSuperclass
 @Inheritance
@@ -48,15 +61,21 @@ public abstract class Identifiable implements Serializable {
 
     private static final long serialVersionUID = 1L;
     @Id
-    @NotNull
+    @GeneratedValue
     @FieldInfo(name = "ID", description = "The unique ID used for storage in the database (automatic and save generation is supported by components)")
+    /*
+    internal implementation notes:
+    - there should be no need for a @NotNull annotation because JPA provider
+    will handle everything
+    - a @FieldInfo makes sense because the ID field will still be visible in a
+    read-only component
+    */
     private Long id;
+    @Tags
+    @FieldInfo(name="Tags", description = "A list of tags which can be freely associated with the entity")
+    private Set<String> tags = new HashSet<>();
 
     protected Identifiable() {
-    }
-
-    public Identifiable(Long id) {
-        this.id = id;
     }
 
     public Long getId() {
@@ -65,5 +84,13 @@ public abstract class Identifiable implements Serializable {
 
     protected void setId(Long id) {
         this.id = id;
+    }
+
+    public Set<String> getTags() {
+        return tags;
+    }
+
+    protected void setTags(Set<String> tags) {
+        this.tags = tags;
     }
 }

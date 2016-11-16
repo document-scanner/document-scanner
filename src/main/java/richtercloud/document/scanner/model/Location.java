@@ -40,8 +40,7 @@ public class Location extends Identifiable {
     protected Location() {
     }
 
-    public Location(Long id, String description) {
-        super(id);
+    public Location(String description) {
         this.description = description;
     }
 

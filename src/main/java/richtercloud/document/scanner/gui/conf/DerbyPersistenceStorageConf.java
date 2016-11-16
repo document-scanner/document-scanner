@@ -30,7 +30,7 @@ import java.util.Set;
 import javax.persistence.EntityManager;
 import richtercloud.document.scanner.gui.DocumentScanner;
 import richtercloud.document.scanner.storage.DerbyPersistenceStorage;
-import richtercloud.reflection.form.builder.message.MessageHandler;
+import richtercloud.message.handler.MessageHandler;
 
 /**
  *

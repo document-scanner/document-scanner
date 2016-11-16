@@ -31,9 +31,11 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
-import richtercloud.reflection.form.builder.message.Message;
-import richtercloud.reflection.form.builder.message.MessageHandler;
+import richtercloud.message.handler.Message;
+import richtercloud.message.handler.MessageHandler;
 
 /**
  * Allows displaying all SANE devices at an address and to view and edit its
@@ -45,29 +47,31 @@ import richtercloud.reflection.form.builder.message.MessageHandler;
  * @author richter
  */
 public class ScannerSelectionDialog extends javax.swing.JDialog {
+    private final static Logger LOGGER = LoggerFactory.getLogger(ScannerSelectionDialog.class);
     private static final String SCANNER_ADDRESS_DEFAULT = "localhost";
     private static final long serialVersionUID = 1L;
-    private class SelectionTableModel extends DefaultTableModel {
+    private class SaneDeviceTableModel extends DefaultTableModel {
         private static final long serialVersionUID = 1L;
         private final List<SaneDevice> devices;
 
-        SelectionTableModel(List<SaneDevice> devices) {
+        SaneDeviceTableModel(List<SaneDevice> devices) {
             super(new String[] {"Name", "Model", "Type", "Vendor"}, 0);
             this.devices = devices;
         }
 
         @Override
         public Object getValueAt(int row, int column) {
-            if(column == 0) {
-                return devices.get(row).getName();
-            }else if(column == 1) {
-                return devices.get(row).getModel();
-            }else if(column == 2) {
-                return devices.get(row).getType();
-            }else if(column == 3) {
-                return devices.get(row).getVendor();
-            }else {
-                throw new IllegalArgumentException();
+            switch (column) {
+                case 0:
+                    return devices.get(row).getName();
+                case 1:
+                    return devices.get(row).getModel();
+                case 2:
+                    return devices.get(row).getType();
+                case 3:
+                    return devices.get(row).getVendor();
+                default:
+                    throw new IllegalArgumentException();
             }
         }
 
@@ -116,7 +120,14 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
             return Collections.unmodifiableList(devices);
         }
     }
-    private final SelectionTableModel tableModel = new SelectionTableModel(new LinkedList<SaneDevice>());
+    private final SaneDeviceTableModel tableModel = new SaneDeviceTableModel(new LinkedList<SaneDevice>());
+    /**
+     * A {@link SaneSession} which is necessary to get the names of available
+     * {@link SaneDevice}s which are then retrieved with
+     * {@link DocumentScanner#getScannerDevice(java.lang.String, java.util.Map, java.lang.String) }
+     * in order to work around the configuration mess, i.e. don't use devices
+     * retrieved from this session.
+     */
     private SaneSession saneSession;
     private final TableModelListener scannerDialogTableModelListener = new TableModelListener() {
         @Override
@@ -172,11 +183,10 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
         this.tableModel.addTableModelListener(this.scannerDialogTableModelListener);
         this.scannerDialogTable.getSelectionModel().addListSelectionListener(this.scannerDialogTableSelectionListener);
         this.scannerDialogAddressTextField.setText(documentScannerConf.getScannerSaneAddress());
-        InetAddress address0 = InetAddress.getByName(documentScannerConf.getScannerSaneAddress());
-        this.saneSession = SaneSession.withRemoteSane(address0);
         for(String scannerName : documentScannerConf.getScannerConfMap().keySet()) {
             SaneDevice existingDevice = DocumentScanner.getScannerDevice(scannerName,
-                    documentScannerConf.getScannerConfMap());
+                    documentScannerConf.getScannerConfMap(),
+                    SCANNER_ADDRESS_DEFAULT);
             tableModel.addDevice(existingDevice);
         }
     }
@@ -196,8 +206,18 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
             this.saneSession = SaneSession.withRemoteSane(address0);
             List<SaneDevice> availableDevices = this.saneSession.listDevices();
             for(SaneDevice availableDevice : availableDevices) {
+                if(!availableDevice.isOpen()) {
+                    availableDevice.open();
+                }
+                if(availableDevice.getOption(ScannerEditDialog.RESOLUTION_OPTION_NAME) == null) {
+                    LOGGER.info(String.format("ignoring device '%s' because it doesn't support the option '%s'",
+                            availableDevice.toString(),
+                            ScannerEditDialog.RESOLUTION_OPTION_NAME));
+                    continue;
+                }
                 SaneDevice cachedAvailableDevice = DocumentScanner.getScannerDevice(availableDevice.getName(),
-                        documentScannerConf.getScannerConfMap()); //otherwise option changes are lost
+                        documentScannerConf.getScannerConfMap(),
+                        addressString); //otherwise option changes are lost
                 this.tableModel.addDevice(cachedAvailableDevice);
             }
             this.scannerDialogStatusLabel.setText(" ");
@@ -217,6 +237,7 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
      * @param additional
      */
     private void handleSearchScannerException(Exception ex, String additional) {
+        LOGGER.info("Scanner search failed due to following exception", ex);
         String labelText = DocumentScanner.handleSearchScannerException("The search at the specified address failed with the following error: ", ex, additional);
         this.scannerDialogStatusLabel.setText(labelText);
     }
@@ -364,7 +385,8 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
                 this.messageHandler);
             scannerEditDialog.setVisible(true);
         } catch (IOException | SaneException ex) {
-            this.messageHandler.handle(new Message(String.format("Exception during scanner configuration", ExceptionUtils.getRootCauseMessage(ex)),
+            LOGGER.error("Exception during scanner configuration", ex);
+            this.messageHandler.handle(new Message(String.format("Exception during scanner configuration: %s", ExceptionUtils.getRootCauseMessage(ex)),
                     JOptionPane.ERROR_MESSAGE,
                     "Exception occured"));
         }

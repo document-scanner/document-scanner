@@ -26,7 +26,8 @@ import java.util.Set;
 import javax.swing.JPanel;
 
 /**
- * A panel which represents one PDF or image page/scan.
+ * A panel which represents one single PDF or image page/scan. Will most likely
+ * be contained in a {@link OCRSelectPanelPanel}.
  * @author richter
  */
 /*

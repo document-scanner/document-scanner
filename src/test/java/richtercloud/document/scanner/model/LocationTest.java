@@ -29,7 +29,7 @@ public class LocationTest extends AbstractTest {
     @Test
     public void testToString() {
         String description = "description";
-        Location instance = new Location(getRandom().nextLong(), description);
+        Location instance = new Location(description);
         String expResult = description;
         String result = instance.toString();
         assertEquals(expResult, result);

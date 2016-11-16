@@ -47,7 +47,6 @@ public class Withdrawal extends Document {
             Location originalLocation,
             boolean originalLost,
             boolean digitalOnly,
-            Long id,
             Company sender,
             Company recipient) {
         super(comment,
@@ -60,7 +59,6 @@ public class Withdrawal extends Document {
                 originalLocation,
                 originalLost,
                 digitalOnly,
-                id,
                 sender,
                 recipient);
         this.employment = employment;

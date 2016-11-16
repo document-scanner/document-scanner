@@ -14,6 +14,7 @@
  */
 package richtercloud.document.scanner.gui;
 
+import richtercloud.document.scanner.gui.ocrresult.FormatOCRResult;
 import java.awt.event.ActionEvent;
 import java.lang.reflect.Field;
 import java.text.DateFormat;
@@ -29,9 +30,9 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.setter.ValueSetter;
+import richtercloud.message.handler.Message;
+import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.ReflectionFormPanel;
-import richtercloud.reflection.form.builder.message.Message;
-import richtercloud.reflection.form.builder.message.MessageHandler;
 
 /**
  * A {@link FieldActionListener} which can deal with predefined formats which
@@ -150,7 +151,7 @@ public class FormatOCRFieldActionListener extends OCRFieldActionListener {
         ValueSetter valueSetter = retrieveValueSetter(comp);
 
         try {
-            valueSetter.setValue(oCRSelection, comp);
+            valueSetter.setOCRResult(oCRSelection, comp);
         } catch (Exception ex) {
             LOGGER.error("An exception during setting the OCR value on " + "component occured", ex);
             getMessageHandler().handle(new Message(String.format("The " + "following exception occured while setting the " + "selected value on the field: %s", ExceptionUtils.getRootCauseMessage(ex)), JOptionPane.ERROR_MESSAGE, "Exception occured"));

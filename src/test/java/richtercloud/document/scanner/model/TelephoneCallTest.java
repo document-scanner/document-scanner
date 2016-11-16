@@ -34,31 +34,28 @@ public class TelephoneCallTest extends AbstractTest {
         long beginValue = System.currentTimeMillis()-1000;
         Date begin = new Date(beginValue);
         Date end = new Date(beginValue-10000);
-        TelephoneNumber senderTelephoneNumber = new TelephoneNumber(getRandom().nextLong(),
-                33,
+        TelephoneNumber senderTelephoneNumber = new TelephoneNumber(33,
                 123,
                 456789,
                 null,
                 TelephoneNumber.TYPE_LANDLINE);
-        Company sender = new Company(getRandom().nextLong(),
-                "name",
+        Company sender = new Company("name",
                 new LinkedList<>(Arrays.asList("allNames")),
                 new LinkedList<>(Arrays.asList(new Address("street", "number", "zipcode", "region", "city", "country"))),
-                new LinkedList<>(Arrays.asList(new EmailAddress(getRandom().nextLong(), "a@b.com", null))),
+                new LinkedList<>(Arrays.asList(new EmailAddress("a@b.com",
+                        null))),
                 new LinkedList<>(Arrays.asList(senderTelephoneNumber)));
-        Company recipient = new Company(getRandom().nextLong(),
-                "name",
+        Company recipient = new Company("name",
                 new LinkedList<>(Arrays.asList("allNames")),
                 new LinkedList<>(Arrays.asList(new Address("street", "number", "zipcode", "region", "city", "country"))),
-                new LinkedList<>(Arrays.asList(new EmailAddress(getRandom().nextLong(), "a@b.com", null))),
-                new LinkedList<>(Arrays.asList(new TelephoneNumber(getRandom().nextLong(),
-                        33,
+                new LinkedList<>(Arrays.asList(new EmailAddress("a@b.com",
+                        null))),
+                new LinkedList<>(Arrays.asList(new TelephoneNumber(33,
                         123,
                         456789,
                         null,
                         TelephoneNumber.TYPE_LANDLINE))));
-        TelephoneNumber telephoneNumber = new TelephoneNumber(getRandom().nextLong(),
-                        55,
+        TelephoneNumber telephoneNumber = new TelephoneNumber(55,
                         123,
                         456789,
                         null,
@@ -66,10 +63,9 @@ public class TelephoneCallTest extends AbstractTest {
         TelephoneCall instance = new TelephoneCall(begin,
                 end,
                 "transcription",
-                getRandom().nextLong(),
+                telephoneNumber,
                 sender,
-                recipient,
-                telephoneNumber);
+                recipient);
         String expResult = begin+": "+sender+" -> "+recipient+" ("+telephoneNumber+")";
         String result = instance.toString();
         assertEquals(expResult, result);

@@ -20,17 +20,17 @@ import java.util.Date;
 import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import richtercloud.document.scanner.gui.FormatOCRResult;
 import richtercloud.document.scanner.gui.FormatUtils;
-import richtercloud.document.scanner.gui.OCRResult;
-import richtercloud.reflection.form.builder.components.UtilDatePicker;
+import richtercloud.document.scanner.gui.ocrresult.FormatOCRResult;
+import richtercloud.document.scanner.gui.ocrresult.OCRResult;
+import richtercloud.reflection.form.builder.components.date.UtilDatePicker;
 
 /**
  * Taken from http://stackoverflow.com/questions/9288350/adding-vertical-scroll-to-a-jpopupmenu/14167008#14167008 under CC-by-SA.
  *
  * @author richter
  */
-public class UtilDatePickerSetter implements ValueSetter<OCRResult<Date>, UtilDatePicker> {
+public class UtilDatePickerSetter implements ValueSetter<Date, UtilDatePicker> {
     private final static UtilDatePickerSetter INSTANCE = new UtilDatePickerSetter();
     private final static Logger LOGGER = LoggerFactory.getLogger(UtilDatePickerSetter.class);
 
@@ -39,7 +39,7 @@ public class UtilDatePickerSetter implements ValueSetter<OCRResult<Date>, UtilDa
     }
 
     @Override
-    public void setValue(OCRResult<Date> value, UtilDatePicker comp) {
+    public void setOCRResult(OCRResult value, UtilDatePicker comp) {
         if(value instanceof FormatOCRResult) {
             FormatOCRResult formatOCRResult = (FormatOCRResult) value;
             Date date = null;
@@ -117,12 +117,16 @@ public class UtilDatePickerSetter implements ValueSetter<OCRResult<Date>, UtilDa
             LOGGER.debug(String.format("Setting OCR result '%s' as date '%s'",
                     formatOCRResult.getoCRResult(),
                     date));
-            comp.getModel().setValue(date); //correctly updates the displayed value
+            comp.setValue(date); //correctly updates the displayed value
         }else {
             //Can't check for concrete type here because a BaseOCRResult might
             //have been passed from AutoOCRValueDetectionDialog
-            Date date = value.getoCRResult();
-            comp.getModel().setValue(date);
+            //@TODO
         }
+    }
+
+    @Override
+    public void setValue(Date value, UtilDatePicker comp) {
+        comp.setValue(value);
     }
 }

@@ -15,6 +15,7 @@
 package richtercloud.document.scanner.gui;
 
 import java.awt.Component;
+import java.awt.Window;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.HashMap;
@@ -26,16 +27,21 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JComboBox;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.ListCellRenderer;
+import javax.swing.ListSelectionModel;
 import static richtercloud.document.scanner.gui.EntityPanel.sortEntityClasses;
+import richtercloud.message.handler.ConfirmMessageHandler;
+import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.reflection.form.builder.jpa.JPACachedFieldRetriever;
 import richtercloud.reflection.form.builder.jpa.JPAReflectionFormBuilder;
+import richtercloud.reflection.form.builder.jpa.WarningHandler;
+import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
 import richtercloud.reflection.form.builder.jpa.panels.QueryPanel;
-import richtercloud.reflection.form.builder.message.MessageHandler;
 
 /**
- *
+ * A dialog to select the class and the concrete entity to edit or delete it.
  * @author richter
  */
 /*
@@ -47,7 +53,7 @@ open them in MainPanel.
 */
 public class EntityEditingDialog extends javax.swing.JDialog {
     private static final long serialVersionUID = 1L;
-    private ListCellRenderer<Object> entityEditingClassComboBoxRenderer = new DefaultListCellRenderer() {
+    private final ListCellRenderer<Object> entityEditingClassComboBoxRenderer = new DefaultListCellRenderer() {
         private static final long serialVersionUID = 1L;
         @Override
         public Component getListCellRendererComponent(JList<?> list,
@@ -71,9 +77,9 @@ public class EntityEditingDialog extends javax.swing.JDialog {
             return super.getListCellRendererComponent(list, value0, index, isSelected, cellHasFocus);
         }
     };
-    private DefaultComboBoxModel<Class<?>> entityEditingClassComboBoxModel = new DefaultComboBoxModel<>();
-    private EntityManager entityManager;
-    private JPAReflectionFormBuilder reflectionFormBuilder;
+    private final DefaultComboBoxModel<Class<?>> entityEditingClassComboBoxModel = new DefaultComboBoxModel<>();
+    private final EntityManager entityManager;
+    private final JPAReflectionFormBuilder reflectionFormBuilder;
     private QueryPanel<Object> entityEditingQueryPanel;
     /**
      * A cache to keep custom queries when changing the query class (would be
@@ -83,8 +89,31 @@ public class EntityEditingDialog extends javax.swing.JDialog {
     internal implementation notes:
     - for necessity for instance creation see class comment
     */
-    private Map<Class<?>, QueryPanel<Object>> entityEditingQueryPanelCache = new HashMap<>();
+    private final Map<Class<?>, QueryPanel<Object>> entityEditingQueryPanelCache = new HashMap<>();
     private final MessageHandler messageHandler;
+
+    public EntityEditingDialog(Window parent,
+            Set<Class<?>> entityClasses,
+            Class<?> primaryClassSelection,
+            EntityManager entityManager,
+            MessageHandler messageHandler,
+            ConfirmMessageHandler confirmMessageHandler,
+            IdApplier<?> idApplier,
+            Map<Class<?>, WarningHandler<?>> warningHandlers) {
+        super(parent,
+                ModalityType.APPLICATION_MODAL);
+        this.messageHandler = messageHandler;
+        this.entityManager = entityManager;
+        init(entityClasses, primaryClassSelection, entityManager);
+        reflectionFormBuilder = new JPAReflectionFormBuilder(entityManager,
+                DocumentScanner.generateApplicationWindowTitle("Field description", DocumentScanner.APP_NAME, DocumentScanner.APP_VERSION),
+                messageHandler,
+                confirmMessageHandler,
+                new JPACachedFieldRetriever(),
+                idApplier,
+                warningHandlers);
+        init1(entityClasses, primaryClassSelection);
+    }
 
     /**
      * Creates new form EntityEditingDialog
@@ -93,28 +122,42 @@ public class EntityEditingDialog extends javax.swing.JDialog {
      * @param primaryClassSelection
      * @param entityManager
      * @param messageHandler
+     * @param idApplier
      */
     public EntityEditingDialog(java.awt.Frame parent,
             Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
             EntityManager entityManager,
-            MessageHandler messageHandler) {
+            MessageHandler messageHandler,
+            ConfirmMessageHandler confirmMessageHandler,
+            IdApplier<?> idApplier,
+            Map<Class<?>, WarningHandler<?>> warningHandlers) {
         super(parent,
                 true //modal
         );
+        this.messageHandler = messageHandler;
+        this.entityManager = entityManager;
+        init(entityClasses, primaryClassSelection, entityManager);
+        reflectionFormBuilder = new JPAReflectionFormBuilder(entityManager,
+                DocumentScanner.generateApplicationWindowTitle("Field description", DocumentScanner.APP_NAME, DocumentScanner.APP_VERSION),
+                messageHandler,
+                confirmMessageHandler,
+                new JPACachedFieldRetriever(),
+                idApplier,
+                warningHandlers);
+        init1(entityClasses, primaryClassSelection);
+    }
+
+    private void init(Set<Class<?>> entityClasses,
+            Class<?> primaryClassSelection,
+            EntityManager entityManager) {
         initComponents();
         if(messageHandler == null) {
             throw new IllegalArgumentException("messageHandler mustn't be null");
         }
-        this.messageHandler = messageHandler;
-        reflectionFormBuilder = new JPAReflectionFormBuilder(entityManager,
-                DocumentScanner.generateApplicationWindowTitle("Field description", DocumentScanner.APP_NAME, DocumentScanner.APP_VERSION),
-                messageHandler,
-                new JPACachedFieldRetriever());
         if(entityManager == null) {
             throw new IllegalArgumentException("entityManager mustn't be null");
         }
-        this.entityManager = entityManager;
         if(entityClasses == null) {
             throw new IllegalArgumentException("entityClasses mustn't be null");
         }
@@ -124,7 +167,10 @@ public class EntityEditingDialog extends javax.swing.JDialog {
         if(!entityClasses.contains(primaryClassSelection)) {
             throw new IllegalArgumentException(String.format("primaryClassSelection '%s' has to be contained in entityClasses", primaryClassSelection));
         }
+    }
 
+    private void init1(Set<Class<?>> entityClasses,
+            Class<?> primaryClassSelection) {
         this.entityEditingClassComboBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
@@ -147,12 +193,13 @@ public class EntityEditingDialog extends javax.swing.JDialog {
         entityEditingQueryPanel = this.entityEditingQueryPanelCache.get(selectedEntityClass);
         if(entityEditingQueryPanel == null) {
             try {
-                this.entityEditingQueryPanel = new QueryPanel<>(entityManager,
+                this.entityEditingQueryPanel = new QueryPanel(entityManager,
                         selectedEntityClass,
                         messageHandler,
                         reflectionFormBuilder,
                         null, //initialValue
-                        null //bidirectionalControlPanel (doesn't make sense)
+                        null, //bidirectionalControlPanel (doesn't make sense)
+                        ListSelectionModel.MULTIPLE_INTERVAL_SELECTION
                 );
             } catch (IllegalArgumentException | IllegalAccessException ex) {
                 throw new RuntimeException(ex);
@@ -165,8 +212,8 @@ public class EntityEditingDialog extends javax.swing.JDialog {
         this.entityEditingQueryPanel.clearSelection();
     }
 
-    public Object getSelectedEntity() {
-        Object retValue = this.entityEditingQueryPanel.getSelectedObject();
+    public List<Object> getSelectedEntities() {
+        List<Object> retValue = this.entityEditingQueryPanel.getSelectedObjects();
         return retValue;
     }
 
@@ -186,6 +233,7 @@ public class EntityEditingDialog extends javax.swing.JDialog {
         entityEditingQueryPanelScrollPane = new javax.swing.JScrollPane();
         editButton = new javax.swing.JButton();
         cancelButton = new javax.swing.JButton();
+        deleteButton = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
@@ -213,6 +261,13 @@ public class EntityEditingDialog extends javax.swing.JDialog {
             }
         });
 
+        deleteButton.setText("Delete");
+        deleteButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                deleteButtonActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -229,6 +284,8 @@ public class EntityEditingDialog extends javax.swing.JDialog {
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addGap(0, 0, Short.MAX_VALUE)
                         .addComponent(cancelButton)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(deleteButton)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(editButton)))
                 .addContainerGap())
@@ -247,7 +304,8 @@ public class EntityEditingDialog extends javax.swing.JDialog {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(editButton)
-                    .addComponent(cancelButton))
+                    .addComponent(cancelButton)
+                    .addComponent(deleteButton))
                 .addContainerGap())
         );
 
@@ -261,7 +319,8 @@ public class EntityEditingDialog extends javax.swing.JDialog {
 
     private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelButtonActionPerformed
         this.entityEditingQueryPanel.clearSelection(); //causes
-            //getSelectedEntity to return null
+            //getSelectedEntities to return an empty list which indicates that
+            //the dialog has been canceled
         this.setVisible(false);
     }//GEN-LAST:event_cancelButtonActionPerformed
 
@@ -269,8 +328,28 @@ public class EntityEditingDialog extends javax.swing.JDialog {
         this.setVisible(false);
     }//GEN-LAST:event_editButtonActionPerformed
 
+    private void deleteButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteButtonActionPerformed
+        int answer = JOptionPane.showConfirmDialog(this,
+                "Do you really want to delete all selected entities?",
+                DocumentScanner.generateApplicationWindowTitle("Delete entities",
+                        DocumentScanner.APP_NAME,
+                        DocumentScanner.APP_VERSION),
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+        if(answer == JOptionPane.YES_OPTION) {
+            List<Object> selectedEntities = this.entityEditingQueryPanel.getSelectedObjects();
+            for(Object selectedEntity : selectedEntities) {
+                this.entityManager.getTransaction().begin();
+                this.entityManager.remove(selectedEntity);
+                this.entityManager.getTransaction().commit();
+            }
+            this.entityEditingQueryPanel.getQueryComponent().repeatLastQuery();
+        }
+    }//GEN-LAST:event_deleteButtonActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton cancelButton;
+    private javax.swing.JButton deleteButton;
     private javax.swing.JButton editButton;
     private javax.swing.JComboBox<Class<?>> entityEditingClassComboBox;
     private javax.swing.JLabel entityEditingClassComboBoxLabel;

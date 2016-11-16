@@ -49,8 +49,8 @@ public class EmailAddress extends Identifiable {
     protected EmailAddress() {
     }
 
-    public EmailAddress(Long id, String address, List<String> pgpKeyIds) {
-        super(id);
+    public EmailAddress(String address,
+            List<String> pgpKeyIds) {
         this.address = address;
         this.pgpKeyIds = pgpKeyIds;
     }

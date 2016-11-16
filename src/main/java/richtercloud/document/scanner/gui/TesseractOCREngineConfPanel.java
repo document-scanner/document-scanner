@@ -14,17 +14,18 @@
  */
 package richtercloud.document.scanner.gui;
 
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Scanner;
 import javax.swing.DefaultListModel;
+import javax.swing.JOptionPane;
 import richtercloud.document.scanner.gui.conf.TesseractOCREngineConf;
 import richtercloud.document.scanner.gui.engineconf.OCREngineConfPanel;
 import richtercloud.document.scanner.ocr.BinaryNotFoundException;
-import richtercloud.document.scanner.ocr.ProcessOCREngine;
+import richtercloud.message.handler.Message;
+import richtercloud.message.handler.MessageHandler;
 
 /**
  *
@@ -34,42 +35,70 @@ public class TesseractOCREngineConfPanel extends OCREngineConfPanel<TesseractOCR
     private static final long serialVersionUID = 1L;
     private final DefaultListModel<String> languageListModel = new DefaultListModel<>();
     private final TesseractOCREngineConf conf;
+    private final MessageHandler messageHandler;
 
     /**
-     * Creates new form TesseractOCREngineConfPanel
+     * Creates a new {@code TesseractOCREngineConfPanel} using an empty
+     * {@link TesseractOCREngineConf}.
+     * @param messageHandler receives a message if the {@code tesseract} binary
+     * invoked with {@code --list-langs} returns a code {@code != 0}
      * @throws java.io.IOException
      * @throws java.lang.InterruptedException
-     * @throws richtercloud.document.scanner.gui.TesseractNotFoundException
      */
-    public TesseractOCREngineConfPanel() throws IOException, InterruptedException, BinaryNotFoundException {
-        this(new TesseractOCREngineConf());
+    public TesseractOCREngineConfPanel(MessageHandler messageHandler) throws IOException, InterruptedException, BinaryNotFoundException {
+        this(new TesseractOCREngineConf(),
+                messageHandler);
     }
 
-    public TesseractOCREngineConfPanel(TesseractOCREngineConf conf) throws IOException, InterruptedException, BinaryNotFoundException {
+    /**
+     * Creates a new {@code TesseractOCREngineConfPanel}.
+     * @param conf the {@link TesseractOCREngineConf} which is updated by this
+     * panel (consider invoking {@link TesseractOCREngineConf#validate() } and
+     * handle exceptions before passing it to the constructor since it's invoked
+     * in this constructor)
+     * @param messageHandler receives a message if the {@code tesseract} binary
+     * invoked with {@code --list-langs} returns a code {@code != 0}
+     * @throws IOException
+     * @throws InterruptedException
+     * @throws BinaryNotFoundException
+     */
+    public TesseractOCREngineConfPanel(TesseractOCREngineConf conf,
+            MessageHandler messageHandler) throws IOException, InterruptedException, BinaryNotFoundException {
         this.initComponents();
+        this.messageHandler = messageHandler;
         this.conf = conf;
-        ProcessOCREngine.checkBinaryAvailableExceptions(this.conf.getTesseract());
-        ProcessBuilder tesseractProcessBuilder = new ProcessBuilder(this.conf.getTesseract(), "--list-langs");
-        Process tesseractProcess = tesseractProcessBuilder.redirectOutput(ProcessBuilder.Redirect.PIPE).start();
-        int tesseractProcessReturnCode = tesseractProcess.waitFor();
-        if(tesseractProcessReturnCode != 0) {
-            throw new RuntimeException(String.format("the tesseract process unexpectedly returned with non-zero return code %d", tesseractProcessReturnCode));
-        }
-        //tesseract --list-langs prints to stderr, reported as https://bugs.launchpad.net/ubuntu/+source/tesseract/+bug/1481015
-        Scanner tesseractProcessOutputScanner = new Scanner(tesseractProcess.getErrorStream());
-        List<String> langs = new LinkedList<>();
-        while(tesseractProcessOutputScanner.hasNextLine()) {
-            String lang = tesseractProcessOutputScanner.nextLine();
-            if(!lang.startsWith("List of available languages")) {
-                langs.add(lang);
+        //assume that when the focus is lost the editing of the binary textfield
+        //is finished and the list of available languages needs to be updated
+        this.binaryTextField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) {
+                try {
+                    onBinaryChanged();
+                } catch (IOException | InterruptedException ex) {
+                    throw new RuntimeException(ex);
+                }
             }
+        });
+        this.binaryTextField.setText(conf.getTesseract());
+        onBinaryChanged();
+    }
+
+    private void onBinaryChanged() throws IOException, InterruptedException {
+        TesseractOCREngineConf confToValidate = new TesseractOCREngineConf(this.conf);
+        confToValidate.setTesseract(binaryTextField.getText());
+        try {
+            confToValidate.validate();
+        } catch (BinaryNotFoundException | IllegalStateException ex) {
+            this.messageHandler.handle(new Message(ex, JOptionPane.WARNING_MESSAGE));
         }
-        Collections.sort(langs, String.CASE_INSENSITIVE_ORDER);
-        for(String lang : langs) {
+        //update model
+        languageListModel.clear();
+        List<String> availableLanguages = confToValidate.getAvailableLanguages();
+        for(String lang : availableLanguages) {
             this.languageListModel.addElement(lang);
         }
         List<Integer> selectedLanguageIndices = new ArrayList<>();
-        for(String selectedLanguage : conf.getSelectedLanguages()) {
+        for(String selectedLanguage : confToValidate.getSelectedLanguages()) {
             int index = this.languageListModel.indexOf(selectedLanguage);
             selectedLanguageIndices.add(index);
         }
@@ -78,16 +107,6 @@ public class TesseractOCREngineConfPanel extends OCREngineConfPanel<TesseractOCR
             selectedLanguageIndicesArray[i] = selectedLanguageIndices.get(i);
         }
         this.languageList.setSelectedIndices(selectedLanguageIndicesArray);
-    }
-
-    /**
-     * returns a {@code String} representing a language code which is guaranteed
-     * to be compatible with {@code tesseract} when passed with {@code -l}
-     * option
-     * @return
-     */
-    public List<String> getSelectedLanguages() {
-        return Collections.unmodifiableList(this.conf.getSelectedLanguages());
     }
 
     @Override
@@ -104,49 +123,65 @@ public class TesseractOCREngineConfPanel extends OCREngineConfPanel<TesseractOCR
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        languageLabel = new javax.swing.JLabel();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        languageList = new javax.swing.JList<String>();
+        languageListLabel = new javax.swing.JLabel();
+        languageListScrollPane = new javax.swing.JScrollPane();
+        languageList = new javax.swing.JList<>();
+        binaryTextFieldLabel = new javax.swing.JLabel();
+        binaryTextField = new javax.swing.JTextField();
 
-        languageLabel.setText("Language");
+        languageListLabel.setText("Language");
 
         languageList.setModel(languageListModel);
-        jScrollPane1.setViewportView(languageList);
+        languageListScrollPane.setViewportView(languageList);
+
+        binaryTextFieldLabel.setText("tesseract binary");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+            .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(languageLabel)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(languageListLabel)
+                    .addComponent(binaryTextFieldLabel))
                 .addGap(18, 18, 18)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 289, Short.MAX_VALUE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(binaryTextField)
+                    .addComponent(languageListScrollPane))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(binaryTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(binaryTextFieldLabel))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(languageLabel)
+                        .addComponent(languageListLabel)
                         .addGap(0, 0, Short.MAX_VALUE))
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 276, Short.MAX_VALUE))
-                .addContainerGap())
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(languageListScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 327, Short.MAX_VALUE)
+                        .addContainerGap())))
         );
     }// </editor-fold>//GEN-END:initComponents
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JLabel languageLabel;
+    private javax.swing.JTextField binaryTextField;
+    private javax.swing.JLabel binaryTextFieldLabel;
     private javax.swing.JList<String> languageList;
+    private javax.swing.JLabel languageListLabel;
+    private javax.swing.JScrollPane languageListScrollPane;
     // End of variables declaration//GEN-END:variables
 
     @Override
     public void save() {
         this.conf.setSelectedLanguages(this.languageList.getSelectedValuesList());
+        this.conf.setTesseract(this.binaryTextField.getText());
     }
 
     @Override

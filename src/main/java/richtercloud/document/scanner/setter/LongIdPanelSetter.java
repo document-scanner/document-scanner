@@ -14,14 +14,14 @@
  */
 package richtercloud.document.scanner.setter;
 
-import richtercloud.document.scanner.gui.StringOCRResult;
+import richtercloud.document.scanner.gui.ocrresult.OCRResult;
 import richtercloud.reflection.form.builder.jpa.panels.LongIdPanel;
 
 /**
  *
  * @author richter
  */
-public class LongIdPanelSetter implements ValueSetter<StringOCRResult, LongIdPanel>{
+public class LongIdPanelSetter implements ValueSetter<Long, LongIdPanel> {
     private final static LongIdPanelSetter INSTANCE = new LongIdPanelSetter();
 
     public static LongIdPanelSetter getInstance() {
@@ -32,8 +32,13 @@ public class LongIdPanelSetter implements ValueSetter<StringOCRResult, LongIdPan
     }
 
     @Override
-    public void setValue(StringOCRResult value, LongIdPanel comp) {
-        comp.setValue(Long.valueOf(value.getoCRResult()));
+    public void setOCRResult(OCRResult oCRResult, LongIdPanel comp) {
+        setValue(Long.valueOf(oCRResult.getoCRResult()), comp);
+    }
+
+    @Override
+    public void setValue(Long value, LongIdPanel comp) {
+        comp.setValue(value);
     }
 
 }

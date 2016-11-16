@@ -21,7 +21,6 @@ import javax.persistence.ManyToOne;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
-import javax.validation.constraints.NotNull;
 import richtercloud.reflection.form.builder.FieldInfo;
 
 /**
@@ -32,10 +31,10 @@ import richtercloud.reflection.form.builder.FieldInfo;
 public abstract class AbstractDocument extends WorkflowItem {
     private static final long serialVersionUID = 1L;
     /**
-     * The date and time (timestamp) of the actual reception.
+     * The date and time (timestamp) of the actual reception. {@code null}
+     * indicates that this date is unknown.
      */
     @Temporal(TemporalType.TIMESTAMP)
-    @NotNull
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Received", description = "The date of the reception")
     private Date receptionDate;
@@ -71,10 +70,11 @@ public abstract class AbstractDocument extends WorkflowItem {
             Location originalLocation,
             boolean originalLost,
             boolean digitalOnly,
-            Long id,
             Company sender,
             Company recipient) {
-        super(id, sender, recipient, theDate);
+        super(sender,
+                recipient,
+                theDate);
         this.receptionDate = receptionDate;
         this.originalLocation = originalLocation;
         this.originalLost = originalLost;

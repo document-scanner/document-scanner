@@ -100,8 +100,10 @@ public class Payment extends Identifiable {
     protected Payment() {
     }
 
-    public Payment(Long id, Amount<Money> amount, Date date, FinanceAccount sender, FinanceAccount recipient) {
-        super(id);
+    public Payment(Amount<Money> amount,
+            Date date,
+            FinanceAccount sender,
+            FinanceAccount recipient) {
         this.amount = amount;
         this.theDate = date;
         this.sender = sender;

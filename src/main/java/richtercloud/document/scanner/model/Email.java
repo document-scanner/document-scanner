@@ -45,11 +45,12 @@ public class Email extends WorkflowItem {
     public Email(EmailAddress senderAddress,
             List<EmailAddress> ccRecipientAddresses,
             List<EmailAddress> bccRecipientAddresses,
-            Long id,
             Company sender,
             Company recipient,
             Date theDate) {
-        super(id, sender, recipient, theDate);
+        super(sender,
+                recipient,
+                theDate);
         this.senderAddress = senderAddress;
         this.ccRecipientAddresses = ccRecipientAddresses;
         this.bccRecipientAddresses = bccRecipientAddresses;

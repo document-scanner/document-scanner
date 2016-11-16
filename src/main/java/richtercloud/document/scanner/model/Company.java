@@ -37,9 +37,11 @@ import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
 @Inheritance
 public class Company extends Identifiable {
     private static final long serialVersionUID = 1L;
-    @FieldInfo(name = "Name", description = "A unique name for the contact "
+    @FieldInfo(name = "Name", description = "A name for the contact "
             + "excluding all extra names which ought to be specified in the "
-            + "complete name list")
+            + "complete name list. The name doesn't have to be unique because "
+            + "two companies with the same name can exist, but there'll be a "
+            + "warning if a company with the same name already exists.")
     @NotNull(groups = {Default.class, IdGenerationValidation.class})
     @Size(min = 1)
     @Basic(fetch = FetchType.EAGER)
@@ -78,8 +80,11 @@ public class Company extends Identifiable {
     protected Company() {
     }
 
-    public Company(Long id, String name, List<String> allNames, List<Address> addresses, List<EmailAddress> emails, List<TelephoneNumber> telephoneNumbers) {
-        super(id);
+    public Company(String name,
+            List<String> allNames,
+            List<Address> addresses,
+            List<EmailAddress> emails,
+            List<TelephoneNumber> telephoneNumbers) {
         this.name = name;
         this.allNames = allNames;
         this.addresses = addresses;

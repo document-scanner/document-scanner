@@ -15,13 +15,13 @@
 package richtercloud.document.scanner.setter;
 
 import javax.swing.JSpinner;
-import richtercloud.document.scanner.gui.StringOCRResult;
+import richtercloud.document.scanner.gui.ocrresult.OCRResult;
 
 /**
  *
  * @author richter
  */
-public class SpinnerSetter implements ValueSetter<StringOCRResult, JSpinner> {
+public class SpinnerSetter implements ValueSetter<Double, JSpinner> {
     private final static SpinnerSetter INSTANCE = new SpinnerSetter();
 
     public static SpinnerSetter getInstance() {
@@ -32,8 +32,13 @@ public class SpinnerSetter implements ValueSetter<StringOCRResult, JSpinner> {
     }
 
     @Override
-    public void setValue(StringOCRResult value, JSpinner comp) {
-        comp.setValue(Double.valueOf(value.getoCRResult()));
+    public void setOCRResult(OCRResult oCRResult, JSpinner comp) {
+        setValue(Double.valueOf(oCRResult.getoCRResult()), comp);
+    }
+
+    @Override
+    public void setValue(Double value, JSpinner comp) {
+        comp.setValue(value);
     }
 
 }

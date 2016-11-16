@@ -33,7 +33,8 @@ public class EmailAddressTest extends AbstractTest {
     public void testToString() {
         String address = "x@y.com";
         List<String> pgpKeyIds = new LinkedList<>(Arrays.asList("1e2", "22"));
-        EmailAddress instance = new EmailAddress(getRandom().nextLong(), address, pgpKeyIds);
+        EmailAddress instance = new EmailAddress(address,
+                pgpKeyIds);
         String expResult = address;
         String result = instance.toString();
         assertEquals(expResult, result);

@@ -110,13 +110,11 @@ public class TelephoneNumber extends Identifiable {
      * details)
      * @param id
      */
-    public TelephoneNumber(Long id,
-            int countryCode,
+    public TelephoneNumber(int countryCode,
             int prefix,
             int number,
             Company provider,
             int type) {
-        super(id);
         if(!TYPES.contains(type)) {
             throw new IllegalArgumentException(String.format("type %d isn't an allowed type", type));
         }

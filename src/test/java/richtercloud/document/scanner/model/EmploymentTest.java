@@ -34,14 +34,22 @@ public class EmploymentTest extends AbstractTest {
         long beginValue = System.currentTimeMillis()-1000;
         Date begin = new Date(beginValue);
         Date end = new Date(beginValue-100000);
-        Company company = new Company(getRandom().nextLong(),
-                "company",
+        Company company = new Company("company",
                 new LinkedList<>(Arrays.asList("company")),
-                new LinkedList<>(Arrays.asList(new Address("street", "number", "zipcode", "region", "city", "country"))),
-                new LinkedList<>(Arrays.asList(new EmailAddress(getRandom().nextLong(), "a@b.com", null))),
-                new LinkedList<>(Arrays.asList(new TelephoneNumber(getRandom().nextLong(), 49, 123, 456789, null, TelephoneNumber.TYPE_LANDLINE))));
-        Employment instance = new Employment(getRandom().nextLong(),
-                company,
+                new LinkedList<>(Arrays.asList(new Address("street",
+                        "number",
+                        "zipcode",
+                        "region",
+                        "city",
+                        "country"))),
+                new LinkedList<>(Arrays.asList(new EmailAddress("a@b.com",
+                        null))),
+                new LinkedList<>(Arrays.asList(new TelephoneNumber(49,
+                        123,
+                        456789,
+                        null,
+                        TelephoneNumber.TYPE_LANDLINE))));
+        Employment instance = new Employment(company,
                 begin,
                 end);
         String expResult = begin+" -> "+end+" at "+company;

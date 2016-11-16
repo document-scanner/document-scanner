@@ -35,7 +35,6 @@ public class Leaflet extends AbstractDocument {
             Location originalLocation,
             boolean originalLost,
             boolean digitalOnly,
-            Long id,
             Company sender,
             Company recipient) {
         super(date,
@@ -43,7 +42,6 @@ public class Leaflet extends AbstractDocument {
                 originalLocation,
                 originalLost,
                 digitalOnly,
-                id,
                 sender,
                 recipient);
     }

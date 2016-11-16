@@ -16,26 +16,43 @@ package richtercloud.document.scanner.gui;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Set;
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JToolBar;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.SwingConstants;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.gui.conf.OCREngineConf;
 import richtercloud.document.scanner.ocr.OCREngineFactory;
 
 /**
+ * A container for a {@link OCRSelectPanelPanel} and a toolbar for navigation in
+ * the scan (zoom, etc.) as well as buttons to start special functions (OCR
+ * value detection, etc.).
  *
+ * It'd be nice to use a JavaFX toolbar here since it automatically manages
+ * overlapping buttons, but using Platform.runLater requires
  * @author richter
  */
 public class OCRSelectComponent extends JPanel {
     private static final long serialVersionUID = 1L;
     private final OCRSelectPanelPanel oCRSelectPanelPanel;
-    private final JToolBar toolbar = new JToolBar();
-    private final JButton zoomInButton = new JButton(" + ");
-    private final JButton zoomOutButton = new JButton(" - ");
-    private final JButton autoOCRValueDetectionResultsButton = new JButton("Auto detection results");
+    /*private ToolBar toolbar;
+    private Button zoomInButton;
+    private Button zoomOutButton;
+    private Button autoOCRValueDetectionResultsButton;
+    private Button autoOCRValueDetectionButton;
+    private CheckBox autoOCRValueDetectionCheckBox;*/
+    private final JToolBar toolbar = new JToolBar(SwingConstants.VERTICAL);
+    private final JButton zoomInButton = new JButton("+");
+    private final JButton zoomOutButton = new JButton("-");
+    private final JButton autoOCRValueDetectionResultsButton = new JButton("Set auto detection results on form");
     private final JButton autoOCRValueDetectionButton = new JButton("(Re-)Run auto detection");
+    private final JCheckBox autoOCRValueDetectionCheckBox = new JCheckBox("Show auto detection components on form");
     private float zoomLevel = 1;
     private final EntityPanel entityPanel;
     private final OCREngineFactory oCREngineFactory;
@@ -51,34 +68,144 @@ public class OCRSelectComponent extends JPanel {
             EntityPanel entityPanel,
             OCREngineFactory oCREngineFactory,
             OCREngineConf oCREngineConf,
-            DocumentScannerConf documentScannerConf) {
+            DocumentScannerConf documentScannerConf,
+            final Set<JPanel> autoOCRValueDetectionPanels) {
         this.oCRSelectPanelPanel = oCRSelectPanelPanel;
         this.entityPanel = entityPanel;
         this.oCREngineFactory = oCREngineFactory;
         this.oCREngineConf = oCREngineConf;
         this.documentScannerConf = documentScannerConf;
 
-        toolbar.add(zoomInButton);
-        toolbar.add(zoomOutButton);
-        toolbar.add(autoOCRValueDetectionResultsButton);
-        toolbar.add(autoOCRValueDetectionButton);
+        /*zoomInButton = new Button(" + ");
+        zoomOutButton = new Button(" - ");
+        autoOCRValueDetectionResultsButton = new Button("Set auto detection results on form");
+        autoOCRValueDetectionButton = new Button("(Re-)Run auto detection");
+        autoOCRValueDetectionCheckBox = new CheckBox("Show auto detection components on form");
+        toolbar = new ToolBar(zoomInButton,
+                zoomOutButton,
+                autoOCRValueDetectionResultsButton,
+                autoOCRValueDetectionButton,
+                autoOCRValueDetectionCheckBox);
+        toolbarPanel.setScene(new Scene(toolbar));
+        zoomInButton.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        OCRSelectComponent.this.zoomLevel *= OCRSelectComponent.this.documentScannerConf.getZoomLevelMultiplier();
+                        OCRSelectComponent.this.oCRSelectPanelPanel.setZoomLevels(OCRSelectComponent.this.zoomLevel);
+                        OCRSelectComponent.this.repaint();
+                    }
+                });
+            }
+        });
+        zoomOutButton.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        OCRSelectComponent.this.zoomLevel /= OCRSelectComponent.this.documentScannerConf.getZoomLevelMultiplier();
+                        OCRSelectComponent.this.oCRSelectPanelPanel.setZoomLevels(OCRSelectComponent.this.zoomLevel);
+                        OCRSelectComponent.this.repaint();
+                        //zooming out requires a scroll event to occur in order to
+                        //paint other pages than the first only; revalidate doesn't
+                        //help
+                    }
+                });
+            }
+        });
+        autoOCRValueDetectionResultsButton.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        OCRSelectComponent.this.entityPanel.autoOCRValueDetection(new OCRSelectPanelPanelFetcher(OCRSelectComponent.this.getoCRSelectPanelPanel(),
+                                OCRSelectComponent.this.oCREngineFactory,
+                                OCRSelectComponent.this.oCREngineConf),
+                                false //forceRenewal
+                        );
+                    }
+                });
+            }
+        });
+        autoOCRValueDetectionButton.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        OCRSelectComponent.this.entityPanel.autoOCRValueDetection(new OCRSelectPanelPanelFetcher(OCRSelectComponent.this.getoCRSelectPanelPanel(),
+                                OCRSelectComponent.this.oCREngineFactory,
+                                OCRSelectComponent.this.oCREngineConf),
+                                true //forceRenewal
+                        );
+                    }
+                });
+            }
+        });
+        autoOCRValueDetectionCheckBox.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        for(JPanel autoOCRValueDetectionPanel : autoOCRValueDetectionPanels) {
+                            boolean visible = autoOCRValueDetectionCheckBox.isSelected();
+                            autoOCRValueDetectionPanel.setVisible(visible);
+                        }
+                    }
+                });
+            }
+        });
+        autoOCRValueDetectionCheckBox.setSelected(true); //should trigger
+        //action listener above*/
 
-        GroupLayout groupLayout = new GroupLayout(this);
+        //Simulate a multiline toolbar rather than implement something that is
+        //already available in JavaFX in which the application will be ported
+        //sooner or later anyway
+        GroupLayout toolbarLayout = new GroupLayout(toolbar);
+        toolbar.setLayout(toolbarLayout);
+        JPanel toolbarPanel = new JPanel(new WrapLayout(WrapLayout.LEADING, 5, 5)
+                //FlowLayout isn't sufficient
+        );
+        toolbarPanel.add(zoomInButton);
+        toolbarPanel.add(zoomOutButton);
+        toolbarPanel.add(autoOCRValueDetectionResultsButton);
+        toolbarPanel.add(autoOCRValueDetectionButton);
+        toolbarPanel.add(autoOCRValueDetectionCheckBox);
+        JScrollPane toolbarPanelScrollPane = new JScrollPane(toolbarPanel);
+        toolbarPanelScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        toolbarPanelScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+        toolbarLayout.setHorizontalGroup(toolbarLayout.createSequentialGroup().addComponent(toolbarPanelScrollPane));
+        toolbarLayout.setVerticalGroup(toolbarLayout.createSequentialGroup().addComponent(toolbarPanelScrollPane));
+        toolbar.setFloatable(false);
+
         OCRSelectPanelPanelScrollPane oCRSelectPanelPanelScrollPane =
                 new OCRSelectPanelPanelScrollPane(oCRSelectPanelPanel);
-        this.setLayout(groupLayout);
-        groupLayout.setVerticalGroup(groupLayout.createSequentialGroup()
-                .addComponent(oCRSelectPanelPanelScrollPane, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE)
-                .addComponent(toolbar,
+        GroupLayout layout = new GroupLayout(this);
+        setLayout(layout);
+        layout.setHorizontalGroup(layout.createParallelGroup()
+                .addComponent(oCRSelectPanelPanelScrollPane,
+                        0,
                         GroupLayout.PREFERRED_SIZE,
-                        GroupLayout.DEFAULT_SIZE,
-                        GroupLayout.PREFERRED_SIZE));
-        groupLayout.setHorizontalGroup(groupLayout.createParallelGroup()
-                .addComponent(oCRSelectPanelPanelScrollPane, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE)
+                        Short.MAX_VALUE)
                 .addComponent(toolbar,
+                        0, //allows toolbar to be resizable horizontally
                         GroupLayout.PREFERRED_SIZE,
-                        GroupLayout.DEFAULT_SIZE,
-                        GroupLayout.PREFERRED_SIZE));
+                        Short.MAX_VALUE //needs to be able to grow infinitely
+                ));
+        layout.setVerticalGroup(layout.createSequentialGroup()
+                .addComponent(oCRSelectPanelPanelScrollPane,
+                        0,
+                        GroupLayout.PREFERRED_SIZE,
+                        Short.MAX_VALUE)
+                .addComponent(toolbar,
+                        GroupLayout.PREFERRED_SIZE, //DEFAULT_SIZE causes following lines to be invisible
+                        GroupLayout.PREFERRED_SIZE,
+                        Short.MAX_VALUE));
 
         zoomInButton.addActionListener(new ActionListener() {
             @Override
@@ -119,6 +246,16 @@ public class OCRSelectComponent extends JPanel {
                 );
             }
         });
+        autoOCRValueDetectionCheckBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                for(JPanel autoOCRValueDetectionPanel : autoOCRValueDetectionPanels) {
+                    autoOCRValueDetectionPanel.setVisible(autoOCRValueDetectionCheckBox.isSelected());
+                }
+            }
+        });
+        autoOCRValueDetectionCheckBox.setSelected(true); //should trigger
+            //action listener above
     }
 
     public OCRSelectPanelPanel getoCRSelectPanelPanel() {

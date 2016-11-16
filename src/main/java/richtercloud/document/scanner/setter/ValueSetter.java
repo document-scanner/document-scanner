@@ -15,10 +15,14 @@
 package richtercloud.document.scanner.setter;
 
 import javax.swing.JComponent;
+import richtercloud.document.scanner.gui.ocrresult.OCRResult;
 
 /**
  * An interface to handle different setter methods of different
- * {@link JComponent} and pass the OCR result to them (always a {@code String}).
+ * {@link JComponent} and pass the OCR result to them (always a {@code String})
+ * (with {@link #setOCRResult(richtercloud.document.scanner.gui.ocrresult.OCRResult) })
+ * as well as parsed values from {@link AutoOCRValueDetectionService}s (with
+ * {@link #setValue(java.lang.Object, javax.swing.JComponent) }).
  *
  * Implementations are expected to handle parsing of OCR results as well in
  * order to limit the association of field type and a handler component to one
@@ -28,6 +32,8 @@ import javax.swing.JComponent;
  * @param <C> the type of the component the value is set on
  */
 public interface ValueSetter<V, C extends JComponent> {
+
+    void setOCRResult(OCRResult oCRResult, C comp);
 
     void setValue(V value, C comp);
 }

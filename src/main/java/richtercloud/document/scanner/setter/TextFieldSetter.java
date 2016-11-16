@@ -15,13 +15,13 @@
 package richtercloud.document.scanner.setter;
 
 import javax.swing.JTextField;
-import richtercloud.document.scanner.gui.StringOCRResult;
+import richtercloud.document.scanner.gui.ocrresult.OCRResult;
 
 /**
  *
  * @author richter
  */
-public class TextFieldSetter implements ValueSetter<StringOCRResult, JTextField> {
+public class TextFieldSetter implements ValueSetter<String, JTextField> {
     private final static TextFieldSetter INSTANCE = new TextFieldSetter();
 
     public static TextFieldSetter getInstance() {
@@ -32,8 +32,13 @@ public class TextFieldSetter implements ValueSetter<StringOCRResult, JTextField>
     }
 
     @Override
-    public void setValue(StringOCRResult value, JTextField comp) {
-        comp.setText(value.getoCRResult());
+    public void setValue(String value, JTextField comp) {
+        comp.setText(value);
+    }
+
+    @Override
+    public void setOCRResult(OCRResult oCRResult, JTextField comp) {
+        setValue(oCRResult.getoCRResult(), comp);
     }
 
 }

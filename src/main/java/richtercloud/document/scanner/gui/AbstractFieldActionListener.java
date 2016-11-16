@@ -23,10 +23,11 @@ import javax.swing.JOptionPane;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.components.AutoOCRValueDetectionPanel;
 import richtercloud.document.scanner.setter.ValueSetter;
+import richtercloud.message.handler.Message;
+import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.ReflectionFormPanel;
-import richtercloud.reflection.form.builder.message.Message;
-import richtercloud.reflection.form.builder.message.MessageHandler;
 
 /**
  * Allows code reusage of handling of class field popup menu (e.g. those
@@ -43,7 +44,7 @@ selection in AbstractFieldActionListener subclass in order to keep GUI
 operations (figuring out which format is selected menu) and model/data
 operations (setting value on component and field) separated
 */
-public abstract class AbstractFieldActionListener<T extends OCRResult> implements ActionListener {
+public abstract class AbstractFieldActionListener<T> implements ActionListener {
     private final static Logger LOGGER = LoggerFactory.getLogger(AbstractFieldActionListener.class);
     private final Field field;
     private final ReflectionFormPanel reflectionFormPanel;
@@ -76,9 +77,13 @@ public abstract class AbstractFieldActionListener<T extends OCRResult> implement
     }
 
     protected ValueSetter retrieveValueSetter(JComponent comp) {
-        ValueSetter valueSetter = this.valueSetterMapping.get(comp.getClass());
+        assert comp instanceof AutoOCRValueDetectionPanel;
+        AutoOCRValueDetectionPanel compCast = (AutoOCRValueDetectionPanel) comp;
+        JComponent classComponent = compCast.getClassComponent();
+        ValueSetter valueSetter = this.valueSetterMapping.get(classComponent.getClass());
         if (valueSetter == null) {
-            throw new IllegalArgumentException(String.format("No %s mapped " + "to component %s", ValueSetter.class, comp));
+            throw new IllegalArgumentException(String.format("No %s mapped "
+                    + "to component %s", ValueSetter.class, classComponent));
         }
         return valueSetter;
     }

@@ -28,7 +28,7 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.MutableComboBoxModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import richtercloud.reflection.form.builder.message.MessageHandler;
+import richtercloud.message.handler.MessageHandler;
 
 /**
  * Provides configuration for scan mode and resolution of SANE device with GUI
@@ -47,8 +47,8 @@ public class ScannerEditDialog extends javax.swing.JDialog {
     private final static Logger LOGGER = LoggerFactory.getLogger(ScannerEditDialog.class);
     private final SaneDevice device;
     private final MessageHandler messageHandler;
-    private final static String MODE_OPTION_NAME = "mode";
-    private final static String RESOLUTION_OPTION_NAME = "resolution";
+    public final static String MODE_OPTION_NAME = "mode";
+    public final static String RESOLUTION_OPTION_NAME = "resolution";
     public final static String DOCUMENT_SOURCE_OPTION_NAME = "source";
     private final ScannerConf scannerConf;
 
