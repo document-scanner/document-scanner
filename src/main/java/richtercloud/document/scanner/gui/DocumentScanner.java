@@ -137,9 +137,9 @@ import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrency
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyPanel;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyUsageStatisticsStorage;
+import richtercloud.reflection.form.builder.components.money.FailsafeAmountMoneyExchangeRateRetriever;
 import richtercloud.reflection.form.builder.components.money.FileAmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.money.FileAmountMoneyUsageStatisticsStorage;
-import richtercloud.reflection.form.builder.components.money.FixerAmountMoneyExchangeRateRetriever;
 import richtercloud.reflection.form.builder.jpa.JPACachedFieldRetriever;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.idapplier.GeneratedValueIdApplier;
@@ -271,7 +271,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     }
     private final AmountMoneyUsageStatisticsStorage amountMoneyUsageStatisticsStorage;
     private final AmountMoneyCurrencyStorage amountMoneyCurrencyStorage;
-    private final AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever = new FixerAmountMoneyExchangeRateRetriever();
+    private final AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever = new FailsafeAmountMoneyExchangeRateRetriever();
     private final TagStorage tagStorage;
     private final static String AMOUNT_MONEY_USAGE_STATISTICS_STORAGE_FILE_NAME = "currency-usage-statistics.xml";
     private final static String AMOUNT_MONEY_CURRENCY_STORAGE_FILE_NAME = "currencies.xml";
