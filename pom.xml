@@ -145,15 +145,6 @@
             <type>jar</type>
         </dependency>
         <dependency>
-            <groupId>org.dockingframes</groupId>
-            <artifactId>docking-frames-common</artifactId>
-            <version>1.1.2-P18a</version><!-- 1.1.2-SNAPSHOT pointing to 1.1.2p16a-3-gf1bddbd causes
-            java.lang.IllegalStateException: During an operation the framework attempted to acquire the same lock twice. There are two possible explanations:
-1. In a multi-threaded application one or both operations are not executed in the EventDispatchThread, or
-2. The operations are calling each other, which should not happen. -->
-            <type>jar</type>
-        </dependency>
-        <dependency>
             <groupId>richtercloud</groupId>
             <artifactId>swing-worker-get-wait-dialog</artifactId>
             <version>1.0-SNAPSHOT</version>
@@ -168,6 +159,12 @@
         <dependency>
             <groupId>richtercloud</groupId>
             <artifactId>message-handler</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>richtercloud</groupId>
+            <artifactId>document-scanner-flexdock</artifactId>
             <version>1.0-SNAPSHOT</version>
             <type>jar</type>
         </dependency>
