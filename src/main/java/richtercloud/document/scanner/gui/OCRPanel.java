@@ -30,6 +30,7 @@ import java.util.Set;
 import javax.persistence.EntityManager;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
+import javax.swing.JPanel;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JTextArea;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -70,7 +71,7 @@ of all available formats); providing selection for all 160 available locales is
 overkill and strangely results in > 20 identical format results of "-12345,987"
 -> compare format result of "-12345,987"
 */
-public class OCRPanel extends javax.swing.JPanel {
+public class OCRPanel extends JPanel {
     private static final long serialVersionUID = 1L;
     private final static Logger LOGGER = LoggerFactory.getLogger(OCRPanel.class);
     private final MessageHandler messageHandler;

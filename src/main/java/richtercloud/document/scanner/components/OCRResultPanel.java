@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.ProgressMonitor;
 import javax.swing.SwingWorker;
 import org.apache.commons.lang.exception.ExceptionUtils;
@@ -31,7 +32,7 @@ import richtercloud.message.handler.MessageHandler;
  *
  * @author richter
  */
-public class OCRResultPanel extends javax.swing.JPanel {
+public class OCRResultPanel extends JPanel {
     private static final long serialVersionUID = 1L;
     private final static Logger LOGGER = LoggerFactory.getLogger(OCRResultPanel.class);
     private OCRResultPanelFetcher oCRResultPanelFetcher;

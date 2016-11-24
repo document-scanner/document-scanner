@@ -21,7 +21,7 @@ import javax.swing.JPanel;
  *
  * @author richter
  */
-public class MessagePanelEntry extends javax.swing.JPanel {
+public class MessagePanelEntry extends JPanel {
     private static final long serialVersionUID = 1L;
 
     /**

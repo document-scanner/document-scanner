@@ -40,6 +40,7 @@ import javax.swing.GroupLayout;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.ProgressMonitor;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
@@ -124,7 +125,7 @@ CVetoFocusListener.willLoseFocus, but needs to be stored in a variable
 acquire the same lock twice. There are two possible explanations:` -> ignore as
 long as no problem occurs
 */
-public class MainPanel extends javax.swing.JPanel {
+public class MainPanel extends JPanel {
     private static final long serialVersionUID = 1L;
     private final static Logger LOGGER = LoggerFactory.getLogger(MainPanel.class);
     /**

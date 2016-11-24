@@ -29,6 +29,7 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingWorker;
 import org.apache.commons.lang3.tuple.Pair;
@@ -67,7 +68,7 @@ placeholder panel entityEditingQueryPanelPanel
 component -> add two panels as left and right component and move components
 between them
 */
-public class EntityPanel extends javax.swing.JPanel {
+public class EntityPanel extends JPanel {
     private static final long serialVersionUID = 1L;
     private final static Logger LOGGER = LoggerFactory.getLogger(EntityPanel.class);
     private final DelegatingAutoOCRValueDetectionService autoOCRValueDetectionService;

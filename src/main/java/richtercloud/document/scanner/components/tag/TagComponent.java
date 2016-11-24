@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.Set;
 import javax.swing.DefaultListModel;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import richtercloud.document.scanner.gui.DocumentScanner;
 
@@ -26,7 +27,7 @@ import richtercloud.document.scanner.gui.DocumentScanner;
  *
  * @author richter
  */
-public class TagComponent extends javax.swing.JPanel {
+public class TagComponent extends JPanel {
 
     private static final long serialVersionUID = 1L;
     private final TagStorage tagStorage;
