@@ -23,7 +23,8 @@ import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.util.HashSet;
 import java.util.Set;
-import javax.swing.JPanel;
+import richtercloud.document.scanner.ifaces.OCRSelectPanel;
+import richtercloud.document.scanner.ifaces.OCRSelectPanelSelectionListener;
 
 /**
  * A panel which represents one single PDF or image page/scan. Will most likely
@@ -36,7 +37,7 @@ internal implementation notes:
 which can be used for distinction is image, but BufferedImage doesn't override
 equals or hashCode
 */
-public class OCRSelectPanel extends JPanel implements MouseListener, MouseMotionListener {
+public class DefaultOCRSelectPanel extends OCRSelectPanel implements MouseListener, MouseMotionListener {
     private static final long serialVersionUID = 1L;
     private Point dragStart;
     private Point dragEnd;
@@ -44,7 +45,7 @@ public class OCRSelectPanel extends JPanel implements MouseListener, MouseMotion
     private final Set<OCRSelectPanelSelectionListener> selectionListeners = new HashSet<>();
     private float zoomLevel = 1;
 
-    public OCRSelectPanel(BufferedImage image) {
+    public DefaultOCRSelectPanel(BufferedImage image) {
         this.image = image;
         updatePreferredSize();
         this.init0();
@@ -60,16 +61,19 @@ public class OCRSelectPanel extends JPanel implements MouseListener, MouseMotion
         this.addMouseMotionListener(this);
     }
 
+    @Override
     public BufferedImage getImage() {
         return this.image;
     }
 
+    @Override
     public void unselect() {
         this.dragStart = null;
         this.dragStart = null;
         this.repaint();
     }
 
+    @Override
     public void addSelectionListener(OCRSelectPanelSelectionListener listener) {
         this.selectionListeners.add(listener);
     }
@@ -145,18 +149,22 @@ public class OCRSelectPanel extends JPanel implements MouseListener, MouseMotion
         }
     }
 
+    @Override
     public int dragSelectionX() {
         return Math.min(this.getDragStart().x, this.getDragEnd().x);
     }
 
+    @Override
     public int dragSelectionY() {
         return Math.min(this.getDragStart().y, this.getDragEnd().y);
     }
 
+    @Override
     public int dragSelectionWidth() {
         return Math.max(this.getDragEnd().x, this.getDragStart().x)-Math.min(this.getDragEnd().x, this.getDragStart().x);
     }
 
+    @Override
     public int dragSeletionHeight() {
         return Math.max(this.getDragEnd().y, this.getDragStart().y)-Math.min(this.getDragEnd().y, this.getDragStart().y);
     }
@@ -164,6 +172,7 @@ public class OCRSelectPanel extends JPanel implements MouseListener, MouseMotion
     /**
      * @return the dragStart
      */
+    @Override
     public Point getDragStart() {
         return this.dragStart;
     }
@@ -178,6 +187,7 @@ public class OCRSelectPanel extends JPanel implements MouseListener, MouseMotion
     /**
      * @return the dragEnd
      */
+    @Override
     public Point getDragEnd() {
         return this.dragEnd;
     }
@@ -193,6 +203,7 @@ public class OCRSelectPanel extends JPanel implements MouseListener, MouseMotion
         return zoomLevel;
     }
 
+    @Override
     public void setZoomLevel(float zoomLevel) {
         this.zoomLevel = zoomLevel;
         updatePreferredSize();

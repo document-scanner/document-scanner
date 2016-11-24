@@ -40,7 +40,6 @@ import javax.swing.GroupLayout;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
 import javax.swing.ProgressMonitor;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
@@ -67,6 +66,17 @@ import static richtercloud.document.scanner.gui.DocumentScanner.INITIAL_QUERY_LI
 import static richtercloud.document.scanner.gui.DocumentScanner.generateApplicationWindowTitle;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.gui.conf.OCREngineConf;
+import richtercloud.document.scanner.ifaces.DocumentAddException;
+import richtercloud.document.scanner.ifaces.EntityPanel;
+import richtercloud.document.scanner.ifaces.MainPanel;
+import richtercloud.document.scanner.ifaces.MainPanelDockingManager;
+import richtercloud.document.scanner.ifaces.OCRPanel;
+import richtercloud.document.scanner.ifaces.OCRSelectComponent;
+import richtercloud.document.scanner.ifaces.OCRSelectPanel;
+import richtercloud.document.scanner.ifaces.OCRSelectPanelPanel;
+import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcher;
+import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcherProgressEvent;
+import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcherProgressListener;
 import richtercloud.document.scanner.ocr.OCREngine;
 import richtercloud.document.scanner.ocr.OCREngineFactory;
 import richtercloud.document.scanner.setter.ValueSetter;
@@ -125,9 +135,9 @@ CVetoFocusListener.willLoseFocus, but needs to be stored in a variable
 acquire the same lock twice. There are two possible explanations:` -> ignore as
 long as no problem occurs
 */
-public class MainPanel extends JPanel {
+public class DefaultMainPanel extends MainPanel {
     private static final long serialVersionUID = 1L;
-    private final static Logger LOGGER = LoggerFactory.getLogger(MainPanel.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(DefaultMainPanel.class);
     /**
      * indicates that {@link #addDocument(java.util.List, java.io.File) } ought
      * to be handled in another thread while a {@link ProgressMonitor} dialog
@@ -182,7 +192,7 @@ public class MainPanel extends JPanel {
     private final MainPanelDockingManager mainPanelDockingManager;
     private final GroupLayout layout;
 
-    public MainPanel(Set<Class<?>> entityClasses,
+    public DefaultMainPanel(Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
             EntityManager entityManager,
             AmountMoneyUsageStatisticsStorage amountMoneyUsageStatisticsStorage,
@@ -219,7 +229,7 @@ public class MainPanel extends JPanel {
                 warningHandlers);
     }
 
-    public MainPanel(Set<Class<?>> entityClasses,
+    public DefaultMainPanel(Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
             Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping,
             EntityManager entityManager,
@@ -284,21 +294,19 @@ public class MainPanel extends JPanel {
                 this);
     }
 
+    @Override
     public OCRSelectComponent getoCRSelectComponent() {
         return oCRSelectComponent;
     }
 
+    @Override
     public void setoCRSelectComponent(OCRSelectComponent oCRSelectComponent) {
         this.oCRSelectComponent = oCRSelectComponent;
     }
 
+    @Override
     public Map<OCRSelectComponent, Pair<OCRPanel, EntityPanel>> getDocumentSwitchingMap() {
         return documentSwitchingMap;
-    }
-
-    @Override
-    public GroupLayout getLayout() {
-        return (GroupLayout) super.getLayout();
     }
 
     /**
@@ -316,6 +324,7 @@ public class MainPanel extends JPanel {
     - can't use ProgressMonitor without blocking EVT instead of a model dialog
     when using SwingWorker.get
     */
+    @Override
     public List<BufferedImage> retrieveImages(final File documentFile) throws DocumentAddException, InterruptedException, ExecutionException {
         if(documentFile == null) {
             throw new IllegalArgumentException("documentFile mustn't be null");
@@ -337,7 +346,7 @@ public class MainPanel extends JPanel {
                     for (PDPage page : pages) {
                         if(dialog.isCanceled()) {
                             document.close();
-                            MainPanel.LOGGER.debug("tab generation aborted");
+                            DefaultMainPanel.LOGGER.debug("tab generation aborted");
                             return null;
                         }
                         BufferedImage image = page.convertToImage();
@@ -371,6 +380,7 @@ public class MainPanel extends JPanel {
      * @param entityToEdit the instance determining the initial state of
      * components
      */
+    @Override
     public void addDocument(Object entityToEdit) throws DocumentAddException {
         MainPanelScanResultPanelRecreator mainPanelScanResultPanelRecreator =
                 new MainPanelScanResultPanelRecreator();
@@ -420,6 +430,7 @@ public class MainPanel extends JPanel {
         );
     }
 
+    @Override
     public void addDocument (final List<BufferedImage> images,
             final File documentFile) throws DocumentAddException {
         addDocument(images,
@@ -501,10 +512,10 @@ public class MainPanel extends JPanel {
      */
     private void addDocumentDone(OCRSelectComponent oCRSelectComponent,
             EntityPanel entityPanel) {
-        mainPanelDockingManager.addDocumentDockable(MainPanel.this.oCRSelectComponent,
+        mainPanelDockingManager.addDocumentDockable(DefaultMainPanel.this.oCRSelectComponent,
                 oCRSelectComponent);
         if(this.documentScannerConf.isAutoOCRValueDetection()) {
-            entityPanel.autoOCRValueDetection(new OCRSelectPanelPanelFetcher(oCRSelectComponent.getoCRSelectPanelPanel(),
+            entityPanel.autoOCRValueDetection(new DefaultOCRSelectPanelPanelFetcher(oCRSelectComponent.getoCRSelectPanelPanel(),
                     oCREngineFactory,
                     oCREngineConf),
                     false //forceRenewal (shouldn't matter here since the
@@ -535,19 +546,19 @@ public class MainPanel extends JPanel {
             if(images != null) {
                 for (BufferedImage image : images) {
                     @SuppressWarnings("serial")
-                    OCRSelectPanel panel = new OCRSelectPanel(image) {
+                    OCRSelectPanel panel = new DefaultOCRSelectPanel(image) {
                         @Override
                         public void mouseReleased(MouseEvent evt) {
                             super.mouseReleased(evt);
                             if (this.getDragStart() != null && !this.getDragStart().equals(this.getDragEnd())) {
-                                MainPanel.this.handleOCRSelection();
+                                DefaultMainPanel.this.handleOCRSelection();
                             }
                         }
                     };
                     panels.add(panel);
                 }
             }
-            OCRSelectPanelPanel oCRSelectPanelPanel = new OCRSelectPanelPanel(panels,
+            OCRSelectPanelPanel oCRSelectPanelPanel = new DefaultOCRSelectPanelPanel(panels,
                     documentFile,
                     oCREngineFactory,
                     oCREngineConf);
@@ -620,7 +631,7 @@ public class MainPanel extends JPanel {
                     } catch (FieldHandlingException ex) {
                         String message = String.format("An exception during creation of components occured (details: %s)",
                                 ex.getMessage());
-                        JOptionPane.showMessageDialog(MainPanel.this,
+                        JOptionPane.showMessageDialog(DefaultMainPanel.this,
                                 message,
                                 DocumentScanner.generateApplicationWindowTitle("Exception",
                                         DocumentScanner.APP_NAME,
@@ -643,14 +654,14 @@ public class MainPanel extends JPanel {
                 primaryClassSelection0 = entityToEdit.getClass();
             }
 
-            OCRPanel oCRPanel = new OCRPanel(entityClasses0,
+            OCRPanel oCRPanel = new DefaultOCRPanel(entityClasses0,
                     reflectionFormPanelMap,
                     valueSetterMapping,
                     entityManager,
                     messageHandler,
                     reflectionFormBuilder,
                     documentScannerConf);
-            EntityPanel entityPanel = new EntityPanel(entityClasses0,
+            EntityPanel entityPanel = new DefaultEntityPanel(entityClasses0,
                     primaryClassSelection0,
                     reflectionFormPanelMap,
                     valueSetterMapping,
@@ -662,7 +673,7 @@ public class MainPanel extends JPanel {
                     reflectionFormBuilder,
                     messageHandler,
                     documentScannerConf);
-            OCRSelectComponent oCRSelectComponent = new OCRSelectComponent(oCRSelectPanelPanel,
+            OCRSelectComponent oCRSelectComponent = new DefaultOCRSelectComponent(oCRSelectPanelPanel,
                     entityPanel,
                     oCREngineFactory,
                     oCREngineConf,
@@ -691,7 +702,7 @@ public class MainPanel extends JPanel {
             if(progressMonitor != null) {
                 progressMonitor.close();
             }
-            JOptionPane.showMessageDialog(MainPanel.this, //parentComponent
+            JOptionPane.showMessageDialog(DefaultMainPanel.this, //parentComponent
                     String.format("<html>%s. Please consider filing a "
                             + "bug at <a href=\"%s\">%s</a>. Stacktrace: %s</html>",
                             message,
@@ -739,7 +750,7 @@ public class MainPanel extends JPanel {
          * before {@link #fetch() } works.
          */
         DocumentTabOCRResultPanelFetcher(OCRSelectPanelPanel oCRSelectPanelPanel) {
-            this.oCRSelectPanelPanelFetcher = new OCRSelectPanelPanelFetcher(oCRSelectPanelPanel,
+            this.oCRSelectPanelPanelFetcher = new DefaultOCRSelectPanelPanelFetcher(oCRSelectPanelPanel,
                     oCREngineFactory,
                     oCREngineConf);
         }

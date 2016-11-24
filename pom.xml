@@ -13,6 +13,18 @@
     </properties>
     <dependencies>
         <dependency>
+            <groupId>richtercloud</groupId>
+            <artifactId>document-scanner-ifaces</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>richtercloud</groupId>
+            <artifactId>document-scanner-flexdock</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
             <groupId>com.googlecode.jfreesane</groupId>
             <artifactId>jfreesane</artifactId>
             <version>0.97</version>
@@ -159,12 +171,6 @@
         <dependency>
             <groupId>richtercloud</groupId>
             <artifactId>message-handler</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>richtercloud</groupId>
-            <artifactId>document-scanner-flexdock</artifactId>
             <version>1.0-SNAPSHOT</version>
             <type>jar</type>
         </dependency>

@@ -33,6 +33,11 @@ import org.apache.commons.math4.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.conf.OCREngineConf;
+import richtercloud.document.scanner.ifaces.OCRSelectPanel;
+import richtercloud.document.scanner.ifaces.OCRSelectPanelPanel;
+import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcher;
+import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcherProgressEvent;
+import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcherProgressListener;
 import richtercloud.document.scanner.ocr.OCREngine;
 import richtercloud.document.scanner.ocr.OCREngineFactory;
 
@@ -42,8 +47,8 @@ import richtercloud.document.scanner.ocr.OCREngineFactory;
  * whenever it makes sense or improves understanding.
  * @author richter
  */
-public class OCRSelectPanelPanelFetcher {
-    private final static Logger LOGGER = LoggerFactory.getLogger(OCRSelectPanelPanelFetcher.class);
+public class DefaultOCRSelectPanelPanelFetcher implements OCRSelectPanelPanelFetcher {
+    private final static Logger LOGGER = LoggerFactory.getLogger(DefaultOCRSelectPanelPanelFetcher.class);
     private final List<Double> stringBufferLengths = new ArrayList<>();
     private final OCRSelectPanelPanel oCRSelectPanelPanel;
     private final Set<OCRSelectPanelPanelFetcherProgressListener> progressListeners = new HashSet<>();
@@ -69,7 +74,7 @@ public class OCRSelectPanelPanelFetcher {
     private final OCREngineFactory oCREngineFactory;
     private final OCREngineConf oCREngineConf;
 
-    public OCRSelectPanelPanelFetcher(OCRSelectPanelPanel oCRSelectPanelPanel,
+    public DefaultOCRSelectPanelPanelFetcher(OCRSelectPanelPanel oCRSelectPanelPanel,
             OCREngineFactory oCREngineFactory,
             OCREngineConf oCREngineConf) {
         this.oCRSelectPanelPanel = oCRSelectPanelPanel;
@@ -77,14 +82,17 @@ public class OCRSelectPanelPanelFetcher {
         this.oCREngineConf = oCREngineConf;
     }
 
+    @Override
     public void addProgressListener(OCRSelectPanelPanelFetcherProgressListener progressListener) {
         this.progressListeners.add(progressListener);
     }
 
+    @Override
     public void removeProgressListener(OCRSelectPanelPanelFetcherProgressListener progressListener) {
         this.progressListeners.remove(progressListener);
     }
 
+    @Override
     public String fetch() {
         //estimate the initial StringBuilder size based on the median
         //of all prior OCR results (string length) (and 1000 initially)
@@ -159,6 +167,7 @@ public class OCRSelectPanelPanelFetcher {
         return retValue;
     }
 
+    @Override
     public void cancelFetch() {
         this.cancelRequested = true;
         while(!usedEngines.isEmpty()) {

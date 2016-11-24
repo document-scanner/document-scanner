@@ -15,6 +15,7 @@
 package richtercloud.document.scanner.gui;
 
 import javax.swing.JScrollPane;
+import richtercloud.document.scanner.ifaces.OCRSelectPanelPanel;
 
 /**
  *

@@ -29,7 +29,6 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingWorker;
 import org.apache.commons.lang3.tuple.Pair;
@@ -39,6 +38,9 @@ import richtercloud.document.scanner.components.AutoOCRValueDetectionReflectionF
 import richtercloud.document.scanner.components.OCRResultPanelFetcher;
 import richtercloud.document.scanner.components.ScanResultPanelFetcher;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
+import richtercloud.document.scanner.ifaces.Constants;
+import richtercloud.document.scanner.ifaces.EntityPanel;
+import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcher;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.document.scanner.valuedetectionservice.AutoOCRValueDetectionResult;
 import richtercloud.document.scanner.valuedetectionservice.AutoOCRValueDetectionServiceUpdateEvent;
@@ -68,9 +70,9 @@ placeholder panel entityEditingQueryPanelPanel
 component -> add two panels as left and right component and move components
 between them
 */
-public class EntityPanel extends JPanel {
+public class DefaultEntityPanel extends EntityPanel {
     private static final long serialVersionUID = 1L;
-    private final static Logger LOGGER = LoggerFactory.getLogger(EntityPanel.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(DefaultEntityPanel.class);
     private final DelegatingAutoOCRValueDetectionService autoOCRValueDetectionService;
     private final Set<Class<?>> entityClasses;
     private final AutoOCRValueDetectionReflectionFormBuilder reflectionFormBuilder;
@@ -84,7 +86,7 @@ public class EntityPanel extends JPanel {
      * @param reflectionFormPanelMap allows sharing of already generated
      * {@link ReflectionFormPanel}s
      */
-    public EntityPanel(Set<Class<?>> entityClasses,
+    public DefaultEntityPanel(Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
             Map<Class<?>, ReflectionFormPanel<?>> reflectionFormPanelMap,
             Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping,
@@ -181,6 +183,7 @@ public class EntityPanel extends JPanel {
      */
     private List<AutoOCRValueDetectionResult<?>> detectionResults;
 
+    @Override
     public void autoOCRValueDetection(OCRSelectPanelPanelFetcher oCRSelectPanelPanelFetcher,
             boolean forceRenewal) {
         if(detectionResults == null || forceRenewal == true) {
@@ -195,7 +198,7 @@ public class EntityPanel extends JPanel {
             SwingWorker<List<AutoOCRValueDetectionResult<?>>, Void> worker = new SwingWorker<List<AutoOCRValueDetectionResult<?>>, Void>() {
                 @Override
                 protected List<AutoOCRValueDetectionResult<?>> doInBackground() throws Exception {
-                    List<AutoOCRValueDetectionResult<?>> retValue = EntityPanel.this.autoOCRValueDetectionService.fetchResults(oCRResult);
+                    List<AutoOCRValueDetectionResult<?>> retValue = DefaultEntityPanel.this.autoOCRValueDetectionService.fetchResults(oCRResult);
                     return retValue;
                 }
 
@@ -216,7 +219,7 @@ public class EntityPanel extends JPanel {
             //the dialog will be visible until the SwingWorker is done
             dialog.setVisible(true);
             if(dialog.isCanceled()) {
-                EntityPanel.this.autoOCRValueDetectionService.cancelFetch();
+                DefaultEntityPanel.this.autoOCRValueDetectionService.cancelFetch();
                 return;
             }
             try {

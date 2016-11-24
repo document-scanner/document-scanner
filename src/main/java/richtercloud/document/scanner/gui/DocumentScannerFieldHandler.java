@@ -46,6 +46,7 @@ import richtercloud.document.scanner.components.tag.TagComponentUpdateEvent;
 import richtercloud.document.scanner.components.tag.TagComponentUpdateListener;
 import richtercloud.document.scanner.components.tag.TagStorage;
 import richtercloud.document.scanner.components.annotations.Tags;
+import richtercloud.document.scanner.ifaces.MainPanel;
 import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.ComponentHandler;

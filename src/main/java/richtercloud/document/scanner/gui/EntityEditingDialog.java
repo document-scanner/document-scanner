@@ -30,7 +30,7 @@ import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
-import static richtercloud.document.scanner.gui.EntityPanel.sortEntityClasses;
+import richtercloud.document.scanner.ifaces.Constants;
 import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.ClassInfo;
@@ -182,7 +182,7 @@ public class EntityEditingDialog extends javax.swing.JDialog {
                 }
             }
         });
-        List<Class<?>> entityClassesSort = sortEntityClasses(entityClasses);
+        List<Class<?>> entityClassesSort = DefaultEntityPanel.sortEntityClasses(entityClasses);
         for(Class<?> entityClass : entityClassesSort) {
             this.entityEditingClassComboBoxModel.addElement(entityClass);
         }

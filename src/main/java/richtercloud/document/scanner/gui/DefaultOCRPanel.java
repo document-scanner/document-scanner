@@ -30,7 +30,6 @@ import java.util.Set;
 import javax.persistence.EntityManager;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
-import javax.swing.JPanel;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JTextArea;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -38,6 +37,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
+import richtercloud.document.scanner.ifaces.OCRPanel;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.ReflectionFormBuilder;
@@ -71,9 +71,9 @@ of all available formats); providing selection for all 160 available locales is
 overkill and strangely results in > 20 identical format results of "-12345,987"
 -> compare format result of "-12345,987"
 */
-public class OCRPanel extends JPanel {
+public class DefaultOCRPanel extends OCRPanel {
     private static final long serialVersionUID = 1L;
-    private final static Logger LOGGER = LoggerFactory.getLogger(OCRPanel.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(DefaultOCRPanel.class);
     private final MessageHandler messageHandler;
     private final DocumentScannerConf documentScannerConf;
     private final JScrollPopupMenu currencyFormatPopup = new JScrollPopupMenu("Currency");
@@ -89,7 +89,7 @@ public class OCRPanel extends JPanel {
      * {@link ReflectionFormPanel} for each entity class which is manipulated by
      * the context menu items
      */
-    public OCRPanel(Set<Class<?>> entityClasses,
+    public DefaultOCRPanel(Set<Class<?>> entityClasses,
             Map<Class<?>, ReflectionFormPanel<?>> reflectionFormPanelMap,
             Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping,
             EntityManager entityManager,
@@ -106,7 +106,7 @@ public class OCRPanel extends JPanel {
                     + "null");
         }
         this.documentScannerConf = documentScannerConf;
-        List<Class<?>> entityClassesSort = EntityPanel.sortEntityClasses(entityClasses);
+        List<Class<?>> entityClassesSort = DefaultEntityPanel.sortEntityClasses(entityClasses);
         FormatOCRFieldMenuPopupFactory oCRFieldMenuPopupFactory = new FormatOCRFieldMenuPopupFactory(numberFormatPopupButtonGroup,
                 percentFormatPopupButtonGroup,
                 currencyFormatPopupButtonGroup,
@@ -307,12 +307,10 @@ public class OCRPanel extends JPanel {
         }
     }
 
-
-
+    @Override
     public JTextArea getoCRResultTextArea() {
         return this.oCRResultTextArea;
     }
-
 
     /**
      * This method is called from within the constructor to initialize the form.

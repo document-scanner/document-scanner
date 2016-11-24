@@ -27,6 +27,9 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.gui.conf.OCREngineConf;
+import richtercloud.document.scanner.ifaces.EntityPanel;
+import richtercloud.document.scanner.ifaces.OCRSelectComponent;
+import richtercloud.document.scanner.ifaces.OCRSelectPanelPanel;
 import richtercloud.document.scanner.ocr.OCREngineFactory;
 
 /**
@@ -38,7 +41,7 @@ import richtercloud.document.scanner.ocr.OCREngineFactory;
  * overlapping buttons, but using Platform.runLater requires
  * @author richter
  */
-public class OCRSelectComponent extends JPanel {
+public class DefaultOCRSelectComponent extends OCRSelectComponent {
     private static final long serialVersionUID = 1L;
     private final OCRSelectPanelPanel oCRSelectPanelPanel;
     /*private ToolBar toolbar;
@@ -64,7 +67,7 @@ public class OCRSelectComponent extends JPanel {
      * @param oCRSelectPanelPanel will be wrapped in a
      * {@link OCRSelectPanelPanelScrollPane}
      */
-    public OCRSelectComponent(OCRSelectPanelPanel oCRSelectPanelPanel,
+    public DefaultOCRSelectComponent(OCRSelectPanelPanel oCRSelectPanelPanel,
             EntityPanel entityPanel,
             OCREngineFactory oCREngineFactory,
             OCREngineConf oCREngineConf,
@@ -210,17 +213,17 @@ public class OCRSelectComponent extends JPanel {
         zoomInButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                OCRSelectComponent.this.zoomLevel *= OCRSelectComponent.this.documentScannerConf.getZoomLevelMultiplier();
-                OCRSelectComponent.this.oCRSelectPanelPanel.setZoomLevels(OCRSelectComponent.this.zoomLevel);
-                OCRSelectComponent.this.repaint();
+                DefaultOCRSelectComponent.this.zoomLevel *= DefaultOCRSelectComponent.this.documentScannerConf.getZoomLevelMultiplier();
+                DefaultOCRSelectComponent.this.oCRSelectPanelPanel.setZoomLevels(DefaultOCRSelectComponent.this.zoomLevel);
+                DefaultOCRSelectComponent.this.repaint();
             }
         });
         zoomOutButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                OCRSelectComponent.this.zoomLevel /= OCRSelectComponent.this.documentScannerConf.getZoomLevelMultiplier();
-                OCRSelectComponent.this.oCRSelectPanelPanel.setZoomLevels(OCRSelectComponent.this.zoomLevel);
-                OCRSelectComponent.this.repaint();
+                DefaultOCRSelectComponent.this.zoomLevel /= DefaultOCRSelectComponent.this.documentScannerConf.getZoomLevelMultiplier();
+                DefaultOCRSelectComponent.this.oCRSelectPanelPanel.setZoomLevels(DefaultOCRSelectComponent.this.zoomLevel);
+                DefaultOCRSelectComponent.this.repaint();
                     //zooming out requires a scroll event to occur in order to
                     //paint other pages than the first only; revalidate doesn't
                     //help
@@ -229,9 +232,9 @@ public class OCRSelectComponent extends JPanel {
         autoOCRValueDetectionResultsButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                OCRSelectComponent.this.entityPanel.autoOCRValueDetection(new OCRSelectPanelPanelFetcher(OCRSelectComponent.this.getoCRSelectPanelPanel(),
-                        OCRSelectComponent.this.oCREngineFactory,
-                        OCRSelectComponent.this.oCREngineConf),
+                DefaultOCRSelectComponent.this.entityPanel.autoOCRValueDetection(new DefaultOCRSelectPanelPanelFetcher(DefaultOCRSelectComponent.this.getoCRSelectPanelPanel(),
+                        DefaultOCRSelectComponent.this.oCREngineFactory,
+                        DefaultOCRSelectComponent.this.oCREngineConf),
                         false //forceRenewal
                 );
             }
@@ -239,9 +242,9 @@ public class OCRSelectComponent extends JPanel {
         autoOCRValueDetectionButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                OCRSelectComponent.this.entityPanel.autoOCRValueDetection(new OCRSelectPanelPanelFetcher(OCRSelectComponent.this.getoCRSelectPanelPanel(),
-                        OCRSelectComponent.this.oCREngineFactory,
-                        OCRSelectComponent.this.oCREngineConf),
+                DefaultOCRSelectComponent.this.entityPanel.autoOCRValueDetection(new DefaultOCRSelectPanelPanelFetcher(DefaultOCRSelectComponent.this.getoCRSelectPanelPanel(),
+                        DefaultOCRSelectComponent.this.oCREngineFactory,
+                        DefaultOCRSelectComponent.this.oCREngineConf),
                         true //forceRenewal
                 );
             }
@@ -258,6 +261,7 @@ public class OCRSelectComponent extends JPanel {
             //action listener above
     }
 
+    @Override
     public OCRSelectPanelPanel getoCRSelectPanelPanel() {
         return oCRSelectPanelPanel;
     }

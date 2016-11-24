@@ -91,6 +91,8 @@ import richtercloud.document.scanner.gui.conf.StorageConf;
 import richtercloud.document.scanner.gui.conf.TesseractOCREngineConf;
 import richtercloud.document.scanner.gui.engineconf.OCREngineConfPanel;
 import richtercloud.document.scanner.gui.storageconf.StorageConfPanel;
+import richtercloud.document.scanner.ifaces.DocumentAddException;
+import richtercloud.document.scanner.ifaces.MainPanel;
 import richtercloud.document.scanner.model.APackage;
 import richtercloud.document.scanner.model.Bill;
 import richtercloud.document.scanner.model.Company;
@@ -194,7 +196,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private static final String CONNECTION_URL_TOOLTIP_TEXT = String.format("[mode]:[path] (where mode is one of <b>remote</b>, <b>plocal</b> or <b>??</b> and path is in the form [IP or hostname]/[database name], e.g. %s)", CONNECTION_URL_EXAMPLE);
     public static final String APP_NAME = "Document scanner";
     public static final String APP_VERSION = "1.0";
-    public static final String UNSAVED_NAME = "unsaved";
     public static final String BUG_URL = "https://github.com/krichter722/document-scanner";
     private SaneDevice scannerDevice;
     private ODatabaseDocumentTx db;
@@ -689,7 +690,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 derbyPersistenceStorageSchemeChecksumFile //schemeChecksumFile
         ); //@TODO: replace with classpath annotation discovery
         this.storageConfPanelMap.put(DerbyPersistenceStorageConf.class, derbyStorageConfPanel);
-        this.mainPanel = new MainPanel(ENTITY_CLASSES,
+        this.mainPanel = new DefaultMainPanel(ENTITY_CLASSES,
                 PRIMARY_CLASS_SELECTION,
                 entityManager,
                 amountMoneyUsageStatisticsStorage,

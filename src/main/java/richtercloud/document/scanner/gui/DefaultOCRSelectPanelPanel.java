@@ -23,12 +23,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import javax.swing.JPanel;
 import javax.swing.Scrollable;
 import javax.swing.SwingConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.conf.OCREngineConf;
+import richtercloud.document.scanner.ifaces.OCRSelectPanel;
+import richtercloud.document.scanner.ifaces.OCRSelectPanelPanel;
+import richtercloud.document.scanner.ifaces.OCRSelectPanelSelectionListener;
 import richtercloud.document.scanner.ocr.OCREngineFactory;
 
 /**
@@ -49,9 +51,9 @@ internal implementation notes:
 argument have the same erasure, provide List<OCRSelectPanel> because often
 action methods of OCRSelectPanel are adjusted by callers
 */
-public class OCRSelectPanelPanel extends JPanel implements Scrollable {
+public class DefaultOCRSelectPanelPanel extends OCRSelectPanelPanel implements Scrollable {
     private static final long serialVersionUID = 1L;
-    private final static Logger LOGGER = LoggerFactory.getLogger(OCRSelectPanelPanel.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(DefaultOCRSelectPanelPanel.class);
     /**
      * The pages of which the drawing area ought to be composed
      */
@@ -70,7 +72,7 @@ public class OCRSelectPanelPanel extends JPanel implements Scrollable {
     private File documentFile;
     private float zoomLevel = 1;
 
-    public OCRSelectPanelPanel(OCRSelectPanel panel,
+    public DefaultOCRSelectPanelPanel(OCRSelectPanel panel,
             File documentFile,
             OCREngineFactory oCREngineFactory,
             OCREngineConf oCREngineConf) {
@@ -80,7 +82,7 @@ public class OCRSelectPanelPanel extends JPanel implements Scrollable {
                 oCREngineConf);
     }
 
-    public OCRSelectPanelPanel(List<OCRSelectPanel> panels,
+    public DefaultOCRSelectPanelPanel(List<OCRSelectPanel> panels,
             File documentFile,
             OCREngineFactory oCREngineFactory,
             OCREngineConf oCREngineConf) {
@@ -114,6 +116,7 @@ public class OCRSelectPanelPanel extends JPanel implements Scrollable {
         this.setPreferredSize(newValue);
     }
 
+    @Override
     public File getDocumentFile() {
         return documentFile;
     }
@@ -122,6 +125,7 @@ public class OCRSelectPanelPanel extends JPanel implements Scrollable {
         this.documentFile = documentFile;
     }
 
+    @Override
     public List<OCRSelectPanel> getoCRSelectPanels() {
         return Collections.unmodifiableList(this.oCRSelectPanels);
     }
@@ -130,6 +134,7 @@ public class OCRSelectPanelPanel extends JPanel implements Scrollable {
      *
      * @return the selected image or {@code null} if all image panels contain selections with width or height <= 0
      */
+    @Override
     public BufferedImage getSelection() {
         for(OCRSelectPanel panel : this.oCRSelectPanels) {
             if(panel.getDragStart() != null && panel.getDragEnd() != null) {
@@ -209,6 +214,7 @@ public class OCRSelectPanelPanel extends JPanel implements Scrollable {
      * Sets the zoom level {@code zoomLevel} on all {@link OCRSelectPanel}.
      * @param zoomLevel the zoom level
      */
+    @Override
     public void setZoomLevels(float zoomLevel) {
         this.zoomLevel = zoomLevel; //before updatePreferredSize
         for(OCRSelectPanel oCRSelectPanel : this.oCRSelectPanels) {
@@ -226,9 +232,9 @@ public class OCRSelectPanelPanel extends JPanel implements Scrollable {
 
         @Override
         public void selectionChanged() {
-            OCRSelectPanelPanel.this.selectedPanel = this.panel;
-            for(OCRSelectPanel panel0: OCRSelectPanelPanel.this.oCRSelectPanels) {
-                if(!panel0.equals(OCRSelectPanelPanel.this.selectedPanel)) {
+            DefaultOCRSelectPanelPanel.this.selectedPanel = this.panel;
+            for(OCRSelectPanel panel0: DefaultOCRSelectPanelPanel.this.oCRSelectPanels) {
+                if(!panel0.equals(DefaultOCRSelectPanelPanel.this.selectedPanel)) {
                     panel0.unselect();
                 }
             }
