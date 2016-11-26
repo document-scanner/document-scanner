@@ -650,7 +650,7 @@ public class DefaultMainPanel extends MainPanel {
                         fieldHandler
                 );
                 reflectionFormPanelMap.put(entityToEdit.getClass(), reflectionFormPanel);
-                entityClasses0 = new HashSet<Class<?>>(Arrays.asList(entityToEdit.getClass()));
+                entityClasses0 = new HashSet<>(Arrays.asList(entityToEdit.getClass()));
                 primaryClassSelection0 = entityToEdit.getClass();
             }
 
