@@ -346,6 +346,18 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
      * displayed if more documents than this value are about to be opened.
      */
     private final static int SELECTED_ENTITIES_EDIT_WARNING = 5;
+    /**
+     * Creation of a {@link JFXPanel} is necessary to instantiate the JavaFX
+     * platform which is used for some parts of the application. The reference
+     * isn't used by JavaFX, but stored here in order to indicate that a second
+     * {@code JFXPanel} doesn't need to be allocated.
+     */
+    /*
+    internal implementation notes:
+    - This could be handled by a flag as well, but all resources aquired by the
+    panel will remain in use and thus not be GCed anyway.
+    */
+    private JFXPanel javaFXInitPanel;
 
     /**
      * Parses the command line and evaluates system properties. Command line
@@ -1578,9 +1590,12 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 invisibleWaitDialog.setBounds(0, 0, 1, 1);
                 invisibleWaitDialog.setModal(true);
                 invisibleWaitDialog.setUndecorated(true);
-                new JFXPanel(); //necessary to initialize JavaFX and avoid
-                    //failure of Platform.runLater with
-                    //`java.lang.IllegalStateException: Toolkit not initialized`
+                if(this.javaFXInitPanel != null) {
+                    this.javaFXInitPanel = new JFXPanel();
+                        //necessary to initialize JavaFX and avoid
+                        //failure of Platform.runLater with
+                        //`java.lang.IllegalStateException: Toolkit not initialized`
+                }
                 Platform.runLater(() -> {
                     ScannerResultDialog scannerResultDialog = new ScannerResultDialog(images);
                     Optional<List<List<BufferedImage>>> dialogResult = scannerResultDialog.showAndWait();
