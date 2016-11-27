@@ -79,6 +79,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import org.apache.commons.lang.exception.ExceptionUtils;
+import org.jscience.economics.money.Currency;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.components.tag.FileTagStorage;
@@ -137,6 +138,7 @@ import richtercloud.reflection.form.builder.ReflectionFormPanel;
 import richtercloud.reflection.form.builder.components.date.UtilDatePicker;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
+import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetrieverException;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyPanel;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyUsageStatisticsStorage;
 import richtercloud.reflection.form.builder.components.money.FailsafeAmountMoneyExchangeRateRetriever;
@@ -534,6 +536,25 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private final static File CONFIG_DIR = new File(HOME_DIR, CONFIG_DIR_NAME);
     private final static File DATABASE_DIR = new File(CONFIG_DIR, DATABASE_DIR_NAME_DEFAULT);
     private final static String DERBY_CONNECTION_URL = String.format("jdbc:derby:%s", DATABASE_DIR.getAbsolutePath());
+    /**
+     * Start to fetch results and warm up the cache after start.
+     */
+    private final Thread amountMoneyExchangeRetrieverInitThread = new Thread() {
+        @Override
+        public void run() {
+            LOGGER.debug("Starting prefetching of currency exchange rates in "
+                    + "the background");
+            try {
+                Set<Currency> supportedCurrencies = DocumentScanner.this.amountMoneyExchangeRateRetriever.getSupportedCurrencies();
+                for(Currency supportedCurrency : supportedCurrencies) {
+                    DocumentScanner.this.amountMoneyExchangeRateRetriever.retrieveExchangeRate(supportedCurrency);
+                }
+            } catch (AmountMoneyExchangeRateRetrieverException ex) {
+                //all parts of FailsafeAmountMoneyExchangeRateRetriever failed
+                throw new RuntimeException(ex);
+            }
+        }
+    };
 
     /**
      * Creates new DocumentScanner which does nothing unless
@@ -551,6 +572,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             CONFIG_DIR.mkdir();
             LOGGER.info("created inexisting configuration directory '{}'", CONFIG_DIR_NAME);
         }
+        amountMoneyExchangeRetrieverInitThread.start();
 
         this.initComponents();
 
@@ -1438,6 +1460,32 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         this.storageCreateDialog.setVisible(true);
     }//GEN-LAST:event_storageDialogNewButtonActionPerformed
 
+    private void addDocument(List<BufferedImage> images,
+            File selectedFile) throws DocumentAddException {
+        //wait as long as possible
+        if(amountMoneyExchangeRetrieverInitThread.isAlive()) {
+            try {
+                amountMoneyExchangeRetrieverInitThread.join();
+            } catch (InterruptedException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+        this.mainPanel.addDocument(images,
+                selectedFile);
+    }
+
+    private void addDocument(Object entityToEdit) throws DocumentAddException {
+        //wait as long as possible
+        if(amountMoneyExchangeRetrieverInitThread.isAlive()) {
+            try {
+                amountMoneyExchangeRetrieverInitThread.join();
+            } catch (InterruptedException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+        this.mainPanel.addDocument(entityToEdit);
+    }
+
     private void openMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openMenuItemActionPerformed
         JFileChooser chooser = new JFileChooser();
         FileNameExtensionFilter filter = new FileNameExtensionFilter(
@@ -1459,7 +1507,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 LOGGER.debug("image retrieval has been canceled, discontinuing adding document");
                 return;
             }
-            this.mainPanel.addDocument(images,
+            addDocument(images,
                     selectedFile);
         } catch (DocumentAddException | InterruptedException | ExecutionException ex) {
             handleException(ex, "Exception during adding new document");
@@ -1494,7 +1542,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
         for(Object selectedEntity : selectedEntities) {
             try {
-                this.mainPanel.addDocument(selectedEntity);
+                addDocument(selectedEntity);
             } catch (DocumentAddException ex) {
                 handleException(ex, "Exception during adding new document");
             }
@@ -1543,8 +1591,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 });
                 invisibleWaitDialog.setVisible(true);
                 for(List<BufferedImage> scannerResult : scannerResults) {
-                    this.mainPanel.addDocument(scannerResult,
-                            null //documentFile
+                    addDocument(scannerResult,
+                            null //selectedFile
                     );
                 }
                 this.validate();
@@ -1667,8 +1715,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 });
                 invisibleWaitDialog.setVisible(true);
                 for(List<BufferedImage> scannerResult : scannerResults) {
-                    this.mainPanel.addDocument(scannerResult,
-                            null //documentFile
+                    addDocument(scannerResult,
+                            null //selectedFile
                     );
                 }
                 this.validate();
