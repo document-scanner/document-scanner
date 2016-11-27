@@ -16,6 +16,7 @@ package richtercloud.document.scanner.gui;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.util.Set;
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
@@ -61,6 +62,7 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
     private final OCREngineFactory oCREngineFactory;
     private final OCREngineConf oCREngineConf;
     private final DocumentScannerConf documentScannerConf;
+    private File file;
 
     /**
      *
@@ -72,12 +74,14 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
             OCREngineFactory oCREngineFactory,
             OCREngineConf oCREngineConf,
             DocumentScannerConf documentScannerConf,
-            final Set<JPanel> autoOCRValueDetectionPanels) {
+            final Set<JPanel> autoOCRValueDetectionPanels,
+            File file) {
         this.oCRSelectPanelPanel = oCRSelectPanelPanel;
         this.entityPanel = entityPanel;
         this.oCREngineFactory = oCREngineFactory;
         this.oCREngineConf = oCREngineConf;
         this.documentScannerConf = documentScannerConf;
+        this.file = file;
 
         /*zoomInButton = new Button(" + ");
         zoomOutButton = new Button(" - ");
@@ -264,5 +268,10 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
     @Override
     public OCRSelectPanelPanel getoCRSelectPanelPanel() {
         return oCRSelectPanelPanel;
+    }
+
+    @Override
+    public File getFile() {
+        return file;
     }
 }
