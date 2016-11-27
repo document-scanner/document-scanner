@@ -1574,7 +1574,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 invisibleWaitDialog.setBounds(0, 0, 1, 1);
                 invisibleWaitDialog.setModal(true);
                 invisibleWaitDialog.setUndecorated(true);
-                if(this.javaFXInitPanel != null) {
+                if(this.javaFXInitPanel == null) {
                     this.javaFXInitPanel = new JFXPanel();
                         //necessary to initialize JavaFX and avoid
                         //failure of Platform.runLater with
