@@ -34,6 +34,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import javax.imageio.ImageIO;
 import javax.persistence.EntityManager;
 import javax.swing.GroupLayout;
@@ -619,27 +622,51 @@ public class DefaultMainPanel extends MainPanel {
             Set<Class<?>> entityClasses0;
             Class<?> primaryClassSelection0;
             if(entityToEdit == null) {
+                ReturnValue<Exception> innerEx = new ReturnValue<>();
+                ExecutorService executorService = Executors.newCachedThreadPool();
+                    //In order to avoid programming an ExecutorService which
+                    //works on EVT use one level Runnable nesting passing to
+                    //SwingUtilities.invokeAndWait
                 for(Class<?> entityClass : entityClasses) {
-                    ReflectionFormPanel reflectionFormPanel;
-                    try {
-                        reflectionFormPanel = reflectionFormBuilder.transformEntityClass(entityClass,
-                                null, //entityToUpdate
-                                false, //editingMode
-                                fieldHandler
-                        );
-                        reflectionFormPanelMap.put(entityClass, reflectionFormPanel);
-                    } catch (FieldHandlingException ex) {
-                        String message = String.format("An exception during creation of components occured (details: %s)",
-                                ex.getMessage());
-                        JOptionPane.showMessageDialog(DefaultMainPanel.this,
-                                message,
-                                DocumentScanner.generateApplicationWindowTitle("Exception",
-                                        DocumentScanner.APP_NAME,
-                                        DocumentScanner.APP_VERSION),
-                                JOptionPane.WARNING_MESSAGE);
-                        LOGGER.error(message, ex);
-                        throw ex;
-                    }
+                    Runnable runnable = () -> {
+                        try {
+                            SwingUtilities.invokeAndWait(() -> {
+                                ReflectionFormPanel reflectionFormPanel;
+                                try {
+                                    reflectionFormPanel = reflectionFormBuilder.transformEntityClass(entityClass,
+                                            null, //entityToUpdate
+                                            false, //editingMode
+                                            fieldHandler
+                                    );
+                                    reflectionFormPanelMap.put(entityClass, reflectionFormPanel);
+                                } catch (FieldHandlingException ex) {
+                                    String message = String.format("An exception during creation of components occured (details: %s)",
+                                            ex.getMessage());
+                                    JOptionPane.showMessageDialog(DefaultMainPanel.this,
+                                            message,
+                                            DocumentScanner.generateApplicationWindowTitle("Exception",
+                                                    DocumentScanner.APP_NAME,
+                                                    DocumentScanner.APP_VERSION),
+                                            JOptionPane.WARNING_MESSAGE);
+                                    LOGGER.error(message, ex);
+                                    innerEx.setValue(ex);
+                                } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException ex) {
+                                    throwDocumentAddException(progressMonitor);
+                                    innerEx.setValue(new DocumentAddException(ex));
+                                }
+                            });
+                        } catch (InterruptedException | InvocationTargetException ex) {
+                            throwDocumentAddException(progressMonitor);
+                            innerEx.setValue(new DocumentAddException(ex));
+                        }
+                    };
+                    executorService.execute(runnable);
+                }
+                executorService.shutdown();
+                executorService.awaitTermination(Long.MAX_VALUE,
+                        TimeUnit.NANOSECONDS);
+                if(innerEx.getValue() != null) {
+                    throw innerEx.getValue();
                 }
                 entityClasses0 = entityClasses;
                 primaryClassSelection0 = this.primaryClassSelection;
@@ -686,9 +713,7 @@ public class DefaultMainPanel extends MainPanel {
             }
             return retValue;
         } catch (HeadlessException | IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException | InvocationTargetException ex) {
-            if(progressMonitor != null) {
-                progressMonitor.close();
-            }
+            throwDocumentAddException(progressMonitor);
             throw new DocumentAddException(ex);
         } catch(Throwable ex) {
             //This dramatically facilitates debugging since Java
@@ -731,6 +756,12 @@ public class DefaultMainPanel extends MainPanel {
         String oCRResult = oCREngine.recognizeImage(imageSelection);
         OCRPanel oCRPanel = documentSwitchingMap.get(oCRSelectComponent).getLeft();
         oCRPanel.getoCRResultTextArea().setText(oCRResult);
+    }
+
+    private void throwDocumentAddException(ProgressMonitor progressMonitor) {
+        if(progressMonitor != null) {
+            progressMonitor.close();
+        }
     }
 
     /**
