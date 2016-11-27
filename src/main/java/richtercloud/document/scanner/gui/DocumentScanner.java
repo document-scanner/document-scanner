@@ -1595,7 +1595,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                             null //selectedFile
                     );
                 }
-                this.validate();
+                //this.validate(); //not necessary
             }
         } catch (DocumentAddException | InterruptedException | ExecutionException ex) {
             handleException(ex, "Exception during adding new document");
