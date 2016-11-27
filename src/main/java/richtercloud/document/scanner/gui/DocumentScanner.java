@@ -844,6 +844,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         scanMenuItem = new javax.swing.JMenuItem();
         openMenuItem = new javax.swing.JMenuItem();
         openSelectionMenuItem = new javax.swing.JMenuItem();
+        closeMenuItem = new javax.swing.JMenuItem();
         editEntryMenuItem = new javax.swing.JMenuItem();
         autoOCRValueDetectionMenuItem = new javax.swing.JMenuItem();
         oCRMenuSeparator = new javax.swing.JPopupMenu.Separator();
@@ -1259,6 +1260,15 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         });
         fileMenu.add(openSelectionMenuItem);
 
+        closeMenuItem.setText("Close");
+        closeMenuItem.setEnabled(false);
+        closeMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                closeMenuItemActionPerformed(evt);
+            }
+        });
+        fileMenu.add(closeMenuItem);
+
         editEntryMenuItem.setText("Edit entry...");
         editEntryMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -1472,32 +1482,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         this.storageCreateDialog.setVisible(true);
     }//GEN-LAST:event_storageDialogNewButtonActionPerformed
 
-    private void addDocument(List<BufferedImage> images,
-            File selectedFile) throws DocumentAddException {
-        //wait as long as possible
-        if(amountMoneyExchangeRetrieverInitThread.isAlive()) {
-            try {
-                amountMoneyExchangeRetrieverInitThread.join();
-            } catch (InterruptedException ex) {
-                throw new RuntimeException(ex);
-            }
-        }
-        this.mainPanel.addDocument(images,
-                selectedFile);
-    }
-
-    private void addDocument(Object entityToEdit) throws DocumentAddException {
-        //wait as long as possible
-        if(amountMoneyExchangeRetrieverInitThread.isAlive()) {
-            try {
-                amountMoneyExchangeRetrieverInitThread.join();
-            } catch (InterruptedException ex) {
-                throw new RuntimeException(ex);
-            }
-        }
-        this.mainPanel.addDocument(entityToEdit);
-    }
-
     private void openMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openMenuItemActionPerformed
         JFileChooser chooser = new JFileChooser();
         FileNameExtensionFilter filter = new FileNameExtensionFilter(
@@ -1616,6 +1600,41 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             handleException(ex, "Exception during adding new document");
         }
     }//GEN-LAST:event_openSelectionMenuItemActionPerformed
+
+    private void closeMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_closeMenuItemActionPerformed
+        this.mainPanel.removeActiveDocument();
+        if(this.mainPanel.getDocumentCount() == 0) {
+            this.closeMenuItem.setEnabled(false);
+        }
+    }//GEN-LAST:event_closeMenuItemActionPerformed
+
+    private void addDocument(List<BufferedImage> images,
+            File selectedFile) throws DocumentAddException {
+        //wait as long as possible
+        if(amountMoneyExchangeRetrieverInitThread.isAlive()) {
+            try {
+                amountMoneyExchangeRetrieverInitThread.join();
+            } catch (InterruptedException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+        this.mainPanel.addDocument(images,
+                selectedFile);
+        closeMenuItem.setEnabled(true);
+    }
+
+    private void addDocument(Object entityToEdit) throws DocumentAddException {
+        //wait as long as possible
+        if(amountMoneyExchangeRetrieverInitThread.isAlive()) {
+            try {
+                amountMoneyExchangeRetrieverInitThread.join();
+            } catch (InterruptedException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+        this.mainPanel.addDocument(entityToEdit);
+        closeMenuItem.setEnabled(true);
+    }
 
     /**
      * connects to an OrientDB database using the current values of the text
@@ -1844,6 +1863,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenuItem aboutMenuItem;
     private javax.swing.JMenuItem autoOCRValueDetectionMenuItem;
+    private javax.swing.JMenuItem closeMenuItem;
     private javax.swing.JButton databaseCancelButton;
     private javax.swing.JButton databaseConnectButton;
     private javax.swing.JLabel databaseConnectionFailureLabel;

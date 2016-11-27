@@ -194,6 +194,7 @@ public class DefaultMainPanel extends MainPanel {
     private final Map<Class<?>, WarningHandler<?>> warningHandlers;
     private final MainPanelDockingManager mainPanelDockingManager;
     private final GroupLayout layout;
+    private int documentCount = 0;
 
     public DefaultMainPanel(Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
@@ -310,6 +311,11 @@ public class DefaultMainPanel extends MainPanel {
     @Override
     public Map<OCRSelectComponent, Pair<OCRPanel, EntityPanel>> getDocumentSwitchingMap() {
         return documentSwitchingMap;
+    }
+
+    @Override
+    public int getDocumentCount() {
+        return documentCount;
     }
 
     /**
@@ -525,6 +531,13 @@ public class DefaultMainPanel extends MainPanel {
                         //initial list of results has to be empty)
             );
         }
+        this.documentCount++;
+    }
+
+    @Override
+    public void removeActiveDocument() {
+        this.mainPanelDockingManager.removeDocument(this.getoCRSelectComponent());
+        this.documentCount--;
     }
 
     /**
