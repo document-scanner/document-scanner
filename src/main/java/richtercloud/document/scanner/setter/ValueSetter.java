@@ -36,4 +36,11 @@ public interface ValueSetter<V, C extends JComponent> {
     void setOCRResult(OCRResult oCRResult, C comp);
 
     void setValue(V value, C comp);
+
+    /**
+     * Whether or not this setter supports setting of {@link OCRResult} with
+     * {@link #setOCRResult(richtercloud.document.scanner.gui.ocrresult.OCRResult, javax.swing.JComponent) }.
+     * @return {@code true} if it does support, {@code false} otherwise
+     */
+    boolean isSupportsOCRResultSetting();
 }

@@ -77,4 +77,9 @@ public class AmountMoneyPanelSetter implements ValueSetter<Amount<Money>, Amount
             //@TODO
         }
     }
+
+    @Override
+    public boolean isSupportsOCRResultSetting() {
+        return true;
+    }
 }

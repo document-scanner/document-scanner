@@ -29,22 +29,17 @@ import richtercloud.reflection.form.builder.ReflectionFormPanel;
 public class OCRFieldPopupMenuFactory extends AbstractFieldPopupMenuFactory {
     private final JTextArea oCRResultTextArea;
     private final MessageHandler messageHandler;
-    private final Map<Class<? extends JComponent>, ValueSetter<?, ?>> valueSetterMapping;
 
     public OCRFieldPopupMenuFactory(JTextArea oCRResultTextArea,
             MessageHandler messageHandler,
             Map<Class<? extends JComponent>, ValueSetter<?, ?>> valueSetterMapping) {
+        super(valueSetterMapping);
         this.oCRResultTextArea = oCRResultTextArea;
         this.messageHandler = messageHandler;
-        this.valueSetterMapping = valueSetterMapping;
     }
 
     public JTextArea getoCRResultTextArea() {
         return oCRResultTextArea;
-    }
-
-    public Map<Class<? extends JComponent>, ValueSetter<?, ?>> getValueSetterMapping() {
-        return valueSetterMapping;
     }
 
     public MessageHandler getMessageHandler() {
@@ -56,7 +51,7 @@ public class OCRFieldPopupMenuFactory extends AbstractFieldPopupMenuFactory {
         return new OCRFieldActionListener(oCRResultTextArea,
                 field,
                 reflectionFormPanel,
-                valueSetterMapping,
+                getValueSetterMapping(),
                 messageHandler);
     }
 }

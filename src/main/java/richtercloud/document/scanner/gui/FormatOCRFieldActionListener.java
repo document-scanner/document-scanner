@@ -29,6 +29,7 @@ import javax.swing.JTextArea;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.components.AutoOCRValueDetectionPanel;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
@@ -146,12 +147,15 @@ public class FormatOCRFieldActionListener extends OCRFieldActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        JComponent comp = retrieveComponent();
+        AutoOCRValueDetectionPanel comp = (AutoOCRValueDetectionPanel) retrieveComponent();
+            //in document-scanner we can assume that all field components are
+            //AutoOCRValueDetectionPanel
         FormatOCRResult oCRSelection = retrieveValue();
         ValueSetter valueSetter = retrieveValueSetter(comp);
 
         try {
-            valueSetter.setOCRResult(oCRSelection, comp);
+            valueSetter.setOCRResult(oCRSelection,
+                    comp.getClassComponent());
         } catch (Exception ex) {
             LOGGER.error("An exception during setting the OCR value on " + "component occured", ex);
             getMessageHandler().handle(new Message(String.format("The " + "following exception occured while setting the " + "selected value on the field: %s", ExceptionUtils.getRootCauseMessage(ex)), JOptionPane.ERROR_MESSAGE, "Exception occured"));

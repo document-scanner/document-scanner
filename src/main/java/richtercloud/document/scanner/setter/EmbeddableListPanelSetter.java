@@ -39,6 +39,13 @@ public class EmbeddableListPanelSetter implements ValueSetter<Object, Embeddable
 
     @Override
     public void setOCRResult(OCRResult oCRResult, EmbeddableListPanel comp) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        //There's no easy way to set multiple values in form of a list
+        //-> better to be handled in auto OCR value detection
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public boolean isSupportsOCRResultSetting() {
+        return false;
     }
 }

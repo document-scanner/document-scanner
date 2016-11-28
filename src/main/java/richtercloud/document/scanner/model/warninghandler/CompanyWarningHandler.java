@@ -49,7 +49,9 @@ public class CompanyWarningHandler implements WarningHandler<Company> {
         CriteriaQuery<Company> criteria = entityManager.getCriteriaBuilder().createQuery( Company.class );
         Root<Company> personRoot = criteria.from( Company.class );
         criteria.select( personRoot );
-        criteria.where( entityManager.getCriteriaBuilder().equal( personRoot.get("Company.name"), instance.getName() ) );
+        criteria.where( entityManager.getCriteriaBuilder().equal( personRoot.get("name"), instance.getName() ) );
+            //attributeName Company.name was used before, unclear why (causes
+            //` java.lang.IllegalArgumentException: The attribute [Company.name] is not present in the managed type [EntityTypeImpl@553585467:Company [ javaType: class richtercloud.document.scanner.model.Company descriptor: RelationalDescriptor(richtercloud.document.scanner.model.Company --> [DatabaseTable(COMPANY)]), mappings: 8]].`)
         List<Company> results = entityManager.createQuery( criteria ).getResultList();
         if(!results.isEmpty()) {
             int answer = confirmMessageHandler.confirm(new Message(String.format("An instance with the name '%s' already exists in the database. Continue anyway?", instance.getName()),

@@ -129,4 +129,9 @@ public class UtilDatePickerSetter implements ValueSetter<Date, UtilDatePicker> {
     public void setValue(Date value, UtilDatePicker comp) {
         comp.setValue(value);
     }
+
+    @Override
+    public boolean isSupportsOCRResultSetting() {
+        return true;
+    }
 }

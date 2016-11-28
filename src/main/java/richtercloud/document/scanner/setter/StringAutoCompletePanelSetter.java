@@ -35,6 +35,11 @@ public class StringAutoCompletePanelSetter implements ValueSetter<OCRResult, Str
 
     @Override
     public void setOCRResult(OCRResult oCRResult, StringAutoCompletePanel<?> comp) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        comp.getComboBox().setSelectedItem(oCRResult.getoCRResult());
+    }
+
+    @Override
+    public boolean isSupportsOCRResultSetting() {
+        return true;
     }
 }

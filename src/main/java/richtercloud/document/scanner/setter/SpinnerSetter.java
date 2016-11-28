@@ -41,4 +41,8 @@ public class SpinnerSetter implements ValueSetter<Double, JSpinner> {
         comp.setValue(value);
     }
 
+    @Override
+    public boolean isSupportsOCRResultSetting() {
+        return true;
+    }
 }

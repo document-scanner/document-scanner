@@ -30,14 +30,13 @@ import richtercloud.reflection.form.builder.ReflectionFormPanel;
 public class AutoOCRValueDetectionFieldPopupMenuFactory extends AbstractFieldPopupMenuFactory {
     private final Object value;
     private final MessageHandler messageHandler;
-    private final Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping;
 
     public AutoOCRValueDetectionFieldPopupMenuFactory(Object value,
             MessageHandler messageHandler,
             Map<Class<? extends JComponent>, ValueSetter<?, ?>> valueSetterMapping) {
+        super(valueSetterMapping);
         this.value = value;
         this.messageHandler = messageHandler;
-        this.valueSetterMapping = valueSetterMapping;
     }
 
     @Override
@@ -46,7 +45,7 @@ public class AutoOCRValueDetectionFieldPopupMenuFactory extends AbstractFieldPop
         return new AutoOCRValueDetectionFieldActionListener(value,
                 field,
                 reflectionFormPanel,
-                valueSetterMapping,
+                getValueSetterMapping(),
                 messageHandler);
     }
 }

@@ -41,4 +41,8 @@ public class TextFieldSetter implements ValueSetter<String, JTextField> {
         setValue(oCRResult.getoCRResult(), comp);
     }
 
+    @Override
+    public boolean isSupportsOCRResultSetting() {
+        return true;
+    }
 }

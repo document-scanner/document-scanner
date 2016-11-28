@@ -18,8 +18,14 @@ import java.lang.reflect.Field;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.components.AutoOCRValueDetectionPanel;
+import richtercloud.document.scanner.gui.ocrresult.OCRResult;
+import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.reflection.form.builder.FieldInfo;
 import richtercloud.reflection.form.builder.ReflectionFormBuilder;
@@ -41,6 +47,16 @@ interfaces which allow adding of menu items it's necessary that this factory
 returns the menu items in order to allow the caller to process them.
 */
 public abstract class AbstractFieldPopupMenuFactory {
+    private final static Logger LOGGER = LoggerFactory.getLogger(AbstractFieldPopupMenuFactory.class);
+    private final Map<Class<? extends JComponent>, ValueSetter<?, ?>> valueSetterMapping;
+
+    public AbstractFieldPopupMenuFactory(Map<Class<? extends JComponent>, ValueSetter<?, ?>> valueSetterMapping) {
+        this.valueSetterMapping = valueSetterMapping;
+    }
+
+    public Map<Class<? extends JComponent>, ValueSetter<?, ?>> getValueSetterMapping() {
+        return valueSetterMapping;
+    }
 
     protected abstract AbstractFieldActionListener createFieldActionListener(Field field,
             ReflectionFormPanel reflectionFormPanel);
@@ -74,6 +90,24 @@ public abstract class AbstractFieldPopupMenuFactory {
             JMenu entityClassMenu = new JMenu(className);
             List<Field> relevantFields = reflectionFormBuilder.getFieldRetriever().retrieveRelevantFields(entityClass);
             for(Field relevantField : relevantFields) {
+                JComponent relevantFieldComponent = reflectionFormPanel.getComponentByField(relevantField);
+                assert relevantFieldComponent instanceof AutoOCRValueDetectionPanel;
+                AutoOCRValueDetectionPanel autoOCRValueDetectionPanel = (AutoOCRValueDetectionPanel) relevantFieldComponent;
+                JComponent autoOCRValueDetectionPanelComponent = autoOCRValueDetectionPanel.getClassComponent();
+                ValueSetter relevantFieldValueSetter = valueSetterMapping.get(autoOCRValueDetectionPanelComponent.getClass());
+                if(relevantFieldValueSetter == null) {
+                    LOGGER.debug(String.format("skipping field %s because it doesn't have a %s mapped",
+                            relevantField,
+                            ValueSetter.class));
+                    continue;
+                }
+                if(!relevantFieldValueSetter.isSupportsOCRResultSetting()) {
+                    LOGGER.debug(String.format("skipping field %s because its %s doesn't support setting %ss",
+                            relevantField,
+                            ValueSetter.class,
+                            OCRResult.class));
+                    continue;
+                }
                 String fieldName;
                 FieldInfo fieldInfo = relevantField.getAnnotation(FieldInfo.class);
                 if(fieldInfo != null) {
