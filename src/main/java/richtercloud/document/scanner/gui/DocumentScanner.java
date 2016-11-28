@@ -282,13 +282,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private final Map<java.lang.reflect.Type, TypeHandler<?, ?,?, ?>> typeHandlerMapping;
     private MessageHandler messageHandler = new DialogMessageHandler(this);
     private ConfirmMessageHandler confirmMessageHandler = new DialogConfirmMessageHandler(this);
-    private final Map<Class<?>, WarningHandler<?>> warningHandlers = new HashMap<Class<?>, WarningHandler<?>>() {
-        private static final long serialVersionUID = 1L;
-        {
-            put(Company.class,
-                    new CompanyWarningHandler(entityManager, confirmMessageHandler));
-        }
-    };
+    private final Map<Class<?>, WarningHandler<?>> warningHandlers = new HashMap<>();
     private ListCellRenderer<Object> oCRDialogEngineComboBoxRenderer = new DefaultListCellRenderer() {
         private static final long serialVersionUID = 1L;
 
@@ -716,6 +710,10 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         this.entityManagerFactory = Persistence.createEntityManagerFactory("richtercloud_document-scanner_jar_1.0-SNAPSHOTPU",
                 entityManagerFactoryMap);
         this.entityManager = entityManagerFactory.createEntityManager();
+
+        warningHandlers.put(Company.class,
+                new CompanyWarningHandler(entityManager, confirmMessageHandler));
+            //after entityManager has been initialized
 
         DerbyPersistenceStorageConfPanel derbyStorageConfPanel;
         derbyStorageConfPanel = new DerbyPersistenceStorageConfPanel(entityManager,

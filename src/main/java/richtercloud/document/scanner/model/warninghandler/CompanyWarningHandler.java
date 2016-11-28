@@ -34,7 +34,13 @@ public class CompanyWarningHandler implements WarningHandler<Company> {
 
     public CompanyWarningHandler(EntityManager entityManager,
             ConfirmMessageHandler confirmMessageHandler) {
+        if(entityManager == null) {
+            throw new IllegalArgumentException("entityManager mustn't be null");
+        }
         this.entityManager = entityManager;
+        if(confirmMessageHandler == null) {
+            throw new IllegalArgumentException("confirmMessageHandler mustn't be null");
+        }
         this.confirmMessageHandler = confirmMessageHandler;
     }
 
