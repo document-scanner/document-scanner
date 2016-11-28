@@ -18,8 +18,6 @@ import java.awt.HeadlessException;
 import java.awt.Window;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -37,7 +35,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import javax.imageio.ImageIO;
 import javax.persistence.EntityManager;
 import javax.swing.GroupLayout;
 import javax.swing.JComponent;
@@ -54,11 +51,11 @@ import org.apache.pdfbox.pdmodel.PDPage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.components.AutoOCRValueDetectionReflectionFormBuilder;
+import richtercloud.document.scanner.components.MainPanelScanResultPanelFetcher;
+import richtercloud.document.scanner.components.MainPanelScanResultPanelRecreator;
 import richtercloud.document.scanner.components.OCRResultPanelFetcher;
 import richtercloud.document.scanner.components.OCRResultPanelFetcherProgressEvent;
 import richtercloud.document.scanner.components.OCRResultPanelFetcherProgressListener;
-import richtercloud.document.scanner.components.ScanResultPanelFetcher;
-import richtercloud.document.scanner.components.ScanResultPanelRecreator;
 import richtercloud.document.scanner.components.annotations.ScanResult;
 import richtercloud.document.scanner.components.tag.TagStorage;
 import richtercloud.document.scanner.flexdock.MainPanelDockingManagerFlexdock;
@@ -831,62 +828,5 @@ public class DefaultMainPanel extends MainPanel {
         }
     }
 
-    private class MainPanelScanResultPanelFetcher implements ScanResultPanelFetcher {
-        private OCRSelectPanelPanel oCRSelectComponent;
 
-        /**
-         * Creates a {@code MainPanelScanResultPanelFetcher}.
-         * @param oCRSelectComponent the {@link OCRSelectPanelPanel} where to
-         * fetch the OCR results (might be {@code null} in order to avoid
-         * cyclic dependencies, but needs to be set up with {@link #setoCRSelectComponent(richtercloud.document.scanner.gui.OCRSelectPanelPanel) }
-         * before {@link #fetch() } works.
-         */
-        MainPanelScanResultPanelFetcher(OCRSelectPanelPanel oCRSelectComponent) {
-            this.oCRSelectComponent = oCRSelectComponent;
-        }
-
-        public void setoCRSelectComponent(OCRSelectPanelPanel oCRSelectComponent) {
-            this.oCRSelectComponent = oCRSelectComponent;
-        }
-
-        /**
-         * Uses {@link ImageIO#write(java.awt.image.RenderedImage, java.lang.String, java.io.OutputStream) }
-         * assuming that {@link ImageIO#read(java.io.InputStream) } allows
-         * re-reading data correctly.
-         * @return the fetched binary data
-         */
-        @Override
-        public byte[] fetch() {
-            ByteArrayOutputStream retValueStream = new ByteArrayOutputStream();
-            try {
-                for (OCRSelectPanel imagePanel : this.oCRSelectComponent.getoCRSelectPanels()) {
-                    if (!ImageIO.write(imagePanel.getImage(), "png", retValueStream)) {
-                        throw new IllegalStateException("writing image data to output stream failed");
-                    }
-                }
-                return retValueStream.toByteArray();
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
-        }
-    }
-
-    private class MainPanelScanResultPanelRecreator implements ScanResultPanelRecreator {
-
-        @Override
-        public List<BufferedImage> recreate(byte[] data) {
-            List<BufferedImage> retValue = new LinkedList<>();
-            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(data);
-            try {
-                BufferedImage image = ImageIO.read(byteArrayInputStream);
-                while(image != null) {
-                    retValue.add(image);
-                    image = ImageIO.read(byteArrayInputStream);
-                }
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
-            return retValue;
-        }
-    }
 }
