@@ -39,4 +39,8 @@ public class DocumentPane extends GridPane {
     public List<ImageViewPane> getDocumentNodes() {
         return documentNodes;
     }
+
+    public boolean containsDocumentNode(ImageViewPane documentNode) {
+        return documentNodes.contains(documentNode);
+    }
 }

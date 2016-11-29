@@ -178,6 +178,8 @@ public class ScannerResultDialog extends Dialog<List<List<BufferedImage>>> {
                         selectedDocument);
                 selectedDocument.setValue(addedDocument);
             }
+            assert selectedDocument.getValue() != null;
+            assert documentPane.containsDocumentNode(selectedDocument.getValue());
             for(ImageViewPane selectedScanResult : selectedScanResults) {
                 assert selectedDocument.getValue() != null;
                 //...and add to selected document in document pane
