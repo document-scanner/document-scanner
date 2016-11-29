@@ -1734,9 +1734,11 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 invisibleWaitDialog.setBounds(0, 0, 1, 1);
                 invisibleWaitDialog.setModal(true);
                 invisibleWaitDialog.setUndecorated(true);
-                new JFXPanel(); //necessary to initialize JavaFX and avoid
-                    //failure of Platform.runLater with
-                    //`java.lang.IllegalStateException: Toolkit not initialized`
+                if(this.javaFXInitPanel == null) {
+                    this.javaFXInitPanel = new JFXPanel(); //necessary to initialize JavaFX and avoid
+                        //failure of Platform.runLater with
+                        //`java.lang.IllegalStateException: Toolkit not initialized`
+                }
                 Platform.runLater(() -> {
                     ScannerResultDialog scannerResultDialog = new ScannerResultDialog(scannedImages);
                     Optional<List<List<BufferedImage>>> dialogResult = scannerResultDialog.showAndWait();
