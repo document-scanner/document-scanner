@@ -25,12 +25,15 @@ import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Properties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * An {@link AutoOCRValueDetectionService} which uses the <a href=""></a>.
  * @author richter
  */
 public class SUTimeAutoOCRValueDetectionService extends AbstractAutoOCRValueDetectionService<Date> {
+    private final static Logger LOGGER = LoggerFactory.getLogger(SUTimeAutoOCRValueDetectionService.class);
     /**
      * The {@code SUTime} pipeline used for date and time value discovery. Is
      * reusage according to class javadoc.
@@ -59,7 +62,11 @@ public class SUTimeAutoOCRValueDetectionService extends AbstractAutoOCRValueDete
             try {
                 value = SIMPLE_DATE_FORMAT.parse(temporal.getRange().begin().toString());
             } catch (ParseException ex) {
-                throw new RuntimeException(ex);
+                //Something like `Caused by: java.text.ParseException: Unparseable date: "716-XX-XX"`
+                //can happen @TODO: figure out
+                LOGGER.error("an unexpected exception occured during",
+                        ex);
+                continue;
             }
             AutoOCRValueDetectionResult<Date> result = new AutoOCRValueDetectionResult<>(oCRSource,
                     value
