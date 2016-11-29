@@ -511,6 +511,58 @@ public class DefaultMainPanel extends MainPanel {
     }
 
     /**
+     * Calculate the zoom level of multiple images based on their average width
+     * and {@link DocumentScannerConf#getPreferredWidth() }.
+     * @return the calculated zoom level
+     */
+    public static float adjustZoomLevel(List<BufferedImage> images,
+            DocumentScannerConf documentScannerConf) {
+        //calculate average width
+        int averageWidth = 0;
+        for(BufferedImage image : images) {
+            averageWidth += image.getWidth();
+        }
+        averageWidth /= images.size();
+        int zoomStepCount = 0;
+        int zoomDifference = Math.abs(averageWidth - documentScannerConf.getPreferredWidth());
+        int zoomDifferenceNew;
+        int resultWidth = averageWidth;
+        if(averageWidth == documentScannerConf.getPreferredWidth()) {
+            return 1.0f;
+        }else if(averageWidth > documentScannerConf.getPreferredWidth()) {
+            //need to zoom out
+            //find the minimal zoom difference
+            while(true) {
+                resultWidth = (int) (resultWidth*documentScannerConf.getZoomLevelMultiplier());
+                zoomDifferenceNew = Math.abs(documentScannerConf.getPreferredWidth() - resultWidth);
+                if(zoomDifferenceNew < zoomDifference) {
+                    zoomStepCount += 1;
+                    zoomDifference = zoomDifferenceNew;
+                }else {
+                    break;
+                }
+            }
+            float retValue = (float) Math.pow(documentScannerConf.getZoomLevelMultiplier(), zoomStepCount);
+            return retValue;
+        }else {
+            //averageWidth < documentScannerConf.getPreferredWidth()
+            //need to zoom in
+            while(true) {
+                resultWidth = (int) (resultWidth/documentScannerConf.getZoomLevelMultiplier());
+                zoomDifferenceNew = Math.abs(documentScannerConf.getPreferredWidth() - resultWidth);
+                if(zoomDifferenceNew < zoomDifference) {
+                    zoomStepCount += 1;
+                    zoomDifference = zoomDifferenceNew;
+                }else {
+                    break;
+                }
+            }
+            float retValue = (float) Math.pow(1/documentScannerConf.getZoomLevelMultiplier(), zoomStepCount);
+            return retValue;
+        }
+    }
+
+    /**
      *
      * @param oCRSelectComponent the created {@link OCRSelectComponent} for the
      * new document
@@ -520,6 +572,14 @@ public class DefaultMainPanel extends MainPanel {
             EntityPanel entityPanel) {
         mainPanelDockingManager.addDocumentDockable(DefaultMainPanel.this.oCRSelectComponent,
                 oCRSelectComponent);
+        //collect oCRSelectComponent's images
+        List<BufferedImage> images = new LinkedList<>();
+        for(OCRSelectPanel oCRSelectPanel : oCRSelectComponent.getoCRSelectPanelPanel().getoCRSelectPanels()) {
+            images.add(oCRSelectPanel.getImage());
+        }
+        float zoomLevel = adjustZoomLevel(images,
+                documentScannerConf);
+        oCRSelectComponent.getoCRSelectPanelPanel().setZoomLevels(zoomLevel);
         if(this.documentScannerConf.isAutoOCRValueDetection()) {
             entityPanel.autoOCRValueDetection(new DefaultOCRSelectPanelPanelFetcher(oCRSelectComponent.getoCRSelectPanelPanel(),
                     oCREngineFactory,

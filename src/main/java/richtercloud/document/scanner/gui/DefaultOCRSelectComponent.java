@@ -217,7 +217,7 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
         zoomInButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                DefaultOCRSelectComponent.this.zoomLevel *= DefaultOCRSelectComponent.this.documentScannerConf.getZoomLevelMultiplier();
+                DefaultOCRSelectComponent.this.zoomLevel /= DefaultOCRSelectComponent.this.documentScannerConf.getZoomLevelMultiplier();
                 DefaultOCRSelectComponent.this.oCRSelectPanelPanel.setZoomLevels(DefaultOCRSelectComponent.this.zoomLevel);
                 DefaultOCRSelectComponent.this.repaint();
             }
@@ -225,7 +225,7 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
         zoomOutButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                DefaultOCRSelectComponent.this.zoomLevel /= DefaultOCRSelectComponent.this.documentScannerConf.getZoomLevelMultiplier();
+                DefaultOCRSelectComponent.this.zoomLevel *= DefaultOCRSelectComponent.this.documentScannerConf.getZoomLevelMultiplier();
                 DefaultOCRSelectComponent.this.oCRSelectPanelPanel.setZoomLevels(DefaultOCRSelectComponent.this.zoomLevel);
                 DefaultOCRSelectComponent.this.repaint();
                     //zooming out requires a scroll event to occur in order to

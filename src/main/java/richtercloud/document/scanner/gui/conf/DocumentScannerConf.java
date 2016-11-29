@@ -40,7 +40,12 @@ public class DocumentScannerConf implements Serializable {
     private final static boolean AUTO_GENERATE_IDS_DEFAULT = true;
     private final static boolean AUTO_SAVE_IMAGE_DATA_DEFAULT = true;
     private final static boolean AUTO_SAVE_OCR_DATA_DEFAULT = true;
-    private final static float ZOOM_LEVEL_MULTIPLIER_DEFAULT = 1.33f;
+    private final static float ZOOM_LEVEL_MULTIPLIER_DEFAULT = 0.66f;
+    /**
+     * A minimal limit for the zoom level in order to prevent too non-sensical
+     * values.
+     */
+    private final static float ZOOM_LEVEL_MIN = 0.01f;
 
     private static Set<StorageConf<?,?>> generateAvailableStorageConfsDefault(EntityManager entityManager,
             MessageHandler messageHandler,
@@ -103,7 +108,19 @@ public class DocumentScannerConf implements Serializable {
      * Mapping between scanner name and it's {@link ScannerConf}.
      */
     private Map<String, ScannerConf> scannerConfMap;
+    /**
+     * The zoom level multiplier which decides how large the effect of a zoom-in
+     * or zoom-out operation is. Has to be between {@link #ZOOM_LEVEL_MIN} and
+     * {@code 1.0}.
+     */
     private float zoomLevelMultiplier = ZOOM_LEVEL_MULTIPLIER_DEFAULT;
+    public final static int PREFERRED_WIDTH_DEFAULT = 600;
+        //300 is pretty small for an average screen
+    /**
+     * The width of preview images which should be matched as closely as
+     * possible with default zoom levels.
+     */
+    private int preferredWidth = PREFERRED_WIDTH_DEFAULT;
 
     protected DocumentScannerConf() {
     }
@@ -126,7 +143,8 @@ public class DocumentScannerConf implements Serializable {
                 AUTO_SAVE_IMAGE_DATA_DEFAULT,
                 AUTO_SAVE_OCR_DATA_DEFAULT,
                 new HashMap<String, ScannerConf>(),
-                ZOOM_LEVEL_MULTIPLIER_DEFAULT);
+                ZOOM_LEVEL_MULTIPLIER_DEFAULT,
+                PREFERRED_WIDTH_DEFAULT);
     }
 
     public DocumentScannerConf(StorageConf storageConf,
@@ -135,14 +153,34 @@ public class DocumentScannerConf implements Serializable {
             boolean autoSaveImageData,
             boolean autoSaveOCRData,
             Map<String, ScannerConf> scannerConfMap,
-            float zoomLevelMultiplier) {
+            float zoomLevelMultiplier,
+            int preferredWidth) {
         this.storageConf = storageConf;
         this.availableStorageConfs = availableStorageConfs;
         this.autoGenerateIDs = autoGenerateIDs;
         this.autoSaveImageData = autoSaveImageData;
         this.autoSaveOCRData = autoSaveOCRData;
         this.scannerConfMap = scannerConfMap;
+        if(zoomLevelMultiplier > 1.0) {
+            throw new IllegalArgumentException(String.format("The zoom level "
+                    + "multiplier mustn't be greater than 1.0 since the "
+                    + "application interprets it between %f and 1.0",
+                    ZOOM_LEVEL_MIN));
+        }
+        if(zoomLevelMultiplier < ZOOM_LEVEL_MIN) {
+            throw new IllegalArgumentException(String.format("The zoom level "
+                    + "multiplier mustn't be less than %f since the "
+                    + "application interprets it between %f and 1.0",
+                    ZOOM_LEVEL_MIN,
+                    ZOOM_LEVEL_MIN));
+        }
         this.zoomLevelMultiplier = zoomLevelMultiplier;
+        if(preferredWidth < 10) {
+            throw new IllegalArgumentException("A preferred width of less than "
+                    + "10 will cause severe displaying issues and will thus "
+                    + "not be supported");
+        }
+        this.preferredWidth = preferredWidth;
     }
 
     public DocumentScannerConf(DocumentScannerConf documentScannerConf) {
@@ -152,8 +190,17 @@ public class DocumentScannerConf implements Serializable {
                 documentScannerConf.isAutoSaveImageData(),
                 documentScannerConf.isAutoSaveOCRData(),
                 documentScannerConf.getScannerConfMap(),
-                documentScannerConf.getZoomLevelMultiplier()
+                documentScannerConf.getZoomLevelMultiplier(),
+                documentScannerConf.getPreferredWidth()
         );
+    }
+
+    public int getPreferredWidth() {
+        return preferredWidth;
+    }
+
+    public void setPreferredWidth(int preferredWidth) {
+        this.preferredWidth = preferredWidth;
     }
 
     public float getZoomLevelMultiplier() {

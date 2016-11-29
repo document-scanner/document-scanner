@@ -41,6 +41,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 
 /**
  * Allows associating scan results, i.e. images, with documents which group
@@ -78,7 +79,7 @@ public class ScannerResultDialog extends Dialog<List<List<BufferedImage>>> {
     private float zoomMultiplicator = 0.3f;
     private int initialWidth = 600;
     private int initialHeight = 400;
-    private int panelWidth = 200;
+    private final int panelWidth;
     /**
      * The height of empty document panels which are added to {@code leftPane}
      * whose relation can't already be known. Scan result objects' height is
@@ -88,10 +89,13 @@ public class ScannerResultDialog extends Dialog<List<List<BufferedImage>>> {
      * The default value is one calculated based on {@code panelWidth} and the
      * relation of DIN A4/ISO 216 paper with 210 mm × 297 mm.
      */
-    private int panelHeight = panelWidth * 297 / 210;
+    private final int panelHeight;
     private int centralPanelPadding = 15;
 
-    public ScannerResultDialog(List<BufferedImage> scanResultImages) {
+    public ScannerResultDialog(List<BufferedImage> scanResultImages,
+            DocumentScannerConf documentScannerConf) {
+        this.panelWidth = documentScannerConf.getPreferredWidth();
+        this.panelHeight = panelWidth * 297 / 210;
         setResizable(true);
         getDialogPane().setPrefSize(initialWidth, initialHeight);
 

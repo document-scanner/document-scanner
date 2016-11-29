@@ -1579,7 +1579,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         //`java.lang.IllegalStateException: Toolkit not initialized`
                 }
                 Platform.runLater(() -> {
-                    ScannerResultDialog scannerResultDialog = new ScannerResultDialog(images);
+                    ScannerResultDialog scannerResultDialog = new ScannerResultDialog(images,
+                            this.documentScannerConf);
                     Optional<List<List<BufferedImage>>> dialogResult = scannerResultDialog.showAndWait();
                     if(dialogResult.isPresent()) {
                         scannerResults.addAll(scannerResultDialog.getResult());
@@ -1740,7 +1741,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         //`java.lang.IllegalStateException: Toolkit not initialized`
                 }
                 Platform.runLater(() -> {
-                    ScannerResultDialog scannerResultDialog = new ScannerResultDialog(scannedImages);
+                    ScannerResultDialog scannerResultDialog = new ScannerResultDialog(scannedImages,
+                            this.documentScannerConf);
                     Optional<List<List<BufferedImage>>> dialogResult = scannerResultDialog.showAndWait();
                     if(dialogResult.isPresent()) {
                         scannerResults.addAll(scannerResultDialog.getResult());
