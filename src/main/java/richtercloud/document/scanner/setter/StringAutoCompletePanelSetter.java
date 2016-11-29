@@ -21,7 +21,7 @@ import richtercloud.reflection.form.builder.jpa.panels.StringAutoCompletePanel;
  *
  * @author richter
  */
-public class StringAutoCompletePanelSetter implements ValueSetter<OCRResult, StringAutoCompletePanel<?>> {
+public class StringAutoCompletePanelSetter implements ValueSetter<OCRResult, StringAutoCompletePanel> {
     private final static StringAutoCompletePanelSetter INSTANCE = new StringAutoCompletePanelSetter();
 
     public static StringAutoCompletePanelSetter getInstance() {
@@ -29,12 +29,12 @@ public class StringAutoCompletePanelSetter implements ValueSetter<OCRResult, Str
     }
 
     @Override
-    public void setValue(OCRResult value, StringAutoCompletePanel<?> comp) {
+    public void setValue(OCRResult value, StringAutoCompletePanel comp) {
         comp.getComboBox().setSelectedItem(value.getoCRResult());
     }
 
     @Override
-    public void setOCRResult(OCRResult oCRResult, StringAutoCompletePanel<?> comp) {
+    public void setOCRResult(OCRResult oCRResult, StringAutoCompletePanel comp) {
         comp.getComboBox().setSelectedItem(oCRResult.getoCRResult());
     }
 
