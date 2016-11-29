@@ -59,6 +59,12 @@ public class SUTimeAutoOCRValueDetectionService extends AbstractAutoOCRValueDete
             String oCRSource = coreMap.toString();
             Date value;
             Temporal temporal = coreMap.get(TimeExpression.Annotation.class).getTemporal();
+            if(temporal.getRange() == null || temporal.getRange().begin() == null) {
+                LOGGER.debug("skipping temporal %s with null range or with range with null begin");
+                    //@TODO: investigate further and prevent causes for this if
+                    //it makes sense
+                continue;
+            }
             try {
                 value = SIMPLE_DATE_FORMAT.parse(temporal.getRange().begin().toString());
             } catch (ParseException ex) {
