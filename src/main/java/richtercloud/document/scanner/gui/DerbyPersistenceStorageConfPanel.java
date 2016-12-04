@@ -21,7 +21,6 @@ import javax.persistence.EntityManager;
 import richtercloud.document.scanner.gui.conf.DerbyPersistenceStorageConf;
 import richtercloud.document.scanner.gui.conf.DerbyPersistenceStorageConfInitializationException;
 import richtercloud.document.scanner.gui.storageconf.StorageConfPanel;
-import richtercloud.message.handler.MessageHandler;
 
 /**
  *
@@ -29,7 +28,6 @@ import richtercloud.message.handler.MessageHandler;
  */
 public class DerbyPersistenceStorageConfPanel extends StorageConfPanel<DerbyPersistenceStorageConf> {
     private static final long serialVersionUID = 1L;
-    private EntityManager entityManager;
     private DerbyPersistenceStorageConf storageConf;
 
     /**
@@ -40,13 +38,10 @@ public class DerbyPersistenceStorageConfPanel extends StorageConfPanel<DerbyPers
     }
 
     public DerbyPersistenceStorageConfPanel(EntityManager entityManager,
-            MessageHandler messageHandler,
             Set<Class<?>> entityClasses,
             File schemeChecksumFile) throws DerbyPersistenceStorageConfInitializationException, IOException {
         this();
-        this.entityManager = entityManager;
         this.storageConf =  new DerbyPersistenceStorageConf(entityManager,
-                messageHandler,
                 entityClasses,
                 schemeChecksumFile);
         this.storageConf.validate();

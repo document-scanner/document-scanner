@@ -14,6 +14,7 @@
  */
 package richtercloud.document.scanner.gui.conf;
 
+import com.beust.jcommander.Parameter;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -28,6 +29,15 @@ import richtercloud.document.scanner.gui.ScannerConf;
 import richtercloud.message.handler.MessageHandler;
 
 /**
+ * Represents deserialized instances of configurations which are supposed to be
+ * serializable to a configuration file.
+ *
+ * Holds all configuration-related default values in form of constants.
+ *
+ * Following concept https://richtercloud.de:446/dokuwiki/doku.php?id=programming:java#configuration_files_and_command_line_interface.
+ * There's no support for a base directory option which adjusts all path-related
+ * options, i.e. the user is forced to change all path-related options which is
+ * just fine.
  *
  * @author richter
  */
@@ -46,15 +56,34 @@ public class DocumentScannerConf implements Serializable {
      * values.
      */
     private final static float ZOOM_LEVEL_MIN = 0.01f;
+    public final static File HOME_DIR = new File(System.getProperty("user.home"));
+    private static final String CONFIG_DIR_NAME_DEFAULT = ".document-scanner";
+    private final static File CONFIG_DIR_DEFAULT = new File(HOME_DIR, CONFIG_DIR_NAME_DEFAULT);
+    private final static String CONFIG_FILE_NAME_DEFAULT = "document-scanner-config.xml";
+    private final static File CONFIG_FILE_DEFAULT = new File(CONFIG_DIR_DEFAULT, CONFIG_FILE_NAME_DEFAULT);
+    /**
+     * The file the this configuration has been loaded from. Might be
+     * {@code null} if no initial configuration file has been specified.
+     */
+    @Parameter(names = {"-c", "--config-file"}, description = "An alternative configuration file location")
+    /*
+    internal implementation notes:
+    - unused in the application, but specification here dramatically facilitates
+    command line parsing
+    */
+    private File configFile = CONFIG_FILE_DEFAULT;
+    public static final String DATABASE_DIR_NAME_DEFAULT = "databases";
+    private final static File DATABASE_DIR_DEFAULT = new File(CONFIG_DIR_DEFAULT, DATABASE_DIR_NAME_DEFAULT);
+    private File databaseDir = DATABASE_DIR_DEFAULT;
+    private final static String DERBY_CONNECTION_URL_DEFAULT = String.format("jdbc:derby:%s", DATABASE_DIR_DEFAULT.getAbsolutePath());
+    private String derbyConnectionURL = DERBY_CONNECTION_URL_DEFAULT;
 
     private static Set<StorageConf<?,?>> generateAvailableStorageConfsDefault(EntityManager entityManager,
-            MessageHandler messageHandler,
             Set<Class<?>> entityClasses,
             File schemeChecksumFile,
             File xMLStorageFile) throws IOException {
         Set<StorageConf<?,?>> availableStorageConfs = new HashSet<>();
         availableStorageConfs.add(new DerbyPersistenceStorageConf(entityManager,
-                messageHandler,
                 entityClasses,
                 schemeChecksumFile));
         availableStorageConfs.add(new XMLStorageConf(xMLStorageFile));
@@ -107,7 +136,7 @@ public class DocumentScannerConf implements Serializable {
     /**
      * Mapping between scanner name and it's {@link ScannerConf}.
      */
-    private Map<String, ScannerConf> scannerConfMap;
+    private Map<String, ScannerConf> scannerConfMap = new HashMap<>();
     /**
      * The zoom level multiplier which decides how large the effect of a zoom-in
      * or zoom-out operation is. Has to be between {@link #ZOOM_LEVEL_MIN} and
@@ -121,8 +150,26 @@ public class DocumentScannerConf implements Serializable {
      * possible with default zoom levels.
      */
     private int preferredWidth = PREFERRED_WIDTH_DEFAULT;
+    private final static String XML_STORAGE_FILE_NAME_DEFAULT = "xml-storage.xml";
+    private final static File XML_STORAGE_FILE_DEFAULT = new File(CONFIG_DIR_DEFAULT, XML_STORAGE_FILE_NAME_DEFAULT);
+    private File xMLStorageFile = XML_STORAGE_FILE_DEFAULT;
+    private final static File DERBY_PERSISTENCE_STORAGE_SCHEME_CHECKSUM_FILE_DEFAULT = new File(CONFIG_DIR_DEFAULT, DerbyPersistenceStorageConf.SCHEME_CHECKSUM_FILE_NAME);
+    private File derbyPersistenceStorageSchemeChecksumFile = DERBY_PERSISTENCE_STORAGE_SCHEME_CHECKSUM_FILE_DEFAULT;
+    private File amountMoneyUsageStatisticsStorageFile = new File(CONFIG_DIR_DEFAULT, AMOUNT_MONEY_USAGE_STATISTICS_STORAGE_FILE_NAME);
+    private File amountMoneyCurrencyStorageFile = new File(CONFIG_DIR_DEFAULT, AMOUNT_MONEY_CURRENCY_STORAGE_FILE_NAME);
+    private final static String AMOUNT_MONEY_USAGE_STATISTICS_STORAGE_FILE_NAME = "currency-usage-statistics.xml";
+    private final static String AMOUNT_MONEY_CURRENCY_STORAGE_FILE_NAME = "currencies.xml";
+    private final static String TAG_STORAGE_FILE_NAME = "tags";
+    private final static File TAG_STORAGE_FILE_DEFAULT = new File(CONFIG_DIR_DEFAULT, TAG_STORAGE_FILE_NAME);
+    private File tagStorageFile = TAG_STORAGE_FILE_DEFAULT;
 
-    protected DocumentScannerConf() {
+    @Parameter(names= {"-d", "--debug"}, description= "Print extra debugging statements")
+    private boolean debug = false;
+
+    /**
+     * Creates an configuration with default values.
+     */
+    public DocumentScannerConf() {
     }
 
     public DocumentScannerConf(EntityManager entityManager,
@@ -131,11 +178,9 @@ public class DocumentScannerConf implements Serializable {
             File schemeChecksumFile,
             File xMLStorageFile) throws IOException {
         this(new DerbyPersistenceStorageConf(entityManager,
-                messageHandler,
                 entityClasses,
                 schemeChecksumFile),
                 generateAvailableStorageConfsDefault(entityManager,
-                        messageHandler,
                         entityClasses,
                         schemeChecksumFile,
                         xMLStorageFile),
@@ -193,6 +238,30 @@ public class DocumentScannerConf implements Serializable {
                 documentScannerConf.getZoomLevelMultiplier(),
                 documentScannerConf.getPreferredWidth()
         );
+    }
+
+    public File getConfigFile() {
+        return configFile;
+    }
+
+    public boolean isDebug() {
+        return this.debug;
+    }
+
+    protected void setDebug(boolean debug) {
+        this.debug = debug;
+    }
+
+    public File getDatabaseDir() {
+        return databaseDir;
+    }
+
+    public String getDerbyConnectionURL() {
+        return derbyConnectionURL;
+    }
+
+    public File getTagStorageFile() {
+        return tagStorageFile;
     }
 
     public int getPreferredWidth() {
@@ -355,5 +424,33 @@ public class DocumentScannerConf implements Serializable {
 
     public void setAutoOCRValueDetection(boolean autoOCRValueDetection) {
         this.autoOCRValueDetection = autoOCRValueDetection;
+    }
+
+    /**
+     * @return the xMLStorageFile
+     */
+    public File getxMLStorageFile() {
+        return xMLStorageFile;
+    }
+
+    /**
+     * @return the derbyPersistenceStorageSchemeChecksumFile
+     */
+    public File getDerbyPersistenceStorageSchemeChecksumFile() {
+        return derbyPersistenceStorageSchemeChecksumFile;
+    }
+
+    /**
+     * @return the amountMoneyUsageStatisticsStorageFile
+     */
+    public File getAmountMoneyUsageStatisticsStorageFile() {
+        return amountMoneyUsageStatisticsStorageFile;
+    }
+
+    /**
+     * @return the amountMoneyCurrencyStorageFile
+     */
+    public File getAmountMoneyCurrencyStorageFile() {
+        return amountMoneyCurrencyStorageFile;
     }
 }

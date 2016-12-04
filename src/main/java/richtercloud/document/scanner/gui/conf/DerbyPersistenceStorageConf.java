@@ -28,9 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import javax.persistence.EntityManager;
-import richtercloud.document.scanner.gui.DocumentScanner;
 import richtercloud.document.scanner.storage.DerbyPersistenceStorage;
-import richtercloud.message.handler.MessageHandler;
 
 /**
  *
@@ -42,7 +40,7 @@ public class DerbyPersistenceStorageConf implements Serializable, StorageConf<De
     private final static String CONNECTION_URL_DEFAULT = "localhost";
     private final static String USERNAME_DEFAULT = "";
     private final static String PASSWORD_DEFAULT = "";
-    private final static String DATABASE_DIR_NAME_DEFAULT = DocumentScanner.DATABASE_DIR_NAME_DEFAULT;
+    private final static String DATABASE_DIR_NAME_DEFAULT = DocumentScannerConf.DATABASE_DIR_NAME_DEFAULT;
     public final static String SCHEME_CHECKSUM_FILE_NAME = "last-scheme.xml";
 
     /**
@@ -82,7 +80,6 @@ public class DerbyPersistenceStorageConf implements Serializable, StorageConf<De
     private String databaseDirName = DATABASE_DIR_NAME_DEFAULT;
     private EntityManager entityManager;
     private File schemeChecksumFile;
-    private MessageHandler messageHandler;
     private Set<Class<?>> entityClasses;
 
     protected DerbyPersistenceStorageConf() {
@@ -109,7 +106,6 @@ public class DerbyPersistenceStorageConf implements Serializable, StorageConf<De
     argument
     */
     public DerbyPersistenceStorageConf(EntityManager entityManager,
-            MessageHandler messageHandler,
             Set<Class<?>> entityClasses,
             File schemeChecksumFile) throws FileNotFoundException, IOException {
         if(!schemeChecksumFile.exists()) {
@@ -121,7 +117,6 @@ public class DerbyPersistenceStorageConf implements Serializable, StorageConf<De
         }
         this.schemeChecksumFile = schemeChecksumFile;
         this.entityManager = entityManager;
-        this.messageHandler = messageHandler;
         this.entityClasses = entityClasses;
     }
 

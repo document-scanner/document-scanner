@@ -33,8 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.conf.model.TestClass;
 import richtercloud.document.scanner.storage.DerbyPersistenceStorage;
-import richtercloud.message.handler.LoggerMessageHandler;
-import richtercloud.message.handler.MessageHandler;
 
 /**
  *
@@ -80,13 +78,11 @@ public class DerbyPersistenceStorageConfTest {
         //any harm
         driver.newInstance();
         EntityManager entityManager = entityManagerFactory.createEntityManager();
-        MessageHandler messageHandler = new LoggerMessageHandler(LOGGER);
         Set<Class<?>> entityClasses = new HashSet<Class<?>>(Arrays.asList(TestClass.class));
         File lastSchemeStorageTempFile = File.createTempFile("document-scanner-test", null);
         lastSchemeStorageTempFile.delete(); //needs to be inexisting to trigger generation of default values in file
         LOGGER.info(String.format("using '%s' for temporary storage of last scheme", lastSchemeStorageTempFile.getAbsolutePath()));
         DerbyPersistenceStorageConf instance = new DerbyPersistenceStorageConf(entityManager,
-                messageHandler,
                 entityClasses,
                 lastSchemeStorageTempFile //prevent creating file with TestClass which isn't accessible outside tests
         );

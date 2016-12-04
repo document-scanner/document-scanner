@@ -20,6 +20,7 @@ import au.com.southsky.jfreesane.SaneSession;
 import au.com.southsky.jfreesane.SaneStatus;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
+import com.beust.jcommander.JCommander;
 import com.google.common.reflect.TypeToken;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
 import com.orientechnologies.orient.core.exception.ODatabaseException;
@@ -188,6 +189,8 @@ internal implementation notes:
 - the combobox in the storage create dialog for selection of the type of the new
 storage doesn't have to be a StorageConf instance and it's misleading if it is
 because such a StorageConf is about to be created -> use Class
+- see DocumentScannerConf for design decisions regarding configuration file and
+command line parameters
  */
 public class DocumentScanner extends javax.swing.JFrame implements Managed<Exception> {
 
@@ -211,9 +214,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
      * chosen if the exact resolution isn't available.
      */
     public final static int RESOLUTION_DEFAULT = 300;
-    private static final String CONFIG_DIR_NAME = ".document-scanner";
-    private final static String CONFIG_FILE_NAME = "document-scanner-config.xml";
-    private final File configFile;
     private MutableComboBoxModel<Class<? extends StorageConf<?,?>>> storageCreateDialogTypeComboBoxModel = new DefaultComboBoxModel<>();
     private Map<Class<? extends StorageConf<?,?>>, StorageConfPanel<?>> storageConfPanelMap = new HashMap<>();
     private DefaultListModel<StorageConf<?,?>> storageListModel = new DefaultListModel<>();
@@ -240,7 +240,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
 //                    WorkflowItem.class // is an entity, but abstract
                     )));
     public final static Class<?> PRIMARY_CLASS_SELECTION = Document.class;
-    public static final String DATABASE_DIR_NAME_DEFAULT = "databases";
     /*
     internal implementation notes:
     - connection and EntityManagerFactory should both be either static or
@@ -250,9 +249,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private EntityManagerFactory entityManagerFactory;
     private EntityManager entityManager;
     private DocumentScannerConf documentScannerConf;
-    private boolean debug = false;
-    private DocumentScannerCommandParser cmd = new DocumentScannerCommandParser();
-    private final static String PROPERTY_KEY_DEBUG = "document.scanner.debug";
     public final static Map<Class<? extends JComponent>, ValueSetter<?,?>> VALUE_SETTER_MAPPING_DEFAULT;
     static {
         Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMappingDefault = new HashMap<>();
@@ -276,9 +272,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private final AmountMoneyCurrencyStorage amountMoneyCurrencyStorage;
     private final AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever = new FailsafeAmountMoneyExchangeRateRetriever();
     private final TagStorage tagStorage;
-    private final static String AMOUNT_MONEY_USAGE_STATISTICS_STORAGE_FILE_NAME = "currency-usage-statistics.xml";
-    private final static String AMOUNT_MONEY_CURRENCY_STORAGE_FILE_NAME = "currencies.xml";
-    private final static String TAG_STORAGE_FILE_NAME = "tags";
     private final Map<java.lang.reflect.Type, TypeHandler<?, ?,?, ?>> typeHandlerMapping;
     private MessageHandler messageHandler = new DialogMessageHandler(this);
     private ConfirmMessageHandler confirmMessageHandler = new DialogConfirmMessageHandler(this);
@@ -300,9 +293,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
 
     };
-    private final static String XML_STORAGE_FILE_NAME_DEFAULT = "xml-storage.xml";
-    private File xMLStorageFile = new File(CONFIG_DIR, XML_STORAGE_FILE_NAME_DEFAULT);
-    private File derbyPersistenceStorageSchemeChecksumFile = new File(CONFIG_DIR, DerbyPersistenceStorageConf.SCHEME_CHECKSUM_FILE_NAME);
     public final static int INITIAL_QUERY_LIMIT_DEFAULT = 20;
     public final static String BIDIRECTIONAL_HELP_DIALOG_TITLE = generateApplicationWindowTitle("Bidirectional relations help", APP_NAME, APP_VERSION);
     private final static DocumentScannerConfConverter DOCUMENT_SCANNER_CONF_CONVERTER = new DocumentScannerConfConverter();
@@ -353,27 +343,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     */
     private JFXPanel javaFXInitPanel;
 
-    /**
-     * Parses the command line and evaluates system properties. Command line
-     * arguments superseed properties.
-     */
-    private void parseArguments() {
-        if (this.cmd.isDebug() != null) {
-            this.debug = this.cmd.isDebug();
-        } else {
-            String debugProp = System.getProperty(PROPERTY_KEY_DEBUG);
-            if (debugProp != null) {
-                this.debug = Boolean.valueOf(debugProp);
-            }
-        }
-
-        if (this.debug) {
-            LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-            ch.qos.logback.classic.Logger rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
-            rootLogger.setLevel(Level.DEBUG);
-        }
-    }
-
     public static SaneDevice getScannerDevice(String scannerName,
             Map<String, ScannerConf> scannerConfMap,
             String scannerAddressFallback) throws IOException, SaneException {
@@ -408,32 +377,27 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     }
 
     /**
-     * Fills {@code conf} from configuration file.
+     * Validates  {@code conf} from configuration file.
      */
-    private void loadProperties() {
-        XStream xStream = new XStream();
-        xStream.registerConverter(DOCUMENT_SCANNER_CONF_CONVERTER);
-        try {
-            this.documentScannerConf = (DocumentScannerConf)xStream.fromXML(new FileInputStream(this.configFile));
-        } catch (FileNotFoundException ex) {
-            throw new RuntimeException(ex);
-        }
+    private void validateProperties() {
         //if a scanner address and device name is in persisted conf check if
         //it's accessible and treat it as selected scanner silently
-        try {
-            String scannerName = this.documentScannerConf.getScannerName();
-            this.scannerDevice = getScannerDevice(scannerName,
-                    this.documentScannerConf.getScannerConfMap(),
-                    DocumentScannerConf.SCANNER_SANE_ADDRESS_DEFAULT);
-            afterScannerSelection();
-        } catch (IOException | SaneException ex) {
-            String text = handleSearchScannerException("An exception during the setup of "
-                    + "previously selected scanner occured: ",
-                    ex,
-                    SANED_BUG_INFO);
-            messageHandler.handle(new Message(String.format("Exception during setup of previously selected scanner: %s\n%s", ExceptionUtils.getRootCauseMessage(ex), text),
-                    JOptionPane.WARNING_MESSAGE,
-                    "Exception occured"));
+        String scannerName = this.documentScannerConf.getScannerName();
+        if(scannerName != null) {
+            try {
+                this.scannerDevice = getScannerDevice(scannerName,
+                        this.documentScannerConf.getScannerConfMap(),
+                        DocumentScannerConf.SCANNER_SANE_ADDRESS_DEFAULT);
+                afterScannerSelection();
+            } catch (IOException | SaneException ex) {
+                String text = handleSearchScannerException("An exception during the setup of "
+                        + "previously selected scanner occured: ",
+                        ex,
+                        SANED_BUG_INFO);
+                messageHandler.handle(new Message(String.format("Exception during setup of previously selected scanner: %s\n%s", ExceptionUtils.getRootCauseMessage(ex), text),
+                        JOptionPane.WARNING_MESSAGE,
+                        "Exception occured"));
+            }
         }
     }
 
@@ -519,9 +483,9 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             try {
                 XStream xStream = new XStream();
                 xStream.registerConverter(DOCUMENT_SCANNER_CONF_CONVERTER);
-                xStream.toXML(this.documentScannerConf, new FileOutputStream(this.configFile));
+                xStream.toXML(this.documentScannerConf, new FileOutputStream(this.documentScannerConf.getConfigFile()));
             } catch (FileNotFoundException ex) {
-                LOGGER.warn("an unexpected exception occured during save of configurations into file '{}', changes most likely lost", this.configFile.getAbsolutePath());
+                LOGGER.warn("an unexpected exception occured during save of configurations into file '{}', changes most likely lost", this.documentScannerConf.getConfigFile().getAbsolutePath());
             }
             this.documentScannerConf = null;
         }
@@ -538,10 +502,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         close();
     }
 
-    private final static File HOME_DIR = new File(System.getProperty("user.home"));
-    private final static File CONFIG_DIR = new File(HOME_DIR, CONFIG_DIR_NAME);
-    private final static File DATABASE_DIR = new File(CONFIG_DIR, DATABASE_DIR_NAME_DEFAULT);
-    private final static String DERBY_CONNECTION_URL = String.format("jdbc:derby:%s", DATABASE_DIR.getAbsolutePath());
     /**
      * Start to fetch results and warm up the cache after start.
      */
@@ -571,35 +531,18 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     internal implementation notes:
     - resources are opened in init methods only (see https://richtercloud.de:446/doku.php?id=programming:java#resource_handling for details)
     */
-    public DocumentScanner() throws BinaryNotFoundException {
-        this.parseArguments();
-        assert HOME_DIR.exists();
-        if (!CONFIG_DIR.exists()) {
-            CONFIG_DIR.mkdir();
-            LOGGER.info("created inexisting configuration directory '{}'", CONFIG_DIR_NAME);
+    public DocumentScanner(DocumentScannerConf documentScannerConf) throws BinaryNotFoundException {
+        this.documentScannerConf = documentScannerConf;
+        if (this.documentScannerConf.isDebug()) {
+            LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+            ch.qos.logback.classic.Logger rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
+            rootLogger.setLevel(Level.DEBUG);
         }
+        validateProperties();
+
         amountMoneyExchangeRetrieverInitThread.start();
 
         this.initComponents();
-
-        //loading properties depends on initComponents because exceptions are
-        //handled with GUI elements
-        this.configFile = new File(CONFIG_DIR, CONFIG_FILE_NAME);
-        if (this.configFile.exists()) {
-            this.loadProperties(); //initializes this.conf
-        } else {
-            try {
-                this.documentScannerConf = new DocumentScannerConf(entityManager,
-                        messageHandler,
-                        ENTITY_CLASSES,
-                        derbyPersistenceStorageSchemeChecksumFile,
-                        xMLStorageFile);
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
-            LOGGER.info("no previous configuration found in configuration directry '{}', using default values", CONFIG_DIR.getAbsolutePath());
-            //new configuration will be persisted in shutdownHook
-        }
 
         try {
             this.tesseractOCREngineConfPanel = new TesseractOCREngineConfPanel((TesseractOCREngineConf) this.documentScannerConf.getoCREngineConf(),
@@ -665,16 +608,13 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         && DocumentScanner.this.storageList.getSelectedIndices().length > 0);
             }
         });
-        File amountMoneyUsageStatisticsStorageFile = new File(CONFIG_DIR, AMOUNT_MONEY_USAGE_STATISTICS_STORAGE_FILE_NAME);
-        File amountMoneyCurrencyStorageFile = new File(CONFIG_DIR, AMOUNT_MONEY_CURRENCY_STORAGE_FILE_NAME);
         try {
-            this.amountMoneyUsageStatisticsStorage = new FileAmountMoneyUsageStatisticsStorage(amountMoneyUsageStatisticsStorageFile);
+            this.amountMoneyUsageStatisticsStorage = new FileAmountMoneyUsageStatisticsStorage(documentScannerConf.getAmountMoneyUsageStatisticsStorageFile());
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
-        this.amountMoneyCurrencyStorage = new FileAmountMoneyCurrencyStorage(amountMoneyCurrencyStorageFile);
-        File tagStorageFile = new File(CONFIG_DIR, TAG_STORAGE_FILE_NAME);
-        this.tagStorage = new FileTagStorage(tagStorageFile);
+        this.amountMoneyCurrencyStorage = new FileAmountMoneyCurrencyStorage(documentScannerConf.getAmountMoneyCurrencyStorageFile());
+        this.tagStorage = new FileTagStorage(documentScannerConf.getTagStorageFile());
         JPAAmountMoneyMappingTypeHandlerFactory fieldHandlerFactory = new JPAAmountMoneyMappingTypeHandlerFactory(entityManager,
                 INITIAL_QUERY_LIMIT_DEFAULT,
                 messageHandler,
@@ -706,7 +646,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     public void init() throws DerbyPersistenceStorageConfInitializationException, IOException {
         Map<Object, Object> entityManagerFactoryMap = new HashMap<>();
         entityManagerFactoryMap.put("javax.persistence.jdbc.url",
-                String.format("%s;create=%s", DERBY_CONNECTION_URL, !DATABASE_DIR.exists()));
+                String.format("%s;create=%s", documentScannerConf.getDerbyConnectionURL(), !documentScannerConf.getDatabaseDir().exists()));
         this.entityManagerFactory = Persistence.createEntityManagerFactory("richtercloud_document-scanner_jar_1.0-SNAPSHOTPU",
                 entityManagerFactoryMap);
         this.entityManager = entityManagerFactory.createEntityManager();
@@ -717,9 +657,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
 
         DerbyPersistenceStorageConfPanel derbyStorageConfPanel;
         derbyStorageConfPanel = new DerbyPersistenceStorageConfPanel(entityManager,
-                messageHandler,
                 ENTITY_CLASSES,
-                derbyPersistenceStorageSchemeChecksumFile //schemeChecksumFile
+                documentScannerConf.getDerbyPersistenceStorageSchemeChecksumFile() //schemeChecksumFile
         ); //@TODO: replace with classpath annotation discovery
         this.storageConfPanelMap.put(DerbyPersistenceStorageConf.class, derbyStorageConfPanel);
         this.mainPanel = new DefaultMainPanel(ENTITY_CLASSES,
@@ -779,7 +718,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         //somehow necessary in order to remove db.lck in the database directory.
         try {
             LOGGER.info("Shutting down database and database server");
-            DriverManager.getConnection(String.format("%s;shutdown=true", DERBY_CONNECTION_URL)); //shutdown the database
+            DriverManager.getConnection(String.format("%s;shutdown=true", documentScannerConf.getDerbyConnectionURL())); //shutdown the database
             DriverManager.getConnection("jdbc:derby:;shutdown=true"); //shutdown Derby (supposed to remove db.lck<ref>http://db.apache.org/derby/docs/10.8/devguide/tdevdvlp40464.html#tdevdvlp40464</ref>, but doesn't)
         } catch (SQLException ex) {
             LOGGER.error("an exception during shutdown of the database connection occured", ex);
@@ -1811,7 +1750,29 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             public void run() {
                 DocumentScanner documentScanner = null;
                 try {
-                    documentScanner = new DocumentScanner();
+                    assert DocumentScannerConf.HOME_DIR.exists();
+                    DocumentScannerConf documentScannerConf = new DocumentScannerConf();
+                    //read once for configFile parameter...
+                    new JCommander(documentScannerConf, args);
+
+                    //...then read configFile...
+                    if(documentScannerConf.getConfigFile().exists()) {
+                        XStream xStream = new XStream();
+                        xStream.registerConverter(DOCUMENT_SCANNER_CONF_CONVERTER);
+                        try {
+                            documentScannerConf = (DocumentScannerConf)xStream.fromXML(new FileInputStream(documentScannerConf.getConfigFile()));
+                        } catch (FileNotFoundException ex) {
+                            throw new RuntimeException(ex);
+                        }
+                    }else {
+                        documentScannerConf = new DocumentScannerConf();
+                        LOGGER.info("no previous configuration found in configuration directry '{}', using default values", documentScannerConf.getConfigFile().getAbsolutePath());
+                        //new configuration will be persisted in shutdownHook
+                    }
+                    //...and override value from command line
+                    new JCommander(documentScannerConf, args);
+
+                    documentScanner = new DocumentScanner(documentScannerConf);
                     documentScanner.init();
                     documentScanner.setVisible(true); //all shutdown and
                         //resource closing routines need to be handled in event
