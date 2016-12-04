@@ -120,10 +120,10 @@ public class DocumentScannerConf implements Serializable {
      * button is pressed (without the id generation button of the id panel
      * being pressed)
      */
-    private boolean autoGenerateIDs;
+    private boolean autoGenerateIDs = true;
     private Locale locale = LOCALE_DEFAULT;
-    private boolean autoSaveImageData;
-    private boolean autoSaveOCRData;
+    private boolean autoSaveImageData = true;
+    private boolean autoSaveOCRData = true;
     /**
      * Whether to select automatic selection of format or locale format
      * intially.*/
