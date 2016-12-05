@@ -68,6 +68,7 @@ import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.gui.conf.OCREngineConf;
 import richtercloud.document.scanner.ifaces.DocumentAddException;
 import richtercloud.document.scanner.ifaces.EntityPanel;
+import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.ifaces.MainPanel;
 import richtercloud.document.scanner.ifaces.MainPanelDockingManager;
 import richtercloud.document.scanner.ifaces.OCRPanel;
@@ -134,6 +135,9 @@ CVetoFocusListener.willLoseFocus, but needs to be stored in a variable
 `java.lang.IllegalStateException: During an operation the framework attempted to
 acquire the same lock twice. There are two possible explanations:` -> ignore as
 long as no problem occurs
+- zooming: There's been a method adjustZoomLevels in 24bb703 which calculated
+the number of zoom steps in order to approach a specific width as close as
+possible. It has been removed because calculating the width is easier to manage.
 */
 public class DefaultMainPanel extends MainPanel {
     private static final long serialVersionUID = 1L;
@@ -331,7 +335,7 @@ public class DefaultMainPanel extends MainPanel {
     when using SwingWorker.get
     */
     @Override
-    public List<BufferedImage> retrieveImages(final File documentFile) throws DocumentAddException, InterruptedException, ExecutionException {
+    public List<ImageWrapper> retrieveImages(final File documentFile) throws DocumentAddException, InterruptedException, ExecutionException {
         if(documentFile == null) {
             throw new IllegalArgumentException("documentFile mustn't be null");
         }
@@ -340,10 +344,10 @@ public class DefaultMainPanel extends MainPanel {
                 "Retrieving image data", //labelText
                 null //progressBarText
         );
-        final SwingWorker<List<BufferedImage>, Void> worker = new SwingWorker<List<BufferedImage>, Void>() {
+        final SwingWorker<List<ImageWrapper>, Void> worker = new SwingWorker<List<ImageWrapper>, Void>() {
             @Override
-            protected List<BufferedImage> doInBackground() throws Exception {
-                List<BufferedImage> retValue = new LinkedList<>();
+            protected List<ImageWrapper> doInBackground() throws Exception {
+                List<ImageWrapper> retValue = new LinkedList<>();
                 try {
                     InputStream pdfInputStream = new FileInputStream(documentFile);
                     PDDocument document = PDDocument.load(pdfInputStream);
@@ -356,7 +360,8 @@ public class DefaultMainPanel extends MainPanel {
                             return null;
                         }
                         BufferedImage image = page.convertToImage();
-                        retValue.add(image);
+                        ImageWrapper imageWrapper = new ImageWrapper(documentScannerConf.getImageWrapperStorageDir(), image);
+                        retValue.add(imageWrapper);
                     }
                     document.close();
                 }catch(IOException ex) {
@@ -374,7 +379,7 @@ public class DefaultMainPanel extends MainPanel {
         worker.execute();
         //the dialog will be visible until the SwingWorker is done
         dialog.setVisible(true);
-        List<BufferedImage> retValue = worker.get();
+        List<ImageWrapper> retValue = worker.get();
         return retValue;
     }
 
@@ -387,9 +392,9 @@ public class DefaultMainPanel extends MainPanel {
      * components
      */
     @Override
-    public void addDocument(Object entityToEdit) throws DocumentAddException {
+    public void addDocument(Object entityToEdit) throws DocumentAddException, IOException {
         MainPanelScanResultPanelRecreator mainPanelScanResultPanelRecreator =
-                new MainPanelScanResultPanelRecreator();
+                new MainPanelScanResultPanelRecreator(this.documentScannerConf.getImageWrapperStorageDir());
         List<Field> entityClassFields = reflectionFormBuilder.getFieldRetriever().retrieveRelevantFields(entityToEdit.getClass());
         Field entityToEditScanResultField = null;
         for(Field entityClassField : entityClassFields) {
@@ -405,7 +410,7 @@ public class DefaultMainPanel extends MainPanel {
                 entityToEditScanResultField = entityClassField;
             }
         }
-        List<BufferedImage> images = null;
+        List<ImageWrapper> images = null;
         if(entityToEditScanResultField != null) {
             if(!entityToEditScanResultField.getType().equals(byte[].class)) {
                 throw new IllegalArgumentException(String.format("field %s "
@@ -437,8 +442,8 @@ public class DefaultMainPanel extends MainPanel {
     }
 
     @Override
-    public void addDocument (final List<BufferedImage> images,
-            final File documentFile) throws DocumentAddException {
+    public void addDocument (final List<ImageWrapper> images,
+            final File documentFile) throws DocumentAddException, IOException {
         addDocument(images,
                 documentFile,
                 null //entityToEdit
@@ -455,9 +460,9 @@ public class DefaultMainPanel extends MainPanel {
      * the {@link OCRSelectComponent} represents scan data).
      * @throws DocumentAddException
      */
-    public void addDocument (final List<BufferedImage> images,
+    public void addDocument (final List<ImageWrapper> images,
             final File documentFile,
-            final Object entityToEdit) throws DocumentAddException {
+            final Object entityToEdit) throws DocumentAddException, IOException {
         if(ADD_DOCUMENT_ASYNC) {
             final ProgressMonitor progressMonitor = new ProgressMonitor(this, //parent
                     "Generating new document tab", //message
@@ -482,11 +487,15 @@ public class DefaultMainPanel extends MainPanel {
                 @Override
                 protected void done() {
                     if(!progressMonitor.isCanceled()) {
-                        addDocumentDone(this.createdOCRSelectComponentPair.getKey(),
-                                this.createdOCRSelectComponentPair.getValue());
+                        try {
+                            addDocumentDone(this.createdOCRSelectComponentPair.getKey(),
+                                    this.createdOCRSelectComponentPair.getValue());
                             //since SwingWorker.done is executed on the EVT
                             //(according to Javadoc), it should be fine to call
                             //addDocumentDone here
+                        } catch (IOException ex) {
+                            throw new RuntimeException(ex);
+                        }
                     }
                     progressMonitor.close(); //- need to close explicitly
                         //because progress isn't set
@@ -511,79 +520,25 @@ public class DefaultMainPanel extends MainPanel {
     }
 
     /**
-     * Calculate the zoom level of multiple images based on their average width
-     * and {@link DocumentScannerConf#getPreferredWidth() }.
-     * @return the calculated zoom level
-     */
-    public static float adjustZoomLevel(List<BufferedImage> images,
-            DocumentScannerConf documentScannerConf) {
-        //calculate average width
-        int averageWidth = 0;
-        for(BufferedImage image : images) {
-            averageWidth += image.getWidth();
-        }
-        averageWidth /= images.size();
-        int zoomStepCount = 0;
-        int zoomDifference = Math.abs(averageWidth - documentScannerConf.getPreferredWidth());
-        int zoomDifferenceNew;
-        int resultWidth = averageWidth;
-        if(averageWidth == documentScannerConf.getPreferredWidth()) {
-            return 1.0f;
-        }else if(averageWidth > documentScannerConf.getPreferredWidth()) {
-            //need to zoom out
-            //find the minimal zoom difference
-            while(true) {
-                resultWidth = (int) (resultWidth*documentScannerConf.getZoomLevelMultiplier());
-                zoomDifferenceNew = Math.abs(documentScannerConf.getPreferredWidth() - resultWidth);
-                if(zoomDifferenceNew < zoomDifference) {
-                    zoomStepCount += 1;
-                    zoomDifference = zoomDifferenceNew;
-                }else {
-                    break;
-                }
-            }
-            float retValue = (float) Math.pow(documentScannerConf.getZoomLevelMultiplier(), zoomStepCount);
-            return retValue;
-        }else {
-            //averageWidth < documentScannerConf.getPreferredWidth()
-            //need to zoom in
-            while(true) {
-                resultWidth = (int) (resultWidth/documentScannerConf.getZoomLevelMultiplier());
-                zoomDifferenceNew = Math.abs(documentScannerConf.getPreferredWidth() - resultWidth);
-                if(zoomDifferenceNew < zoomDifference) {
-                    zoomStepCount += 1;
-                    zoomDifference = zoomDifferenceNew;
-                }else {
-                    break;
-                }
-            }
-            float retValue = (float) Math.pow(1/documentScannerConf.getZoomLevelMultiplier(), zoomStepCount);
-            return retValue;
-        }
-    }
-
-    /**
      *
      * @param oCRSelectComponent the created {@link OCRSelectComponent} for the
      * new document
      * @param entityPanel the created {@link EntityPanel} for the new document
      */
     private void addDocumentDone(OCRSelectComponent oCRSelectComponent,
-            EntityPanel entityPanel) {
+            EntityPanel entityPanel) throws IOException {
         mainPanelDockingManager.addDocumentDockable(DefaultMainPanel.this.oCRSelectComponent,
                 oCRSelectComponent);
         //collect oCRSelectComponent's images
-        List<BufferedImage> images = new LinkedList<>();
+        List<ImageWrapper> images = new LinkedList<>();
         for(OCRSelectPanel oCRSelectPanel : oCRSelectComponent.getoCRSelectPanelPanel().getoCRSelectPanels()) {
             images.add(oCRSelectPanel.getImage());
         }
-        float zoomLevel = adjustZoomLevel(images,
-                documentScannerConf);
-        oCRSelectComponent.getoCRSelectPanelPanel().setZoomLevels(zoomLevel);
         if(this.documentScannerConf.isAutoOCRValueDetection()) {
             entityPanel.autoOCRValueDetection(new DefaultOCRSelectPanelPanelFetcher(oCRSelectComponent.getoCRSelectPanelPanel(),
                     oCREngineFactory,
-                    oCREngineConf),
+                    oCREngineConf,
+                    documentScannerConf),
                     false //forceRenewal (shouldn't matter here since the
                         //initial list of results has to be empty)
             );
@@ -609,7 +564,7 @@ public class DefaultMainPanel extends MainPanel {
      * @return the created pair of {@link OCRSelectComponent} and
      * {@link EntityPanel}
      */
-    private Pair<OCRSelectComponent, EntityPanel> addDocumentRoutine(List<BufferedImage> images,
+    private Pair<OCRSelectComponent, EntityPanel> addDocumentRoutine(List<ImageWrapper> images,
             File documentFile,
             Object entityToEdit,
             ProgressMonitor progressMonitor) throws DocumentAddException {
@@ -617,14 +572,19 @@ public class DefaultMainPanel extends MainPanel {
         try {
             List<OCRSelectPanel> panels = new LinkedList<>();
             if(images != null) {
-                for (BufferedImage image : images) {
+                for (ImageWrapper image : images) {
                     @SuppressWarnings("serial")
-                    OCRSelectPanel panel = new DefaultOCRSelectPanel(image) {
+                    OCRSelectPanel panel = new DefaultOCRSelectPanel(image,
+                            documentScannerConf.getPreferredWidth()) {
                         @Override
                         public void mouseReleased(MouseEvent evt) {
                             super.mouseReleased(evt);
                             if (this.getDragStart() != null && !this.getDragStart().equals(this.getDragEnd())) {
-                                DefaultMainPanel.this.handleOCRSelection();
+                                try {
+                                    DefaultMainPanel.this.handleOCRSelection();
+                                } catch (IOException ex) {
+                                    throw new RuntimeException(ex);
+                                }
                             }
                         }
                     };
@@ -634,7 +594,8 @@ public class DefaultMainPanel extends MainPanel {
             OCRSelectPanelPanel oCRSelectPanelPanel = new DefaultOCRSelectPanelPanel(panels,
                     documentFile,
                     oCREngineFactory,
-                    oCREngineConf);
+                    oCREngineConf,
+                    documentScannerConf);
 
             DocumentTabOCRResultPanelFetcher oCRResultPanelFetcher = new DocumentTabOCRResultPanelFetcher(oCRSelectPanelPanel //oCRSelectPanelPanel
                     );
@@ -813,7 +774,7 @@ public class DefaultMainPanel extends MainPanel {
         return retValue;
     }
 
-    private void handleOCRSelection() {
+    private void handleOCRSelection() throws IOException {
         BufferedImage imageSelection = oCRSelectComponent.getoCRSelectPanelPanel().getSelection();
         if(imageSelection == null) {
             //image panels only contain selections of width or height <= 0 -> skip silently
@@ -854,7 +815,8 @@ public class DefaultMainPanel extends MainPanel {
         DocumentTabOCRResultPanelFetcher(OCRSelectPanelPanel oCRSelectPanelPanel) {
             this.oCRSelectPanelPanelFetcher = new DefaultOCRSelectPanelPanelFetcher(oCRSelectPanelPanel,
                     oCREngineFactory,
-                    oCREngineConf);
+                    oCREngineConf,
+                    documentScannerConf);
         }
 
         @Override

@@ -20,9 +20,10 @@ import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
+import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.ifaces.OCRSelectPanel;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelSelectionListener;
 
@@ -41,19 +42,33 @@ public class DefaultOCRSelectPanel extends OCRSelectPanel implements MouseListen
     private static final long serialVersionUID = 1L;
     private Point dragStart;
     private Point dragEnd;
-    private final BufferedImage image;
+    private final ImageWrapper image;
     private final Set<OCRSelectPanelSelectionListener> selectionListeners = new HashSet<>();
     private float zoomLevel = 1;
+    private final int preferredWidth;
 
-    public DefaultOCRSelectPanel(BufferedImage image) {
+    /**
+     * Creates a {@code DefaultOCRSelectPanel} from the {@code image} with the
+     * initial width {@code preferredWidth}. Since the image is used in the
+     * {@code preferredWidth} size, all zoom operations ought to be relative to
+     * it.
+     * @param image
+     * @param preferredWidth
+     * @throws IOException
+     */
+    public DefaultOCRSelectPanel(ImageWrapper image,
+            int preferredWidth) throws IOException {
         this.image = image;
+        this.preferredWidth = preferredWidth;
         updatePreferredSize();
         this.init0();
     }
 
-    private void updatePreferredSize() {
-        this.setPreferredSize(new Dimension((int)(image.getWidth()*zoomLevel),
-                (int)(image.getHeight()*zoomLevel)));
+    private void updatePreferredSize() throws IOException {
+        int width = (int)(preferredWidth*zoomLevel);
+        int height = image.getImagePreview((int) (preferredWidth*zoomLevel)).getHeight();
+        this.setPreferredSize(new Dimension(width,
+                height));
     }
 
     private void init0() {
@@ -62,7 +77,7 @@ public class DefaultOCRSelectPanel extends OCRSelectPanel implements MouseListen
     }
 
     @Override
-    public BufferedImage getImage() {
+    public ImageWrapper getImage() {
         return this.image;
     }
 
@@ -133,19 +148,22 @@ public class DefaultOCRSelectPanel extends OCRSelectPanel implements MouseListen
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        int imageWidth = image.getWidth();
-        int imageHeight = image.getHeight();
-        int newImageWidth = (int)(imageWidth * zoomLevel);
-        int newImageHeight = (int)(imageHeight * zoomLevel);
-        g.drawImage(this.image, 0, 0, newImageWidth , newImageHeight ,
-                null //imageObserver
-        );
-        if(this.getDragStart() != null && this.getDragEnd() != null) {
-            g.drawRect(this.dragSelectionX(),
-                    this.dragSelectionY(),
-                    this.dragSelectionWidth(), //width
-                    this.dragSeletionHeight() //height
-            );
+        try {
+            g.drawImage(this.image.getImagePreview((int) (preferredWidth*zoomLevel)),
+                    0, //x
+                    0, //y
+                    null //imageObserver
+            ); //don't scale here by specifying width and height because the
+                //image is already scaled in ImageWrapper
+            if(this.getDragStart() != null && this.getDragEnd() != null) {
+                g.drawRect(this.dragSelectionX(),
+                        this.dragSelectionY(),
+                        this.dragSelectionWidth(), //width
+                        this.dragSeletionHeight() //height
+                );
+            }
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
         }
     }
 
@@ -204,7 +222,7 @@ public class DefaultOCRSelectPanel extends OCRSelectPanel implements MouseListen
     }
 
     @Override
-    public void setZoomLevel(float zoomLevel) {
+    public void setZoomLevel(float zoomLevel) throws IOException {
         this.zoomLevel = zoomLevel;
         updatePreferredSize();
     }

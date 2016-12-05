@@ -14,7 +14,7 @@
  */
 package richtercloud.document.scanner.gui;
 
-import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,13 +42,14 @@ import javafx.scene.paint.Color;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
+import richtercloud.document.scanner.ifaces.ImageWrapper;
 
 /**
  * Allows associating scan results, i.e. images, with documents which group
  * scan results. Callers can open a document tag for each document.
  * @author richter
  */
-public class ScannerResultDialog extends Dialog<List<List<BufferedImage>>> {
+public class ScannerResultDialog extends Dialog<List<List<ImageWrapper>>> {
     private final static Logger LOGGER = LoggerFactory.getLogger(ScannerResultDialog.class);
     private final static Border BORDER_UNSELECTED = new Border(new BorderStroke(Color.BLACK,
             BorderStrokeStyle.SOLID,
@@ -92,8 +93,8 @@ public class ScannerResultDialog extends Dialog<List<List<BufferedImage>>> {
     private final int panelHeight;
     private int centralPanelPadding = 15;
 
-    public ScannerResultDialog(List<BufferedImage> scanResultImages,
-            DocumentScannerConf documentScannerConf) {
+    public ScannerResultDialog(List<ImageWrapper> scanResultImages,
+            DocumentScannerConf documentScannerConf) throws IOException {
         this.panelWidth = documentScannerConf.getPreferredWidth();
         this.panelHeight = panelWidth * 297 / 210;
         setResizable(true);
@@ -166,8 +167,12 @@ public class ScannerResultDialog extends Dialog<List<List<BufferedImage>>> {
             public void handle(MouseEvent event) {
                 //enqueue the scan results which were grouped in the document
                 //back into the scan result pane...
-                for(BufferedImage selectedDocumentScanResult : selectedDocument.getValue().getScanResults()) {
-                    addScanResult(selectedDocumentScanResult, scanResultPane, selectedScanResults);
+                for(ImageWrapper selectedDocumentScanResult : selectedDocument.getValue().getScanResults()) {
+                    try {
+                        addScanResult(selectedDocumentScanResult, scanResultPane, selectedScanResults);
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
                 }
                 //...and remove the document
                 documentPane.getChildren().remove(documentPane.getChildren().size()-1);
@@ -188,16 +193,20 @@ public class ScannerResultDialog extends Dialog<List<List<BufferedImage>>> {
                 assert selectedDocument.getValue() != null;
                 //...and add to selected document in document pane
                 assert selectedScanResult.getScanResults().size() == 1;
+                try {
                     //ImageViewPanes in the scan result pane only have one
                     //ScanResult
-                selectedDocument.getValue().addScanResult(selectedScanResult.getScanResults().get(0),
-                        panelWidth);
+                    selectedDocument.getValue().addScanResult(selectedScanResult.getScanResults().get(0),
+                            panelWidth);
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
             }
             scanResultPane.removeScanResultPanes(selectedScanResults);
             selectedScanResults.clear();
         });
 
-        for(BufferedImage scanResultImage : scanResultImages) {
+        for(ImageWrapper scanResultImage : scanResultImages) {
             addScanResult(scanResultImage,
                     scanResultPane,
                     selectedScanResults);
@@ -273,7 +282,7 @@ public class ScannerResultDialog extends Dialog<List<List<BufferedImage>>> {
             if(param.getButtonData().isCancelButton()) {
                 return null;
             }
-            List<List<BufferedImage>> retValue = new LinkedList<>();
+            List<List<ImageWrapper>> retValue = new LinkedList<>();
             documentPane.getDocumentNodes().forEach((ImageViewPane imageViewPane) -> retValue.add(imageViewPane.getScanResults()));
             return retValue;
         });
@@ -291,11 +300,11 @@ public class ScannerResultDialog extends Dialog<List<List<BufferedImage>>> {
         }
     }
 
-    private void addScanResult(BufferedImage scanResult,
+    private void addScanResult(ImageWrapper scanResult,
             ScanResultPane scanResultPane,
-            List<ImageViewPane> selectedScanResults) {
+            List<ImageViewPane> selectedScanResults) throws IOException {
         ImageViewPane scanResultImageViewPane = new ImageViewPane(scanResult,
-            panelWidth);
+                panelWidth);
         scanResultPane.addScanResultPane(scanResultImageViewPane);
         scanResultImageViewPane.getImageView().addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
             @Override

@@ -17,6 +17,7 @@ package richtercloud.document.scanner.gui;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.IOException;
 import java.util.Set;
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
@@ -102,7 +103,6 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
                     public void run() {
                         OCRSelectComponent.this.zoomLevel *= OCRSelectComponent.this.documentScannerConf.getZoomLevelMultiplier();
                         OCRSelectComponent.this.oCRSelectPanelPanel.setZoomLevels(OCRSelectComponent.this.zoomLevel);
-                        OCRSelectComponent.this.repaint();
                     }
                 });
             }
@@ -115,7 +115,6 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
                     public void run() {
                         OCRSelectComponent.this.zoomLevel /= OCRSelectComponent.this.documentScannerConf.getZoomLevelMultiplier();
                         OCRSelectComponent.this.oCRSelectPanelPanel.setZoomLevels(OCRSelectComponent.this.zoomLevel);
-                        OCRSelectComponent.this.repaint();
                         //zooming out requires a scroll event to occur in order to
                         //paint other pages than the first only; revalidate doesn't
                         //help
@@ -217,20 +216,26 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
         zoomInButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                DefaultOCRSelectComponent.this.zoomLevel /= DefaultOCRSelectComponent.this.documentScannerConf.getZoomLevelMultiplier();
-                DefaultOCRSelectComponent.this.oCRSelectPanelPanel.setZoomLevels(DefaultOCRSelectComponent.this.zoomLevel);
-                DefaultOCRSelectComponent.this.repaint();
+                try {
+                    DefaultOCRSelectComponent.this.zoomLevel /= DefaultOCRSelectComponent.this.documentScannerConf.getZoomLevelMultiplier();
+                    DefaultOCRSelectComponent.this.oCRSelectPanelPanel.setZoomLevels(DefaultOCRSelectComponent.this.zoomLevel);
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
             }
         });
         zoomOutButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                DefaultOCRSelectComponent.this.zoomLevel *= DefaultOCRSelectComponent.this.documentScannerConf.getZoomLevelMultiplier();
-                DefaultOCRSelectComponent.this.oCRSelectPanelPanel.setZoomLevels(DefaultOCRSelectComponent.this.zoomLevel);
-                DefaultOCRSelectComponent.this.repaint();
+                try {
+                    DefaultOCRSelectComponent.this.zoomLevel *= DefaultOCRSelectComponent.this.documentScannerConf.getZoomLevelMultiplier();
+                    DefaultOCRSelectComponent.this.oCRSelectPanelPanel.setZoomLevels(DefaultOCRSelectComponent.this.zoomLevel);
                     //zooming out requires a scroll event to occur in order to
                     //paint other pages than the first only; revalidate doesn't
                     //help
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
             }
         });
         autoOCRValueDetectionResultsButton.addActionListener(new ActionListener() {
@@ -238,7 +243,8 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
             public void actionPerformed(ActionEvent e) {
                 DefaultOCRSelectComponent.this.entityPanel.autoOCRValueDetection(new DefaultOCRSelectPanelPanelFetcher(DefaultOCRSelectComponent.this.getoCRSelectPanelPanel(),
                         DefaultOCRSelectComponent.this.oCREngineFactory,
-                        DefaultOCRSelectComponent.this.oCREngineConf),
+                        DefaultOCRSelectComponent.this.oCREngineConf,
+                        documentScannerConf),
                         false //forceRenewal
                 );
             }
@@ -248,7 +254,8 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
             public void actionPerformed(ActionEvent e) {
                 DefaultOCRSelectComponent.this.entityPanel.autoOCRValueDetection(new DefaultOCRSelectPanelPanelFetcher(DefaultOCRSelectComponent.this.getoCRSelectPanelPanel(),
                         DefaultOCRSelectComponent.this.oCREngineFactory,
-                        DefaultOCRSelectComponent.this.oCREngineConf),
+                        DefaultOCRSelectComponent.this.oCREngineConf,
+                        documentScannerConf),
                         true //forceRenewal
                 );
             }

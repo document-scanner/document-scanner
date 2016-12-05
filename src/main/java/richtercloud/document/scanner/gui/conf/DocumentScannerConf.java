@@ -162,6 +162,9 @@ public class DocumentScannerConf implements Serializable {
     private final static String TAG_STORAGE_FILE_NAME = "tags";
     private final static File TAG_STORAGE_FILE_DEFAULT = new File(CONFIG_DIR_DEFAULT, TAG_STORAGE_FILE_NAME);
     private File tagStorageFile = TAG_STORAGE_FILE_DEFAULT;
+    private final static String IMAGE_WRAPPER_STORAGE_FILE_NAME_DEFAULT = "image-storage";
+    private final static File IMAGE_WRAPPER_STORAGE_DIR = new File(CONFIG_DIR_DEFAULT, IMAGE_WRAPPER_STORAGE_FILE_NAME_DEFAULT);
+    private File imageWrapperStorageDir = IMAGE_WRAPPER_STORAGE_DIR;
 
     @Parameter(names= {"-d", "--debug"}, description= "Print extra debugging statements")
     private boolean debug = false;
@@ -262,6 +265,10 @@ public class DocumentScannerConf implements Serializable {
 
     public File getTagStorageFile() {
         return tagStorageFile;
+    }
+
+    public File getImageWrapperStorageDir() {
+        return imageWrapperStorageDir;
     }
 
     public int getPreferredWidth() {

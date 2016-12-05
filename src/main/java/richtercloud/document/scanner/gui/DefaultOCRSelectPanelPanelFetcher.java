@@ -32,6 +32,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.math4.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.gui.conf.OCREngineConf;
 import richtercloud.document.scanner.ifaces.OCRSelectPanel;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanel;
@@ -73,13 +74,16 @@ public class DefaultOCRSelectPanelPanelFetcher implements OCRSelectPanelPanelFet
      */
     private final OCREngineFactory oCREngineFactory;
     private final OCREngineConf oCREngineConf;
+    private final DocumentScannerConf documentScannerConf;
 
     public DefaultOCRSelectPanelPanelFetcher(OCRSelectPanelPanel oCRSelectPanelPanel,
             OCREngineFactory oCREngineFactory,
-            OCREngineConf oCREngineConf) {
+            OCREngineConf oCREngineConf,
+            DocumentScannerConf documentScannerConf) {
         this.oCRSelectPanelPanel = oCRSelectPanelPanel;
         this.oCREngineFactory = oCREngineFactory;
         this.oCREngineConf = oCREngineConf;
+        this.documentScannerConf = documentScannerConf;
     }
 
     @Override
@@ -133,7 +137,9 @@ public class DefaultOCRSelectPanelPanelFetcher implements OCRSelectPanelPanelFet
                     public String call() throws Exception {
                         OCREngine oCREngine = oCREngineFactory.create(oCREngineConf);
                         usedEngines.add(oCREngine);
-                        String oCRResult = oCREngine.recognizeImage(imagePanel.getImage());
+                        String oCRResult = oCREngine.recognizeImage(imagePanel.getImage().getOriginalImage());
+                            //need to operate on original image in order to get
+                            //acceptable OCR results
                         if(oCRResult == null) {
                             //indicates that the OCREngine.recognizeImage has been aborted
                             if(cancelRequested) {

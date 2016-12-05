@@ -18,11 +18,13 @@ import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.LinkedList;
 import java.util.List;
 import javax.swing.ImageIcon;
+import richtercloud.document.scanner.ifaces.ImageWrapper;
 
 /**
  * Uses {@link ImageIcon}s to deserialize byte arrays coming out of database
@@ -32,6 +34,11 @@ import javax.swing.ImageIcon;
  * @author richter
  */
 public class MainPanelScanResultPanelRecreator implements ScanResultPanelRecreator {
+    private final File imageWrapperStorageDir;
+
+    public MainPanelScanResultPanelRecreator(File imageWrapperStorageDir) {
+        this.imageWrapperStorageDir = imageWrapperStorageDir;
+    }
 
     /**
      * licensed CC-by-SA from http://stackoverflow.com/questions/13605248/java-converting-image-to-bufferedimage
@@ -56,8 +63,8 @@ public class MainPanelScanResultPanelRecreator implements ScanResultPanelRecreat
     }
 
     @Override
-    public List<BufferedImage> recreate(byte[] data) {
-        List<BufferedImage> retValue = new LinkedList<>();
+    public List<ImageWrapper> recreate(byte[] data) {
+        List<ImageWrapper> retValue = new LinkedList<>();
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(data);
         try {
             ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream);
@@ -65,7 +72,9 @@ public class MainPanelScanResultPanelRecreator implements ScanResultPanelRecreat
             assert imageIcons != null;
             for(ImageIcon imageIcon : imageIcons) {
                 BufferedImage image = toBufferedImage(imageIcon.getImage());
-                retValue.add(image);
+                ImageWrapper imageWrapper = new ImageWrapper(this.imageWrapperStorageDir,
+                        image);
+                retValue.add(imageWrapper);
             }
             //byteArrayInputStream.close not necessary because it's a
             //ByteArrayInputStream

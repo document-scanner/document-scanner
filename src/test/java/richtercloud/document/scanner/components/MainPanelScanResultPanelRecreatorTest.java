@@ -17,6 +17,7 @@ package richtercloud.document.scanner.components;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -27,6 +28,7 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.ifaces.OCRSelectPanel;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanel;
 
@@ -51,34 +53,37 @@ public class MainPanelScanResultPanelRecreatorTest {
                 "png",
                 imageBytesOutputStream);
         byte[] imageBytes = imageBytesOutputStream.toByteArray();
-        MainPanelScanResultPanelRecreator instance = new MainPanelScanResultPanelRecreator();
-        List<BufferedImage> result = instance.recreate(imageBytes);
+        File tmpFile = File.createTempFile("prefix", "suffix");
+        MainPanelScanResultPanelRecreator instance = new MainPanelScanResultPanelRecreator(tmpFile);
+        List<ImageWrapper> result = instance.recreate(imageBytes);
         assertEquals(1,
                 result.size());
         ByteArrayOutputStream resultOutputStream = new ByteArrayOutputStream();
-        ImageIO.write(result.get(0),
+        ImageIO.write(result.get(0).getOriginalImage(),
                 "png",
                 resultOutputStream);
         assertImagesEquals(image,
-                result.get(0));
+                result.get(0).getOriginalImage());
 
         //test in conjunction with MainPanelScanResultFetcher
         OCRSelectPanelPanel oCRSelectPanelPanel = mock(OCRSelectPanelPanel.class);
         OCRSelectPanel oCRSelectPanel1 = mock(OCRSelectPanel.class);
         OCRSelectPanel oCRSelectPanel2 = mock(OCRSelectPanel.class);
         image = ImageIO.read(MainPanelScanResultPanelFetcherTest.class.getResource("/File_CC-BY-SA_3_icon_88x31.png"));
-        when(oCRSelectPanel1.getImage()).thenReturn(image);
-        when(oCRSelectPanel2.getImage()).thenReturn(image);
+        ImageWrapper imageWrapper = mock(ImageWrapper.class);
+        when(imageWrapper.getOriginalImage()).thenReturn(image);
+        when(oCRSelectPanel1.getImage()).thenReturn(imageWrapper);
+        when(oCRSelectPanel2.getImage()).thenReturn(imageWrapper);
         List<OCRSelectPanel> oCRSelectPanels = new LinkedList<>(Arrays.asList(oCRSelectPanel1,
                 oCRSelectPanel2));
         when(oCRSelectPanelPanel.getoCRSelectPanels()).thenReturn(oCRSelectPanels);
         MainPanelScanResultPanelFetcher mainPanelScanResultPanelFetcher = new MainPanelScanResultPanelFetcher(oCRSelectPanelPanel);
         byte[] mainPanelScanResultPanelFetcherBytes = mainPanelScanResultPanelFetcher.fetch();
-        List<BufferedImage> mainPanelScanResultPanelFetcherImages = instance.recreate(mainPanelScanResultPanelFetcherBytes);
+        List<ImageWrapper> mainPanelScanResultPanelFetcherImages = instance.recreate(mainPanelScanResultPanelFetcherBytes);
         assertEquals(mainPanelScanResultPanelFetcherImages.size(),
                 2);
         for(int i=0; i<2; i++) {
-            assertImagesEquals(mainPanelScanResultPanelFetcherImages.get(i),
+            assertImagesEquals(mainPanelScanResultPanelFetcherImages.get(i).getOriginalImage(),
                     image);
         }
     }

@@ -25,6 +25,7 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.ifaces.OCRSelectPanel;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanel;
 
@@ -43,8 +44,10 @@ public class MainPanelScanResultPanelFetcherTest {
         OCRSelectPanel oCRSelectPanel1 = mock(OCRSelectPanel.class);
         OCRSelectPanel oCRSelectPanel2 = mock(OCRSelectPanel.class);
         BufferedImage image = ImageIO.read(MainPanelScanResultPanelFetcherTest.class.getResource("/File_CC-BY-SA_3_icon_88x31.png"));
-        when(oCRSelectPanel1.getImage()).thenReturn(image);
-        when(oCRSelectPanel2.getImage()).thenReturn(image);
+        ImageWrapper imageWrapper = mock(ImageWrapper.class);
+        when(imageWrapper.getOriginalImage()).thenReturn(image);
+        when(oCRSelectPanel1.getImage()).thenReturn(imageWrapper);
+        when(oCRSelectPanel2.getImage()).thenReturn(imageWrapper);
         List<OCRSelectPanel> oCRSelectPanels = new LinkedList<>(Arrays.asList(oCRSelectPanel1,
                 oCRSelectPanel2));
         when(oCRSelectPanelPanel.getoCRSelectPanels()).thenReturn(oCRSelectPanels);

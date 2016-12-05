@@ -59,7 +59,7 @@ public class MainPanelScanResultPanelFetcher implements ScanResultPanelFetcher {
         List<ImageIcon> imageIcons = new LinkedList<>();
         try {
             for (OCRSelectPanel imagePanel : this.oCRSelectComponent.getoCRSelectPanels()) {
-                imageIcons.add(new ImageIcon(imagePanel.getImage()));
+                imageIcons.add(new ImageIcon(imagePanel.getImage().getOriginalImage()));
             }
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(retValueStream);
             objectOutputStream.writeObject(imageIcons);

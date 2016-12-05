@@ -94,6 +94,7 @@ import richtercloud.document.scanner.gui.conf.TesseractOCREngineConf;
 import richtercloud.document.scanner.gui.engineconf.OCREngineConfPanel;
 import richtercloud.document.scanner.gui.storageconf.StorageConfPanel;
 import richtercloud.document.scanner.ifaces.DocumentAddException;
+import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.ifaces.MainPanel;
 import richtercloud.document.scanner.model.APackage;
 import richtercloud.document.scanner.model.Bill;
@@ -379,7 +380,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     /**
      * Validates  {@code conf} from configuration file.
      */
-    private void validateProperties() {
+    private void validateProperties() throws IOException {
         //if a scanner address and device name is in persisted conf check if
         //it's accessible and treat it as selected scanner silently
         String scannerName = this.documentScannerConf.getScannerName();
@@ -397,6 +398,17 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 messageHandler.handle(new Message(String.format("Exception during setup of previously selected scanner: %s\n%s", ExceptionUtils.getRootCauseMessage(ex), text),
                         JOptionPane.WARNING_MESSAGE,
                         "Exception occured"));
+            }
+        }
+        if(!this.documentScannerConf.getImageWrapperStorageDir().exists()) {
+            if(!this.documentScannerConf.getImageWrapperStorageDir().mkdirs()) {
+                throw new IOException(String.format("Creation of image wrapper storage directory '%s' failed",
+                        this.documentScannerConf.getImageWrapperStorageDir().getAbsolutePath()));
+            }
+        }else {
+            if(!this.documentScannerConf.getImageWrapperStorageDir().isDirectory()) {
+                throw new IllegalStateException(String.format("Configured image wrapper storage directory '%s' is a file",
+                        this.documentScannerConf.getImageWrapperStorageDir().getAbsolutePath()));
             }
         }
     }
@@ -529,7 +541,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     internal implementation notes:
     - resources are opened in init methods only (see https://richtercloud.de:446/doku.php?id=programming:java#resource_handling for details)
     */
-    public DocumentScanner(DocumentScannerConf documentScannerConf) throws BinaryNotFoundException {
+    public DocumentScanner(DocumentScannerConf documentScannerConf) throws BinaryNotFoundException, IOException {
         this.documentScannerConf = documentScannerConf;
         if (this.documentScannerConf.isDebug()) {
             LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
@@ -1433,14 +1445,14 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             return;
         }
         try {
-            List<BufferedImage> images = this.mainPanel.retrieveImages(selectedFile);
+            List<ImageWrapper> images = this.mainPanel.retrieveImages(selectedFile);
             if(images == null) {
                 LOGGER.debug("image retrieval has been canceled, discontinuing adding document");
                 return;
             }
             addDocument(images,
                     selectedFile);
-        } catch (DocumentAddException | InterruptedException | ExecutionException ex) {
+        } catch (DocumentAddException | InterruptedException | ExecutionException | IOException ex) {
             handleException(ex, "Exception during adding new document");
         }
     }//GEN-LAST:event_openMenuItemActionPerformed
@@ -1474,7 +1486,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         for(Object selectedEntity : selectedEntities) {
             try {
                 addDocument(selectedEntity);
-            } catch (DocumentAddException ex) {
+            } catch (DocumentAddException | IOException ex) {
                 handleException(ex, "Exception during adding new document");
             }
         }
@@ -1496,13 +1508,13 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             return;
         }
         try {
-            List<BufferedImage> images = this.mainPanel.retrieveImages(selectedFile);
+            List<ImageWrapper> images = this.mainPanel.retrieveImages(selectedFile);
             if(images == null) {
                 LOGGER.debug("image retrieval has been canceled, discontinuing adding document");
                 return;
             }
             if(!images.isEmpty()) {
-                final List<List<BufferedImage>> scannerResults = new LinkedList<>();
+                final List<List<ImageWrapper>> scannerResults = new LinkedList<>();
                 JDialog invisibleWaitDialog = new JDialog();
                     //working with Object.wait and Object.notify fails due to
                     //java.lang.IllegalMonitorStateException
@@ -1516,23 +1528,28 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         //`java.lang.IllegalStateException: Toolkit not initialized`
                 }
                 Platform.runLater(() -> {
-                    ScannerResultDialog scannerResultDialog = new ScannerResultDialog(images,
-                            this.documentScannerConf);
-                    Optional<List<List<BufferedImage>>> dialogResult = scannerResultDialog.showAndWait();
+                    ScannerResultDialog scannerResultDialog;
+                    try {
+                        scannerResultDialog = new ScannerResultDialog(images,
+                                this.documentScannerConf);
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                    Optional<List<List<ImageWrapper>>> dialogResult = scannerResultDialog.showAndWait();
                     if(dialogResult.isPresent()) {
                         scannerResults.addAll(scannerResultDialog.getResult());
                     }
                     invisibleWaitDialog.setVisible(false);
                 });
                 invisibleWaitDialog.setVisible(true);
-                for(List<BufferedImage> scannerResult : scannerResults) {
+                for(List<ImageWrapper> scannerResult : scannerResults) {
                     addDocument(scannerResult,
                             null //selectedFile
                     );
                 }
                 //this.validate(); //not necessary
             }
-        } catch (DocumentAddException | InterruptedException | ExecutionException ex) {
+        } catch (DocumentAddException | InterruptedException | ExecutionException | IOException ex) {
             handleException(ex, "Exception during adding new document");
         }
     }//GEN-LAST:event_openSelectionMenuItemActionPerformed
@@ -1544,8 +1561,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
     }//GEN-LAST:event_closeMenuItemActionPerformed
 
-    private void addDocument(List<BufferedImage> images,
-            File selectedFile) throws DocumentAddException {
+    private void addDocument(List<ImageWrapper> images,
+            File selectedFile) throws DocumentAddException, IOException {
         //wait as long as possible
         if(amountMoneyExchangeRetrieverInitThread.isAlive()) {
             try {
@@ -1559,7 +1576,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         closeMenuItem.setEnabled(true);
     }
 
-    private void addDocument(Object entityToEdit) throws DocumentAddException {
+    private void addDocument(Object entityToEdit) throws DocumentAddException, IOException {
         //wait as long as possible
         if(amountMoneyExchangeRetrieverInitThread.isAlive()) {
             try {
@@ -1616,7 +1633,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             if(!this.scannerDevice.isOpen()) {
                 this.scannerDevice.open();
             }
-            List<BufferedImage> scannedImages = new LinkedList<>();
+            List<ImageWrapper> scannedImages = new LinkedList<>();
             if(scannerDocumentSourceRequiresLoop()) {
                 //using ADF according to https://github.com/sjamesr/jfreesane/blob/master/README.md
                 ScannerPageSelectDialog scannerPageSelectDialog = new ScannerPageSelectDialog(this);
@@ -1628,7 +1645,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                     while (true) {
                         try {
                             BufferedImage scannedImage = scannerDevice.acquireImage();
-                            scannedImages.add(scannedImage);
+                            ImageWrapper imageWrapper = new ImageWrapper(documentScannerConf.getImageWrapperStorageDir(), scannedImage);
+                            scannedImages.add(imageWrapper);
                         } catch (SaneException e) {
                             if (e.getStatus() == SaneStatus.STATUS_NO_DOCS) {
                                 // this is the out of paper condition that we expect
@@ -1645,7 +1663,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         LOGGER.info(String.format("requested scan of %d pages", scannerPageSelectDialog.getPageCount()));
                         try {
                             BufferedImage scannedImage = scannerDevice.acquireImage();
-                            scannedImages.add(scannedImage);
+                            ImageWrapper imageWrapper = new ImageWrapper(documentScannerConf.getImageWrapperStorageDir(), scannedImage);
+                            scannedImages.add(imageWrapper);
                         } catch (SaneException e) {
                             if (e.getStatus() == SaneStatus.STATUS_NO_DOCS) {
                                 // this is the out of paper condition that we expect
@@ -1662,10 +1681,11 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 }
             }else {
                 BufferedImage scannedImage = this.scannerDevice.acquireImage();
-                scannedImages.add(scannedImage);
+                ImageWrapper imageWrapper = new ImageWrapper(documentScannerConf.getImageWrapperStorageDir(), scannedImage);
+                scannedImages.add(imageWrapper);
             }
             if(!scannedImages.isEmpty()) {
-                final List<List<BufferedImage>> scannerResults = new LinkedList<>();
+                final List<List<ImageWrapper>> scannerResults = new LinkedList<>();
                 JDialog invisibleWaitDialog = new JDialog();
                     //working with Object.wait and Object.notify fails due to
                     //java.lang.IllegalMonitorStateException
@@ -1678,16 +1698,21 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         //`java.lang.IllegalStateException: Toolkit not initialized`
                 }
                 Platform.runLater(() -> {
-                    ScannerResultDialog scannerResultDialog = new ScannerResultDialog(scannedImages,
-                            this.documentScannerConf);
-                    Optional<List<List<BufferedImage>>> dialogResult = scannerResultDialog.showAndWait();
+                    ScannerResultDialog scannerResultDialog;
+                    try {
+                        scannerResultDialog = new ScannerResultDialog(scannedImages,
+                                this.documentScannerConf);
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                    Optional<List<List<ImageWrapper>>> dialogResult = scannerResultDialog.showAndWait();
                     if(dialogResult.isPresent()) {
                         scannerResults.addAll(scannerResultDialog.getResult());
                     }
                     invisibleWaitDialog.setVisible(false);
                 });
                 invisibleWaitDialog.setVisible(true);
-                for(List<BufferedImage> scannerResult : scannerResults) {
+                for(List<ImageWrapper> scannerResult : scannerResults) {
                     addDocument(scannerResult,
                             null //selectedFile
                     );

@@ -17,6 +17,7 @@ package richtercloud.document.scanner.components;
 import java.awt.Component;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -164,7 +165,7 @@ public class WorkflowItemTreePanel extends JPanel {
                             for(Object selectedEntity : selectedEntities) {
                                 try {
                                     WorkflowItemTreePanel.this.mainPanel.addDocument(selectedEntity);
-                                } catch (DocumentAddException ex) {
+                                } catch (DocumentAddException | IOException ex) {
                                     WorkflowItemTreePanel.this.messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
                                 }
                             }

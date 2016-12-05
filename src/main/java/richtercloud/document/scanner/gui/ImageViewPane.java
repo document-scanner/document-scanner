@@ -14,12 +14,10 @@
  */
 package richtercloud.document.scanner.gui;
 
-import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
-import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Insets;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.Border;
@@ -31,6 +29,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
+import richtercloud.document.scanner.ifaces.ImageWrapper;
 
 /**
  * A wrapper around {@link ImageView} which provides a {@link Pane} to be
@@ -55,13 +54,13 @@ public class ImageViewPane extends GridPane {
     /**
      * The topmost {@link ImageView}.
      */
-    private OriginalImageView imageView;
-    private final List<BufferedImage> scanResults = new LinkedList<>();
+    private ImageWrapperView imageView;
+    private final List<ImageWrapper> scanResults = new LinkedList<>();
     private float zoomLevel = 1.0f;
 
     public ImageViewPane(int imageWidth, int imageHeight) {
         this();
-        addScanResult(new OriginalImageView(new WritableImage(imageWidth, imageHeight)));
+        addScanResult(new ImageWrapperView(imageWidth, imageHeight));
     }
 
     private ImageViewPane() {
@@ -76,7 +75,7 @@ public class ImageViewPane extends GridPane {
      * @param imageWidth the preferred width of the image which is used to
      * calculate the height while preserving width-height ratio
      */
-    public ImageViewPane(BufferedImage scanResult, int imageWidth) {
+    public ImageViewPane(ImageWrapper scanResult, int imageWidth) throws IOException {
         this();
         addScanResult(scanResult, imageWidth);
     }
@@ -85,7 +84,7 @@ public class ImageViewPane extends GridPane {
         return imageView;
     }
 
-    public List<BufferedImage> getScanResults() {
+    public List<ImageWrapper> getScanResults() {
         return scanResults;
     }
 
@@ -94,7 +93,7 @@ public class ImageViewPane extends GridPane {
         this.zoomLevel = zoomLevel;
     }
 
-    private void addScanResult(OriginalImageView scanResultImageView) {
+    private void addScanResult(ImageWrapperView scanResultImageView) {
         this.imageView = scanResultImageView;
         GridPane.setMargin(this.imageView, new Insets(5));
         getChildren().clear();
@@ -111,34 +110,33 @@ public class ImageViewPane extends GridPane {
      * Need a method to be able to add original image (scan results)
      * @param scanResult
      */
-    public void addScanResult(BufferedImage scanResult, int imageWidth) {
-        addScanResult(new OriginalImageView(scanResult, imageWidth));
+    public void addScanResult(ImageWrapper scanResult, int imageWidth) throws IOException {
+        addScanResult(new ImageWrapperView(scanResult, imageWidth));
         this.scanResults.add(scanResult);
     }
 
-    private class OriginalImageView extends ImageView {
-        private final BufferedImage originalImage;
+    private class ImageWrapperView extends ImageView {
+        private final ImageWrapper imageWrapper;
 
-        OriginalImageView(BufferedImage originalImage,
-                int imageWidth) {
-            //scale BufferedImage down before passing it to
-            //SwingFXUtils.toFXImage because the latter performs badly on large
-            //images (which ought to be transformed into small ones anyway)
-            super(SwingFXUtils.toFXImage(originalImage,
-                    null //wimg
-            ));
-            this.originalImage = originalImage;
-            setPreserveRatio(true);
-            setFitWidth(imageWidth);
+        /**
+         * Creates an empty {@code ImageWrapperView}
+         * @param imageWidth
+         * @param imageHeight
+         */
+        ImageWrapperView(int imageWidth,
+                int imageHeight) {
+            super(new WritableImage(imageWidth, imageHeight));
+            this.imageWrapper = null;
         }
 
-        OriginalImageView(Image image) {
-            super(image);
-            this.originalImage = null;
+        ImageWrapperView(ImageWrapper imageWrapper,
+                int imageWidth) throws IOException {
+            super(imageWrapper.getImagePreviewFX(imageWidth));
+            this.imageWrapper = imageWrapper;
         }
 
-        public BufferedImage getOriginalImage() {
-            return originalImage;
+        public ImageWrapper getImageWrapper() {
+            return imageWrapper;
         }
     }
 }

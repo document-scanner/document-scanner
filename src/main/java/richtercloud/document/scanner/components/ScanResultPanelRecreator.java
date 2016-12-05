@@ -14,8 +14,8 @@
  */
 package richtercloud.document.scanner.components;
 
-import java.awt.image.BufferedImage;
 import java.util.List;
+import richtercloud.document.scanner.ifaces.ImageWrapper;
 
 /**
  * Undoes {@link ScanResultPanelFetcher#fetch() }.
@@ -29,5 +29,5 @@ public interface ScanResultPanelRecreator {
      * @param data
      * @return the recreation result
      */
-    List<BufferedImage> recreate(byte[] data);
+    List<ImageWrapper> recreate(byte[] data);
 }

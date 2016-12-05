@@ -16,9 +16,11 @@ package richtercloud.document.scanner.gui;
 
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -27,6 +29,7 @@ import javax.swing.Scrollable;
 import javax.swing.SwingConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.gui.conf.OCREngineConf;
 import richtercloud.document.scanner.ifaces.OCRSelectPanel;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanel;
@@ -37,11 +40,16 @@ import richtercloud.document.scanner.ocr.OCREngineFactory;
  * Arranges multiple (or one) images in different selection panel and handles
  * selection on them for OCR.
  *
- * No cross image selection are supported. Starting a selection on one panel
+ * No cross image selection is supported. Starting a selection on one panel
  * removes the selection on another.
  *
  * Auto-OCR-value-detection is handled in this class because it allows handling
  * of values which reach across multiple pages.
+ *
+ * There's no support for different zoom level on different
+ * {@link OCRSelectPanel}s which is useful if image of different size or
+ * resolution are added in one document tab. This is very unrealistic and thus
+ * not supported.
  *
  * @author richter
  */
@@ -71,22 +79,27 @@ public class DefaultOCRSelectPanelPanel extends OCRSelectPanelPanel implements S
      */
     private File documentFile;
     private float zoomLevel = 1;
+    private final DocumentScannerConf documentScannerConf;
 
     public DefaultOCRSelectPanelPanel(OCRSelectPanel panel,
             File documentFile,
             OCREngineFactory oCREngineFactory,
-            OCREngineConf oCREngineConf) {
+            OCREngineConf oCREngineConf,
+            DocumentScannerConf documentScannerConf) {
         this(new LinkedList<>(Arrays.asList(panel)),
                 documentFile,
                 oCREngineFactory,
-                oCREngineConf);
+                oCREngineConf,
+                documentScannerConf);
     }
 
     public DefaultOCRSelectPanelPanel(List<OCRSelectPanel> panels,
             File documentFile,
             OCREngineFactory oCREngineFactory,
-            OCREngineConf oCREngineConf) {
+            OCREngineConf oCREngineConf,
+            DocumentScannerConf documentScannerConf) {
         this.documentFile = documentFile;
+        this.documentScannerConf = documentScannerConf;
         FlowLayout layout = new FlowLayout(FlowLayout.CENTER, 5, 5);
         this.setLayout(layout);
         for(OCRSelectPanel panel : panels) {
@@ -98,7 +111,9 @@ public class DefaultOCRSelectPanelPanel extends OCRSelectPanelPanel implements S
     }
 
     /**
-     * causes pages to be displayed in horizontal arrangement
+     * Causes pages to be displayed in horizontal arrangement by setting the
+     * width of the largest panel as width and the sum of all heights of all
+     * panels as height.
      */
     private void updatePreferredSize() {
         Dimension newValue;
@@ -107,11 +122,12 @@ public class DefaultOCRSelectPanelPanel extends OCRSelectPanelPanel implements S
         }else {
             int preferredWidth = 0, preferredHeight = 0;
             for(OCRSelectPanel panel : oCRSelectPanels) {
-                preferredHeight += panel.getImage().getHeight();
-                preferredWidth = Math.max(preferredWidth, panel.getImage().getWidth());
+                //preferredSize of each panel should include zoom levels
+                preferredHeight += panel.getPreferredSize().height;
+                preferredWidth = Math.max(preferredWidth, panel.getPreferredSize().width);
             }
-            newValue = new Dimension((int)(preferredWidth*zoomLevel),
-                    (int)(preferredHeight*zoomLevel));
+            newValue = new Dimension(preferredWidth,
+                    preferredHeight);
         }
         this.setPreferredSize(newValue);
     }
@@ -135,7 +151,7 @@ public class DefaultOCRSelectPanelPanel extends OCRSelectPanelPanel implements S
      * @return the selected image or {@code null} if all image panels contain selections with width or height <= 0
      */
     @Override
-    public BufferedImage getSelection() {
+    public BufferedImage getSelection() throws IOException {
         for(OCRSelectPanel panel : this.oCRSelectPanels) {
             if(panel.getDragStart() != null && panel.getDragEnd() != null) {
                 int width = panel.dragSelectionWidth();
@@ -150,11 +166,23 @@ public class DefaultOCRSelectPanelPanel extends OCRSelectPanelPanel implements S
                     LOGGER.debug(String.format("skipping selection with height %d <= 0", height));
                     continue;
                 }
-                BufferedImage imageSelection = panel.getImage().getSubimage((int)(panel.dragSelectionX()/this.zoomLevel),
-                        (int)(panel.dragSelectionY()/this.zoomLevel),
-                        (int)(width/this.zoomLevel),
-                        (int)(height/this.zoomLevel));
-                return imageSelection;
+                BufferedImage imageSelection = panel.getImage().getImagePreview(this.documentScannerConf.getPreferredWidth()).getSubimage((int)(panel.dragSelectionX()/this.zoomLevel), //x
+                        (int)(panel.dragSelectionY()/this.zoomLevel), //y
+                        (int)(width/this.zoomLevel), //width
+                        (int)(height/this.zoomLevel) //height
+                );
+                //The scaled image causes horrible OCR results, but apparently
+                //scaling the image back up is sufficient for good OCR quality
+                //(same result as when working without ImageWrapper)
+                double scale = documentScannerConf.getPreferredWidth()*zoomLevel/panel.getImage().getInitialWidth();
+                int width0 = (int) (width/scale);
+                int height0 = (int) (height/scale);
+                BufferedImage imageSelectionScaled = new BufferedImage(width0,
+                        height0,
+                        imageSelection.getType());
+                Graphics2D gr2 = imageSelectionScaled.createGraphics();
+                gr2.drawImage(imageSelection, 0, 0, width0, height0, null);
+                return imageSelectionScaled;
             }
         }
         return null;
@@ -215,12 +243,14 @@ public class DefaultOCRSelectPanelPanel extends OCRSelectPanelPanel implements S
      * @param zoomLevel the zoom level
      */
     @Override
-    public void setZoomLevels(float zoomLevel) {
+    public void setZoomLevels(float zoomLevel) throws IOException {
         this.zoomLevel = zoomLevel; //before updatePreferredSize
         for(OCRSelectPanel oCRSelectPanel : this.oCRSelectPanels) {
             oCRSelectPanel.setZoomLevel(zoomLevel);
         }
         updatePreferredSize();
+        revalidate(); //necessary in order to get the updated preferredSize have
+            //an effect
     }
 
     private class PanelSelectionListener implements OCRSelectPanelSelectionListener {
