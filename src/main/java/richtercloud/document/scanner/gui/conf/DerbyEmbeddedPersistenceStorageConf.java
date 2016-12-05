@@ -28,15 +28,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import javax.persistence.EntityManager;
-import richtercloud.document.scanner.storage.DerbyPersistenceStorage;
+import richtercloud.document.scanner.storage.DerbyEmbeddedPersistenceStorage;
 
 /**
  *
  * @author richter
  */
-public class DerbyPersistenceStorageConf implements Serializable, StorageConf<DerbyPersistenceStorage, DerbyPersistenceStorageConfInitializationException> {
+public class DerbyEmbeddedPersistenceStorageConf implements Serializable, StorageConf<DerbyEmbeddedPersistenceStorage, DerbyEmbeddedPersistenceStorageConfInitializationException> {
     private static final long serialVersionUID = 1L;
-    private static DerbyPersistenceStorage instance;
+    private static DerbyEmbeddedPersistenceStorage instance;
     private final static String CONNECTION_URL_DEFAULT = "localhost";
     private final static String USERNAME_DEFAULT = "";
     private final static String PASSWORD_DEFAULT = "";
@@ -82,10 +82,10 @@ public class DerbyPersistenceStorageConf implements Serializable, StorageConf<De
     private File schemeChecksumFile;
     private Set<Class<?>> entityClasses;
 
-    protected DerbyPersistenceStorageConf() {
+    protected DerbyEmbeddedPersistenceStorageConf() {
     }
 
-    protected DerbyPersistenceStorageConf(File schemeChecksumFile) {
+    protected DerbyEmbeddedPersistenceStorageConf(File schemeChecksumFile) {
         super();
         this.schemeChecksumFile = schemeChecksumFile;
     }
@@ -105,7 +105,7 @@ public class DerbyPersistenceStorageConf implements Serializable, StorageConf<De
     in constructor rather than provide a constructor with a parent directory
     argument
     */
-    public DerbyPersistenceStorageConf(EntityManager entityManager,
+    public DerbyEmbeddedPersistenceStorageConf(EntityManager entityManager,
             Set<Class<?>> entityClasses,
             File schemeChecksumFile) throws FileNotFoundException, IOException {
         if(!schemeChecksumFile.exists()) {
@@ -191,9 +191,9 @@ public class DerbyPersistenceStorageConf implements Serializable, StorageConf<De
     }
 
     @Override
-    public DerbyPersistenceStorage getStorage() {
+    public DerbyEmbeddedPersistenceStorage getStorage() {
         if(instance == null) {
-            instance = new DerbyPersistenceStorage(this.entityManager);
+            instance = new DerbyEmbeddedPersistenceStorage(this.entityManager);
         }
         return instance;
     }
@@ -217,16 +217,16 @@ public class DerbyPersistenceStorageConf implements Serializable, StorageConf<De
     and ObjectInputStream
     */
     @Override
-    public void validate() throws DerbyPersistenceStorageConfInitializationException {
+    public void validate() throws DerbyEmbeddedPersistenceStorageConfInitializationException {
         try {
             ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(schemeChecksumFile));
             Map<Class<?>, Long> checksumMapOld = (Map<Class<?>, Long>) objectInputStream.readObject();
             Map<Class<?>, Long> checksumMap = generateSchemeChecksumMap(entityClasses);
             if(!checksumMap.equals(checksumMapOld)) {
-                throw new DerbyPersistenceStorageConfInitializationException(String.format("The sum of checksum of class fields and methods doesn't match with the persisted map in '%s'", this.schemeChecksumFile.getAbsolutePath()), schemeChecksumFile);
+                throw new DerbyEmbeddedPersistenceStorageConfInitializationException(String.format("The sum of checksum of class fields and methods doesn't match with the persisted map in '%s'", this.schemeChecksumFile.getAbsolutePath()), schemeChecksumFile);
             }
         } catch (IOException | ClassNotFoundException ex) {
-            throw new DerbyPersistenceStorageConfInitializationException(ex, schemeChecksumFile);
+            throw new DerbyEmbeddedPersistenceStorageConfInitializationException(ex, schemeChecksumFile);
         }
     }
 }

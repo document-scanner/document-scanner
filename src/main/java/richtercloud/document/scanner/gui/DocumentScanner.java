@@ -85,8 +85,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.components.tag.FileTagStorage;
 import richtercloud.document.scanner.components.tag.TagStorage;
-import richtercloud.document.scanner.gui.conf.DerbyPersistenceStorageConf;
-import richtercloud.document.scanner.gui.conf.DerbyPersistenceStorageConfInitializationException;
+import richtercloud.document.scanner.gui.conf.DerbyEmbeddedPersistenceStorageConf;
+import richtercloud.document.scanner.gui.conf.DerbyEmbeddedPersistenceStorageConfInitializationException;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.gui.conf.OCREngineConf;
 import richtercloud.document.scanner.gui.conf.StorageConf;
@@ -597,7 +597,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         this.pack();
         this.oCRDialogPanel.repaint();
 
-        this.storageCreateDialogTypeComboBoxModel.addElement(DerbyPersistenceStorageConf.class);
+        this.storageCreateDialogTypeComboBoxModel.addElement(DerbyEmbeddedPersistenceStorageConf.class);
         this.storageCreateDialogTypeComboBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
@@ -653,7 +653,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
      * way to close opened resources).
      */
     @Override
-    public void init() throws DerbyPersistenceStorageConfInitializationException, IOException {
+    public void init() throws DerbyEmbeddedPersistenceStorageConfInitializationException, IOException {
         Map<Object, Object> entityManagerFactoryMap = new HashMap<>();
         entityManagerFactoryMap.put("javax.persistence.jdbc.url",
                 String.format("%s;create=%s", documentScannerConf.getDerbyConnectionURL(), !documentScannerConf.getDatabaseDir().exists()));
@@ -665,12 +665,12 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 new CompanyWarningHandler(entityManager, confirmMessageHandler));
             //after entityManager has been initialized
 
-        DerbyPersistenceStorageConfPanel derbyStorageConfPanel;
-        derbyStorageConfPanel = new DerbyPersistenceStorageConfPanel(entityManager,
+        DerbyEmbeddedPersistenceStorageConfPanel derbyStorageConfPanel;
+        derbyStorageConfPanel = new DerbyEmbeddedPersistenceStorageConfPanel(entityManager,
                 ENTITY_CLASSES,
                 documentScannerConf.getDerbyPersistenceStorageSchemeChecksumFile() //schemeChecksumFile
         ); //@TODO: replace with classpath annotation discovery
-        this.storageConfPanelMap.put(DerbyPersistenceStorageConf.class, derbyStorageConfPanel);
+        this.storageConfPanelMap.put(DerbyEmbeddedPersistenceStorageConf.class, derbyStorageConfPanel);
         this.mainPanel = new DefaultMainPanel(ENTITY_CLASSES,
                 PRIMARY_CLASS_SELECTION,
                 entityManager,
@@ -1814,7 +1814,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         documentScanner.shutdownHook();
                         documentScanner.dispose();
                     }
-                } catch(DerbyPersistenceStorageConfInitializationException ex) {
+                } catch(DerbyEmbeddedPersistenceStorageConfInitializationException ex) {
                     String message = String.format("A change to the metamodel has occured and the database scheme needs to be adjusted externally. It might help to store the entities in an XML file, open the XML file and store the entities in the new format. If you're sure you know what you're doing, consider removing the old scheme checksum file '%s' and restart the application.",
                             ex.getSchemeChecksumFile().getAbsolutePath());
                     LOGGER.error(message, ex);

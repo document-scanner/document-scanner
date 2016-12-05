@@ -20,7 +20,7 @@ import java.io.File;
  *
  * @author richter
  */
-public class DerbyPersistenceStorageConfInitializationException extends StorageConfInitializationException {
+public class DerbyEmbeddedPersistenceStorageConfInitializationException extends StorageConfInitializationException {
     private static final long serialVersionUID = 1L;
     /**
      * The file containing the checksum for validation (catchers of this
@@ -30,21 +30,21 @@ public class DerbyPersistenceStorageConfInitializationException extends StorageC
      */
     private final File schemeChecksumFile;
 
-    public DerbyPersistenceStorageConfInitializationException(File schemeChecksumFile) {
+    public DerbyEmbeddedPersistenceStorageConfInitializationException(File schemeChecksumFile) {
         this.schemeChecksumFile = schemeChecksumFile;
     }
 
-    public DerbyPersistenceStorageConfInitializationException(String message, File schemeChecksumFile) {
+    public DerbyEmbeddedPersistenceStorageConfInitializationException(String message, File schemeChecksumFile) {
         super(message);
         this.schemeChecksumFile = schemeChecksumFile;
     }
 
-    public DerbyPersistenceStorageConfInitializationException(String message, Throwable cause, File schemeChecksumFile) {
+    public DerbyEmbeddedPersistenceStorageConfInitializationException(String message, Throwable cause, File schemeChecksumFile) {
         super(message, cause);
         this.schemeChecksumFile = schemeChecksumFile;
     }
 
-    public DerbyPersistenceStorageConfInitializationException(Throwable cause, File schemeChecksumFile) {
+    public DerbyEmbeddedPersistenceStorageConfInitializationException(Throwable cause, File schemeChecksumFile) {
         super(cause);
         this.schemeChecksumFile = schemeChecksumFile;
     }

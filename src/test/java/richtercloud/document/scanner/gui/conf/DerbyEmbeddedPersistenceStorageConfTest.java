@@ -32,28 +32,28 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.conf.model.TestClass;
-import richtercloud.document.scanner.storage.DerbyPersistenceStorage;
+import richtercloud.document.scanner.storage.DerbyEmbeddedPersistenceStorage;
 
 /**
  *
  * @author richter
  */
-public class DerbyPersistenceStorageConfTest {
-    private final static Logger LOGGER = LoggerFactory.getLogger(DerbyPersistenceStorageConfTest.class);
+public class DerbyEmbeddedPersistenceStorageConfTest {
+    private final static Logger LOGGER = LoggerFactory.getLogger(DerbyEmbeddedPersistenceStorageConfTest.class);
 
     /**
-     * Test of getStorage method, of class DerbyPersistenceStorageConf.
+     * Test of getStorage method, of class DerbyEmbeddedPersistenceStorageConf.
      * @throws java.io.FileNotFoundException
      */
     @Test
     public void testGetStorage() throws FileNotFoundException {
-        DerbyPersistenceStorageConf instance = new DerbyPersistenceStorageConf();
-        DerbyPersistenceStorage result = instance.getStorage();
+        DerbyEmbeddedPersistenceStorageConf instance = new DerbyEmbeddedPersistenceStorageConf();
+        DerbyEmbeddedPersistenceStorage result = instance.getStorage();
         assertNotNull(result);
     }
 
     /**
-     * Test of validate method, of class DerbyPersistenceStorageConf. Mocking
+     * Test of validate method, of class DerbyEmbeddedPersistenceStorageConf. Mocking
      * EntityManager or Metamodel is overly hard in comparison to an integration
      * test.
      * @throws java.io.IOException
@@ -82,7 +82,7 @@ public class DerbyPersistenceStorageConfTest {
         File lastSchemeStorageTempFile = File.createTempFile("document-scanner-test", null);
         lastSchemeStorageTempFile.delete(); //needs to be inexisting to trigger generation of default values in file
         LOGGER.info(String.format("using '%s' for temporary storage of last scheme", lastSchemeStorageTempFile.getAbsolutePath()));
-        DerbyPersistenceStorageConf instance = new DerbyPersistenceStorageConf(entityManager,
+        DerbyEmbeddedPersistenceStorageConf instance = new DerbyEmbeddedPersistenceStorageConf(entityManager,
                 entityClasses,
                 lastSchemeStorageTempFile //prevent creating file with TestClass which isn't accessible outside tests
         );

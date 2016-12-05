@@ -18,37 +18,37 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Set;
 import javax.persistence.EntityManager;
-import richtercloud.document.scanner.gui.conf.DerbyPersistenceStorageConf;
-import richtercloud.document.scanner.gui.conf.DerbyPersistenceStorageConfInitializationException;
+import richtercloud.document.scanner.gui.conf.DerbyEmbeddedPersistenceStorageConf;
+import richtercloud.document.scanner.gui.conf.DerbyEmbeddedPersistenceStorageConfInitializationException;
 import richtercloud.document.scanner.gui.storageconf.StorageConfPanel;
 
 /**
  *
  * @author richter
  */
-public class DerbyPersistenceStorageConfPanel extends StorageConfPanel<DerbyPersistenceStorageConf> {
+public class DerbyEmbeddedPersistenceStorageConfPanel extends StorageConfPanel<DerbyEmbeddedPersistenceStorageConf> {
     private static final long serialVersionUID = 1L;
-    private DerbyPersistenceStorageConf storageConf;
+    private DerbyEmbeddedPersistenceStorageConf storageConf;
 
     /**
      * Creates new form DerbyStorageConfPanel
      */
-    protected DerbyPersistenceStorageConfPanel() {
+    protected DerbyEmbeddedPersistenceStorageConfPanel() {
         this.initComponents();
     }
 
-    public DerbyPersistenceStorageConfPanel(EntityManager entityManager,
+    public DerbyEmbeddedPersistenceStorageConfPanel(EntityManager entityManager,
             Set<Class<?>> entityClasses,
-            File schemeChecksumFile) throws DerbyPersistenceStorageConfInitializationException, IOException {
+            File schemeChecksumFile) throws DerbyEmbeddedPersistenceStorageConfInitializationException, IOException {
         this();
-        this.storageConf =  new DerbyPersistenceStorageConf(entityManager,
+        this.storageConf =  new DerbyEmbeddedPersistenceStorageConf(entityManager,
                 entityClasses,
                 schemeChecksumFile);
         this.storageConf.validate();
     }
 
     @Override
-    public DerbyPersistenceStorageConf getStorageConf() {
+    public DerbyEmbeddedPersistenceStorageConf getStorageConf() {
         return this.storageConf;
     }
 

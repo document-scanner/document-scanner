@@ -83,7 +83,7 @@ public class DocumentScannerConf implements Serializable {
             File schemeChecksumFile,
             File xMLStorageFile) throws IOException {
         Set<StorageConf<?,?>> availableStorageConfs = new HashSet<>();
-        availableStorageConfs.add(new DerbyPersistenceStorageConf(entityManager,
+        availableStorageConfs.add(new DerbyEmbeddedPersistenceStorageConf(entityManager,
                 entityClasses,
                 schemeChecksumFile));
         availableStorageConfs.add(new XMLStorageConf(xMLStorageFile));
@@ -153,7 +153,7 @@ public class DocumentScannerConf implements Serializable {
     private final static String XML_STORAGE_FILE_NAME_DEFAULT = "xml-storage.xml";
     private final static File XML_STORAGE_FILE_DEFAULT = new File(CONFIG_DIR_DEFAULT, XML_STORAGE_FILE_NAME_DEFAULT);
     private File xMLStorageFile = XML_STORAGE_FILE_DEFAULT;
-    private final static File DERBY_PERSISTENCE_STORAGE_SCHEME_CHECKSUM_FILE_DEFAULT = new File(CONFIG_DIR_DEFAULT, DerbyPersistenceStorageConf.SCHEME_CHECKSUM_FILE_NAME);
+    private final static File DERBY_PERSISTENCE_STORAGE_SCHEME_CHECKSUM_FILE_DEFAULT = new File(CONFIG_DIR_DEFAULT, DerbyEmbeddedPersistenceStorageConf.SCHEME_CHECKSUM_FILE_NAME);
     private File derbyPersistenceStorageSchemeChecksumFile = DERBY_PERSISTENCE_STORAGE_SCHEME_CHECKSUM_FILE_DEFAULT;
     private File amountMoneyUsageStatisticsStorageFile = new File(CONFIG_DIR_DEFAULT, AMOUNT_MONEY_USAGE_STATISTICS_STORAGE_FILE_NAME);
     private File amountMoneyCurrencyStorageFile = new File(CONFIG_DIR_DEFAULT, AMOUNT_MONEY_CURRENCY_STORAGE_FILE_NAME);
@@ -180,7 +180,7 @@ public class DocumentScannerConf implements Serializable {
             Set<Class<?>> entityClasses,
             File schemeChecksumFile,
             File xMLStorageFile) throws IOException {
-        this(new DerbyPersistenceStorageConf(entityManager,
+        this(new DerbyEmbeddedPersistenceStorageConf(entityManager,
                 entityClasses,
                 schemeChecksumFile),
                 generateAvailableStorageConfsDefault(entityManager,
