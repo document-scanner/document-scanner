@@ -473,8 +473,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
 
     /**
      * Handles all non-resource related cleanup tasks (like persistence of
-     * configuration). Sets all handled item references to {@code null} in order
-     * to allow this to be run again by shutdown hook.
+     * configuration). Callers have to make sure that this is invoked only once.
      * @see #close()
      */
     private void shutdownHook() {
@@ -487,7 +486,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             } catch (FileNotFoundException ex) {
                 LOGGER.warn("an unexpected exception occured during save of configurations into file '{}', changes most likely lost", this.documentScannerConf.getConfigFile().getAbsolutePath());
             }
-            this.documentScannerConf = null;
         }
         if(this.scannerDevice != null) {
             if(this.scannerDevice.isOpen()) {
