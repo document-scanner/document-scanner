@@ -49,7 +49,7 @@ sender and recipient properties.
 public class Payment extends Identifiable {
     private static final long serialVersionUID = 1L;
     @NotNull
-    @Basic(fetch = FetchType.EAGER)
+    @Basic(fetch = FetchType.LAZY)
     @FieldInfo(name = "Amount", description = "The amount and currency of the payment")
     @Column(length = 8191) //avoid truncation error
     private Amount<Money> amount;

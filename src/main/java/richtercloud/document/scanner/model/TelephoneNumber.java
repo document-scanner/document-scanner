@@ -54,7 +54,7 @@ public class TelephoneNumber extends Identifiable {
      * <ref>https://en.wikipedia.org/wiki/List_of_country_calling_codes</ref>)
      */
     @Min(1) @Max(999)
-    @Basic(fetch = FetchType.EAGER)
+    @Basic(fetch = FetchType.LAZY)
     @FieldInfo(name = "Country code", description = "The country code of the "
             + "telephone number")
     private int countryCode;
@@ -64,7 +64,7 @@ public class TelephoneNumber extends Identifiable {
      * There're no negative prefixes in phone numbers.
      */
     @Min(0)
-    @Basic(fetch = FetchType.EAGER)
+    @Basic(fetch = FetchType.LAZY)
     @FieldInfo(name = "prefix", description = "The prefix of the number (can "
             + "have different meaning for different countries)")
     private int thePrefix;
@@ -74,7 +74,7 @@ public class TelephoneNumber extends Identifiable {
  and many more which shouldn't matter for this application.
      */
     @Min(0)
-    @Basic(fetch = FetchType.EAGER)
+    @Basic(fetch = FetchType.LAZY)
     @FieldInfo(name = "number", description = "The remaining part of the "
             + "number after the prefix (including room numbers or prefix and "
             + "suffix in USA)")
@@ -83,7 +83,7 @@ public class TelephoneNumber extends Identifiable {
      * A contact representing a telephone service provider. Might be
      * {@code null} if the provider is unknown.
      */
-    @Basic(fetch = FetchType.EAGER)
+    @Basic(fetch = FetchType.LAZY)
     @ManyToOne
     @FieldInfo(name = "Provider", description = "The provider which services "
             + "this telephone number")

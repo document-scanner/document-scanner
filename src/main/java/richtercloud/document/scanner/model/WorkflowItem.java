@@ -43,12 +43,12 @@ not investigated further
 @ValidWorkflowItem
 public abstract class WorkflowItem extends CommunicationItem {
     private static final long serialVersionUID = 1L;
-    @ManyToMany(fetch = FetchType.EAGER, mappedBy = "followingItems")
+    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "followingItems")
     @CommunicationTree
     @FieldInfo(name = "Previous items", description="Communication items to "
             + "which this item is a reply")
     private List<WorkflowItem> previousItems = new LinkedList<>();
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     //@CommunicationTree //there's no need to a second communication tree
         //because referenced ought to be updated correctly due to mappedBy
         //parameter of ManyToMany on previousItems

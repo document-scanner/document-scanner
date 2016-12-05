@@ -38,7 +38,7 @@ public class Bill extends Document {
      * strange bills and this allows to manage things like boarding passes
      * without a value on it.
      */
-    @Basic(fetch = FetchType.EAGER)
+    @Basic(fetch = FetchType.LAZY)
     @FieldInfo(name = "Amount", description = "The amount and currency of the bill")
     private Amount<Money> amount;
 

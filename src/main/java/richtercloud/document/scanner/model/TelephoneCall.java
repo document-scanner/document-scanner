@@ -38,10 +38,10 @@ public class TelephoneCall extends WorkflowItem {
     private static final long serialVersionUID = 1L;
     @Temporal(TemporalType.TIMESTAMP)
     @NotNull
-    @Basic(fetch = FetchType.EAGER)
+    @Basic(fetch = FetchType.LAZY)
     @FieldInfo(name = "End", description="The date and time of the end of the call")
     private Date theEnd;
-    @Basic(fetch = FetchType.EAGER)
+    @Basic(fetch = FetchType.LAZY)
     @FieldInfo(name = "Transcription", description = "The transcription of the call")
     private String transcription;
     @NotNull

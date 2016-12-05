@@ -33,7 +33,7 @@ public class Location extends Identifiable {
     private static final long serialVersionUID = 1L;
     @NotNull(groups = {Default.class, IdGenerationValidation.class}) //used for
             //id generation
-    @Basic(fetch = FetchType.EAGER)
+    @Basic(fetch = FetchType.LAZY)
     @FieldInfo(name = "Description", description = "A description of the location identifying the location uniquely")
     private String description;
 

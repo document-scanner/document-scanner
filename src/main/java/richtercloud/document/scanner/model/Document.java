@@ -40,14 +40,14 @@ import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
 @Inheritance
 public class Document extends AbstractDocument {
     private static final long serialVersionUID = 1L;
-    @Basic(fetch = FetchType.EAGER)
+    @Basic(fetch = FetchType.LAZY)
     @FieldInfo(name = "Comment", description = "An optional comment about the document or its reception")
     private String comment;
     /**
      * a name for the document or a few words describing the context
      */
     @NotNull(groups = {Default.class, IdGenerationValidation.class})
-    @Basic(fetch = FetchType.EAGER)
+    @Basic(fetch = FetchType.LAZY)
     @FieldInfo(name = "Identifier", description = "A name for the document or a few words describing it (choosen by the user)")
     private String identifier;
     @ScanResult
@@ -65,7 +65,7 @@ public class Document extends AbstractDocument {
     //length 255 which is the default
     @FieldInfo(name= "Scan OCR text", description = "The text which has been retrieved by OCR")
     private String scanOCRText;
-    @ManyToMany(mappedBy = "documents", fetch = FetchType.EAGER)
+    @ManyToMany(mappedBy = "documents", fetch = FetchType.LAZY)
     @FieldInfo(name = "Payments", description = "A list of payments associated with this document")
     private List<Payment> payments;
 

@@ -48,13 +48,13 @@ public class APackage extends Identifiable {
      * (rare) case. {@code null} if unknown.
      */
     @Temporal(TemporalType.TIMESTAMP)
-    @Basic(fetch = FetchType.EAGER)
+    @Basic(fetch = FetchType.LAZY)
     @FieldInfo(name = "Delivery", description = "The date of the delivery as specified by the delivery service")
     private Date deliveryDate;
     /**
      * The shipping reference this package belong to.
      */
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @FieldInfo(name = "Shipping", description = "The shipping of the package")
     private Shipping shipping;
 
