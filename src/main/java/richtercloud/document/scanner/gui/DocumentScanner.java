@@ -530,7 +530,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             ch.qos.logback.classic.Logger rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
             rootLogger.setLevel(Level.DEBUG);
         }
-        validateProperties();
 
         amountMoneyExchangeRetrieverInitThread.start();
 
@@ -539,6 +538,10 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         this.storage = (PersistenceStorage) delegatingStorageFactory.create(storageConf);
 
         this.initComponents();
+
+        validateProperties();
+            //after initComponents because of afterScannerSelection involving
+            //GUI components
 
         try {
             this.tesseractOCREngineConfPanel = new TesseractOCREngineConfPanel((TesseractOCREngineConf) this.documentScannerConf.getoCREngineConf(),
