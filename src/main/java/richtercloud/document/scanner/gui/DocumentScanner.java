@@ -1363,6 +1363,12 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                     }
                     invisibleWaitDialog.setVisible(false);
                 });
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ex) {
+                    throw new RuntimeException(ex);
+                }
+                    //try to avoid deadlock between Swing and JavaFX thread
                 invisibleWaitDialog.setVisible(true);
                 for(List<ImageWrapper> scannerResult : scannerResults) {
                     addDocument(scannerResult,
