@@ -14,6 +14,7 @@
  */
 package richtercloud.document.scanner.gui;
 
+import richtercloud.document.scanner.gui.storageconf.StorageSelectionDialog;
 import au.com.southsky.jfreesane.SaneDevice;
 import au.com.southsky.jfreesane.SaneException;
 import au.com.southsky.jfreesane.SaneSession;
@@ -22,9 +23,6 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import com.beust.jcommander.JCommander;
 import com.google.common.reflect.TypeToken;
-import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
-import com.orientechnologies.orient.core.exception.ODatabaseException;
-import com.orientechnologies.orient.core.exception.OSecurityAccessException;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.Converter;
 import com.thoughtworks.xstream.converters.MarshallingContext;
@@ -43,8 +41,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -59,12 +55,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListCellRenderer;
-import javax.swing.DefaultListModel;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.JComponent;
@@ -76,8 +69,6 @@ import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.ListCellRenderer;
 import javax.swing.MutableComboBoxModel;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.jscience.economics.money.Currency;
@@ -85,14 +76,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.components.tag.FileTagStorage;
 import richtercloud.document.scanner.components.tag.TagStorage;
-import richtercloud.document.scanner.gui.conf.DerbyEmbeddedPersistenceStorageConf;
-import richtercloud.document.scanner.gui.conf.DerbyEmbeddedPersistenceStorageConfInitializationException;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.gui.conf.OCREngineConf;
-import richtercloud.document.scanner.gui.conf.StorageConf;
 import richtercloud.document.scanner.gui.conf.TesseractOCREngineConf;
 import richtercloud.document.scanner.gui.engineconf.OCREngineConfPanel;
-import richtercloud.document.scanner.gui.storageconf.StorageConfPanel;
 import richtercloud.document.scanner.ifaces.DocumentAddException;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.ifaces.MainPanel;
@@ -136,7 +123,6 @@ import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.AnyType;
 import richtercloud.reflection.form.builder.FieldRetriever;
-import richtercloud.reflection.form.builder.ReflectionFormPanel;
 import richtercloud.reflection.form.builder.components.date.UtilDatePicker;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
@@ -153,8 +139,14 @@ import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
 import richtercloud.reflection.form.builder.jpa.panels.EmbeddableListPanel;
 import richtercloud.reflection.form.builder.jpa.panels.LongIdPanel;
 import richtercloud.reflection.form.builder.jpa.panels.StringAutoCompletePanel;
+import richtercloud.reflection.form.builder.jpa.storage.AbstractPersistenceStorageConf;
+import richtercloud.reflection.form.builder.jpa.storage.DelegatingPersistenceStorageFactory;
+import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 import richtercloud.reflection.form.builder.jpa.typehandler.JPAEntityListTypeHandler;
 import richtercloud.reflection.form.builder.jpa.typehandler.factory.JPAAmountMoneyMappingTypeHandlerFactory;
+import richtercloud.reflection.form.builder.storage.StorageConf;
+import richtercloud.reflection.form.builder.storage.StorageConfInitializationException;
+import richtercloud.reflection.form.builder.storage.StorageCreationException;
 import richtercloud.reflection.form.builder.typehandler.TypeHandler;
 
 /**
@@ -197,14 +189,10 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
 
     private static final long serialVersionUID = 1L;
     private static final Logger LOGGER = LoggerFactory.getLogger(DocumentScanner.class);
-    private static final int ORIENTDB_PORT_DEFAULT = 2_424;
-    private static final String CONNECTION_URL_EXAMPLE = "remote:localhost/GratefulDeadConcerts";
-    private static final String CONNECTION_URL_TOOLTIP_TEXT = String.format("[mode]:[path] (where mode is one of <b>remote</b>, <b>plocal</b> or <b>??</b> and path is in the form [IP or hostname]/[database name], e.g. %s)", CONNECTION_URL_EXAMPLE);
     public static final String APP_NAME = "Document scanner";
     public static final String APP_VERSION = "1.0";
     public static final String BUG_URL = "https://github.com/krichter722/document-scanner";
     private SaneDevice scannerDevice;
-    private ODatabaseDocumentTx db;
     private final MutableComboBoxModel<Class<? extends OCREngineConf<?>>> oCREngineComboBoxModel = new DefaultComboBoxModel<>();
     private OCREngineConfPanel<?> currentOCREngineConfPanel;
     //@TODO: implement class path discovery of associated conf panel with annotations
@@ -215,9 +203,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
      * chosen if the exact resolution isn't available.
      */
     public final static int RESOLUTION_DEFAULT = 300;
-    private MutableComboBoxModel<Class<? extends StorageConf<?,?>>> storageCreateDialogTypeComboBoxModel = new DefaultComboBoxModel<>();
-    private Map<Class<? extends StorageConf<?,?>>, StorageConfPanel<?>> storageConfPanelMap = new HashMap<>();
-    private DefaultListModel<StorageConf<?,?>> storageListModel = new DefaultListModel<>();
     public final static Set<Class<?>> ENTITY_CLASSES = Collections.unmodifiableSet(new HashSet<Class<?>>(
             Arrays.asList(APackage.class,
                     Bill.class,
@@ -241,14 +226,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
 //                    WorkflowItem.class // is an entity, but abstract
                     )));
     public final static Class<?> PRIMARY_CLASS_SELECTION = Document.class;
-    /*
-    internal implementation notes:
-    - connection and EntityManagerFactory should both be either static or
-    dynamic (due to the fact that there might be support for multiple instances
-    at some point make it dynamic
-     */
-    private EntityManagerFactory entityManagerFactory;
-    private EntityManager entityManager;
     private DocumentScannerConf documentScannerConf;
     public final static Map<Class<? extends JComponent>, ValueSetter<?,?>> VALUE_SETTER_MAPPING_DEFAULT;
     static {
@@ -343,6 +320,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     panel will remain in use and thus not be GCed anyway.
     */
     private JFXPanel javaFXInitPanel;
+    private PersistenceStorage storage;
+    private final DelegatingPersistenceStorageFactory delegatingStorageFactory = new DelegatingPersistenceStorageFactory();
 
     public static SaneDevice getScannerDevice(String scannerName,
             Map<String, ScannerConf> scannerConfMap,
@@ -509,6 +488,9 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 }
             }
         }
+        if(this.storage != null) {
+            this.storage.shutdown();
+        }
         close();
     }
 
@@ -541,7 +523,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     internal implementation notes:
     - resources are opened in init methods only (see https://richtercloud.de:446/doku.php?id=programming:java#resource_handling for details)
     */
-    public DocumentScanner(DocumentScannerConf documentScannerConf) throws BinaryNotFoundException, IOException {
+    public DocumentScanner(DocumentScannerConf documentScannerConf) throws BinaryNotFoundException, IOException, StorageCreationException {
         this.documentScannerConf = documentScannerConf;
         if (this.documentScannerConf.isDebug()) {
             LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
@@ -552,6 +534,10 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
 
         amountMoneyExchangeRetrieverInitThread.start();
 
+        StorageConf storageConf = documentScannerConf.getStorageConf();
+        assert storageConf instanceof AbstractPersistenceStorageConf;
+        this.storage = (PersistenceStorage) delegatingStorageFactory.create(storageConf);
+
         this.initComponents();
 
         try {
@@ -560,11 +546,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 //validates the configured binary
         } catch (IOException | InterruptedException ex) {
             throw new RuntimeException(ex);
-        }
-
-        //after loading DocumentScannerConf
-        for(StorageConf<?,?> availableStorageConf : this.documentScannerConf.getAvailableStorageConfs()) {
-            this.storageListModel.addElement(availableStorageConf);
         }
 
         this.onDeviceUnset();
@@ -597,27 +578,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         this.pack();
         this.oCRDialogPanel.repaint();
 
-        this.storageCreateDialogTypeComboBoxModel.addElement(DerbyEmbeddedPersistenceStorageConf.class);
-        this.storageCreateDialogTypeComboBox.addItemListener(new ItemListener() {
-            @Override
-            public void itemStateChanged(ItemEvent e) {
-                Class<? extends StorageConf<?,?>> clazz = (Class<? extends StorageConf<?,?>>) e.getItem();
-                StorageConfPanel<?> storageConfPanel = DocumentScanner.this.storageConfPanelMap.get(clazz);
-                DocumentScanner.this.storageCreateDialogPanel.removeAll();
-                DocumentScanner.this.storageCreateDialogPanel.add(storageConfPanel);
-                DocumentScanner.this.storageCreateDialogPanel.revalidate();
-                DocumentScanner.this.pack();
-                DocumentScanner.this.storageCreateDialogPanel.repaint();
-            }
-        });
-
-        this.storageList.addListSelectionListener(new ListSelectionListener() {
-            @Override
-            public void valueChanged(ListSelectionEvent e) {
-                DocumentScanner.this.storageDialogSelectButton.setEnabled(DocumentScanner.this.storageListModel.getSize() > 0
-                        && DocumentScanner.this.storageList.getSelectedIndices().length > 0);
-            }
-        });
         try {
             this.amountMoneyUsageStatisticsStorage = new FileAmountMoneyUsageStatisticsStorage(documentScannerConf.getAmountMoneyUsageStatisticsStorageFile());
         } catch (IOException ex) {
@@ -625,7 +585,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
         this.amountMoneyCurrencyStorage = new FileAmountMoneyCurrencyStorage(documentScannerConf.getAmountMoneyCurrencyStorageFile());
         this.tagStorage = new FileTagStorage(documentScannerConf.getTagStorageFile());
-        JPAAmountMoneyMappingTypeHandlerFactory fieldHandlerFactory = new JPAAmountMoneyMappingTypeHandlerFactory(entityManager,
+        JPAAmountMoneyMappingTypeHandlerFactory fieldHandlerFactory = new JPAAmountMoneyMappingTypeHandlerFactory(storage,
                 INITIAL_QUERY_LIMIT_DEFAULT,
                 messageHandler,
                 BIDIRECTIONAL_HELP_DIALOG_TITLE);
@@ -633,7 +593,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
 
         //after entity manager creation
         this.typeHandlerMapping.put(new TypeToken<List<AnyType>>() {
-            }.getType(), new JPAEntityListTypeHandler(entityManager,
+            }.getType(), new JPAEntityListTypeHandler(storage,
                     messageHandler,
                     BIDIRECTIONAL_HELP_DIALOG_TITLE));
         //listen to window close button (x)
@@ -653,27 +613,14 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
      * way to close opened resources).
      */
     @Override
-    public void init() throws DerbyEmbeddedPersistenceStorageConfInitializationException, IOException {
-        Map<Object, Object> entityManagerFactoryMap = new HashMap<>();
-        entityManagerFactoryMap.put("javax.persistence.jdbc.url",
-                String.format("%s;create=%s", documentScannerConf.getDerbyConnectionURL(), !documentScannerConf.getDatabaseDir().exists()));
-        this.entityManagerFactory = Persistence.createEntityManagerFactory("richtercloud_document-scanner_jar_1.0-SNAPSHOTPU",
-                entityManagerFactoryMap);
-        this.entityManager = entityManagerFactory.createEntityManager();
-
+    public void init() throws StorageConfInitializationException, IOException, StorageConfInitializationException {
         warningHandlers.put(Company.class,
-                new CompanyWarningHandler(entityManager, confirmMessageHandler));
+                new CompanyWarningHandler(storage, confirmMessageHandler));
             //after entityManager has been initialized
 
-        DerbyEmbeddedPersistenceStorageConfPanel derbyStorageConfPanel;
-        derbyStorageConfPanel = new DerbyEmbeddedPersistenceStorageConfPanel(entityManager,
-                ENTITY_CLASSES,
-                documentScannerConf.getDerbyPersistenceStorageSchemeChecksumFile() //schemeChecksumFile
-        ); //@TODO: replace with classpath annotation discovery
-        this.storageConfPanelMap.put(DerbyEmbeddedPersistenceStorageConf.class, derbyStorageConfPanel);
         this.mainPanel = new DefaultMainPanel(ENTITY_CLASSES,
                 PRIMARY_CLASS_SELECTION,
-                entityManager,
+                storage,
                 amountMoneyUsageStatisticsStorage,
                 amountMoneyCurrencyStorage,
                 amountMoneyExchangeRateRetriever,
@@ -698,15 +645,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
      */
     @Override
     public void close() {
-        if(this.entityManager != null && this.entityManager.isOpen()) {
-            //might be null if an exception occured in Derby
-            this.entityManager.close();
-        }
-        if(this.entityManagerFactory != null && this.entityManagerFactory.isOpen()) {
-            //might be null if an exception occured in Derby
-            this.entityManagerFactory.close();
-        }
-
         //DocumentScanner doesn't necessarily need to manage device. It'd be
         //more elegant if that was done by a manager or conf class.
         if (this.scannerDevice != null && this.scannerDevice.isOpen()) {
@@ -716,22 +654,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 LOGGER.error("an exception during shutdown of scanner device occured", ex);
             }
             this.scannerDevice = null;
-        }
-        if (this.db != null) {
-            this.db.close();
-            this.db = null;
-        }
-        //call to DriverManager.getConnection(String.format("%s;shutdown=true", DERBY_CONNECTION_URL));
-        //fails due to `java.sql.SQLNonTransientConnectionException: Database '/home/richter/.document-scanner/databases' shutdown.`
-        //with cause `Caused by: org.apache.derby.iapi.error.StandardException: Database '/home/richter/.document-scanner/databases' shutdown.`
-        //(maybe EntityManagerFactory.close shuts down the database), but is
-        //somehow necessary in order to remove db.lck in the database directory.
-        try {
-            LOGGER.info("Shutting down database and database server");
-            DriverManager.getConnection(String.format("%s;shutdown=true", documentScannerConf.getDerbyConnectionURL())); //shutdown the database
-            DriverManager.getConnection("jdbc:derby:;shutdown=true"); //shutdown Derby (supposed to remove db.lck<ref>http://db.apache.org/derby/docs/10.8/devguide/tdevdvlp40464.html#tdevdvlp40464</ref>, but doesn't)
-        } catch (SQLException ex) {
-            LOGGER.error("an exception during shutdown of the database connection occured", ex);
         }
     }
 
@@ -746,16 +668,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
 
         scannerLabel = new javax.swing.JLabel();
         selectScannerButton = new javax.swing.JButton();
-        databaseDialog = new javax.swing.JDialog();
-        databaseConnectionURLTextField = new javax.swing.JTextField();
-        databaseConnectionURLLabel = new javax.swing.JLabel();
-        databaseUsernameTextField = new javax.swing.JTextField();
-        databaseUsernameLabel = new javax.swing.JLabel();
-        databasePasswordTextField = new javax.swing.JPasswordField();
-        databasePasswordLabel = new javax.swing.JLabel();
-        databaseCancelButton = new javax.swing.JButton();
-        databaseConnectButton = new javax.swing.JButton();
-        databaseConnectionFailureLabel = new javax.swing.JLabel();
         oCRDialog = new javax.swing.JDialog();
         oCRDialogEngineComboBox = new javax.swing.JComboBox<>();
         oCRDialogEngineLabel = new javax.swing.JLabel();
@@ -763,24 +675,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         oCRDialogPanel = new javax.swing.JPanel();
         oCRDialogCancelButton = new javax.swing.JButton();
         oCRDialogSaveButton = new javax.swing.JButton();
-        storageCreateDialog = new javax.swing.JDialog();
-        storageCreateDialogNameTextField = new javax.swing.JTextField();
-        storageCreateDialogNameLabel = new javax.swing.JLabel();
-        storageCreateDialogTypeComboBox = new javax.swing.JComboBox<>();
-        storageCreateDialogTypeLabel = new javax.swing.JLabel();
-        storageCreateDialogCancelDialog = new javax.swing.JButton();
-        storageCreateDialogSaveButton = new javax.swing.JButton();
-        storageCreateDialogSeparator = new javax.swing.JSeparator();
-        storageCreateDialogPanel = new javax.swing.JPanel();
-        storageDialog = new javax.swing.JDialog();
-        storageLabel = new javax.swing.JLabel();
-        storageListScrollPane = new javax.swing.JScrollPane();
-        storageList = new javax.swing.JList<>();
-        storageDialogCancelButton = new javax.swing.JButton();
-        storageDialogSelectButton = new javax.swing.JButton();
-        storageDialogEditButton = new javax.swing.JButton();
-        storageDialogDeleteButton = new javax.swing.JButton();
-        storageDialogNewButton = new javax.swing.JButton();
         statusBar = new javax.swing.JPanel();
         mainPanelPanel = new javax.swing.JPanel();
         mainMenuBar = new javax.swing.JMenuBar();
@@ -816,96 +710,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 selectScannerButtonActionPerformed(evt);
             }
         });
-
-        databaseDialog.setTitle(DocumentScanner.generateApplicationWindowTitle("Connect to database", APP_NAME, APP_VERSION));
-        databaseDialog.setModal(true);
-        databaseDialog.addWindowListener(new java.awt.event.WindowAdapter() {
-            public void windowClosed(java.awt.event.WindowEvent evt) {
-                databaseDialogWindowClosed(evt);
-            }
-        });
-
-        databaseConnectionURLTextField.setText(CONNECTION_URL_EXAMPLE);
-        databaseConnectionURLTextField.setToolTipText(CONNECTION_URL_TOOLTIP_TEXT);
-        databaseConnectionURLTextField.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                databaseConnectionURLTextFieldActionPerformed(evt);
-            }
-        });
-
-        databaseConnectionURLLabel.setText("Connection URL");
-        databaseConnectionURLLabel.setToolTipText(CONNECTION_URL_TOOLTIP_TEXT);
-
-        databaseUsernameTextField.setText("root");
-
-        databaseUsernameLabel.setText("Username");
-
-        databasePasswordLabel.setText("Password");
-
-        databaseCancelButton.setText("Cancel");
-        databaseCancelButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                databaseCancelButtonActionPerformed(evt);
-            }
-        });
-
-        databaseConnectButton.setText("Connect");
-        databaseConnectButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                databaseConnectButtonActionPerformed(evt);
-            }
-        });
-
-        databaseConnectionFailureLabel.setText(" ");
-
-        javax.swing.GroupLayout databaseDialogLayout = new javax.swing.GroupLayout(databaseDialog.getContentPane());
-        databaseDialog.getContentPane().setLayout(databaseDialogLayout);
-        databaseDialogLayout.setHorizontalGroup(
-            databaseDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, databaseDialogLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(databaseDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(databaseConnectionFailureLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, databaseDialogLayout.createSequentialGroup()
-                        .addGroup(databaseDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(databasePasswordLabel)
-                            .addComponent(databaseConnectionURLLabel)
-                            .addComponent(databaseUsernameLabel))
-                        .addGap(18, 18, 18)
-                        .addGroup(databaseDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(databasePasswordTextField, javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(databaseUsernameTextField)
-                            .addComponent(databaseConnectionURLTextField, javax.swing.GroupLayout.DEFAULT_SIZE, 435, Short.MAX_VALUE)))
-                    .addGroup(databaseDialogLayout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
-                        .addComponent(databaseConnectButton)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(databaseCancelButton)))
-                .addContainerGap())
-        );
-        databaseDialogLayout.setVerticalGroup(
-            databaseDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(databaseDialogLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(databaseDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(databaseConnectionURLTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(databaseConnectionURLLabel))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(databaseDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(databaseUsernameTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(databaseUsernameLabel))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(databaseDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(databasePasswordTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(databasePasswordLabel))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(databaseConnectionFailureLabel, javax.swing.GroupLayout.DEFAULT_SIZE, 151, Short.MAX_VALUE)
-                .addGap(18, 18, 18)
-                .addGroup(databaseDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(databaseCancelButton)
-                    .addComponent(databaseConnectButton))
-                .addContainerGap())
-        );
 
         oCRDialog.setTitle(DocumentScanner.generateApplicationWindowTitle("OCR setup", APP_NAME, APP_VERSION));
         oCRDialog.setModal(true);
@@ -978,181 +782,11 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 .addContainerGap())
         );
 
-        storageCreateDialog.setTitle(DocumentScanner.generateApplicationWindowTitle("Create storage", APP_NAME, APP_VERSION));
-
-        storageCreateDialogNameLabel.setText("Name");
-
-        storageCreateDialogTypeComboBox.setModel(storageCreateDialogTypeComboBoxModel);
-        storageCreateDialogTypeComboBox.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                storageCreateDialogTypeComboBoxActionPerformed(evt);
-            }
-        });
-
-        storageCreateDialogTypeLabel.setText("Type");
-
-        storageCreateDialogCancelDialog.setText("Cancel");
-        storageCreateDialogCancelDialog.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                storageCreateDialogCancelDialogActionPerformed(evt);
-            }
-        });
-
-        storageCreateDialogSaveButton.setText("Save");
-        storageCreateDialogSaveButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                storageCreateDialogSaveButtonActionPerformed(evt);
-            }
-        });
-
-        javax.swing.GroupLayout storageCreateDialogPanelLayout = new javax.swing.GroupLayout(storageCreateDialogPanel);
-        storageCreateDialogPanel.setLayout(storageCreateDialogPanelLayout);
-        storageCreateDialogPanelLayout.setHorizontalGroup(
-            storageCreateDialogPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
-        );
-        storageCreateDialogPanelLayout.setVerticalGroup(
-            storageCreateDialogPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 148, Short.MAX_VALUE)
-        );
-
-        javax.swing.GroupLayout storageCreateDialogLayout = new javax.swing.GroupLayout(storageCreateDialog.getContentPane());
-        storageCreateDialog.getContentPane().setLayout(storageCreateDialogLayout);
-        storageCreateDialogLayout.setHorizontalGroup(
-            storageCreateDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, storageCreateDialogLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(storageCreateDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(storageCreateDialogPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(storageCreateDialogSeparator)
-                    .addGroup(storageCreateDialogLayout.createSequentialGroup()
-                        .addGroup(storageCreateDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(storageCreateDialogNameLabel)
-                            .addComponent(storageCreateDialogTypeLabel))
-                        .addGap(18, 18, 18)
-                        .addGroup(storageCreateDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(storageCreateDialogNameTextField)
-                            .addComponent(storageCreateDialogTypeComboBox, 0, 413, Short.MAX_VALUE)))
-                    .addGroup(storageCreateDialogLayout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
-                        .addComponent(storageCreateDialogSaveButton)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(storageCreateDialogCancelDialog)))
-                .addContainerGap())
-        );
-        storageCreateDialogLayout.setVerticalGroup(
-            storageCreateDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(storageCreateDialogLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(storageCreateDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(storageCreateDialogNameTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(storageCreateDialogNameLabel))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(storageCreateDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(storageCreateDialogTypeComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(storageCreateDialogTypeLabel))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(storageCreateDialogSeparator, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(storageCreateDialogPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGap(18, 18, 18)
-                .addGroup(storageCreateDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(storageCreateDialogCancelDialog)
-                    .addComponent(storageCreateDialogSaveButton))
-                .addContainerGap())
-        );
-
-        storageDialog.setTitle(DocumentScanner.generateApplicationWindowTitle("Configure storage", APP_NAME, APP_VERSION));
-
-        storageLabel.setText("Storages");
-
-        storageList.setModel(storageListModel);
-        storageListScrollPane.setViewportView(storageList);
-
-        storageDialogCancelButton.setText("Cancel");
-        storageDialogCancelButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                storageDialogCancelButtonActionPerformed(evt);
-            }
-        });
-
-        storageDialogSelectButton.setText("Select");
-        storageDialogSelectButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                storageDialogSelectButtonActionPerformed(evt);
-            }
-        });
-
-        storageDialogEditButton.setText("Edit");
-
-        storageDialogDeleteButton.setText("Delete");
-
-        storageDialogNewButton.setText("New...");
-        storageDialogNewButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                storageDialogNewButtonActionPerformed(evt);
-            }
-        });
-
-        javax.swing.GroupLayout storageDialogLayout = new javax.swing.GroupLayout(storageDialog.getContentPane());
-        storageDialog.getContentPane().setLayout(storageDialogLayout);
-        storageDialogLayout.setHorizontalGroup(
-            storageDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(storageDialogLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(storageDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(storageDialogLayout.createSequentialGroup()
-                        .addComponent(storageLabel)
-                        .addGap(0, 0, Short.MAX_VALUE))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, storageDialogLayout.createSequentialGroup()
-                        .addGroup(storageDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(storageListScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 381, Short.MAX_VALUE)
-                            .addGroup(storageDialogLayout.createSequentialGroup()
-                                .addGap(0, 0, Short.MAX_VALUE)
-                                .addComponent(storageDialogSelectButton)))
-                        .addGroup(storageDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, storageDialogLayout.createSequentialGroup()
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(storageDialogCancelButton))
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, storageDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                .addGroup(storageDialogLayout.createSequentialGroup()
-                                    .addGap(27, 27, 27)
-                                    .addComponent(storageDialogEditButton))
-                                .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, storageDialogLayout.createSequentialGroup()
-                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                    .addGroup(storageDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                        .addComponent(storageDialogNewButton, javax.swing.GroupLayout.Alignment.TRAILING)
-                                        .addComponent(storageDialogDeleteButton, javax.swing.GroupLayout.Alignment.TRAILING)))))))
-                .addContainerGap())
-        );
-        storageDialogLayout.setVerticalGroup(
-            storageDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(storageDialogLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(storageLabel)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(storageDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(storageDialogLayout.createSequentialGroup()
-                        .addComponent(storageListScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 249, Short.MAX_VALUE)
-                        .addGap(18, 18, 18)
-                        .addGroup(storageDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(storageDialogCancelButton)
-                            .addComponent(storageDialogSelectButton)))
-                    .addGroup(storageDialogLayout.createSequentialGroup()
-                        .addComponent(storageDialogNewButton)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(storageDialogEditButton)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(storageDialogDeleteButton)
-                        .addGap(0, 0, Short.MAX_VALUE)))
-                .addContainerGap())
-        );
-
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle(String.format("%s %s", APP_NAME, APP_VERSION) //generateApplicationWindowTitle not applicable
         );
         setBounds(new java.awt.Rectangle(0, 0, 800, 600));
-        setPreferredSize(new java.awt.Dimension(800, 600));
+        setSize(new java.awt.Dimension(800, 600));
 
         javax.swing.GroupLayout statusBarLayout = new javax.swing.GroupLayout(statusBar);
         statusBar.setLayout(statusBarLayout);
@@ -1296,7 +930,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addComponent(mainPanelPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(mainPanelPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 437, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(statusBar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
@@ -1350,34 +984,28 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     }//GEN-LAST:event_selectScannerMenuItemActionPerformed
 
     private void storageSelectionMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_storageSelectionMenuItemActionPerformed
-        this.storageDialog.pack();
-        this.storageDialog.setLocationRelativeTo(this);
-        this.storageDialog.setVisible(true);
-    }//GEN-LAST:event_storageSelectionMenuItemActionPerformed
-
-    private void databaseConnectionURLTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_databaseConnectionURLTextFieldActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_databaseConnectionURLTextFieldActionPerformed
-
-    private void databaseConnectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_databaseConnectButtonActionPerformed
+        StorageSelectionDialog storageSelectionDialog;
         try {
-            this.databaseConnectionFailureLabel.setText("Connecting...");
-            this.connectDatabase();
-            this.databaseDialog.setVisible(false);
-        } catch (ODatabaseException | OSecurityAccessException ex) {
-            String message = ReflectionFormPanel.generateExceptionMessage(ex);
-            this.databaseConnectionFailureLabel.setText(String.format("<html>The connection to the specified database with the specified credentials failed with the following error: %s</html>", message));
+            storageSelectionDialog = new StorageSelectionDialog(this,
+                    documentScannerConf,
+                    messageHandler);
+        } catch (IOException | StorageConfInitializationException ex) {
+            throw new RuntimeException(ex);
         }
-    }//GEN-LAST:event_databaseConnectButtonActionPerformed
-
-    private void databaseDialogWindowClosed(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_databaseDialogWindowClosed
-        this.databaseConnectionFailureLabel.setText(" ");
-    }//GEN-LAST:event_databaseDialogWindowClosed
-
-    private void databaseCancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_databaseCancelButtonActionPerformed
-        this.databaseDialog.setVisible(false);
-        this.databaseConnectionFailureLabel.setText(" ");
-    }//GEN-LAST:event_databaseCancelButtonActionPerformed
+        storageSelectionDialog.setLocationRelativeTo(this);
+        storageSelectionDialog.setVisible(true);
+        StorageConf selectedStorageConf = storageSelectionDialog.getSelectedStorageConf();
+        if(!this.documentScannerConf.getStorageConf().getClass().equals(selectedStorageConf.getClass())) {
+            //type of StorageConf changed
+            this.documentScannerConf.setStorageConf(selectedStorageConf);
+            try {
+                this.storage = delegatingStorageFactory.create(selectedStorageConf);
+            } catch (StorageCreationException ex) {
+                throw new RuntimeException(ex);
+            }
+            mainPanel.setStorage(this.storage);
+        }
+    }//GEN-LAST:event_storageSelectionMenuItemActionPerformed
 
     private void oCRMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_oCRMenuItemActionPerformed
         this.oCRDialog.pack();
@@ -1395,39 +1023,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         assert this.currentOCREngineConfPanel != null;
         this.oCRDialog.setVisible(false);
     }//GEN-LAST:event_oCRDialogSaveButtonActionPerformed
-
-    private void storageCreateDialogTypeComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_storageCreateDialogTypeComboBoxActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_storageCreateDialogTypeComboBoxActionPerformed
-
-    private void storageCreateDialogSaveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_storageCreateDialogSaveButtonActionPerformed
-        Class<? extends StorageConf<?,?>> clazz = this.storageCreateDialogTypeComboBox.getItemAt(this.storageCreateDialogTypeComboBox.getSelectedIndex());
-        StorageConfPanel<?> responsibleStorageConfPanel = this.storageConfPanelMap.get(clazz);
-        StorageConf<?,?> createdStorageConf = responsibleStorageConfPanel.getStorageConf();
-        this.storageListModel.addElement(createdStorageConf);
-        this.documentScannerConf.getAvailableStorageConfs().add(createdStorageConf);
-        this.documentScannerConf.setStorageConf(createdStorageConf);
-    }//GEN-LAST:event_storageCreateDialogSaveButtonActionPerformed
-
-    private void storageCreateDialogCancelDialogActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_storageCreateDialogCancelDialogActionPerformed
-        this.storageCreateDialog.setVisible(false);
-    }//GEN-LAST:event_storageCreateDialogCancelDialogActionPerformed
-
-    private void storageDialogCancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_storageDialogCancelButtonActionPerformed
-        this.storageDialog.setVisible(false);
-    }//GEN-LAST:event_storageDialogCancelButtonActionPerformed
-
-    private void storageDialogSelectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_storageDialogSelectButtonActionPerformed
-        StorageConf<?,?> selectedStorage = this.storageList.getSelectedValue();
-        assert selectedStorage != null;
-        this.documentScannerConf.setStorageConf(selectedStorage);
-    }//GEN-LAST:event_storageDialogSelectButtonActionPerformed
-
-    private void storageDialogNewButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_storageDialogNewButtonActionPerformed
-        this.storageCreateDialog.pack();
-        this.storageCreateDialog.setLocationRelativeTo(this);
-        this.storageCreateDialog.setVisible(true);
-    }//GEN-LAST:event_storageDialogNewButtonActionPerformed
 
     private void openMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openMenuItemActionPerformed
         JFileChooser chooser = new JFileChooser();
@@ -1466,7 +1061,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         EntityEditingDialog entityEditingDialog = new EntityEditingDialog(this,
                 ENTITY_CLASSES,
                 PRIMARY_CLASS_SELECTION,
-                entityManager,
+                storage,
                 messageHandler,
                 confirmMessageHandler,
                 idApplier,
@@ -1587,28 +1182,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
         this.mainPanel.addDocument(entityToEdit);
         closeMenuItem.setEnabled(true);
-    }
-
-    /**
-     * connects to an OrientDB database using the current values of the text
-     * properties of the text inputs in the database connection dialog. Expect a
-     * {@link ODatabaseException} if the connection doesn't succeed due to an
-     * errornous URL or wrong credentials. Excepts the remote engine to be on
-     * the classpath (usually provided by orientdb-client module (in doubt check
-     * with {@code Orient.instance().registerEngine(new OEngineRemote());}).
-     *
-     * @throws ODatabaseException if opening the connection pointed to by the
-     * connection URL fails
-     * @throws OSecurityAccessException if the credentials are wrong
-     */
-    private void connectDatabase() {
-        String connectionURL = this.databaseConnectionURLTextField.getText();
-        this.db = new ODatabaseDocumentTx(connectionURL);
-        String username = this.databaseUsernameTextField.getText();
-        String password = new String(this.databasePasswordTextField.getPassword());
-        this.db.open(username, password);
-        this.saveMenuItem.setEnabled(true);
-        this.saveMenuItem.getParent().revalidate();
     }
 
     /**
@@ -1772,9 +1345,12 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             @Override
             public void run() {
                 DocumentScanner documentScanner = null;
+                DocumentScannerConf documentScannerConf = null;
+                MessageHandler messageHandler = new DialogMessageHandler(null //parent
+                        );
                 try {
                     assert DocumentScannerConf.HOME_DIR.exists();
-                    DocumentScannerConf documentScannerConf = new DocumentScannerConf();
+                    documentScannerConf = new DocumentScannerConf();
                     //read once for configFile parameter...
                     new JCommander(documentScannerConf, args);
 
@@ -1814,14 +1390,9 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         documentScanner.shutdownHook();
                         documentScanner.dispose();
                     }
-                } catch(DerbyEmbeddedPersistenceStorageConfInitializationException ex) {
-                    String message = String.format("A change to the metamodel has occured and the database scheme needs to be adjusted externally. It might help to store the entities in an XML file, open the XML file and store the entities in the new format. If you're sure you know what you're doing, consider removing the old scheme checksum file '%s' and restart the application.",
-                            ex.getSchemeChecksumFile().getAbsolutePath());
-                    LOGGER.error(message, ex);
-                    JOptionPane.showMessageDialog(null, //parent
-                            message,
-                            DocumentScanner.generateApplicationWindowTitle("unexpected exception occurred", APP_NAME, APP_VERSION),
-                            JOptionPane.ERROR_MESSAGE);
+                } catch(StorageConfInitializationException ex) {
+                    LOGGER.error("An unexpected exception during initialization of storage occured, see nested exception for details", ex);
+                    messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
                     if(documentScanner != null) {
                         documentScanner.setVisible(false);
                         documentScanner.close();
@@ -1850,17 +1421,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private javax.swing.JMenuItem aboutMenuItem;
     private javax.swing.JMenuItem autoOCRValueDetectionMenuItem;
     private javax.swing.JMenuItem closeMenuItem;
-    private javax.swing.JButton databaseCancelButton;
-    private javax.swing.JButton databaseConnectButton;
-    private javax.swing.JLabel databaseConnectionFailureLabel;
-    private javax.swing.JLabel databaseConnectionURLLabel;
-    private javax.swing.JTextField databaseConnectionURLTextField;
-    private javax.swing.JDialog databaseDialog;
     private javax.swing.JPopupMenu.Separator databaseMenuSeparator;
-    private javax.swing.JLabel databasePasswordLabel;
-    private javax.swing.JPasswordField databasePasswordTextField;
-    private javax.swing.JLabel databaseUsernameLabel;
-    private javax.swing.JTextField databaseUsernameTextField;
     private javax.swing.JMenuItem editEntryMenuItem;
     private javax.swing.JMenuItem exitMenuItem;
     private javax.swing.JPopupMenu.Separator exitMenuItemSeparator;
@@ -1889,24 +1450,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private javax.swing.JButton selectScannerButton;
     private javax.swing.JMenuItem selectScannerMenuItem;
     private javax.swing.JPanel statusBar;
-    private javax.swing.JDialog storageCreateDialog;
-    private javax.swing.JButton storageCreateDialogCancelDialog;
-    private javax.swing.JLabel storageCreateDialogNameLabel;
-    private javax.swing.JTextField storageCreateDialogNameTextField;
-    private javax.swing.JPanel storageCreateDialogPanel;
-    private javax.swing.JButton storageCreateDialogSaveButton;
-    private javax.swing.JSeparator storageCreateDialogSeparator;
-    private javax.swing.JComboBox<Class<? extends StorageConf<?,?>>> storageCreateDialogTypeComboBox;
-    private javax.swing.JLabel storageCreateDialogTypeLabel;
-    private javax.swing.JDialog storageDialog;
-    private javax.swing.JButton storageDialogCancelButton;
-    private javax.swing.JButton storageDialogDeleteButton;
-    private javax.swing.JButton storageDialogEditButton;
-    private javax.swing.JButton storageDialogNewButton;
-    private javax.swing.JButton storageDialogSelectButton;
-    private javax.swing.JLabel storageLabel;
-    private javax.swing.JList<StorageConf<?,?>> storageList;
-    private javax.swing.JScrollPane storageListScrollPane;
     private javax.swing.JMenu storageSelectionMenu;
     private javax.swing.JMenuItem storageSelectionMenuItem;
     private javax.swing.JMenu toolsMenu;

@@ -29,10 +29,9 @@
     <class>richtercloud.document.scanner.model.Workflow</class>
     <class>richtercloud.document.scanner.model.WorkflowItem</class>
     <properties>
-      <!--URL is set programmtically-->
+      <!--URL and driver is set programmtically-->
       <property name="javax.persistence.jdbc.user" value=""/>
       <property name="javax.persistence.jdbc.password" value=""/>
-      <property name="javax.persistence.jdbc.driver" value="org.apache.derby.jdbc.EmbeddedDriver"/>
       <!--<property name="hibernate.cache.provider_class" value="org.hibernate.cache.NoCacheProvider"/>-->
       <!--<property name="hibernate.hbm2ddl.auto" value="update"/>-->
       <property name="eclipselink.ddl-generation" value="create-or-extend-tables"/>

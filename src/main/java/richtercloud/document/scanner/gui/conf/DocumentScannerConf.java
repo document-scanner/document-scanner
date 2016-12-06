@@ -23,10 +23,13 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import javax.persistence.EntityManager;
 import org.jscience.economics.money.Currency;
+import richtercloud.document.scanner.gui.DocumentScanner;
 import richtercloud.document.scanner.gui.ScannerConf;
-import richtercloud.message.handler.MessageHandler;
+import richtercloud.reflection.form.builder.jpa.storage.DerbyEmbeddedPersistenceStorageConf;
+import richtercloud.reflection.form.builder.jpa.storage.DerbyNetworkPersistenceStorageConf;
+import richtercloud.reflection.form.builder.storage.StorageConf;
+import richtercloud.reflection.form.builder.storage.XMLStorageConf;
 
 /**
  * Represents deserialized instances of configurations which are supposed to be
@@ -58,7 +61,7 @@ public class DocumentScannerConf implements Serializable {
     private final static float ZOOM_LEVEL_MIN = 0.01f;
     public final static File HOME_DIR = new File(System.getProperty("user.home"));
     private static final String CONFIG_DIR_NAME_DEFAULT = ".document-scanner";
-    private final static File CONFIG_DIR_DEFAULT = new File(HOME_DIR, CONFIG_DIR_NAME_DEFAULT);
+    public final static File CONFIG_DIR_DEFAULT = new File(HOME_DIR, CONFIG_DIR_NAME_DEFAULT);
     private final static String CONFIG_FILE_NAME_DEFAULT = "document-scanner-config.xml";
     private final static File CONFIG_FILE_DEFAULT = new File(CONFIG_DIR_DEFAULT, CONFIG_FILE_NAME_DEFAULT);
     /**
@@ -72,20 +75,22 @@ public class DocumentScannerConf implements Serializable {
     command line parsing
     */
     private File configFile = CONFIG_FILE_DEFAULT;
-    public static final String DATABASE_DIR_NAME_DEFAULT = "databases";
-    private final static File DATABASE_DIR_DEFAULT = new File(CONFIG_DIR_DEFAULT, DATABASE_DIR_NAME_DEFAULT);
-    private File databaseDir = DATABASE_DIR_DEFAULT;
-    private final static String DERBY_CONNECTION_URL_DEFAULT = String.format("jdbc:derby:%s", DATABASE_DIR_DEFAULT.getAbsolutePath());
-    private String derbyConnectionURL = DERBY_CONNECTION_URL_DEFAULT;
 
-    private static Set<StorageConf<?,?>> generateAvailableStorageConfsDefault(EntityManager entityManager,
-            Set<Class<?>> entityClasses,
-            File schemeChecksumFile,
+    //keep some database configuration-related constants here since they ought
+    //to be managed agnostic of default values in reflection-form-builder
+    public final static String SCHEME_CHECKSUM_FILE_NAME_DEFAULT = "last-scheme.xml";
+    private final static File SCHEME_CHECKSUM_FILE_DEFAULT = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT,
+            SCHEME_CHECKSUM_FILE_NAME_DEFAULT);
+    public static final String DATABASE_DIR_NAME_DEFAULT = "databases";
+    public final static File DATABASE_DIR_DEFAULT = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT,
+            DATABASE_DIR_NAME_DEFAULT);
+
+    private static Set<StorageConf> generateAvailableStorageConfsDefault(Set<Class<?>> entityClasses,
             File xMLStorageFile) throws IOException {
-        Set<StorageConf<?,?>> availableStorageConfs = new HashSet<>();
-        availableStorageConfs.add(new DerbyEmbeddedPersistenceStorageConf(entityManager,
-                entityClasses,
-                schemeChecksumFile));
+        Set<StorageConf> availableStorageConfs = new HashSet<>();
+        availableStorageConfs.add(new DerbyEmbeddedPersistenceStorageConf(entityClasses,
+                        DATABASE_DIR_DEFAULT,
+                        SCHEME_CHECKSUM_FILE_DEFAULT));
         availableStorageConfs.add(new XMLStorageConf(xMLStorageFile));
         return availableStorageConfs;
     }
@@ -102,13 +107,13 @@ public class DocumentScannerConf implements Serializable {
      *
      * @see #availableStorageConfs
      */
-    private StorageConf<?,?> storageConf;
+    private StorageConf storageConf;
     /**
      * Available storage configurations (including all changes done to them).
      *
      * @see #storageConf
      */
-    private Set<StorageConf<?,?>> availableStorageConfs = new HashSet<>();
+    private Set<StorageConf> availableStorageConfs = new HashSet<>();
     private OCREngineConf<?> oCREngineConf = OCR_ENGINE_CONF_DEFAULT;
     /**
      * The currency initially displayed in data entry components (e.g. for
@@ -153,7 +158,8 @@ public class DocumentScannerConf implements Serializable {
     private final static String XML_STORAGE_FILE_NAME_DEFAULT = "xml-storage.xml";
     private final static File XML_STORAGE_FILE_DEFAULT = new File(CONFIG_DIR_DEFAULT, XML_STORAGE_FILE_NAME_DEFAULT);
     private File xMLStorageFile = XML_STORAGE_FILE_DEFAULT;
-    private final static File DERBY_PERSISTENCE_STORAGE_SCHEME_CHECKSUM_FILE_DEFAULT = new File(CONFIG_DIR_DEFAULT, DerbyEmbeddedPersistenceStorageConf.SCHEME_CHECKSUM_FILE_NAME);
+    private final static File DERBY_PERSISTENCE_STORAGE_SCHEME_CHECKSUM_FILE_DEFAULT = new File(CONFIG_DIR_DEFAULT,
+            SCHEME_CHECKSUM_FILE_NAME_DEFAULT);
     private File derbyPersistenceStorageSchemeChecksumFile = DERBY_PERSISTENCE_STORAGE_SCHEME_CHECKSUM_FILE_DEFAULT;
     private File amountMoneyUsageStatisticsStorageFile = new File(CONFIG_DIR_DEFAULT, AMOUNT_MONEY_USAGE_STATISTICS_STORAGE_FILE_NAME);
     private File amountMoneyCurrencyStorageFile = new File(CONFIG_DIR_DEFAULT, AMOUNT_MONEY_CURRENCY_STORAGE_FILE_NAME);
@@ -168,24 +174,29 @@ public class DocumentScannerConf implements Serializable {
 
     @Parameter(names= {"-d", "--debug"}, description= "Print extra debugging statements")
     private boolean debug = false;
+    private final static String HOSTNAME_DEFAULT = "localhost";
 
     /**
      * Creates an configuration with default values.
      */
-    public DocumentScannerConf() {
+    public DocumentScannerConf() throws IOException {
+        this.storageConf = new DerbyEmbeddedPersistenceStorageConf(DocumentScanner.ENTITY_CLASSES,
+            DATABASE_DIR_DEFAULT,
+            SCHEME_CHECKSUM_FILE_DEFAULT);
+        this.availableStorageConfs.add(this.storageConf);
+        this.availableStorageConfs.add(new DerbyNetworkPersistenceStorageConf(DocumentScanner.ENTITY_CLASSES,
+                HOSTNAME_DEFAULT,
+                SCHEME_CHECKSUM_FILE_DEFAULT));
     }
 
-    public DocumentScannerConf(EntityManager entityManager,
-            MessageHandler messageHandler,
-            Set<Class<?>> entityClasses,
+    public DocumentScannerConf(Set<Class<?>> entityClasses,
+            File databaseDir,
             File schemeChecksumFile,
             File xMLStorageFile) throws IOException {
-        this(new DerbyEmbeddedPersistenceStorageConf(entityManager,
-                entityClasses,
-                schemeChecksumFile),
-                generateAvailableStorageConfsDefault(entityManager,
-                        entityClasses,
-                        schemeChecksumFile,
+        this(new DerbyEmbeddedPersistenceStorageConf(entityClasses,
+                        databaseDir,
+                        schemeChecksumFile),
+                generateAvailableStorageConfsDefault(entityClasses,
                         xMLStorageFile),
                 AUTO_GENERATE_IDS_DEFAULT,
                 AUTO_SAVE_IMAGE_DATA_DEFAULT,
@@ -196,7 +207,7 @@ public class DocumentScannerConf implements Serializable {
     }
 
     public DocumentScannerConf(StorageConf storageConf,
-            Set<StorageConf<?,?>> availableStorageConfs,
+            Set<StorageConf> availableStorageConfs,
             boolean autoGenerateIDs,
             boolean autoSaveImageData,
             boolean autoSaveOCRData,
@@ -253,14 +264,6 @@ public class DocumentScannerConf implements Serializable {
 
     protected void setDebug(boolean debug) {
         this.debug = debug;
-    }
-
-    public File getDatabaseDir() {
-        return databaseDir;
-    }
-
-    public String getDerbyConnectionURL() {
-        return derbyConnectionURL;
     }
 
     public File getTagStorageFile() {
@@ -340,14 +343,14 @@ public class DocumentScannerConf implements Serializable {
     /**
      * @return the storageConf
      */
-    public StorageConf<?,?> getStorageConf() {
+    public StorageConf getStorageConf() {
         return this.storageConf;
     }
 
     /**
      * @param storageConf the storageConf to set
      */
-    public void setStorageConf(StorageConf<?,?> storageConf) {
+    public void setStorageConf(StorageConf storageConf) {
         this.storageConf = storageConf;
     }
 
@@ -365,11 +368,7 @@ public class DocumentScannerConf implements Serializable {
         this.currency = currency;
     }
 
-    public void setAvailableStorageConfs(Set<StorageConf<?,?>> availableStorageConfs) {
-        this.availableStorageConfs = availableStorageConfs;
-    }
-
-    public Set<StorageConf<?,?>> getAvailableStorageConfs() {
+    public Set<StorageConf> getAvailableStorageConfs() {
         return availableStorageConfs;
     }
 

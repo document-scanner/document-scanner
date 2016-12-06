@@ -12,28 +12,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.gui.conf;
+package richtercloud.document.scanner.gui.storageconf;
+
+import richtercloud.document.scanner.gui.storageconf.StorageConfPanel;
+import richtercloud.reflection.form.builder.storage.StorageConf;
 
 /**
  *
  * @author richter
  */
-public class StorageConfInitializationException extends Exception {
-    private static final long serialVersionUID = 1L;
+public interface StorageConfPanelFactory {
 
-    public StorageConfInitializationException() {
-    }
-
-    public StorageConfInitializationException(String message) {
-        super(message);
-    }
-
-    public StorageConfInitializationException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public StorageConfInitializationException(Throwable cause) {
-        super(cause);
-    }
-
+    StorageConfPanel create(StorageConf storageConf);
 }

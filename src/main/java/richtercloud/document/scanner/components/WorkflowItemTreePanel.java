@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-import javax.persistence.EntityManager;
 import javax.swing.GroupLayout;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -52,6 +51,7 @@ import richtercloud.reflection.form.builder.ReflectionFormBuilder;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
 import richtercloud.reflection.form.builder.jpa.panels.QueryListPanel;
+import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 import richtercloud.reflection.form.builder.panels.ListPanelItemEvent;
 import richtercloud.reflection.form.builder.panels.ListPanelItemEventVetoException;
 import richtercloud.reflection.form.builder.panels.ListPanelItemListener;
@@ -91,7 +91,7 @@ public class WorkflowItemTreePanel extends JPanel {
     private final JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
     private final JScrollPane communicationTreeScrollPane;
     private final JScrollPane queryListPanelScrollPane;
-    private final EntityManager entityManager;
+    private final PersistenceStorage storage;
     private final MessageHandler messageHandler;
     private final ConfirmMessageHandler confirmMessageHandler;
     private final Set<Class<?>> entityClasses;
@@ -113,7 +113,7 @@ public class WorkflowItemTreePanel extends JPanel {
      * @throws IllegalArgumentException
      * @throws IllegalAccessException
      */
-    public WorkflowItemTreePanel(EntityManager entityManager,
+    public WorkflowItemTreePanel(PersistenceStorage storage,
             List<WorkflowItem> initialValue,
             MessageHandler messageHandler,
             ConfirmMessageHandler confirmMessageHandler,
@@ -125,7 +125,7 @@ public class WorkflowItemTreePanel extends JPanel {
             Map<Class<?>, WarningHandler<?>> warningHandlers) throws IllegalArgumentException, IllegalAccessException {
         this.entityClasses = entityClasses;
         this.primaryClassSelection = primaryClassSelection;
-        this.entityManager = entityManager;
+        this.storage = storage;
         this.messageHandler = messageHandler;
         this.confirmMessageHandler = confirmMessageHandler;
         this.mainPanel = mainPanel;
@@ -134,7 +134,7 @@ public class WorkflowItemTreePanel extends JPanel {
         }
         this.idApplier = idApplier;
         this.warningHandlers = warningHandlers;
-        this.queryListPanel = new QueryListPanel<>(entityManager,
+        this.queryListPanel = new QueryListPanel<>(storage,
                 reflectionFormBuilder,
                 WorkflowItem.class,
                 messageHandler,
@@ -155,7 +155,7 @@ public class WorkflowItemTreePanel extends JPanel {
                             EntityEditingDialog entityEditingDialog = new EntityEditingDialog(SwingUtilities.getWindowAncestor(WorkflowItemTreePanel.this), //parent
                                     WorkflowItemTreePanel.this.entityClasses,
                                     WorkflowItemTreePanel.this.primaryClassSelection,
-                                    WorkflowItemTreePanel.this.entityManager,
+                                    WorkflowItemTreePanel.this.storage,
                                     WorkflowItemTreePanel.this.messageHandler,
                                     WorkflowItemTreePanel.this.confirmMessageHandler,
                                     WorkflowItemTreePanel.this.idApplier,

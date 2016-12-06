@@ -15,7 +15,7 @@
 package richtercloud.document.scanner.gui.storageconf;
 
 import javax.swing.JPanel;
-import richtercloud.document.scanner.gui.conf.StorageConf;
+import richtercloud.reflection.form.builder.storage.StorageConf;
 
 /**
  *
@@ -28,12 +28,23 @@ internal implementation notes:
 cancel methods because buttons can not be included in the panel itself in order
 to provide sane GUI elements
 */
-public abstract class StorageConfPanel<C extends StorageConf<?,?>> extends JPanel {
+public abstract class StorageConfPanel<C extends StorageConf> extends JPanel {
     private static final long serialVersionUID = 1L;
 
     public abstract C getStorageConf();
 
+    /**
+     * Stores value of the GUI components on the passed {@link StorageConf}.
+     * Validation should occur with {@link StorageConf#validate() }.
+     */
     public abstract void save();
 
     public abstract void cancel();
+
+    /**
+     * Applies values of {@code storageConf} on components of panel which allows
+     * the panel to be reusable.
+     * @param storageConf the configuration with values to apply
+     */
+    public abstract void applyStorageConf(C storageConf);
 }

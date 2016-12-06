@@ -12,15 +12,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.gui;
+package richtercloud.document.scanner.gui.storageconf;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Set;
-import javax.persistence.EntityManager;
-import richtercloud.document.scanner.gui.conf.DerbyEmbeddedPersistenceStorageConf;
-import richtercloud.document.scanner.gui.conf.DerbyEmbeddedPersistenceStorageConfInitializationException;
 import richtercloud.document.scanner.gui.storageconf.StorageConfPanel;
+import richtercloud.reflection.form.builder.jpa.storage.DerbyEmbeddedPersistenceStorageConf;
+import richtercloud.reflection.form.builder.storage.StorageConfInitializationException;
 
 /**
  *
@@ -37,19 +35,23 @@ public class DerbyEmbeddedPersistenceStorageConfPanel extends StorageConfPanel<D
         this.initComponents();
     }
 
-    public DerbyEmbeddedPersistenceStorageConfPanel(EntityManager entityManager,
-            Set<Class<?>> entityClasses,
-            File schemeChecksumFile) throws DerbyEmbeddedPersistenceStorageConfInitializationException, IOException {
+    public DerbyEmbeddedPersistenceStorageConfPanel(DerbyEmbeddedPersistenceStorageConf storageConf) throws StorageConfInitializationException, IOException, StorageConfInitializationException {
         this();
-        this.storageConf =  new DerbyEmbeddedPersistenceStorageConf(entityManager,
-                entityClasses,
-                schemeChecksumFile);
+        this.storageConf = storageConf;
+        applyStorageConf(storageConf);
         this.storageConf.validate();
     }
 
     @Override
     public DerbyEmbeddedPersistenceStorageConf getStorageConf() {
         return this.storageConf;
+    }
+
+    @Override
+    public void applyStorageConf(DerbyEmbeddedPersistenceStorageConf storageConf) {
+        this.storageConf = storageConf;
+        this.databaseDirTextField.setText(storageConf.getDatabaseDir().getAbsolutePath());
+        this.usernameTextField.setText(storageConf.getUsername());
     }
 
     /**
@@ -61,14 +63,14 @@ public class DerbyEmbeddedPersistenceStorageConfPanel extends StorageConfPanel<D
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        connectionURLTextField = new javax.swing.JTextField();
-        connectionURLLabel = new javax.swing.JLabel();
+        databaseDirTextField = new javax.swing.JTextField();
+        databaseDirTextFieldLabel = new javax.swing.JLabel();
         usernameTextField = new javax.swing.JTextField();
         usernameLabel = new javax.swing.JLabel();
         passwordLabel = new javax.swing.JLabel();
         passwordPasswordField = new javax.swing.JPasswordField();
 
-        connectionURLLabel.setText("Connection URL");
+        databaseDirTextFieldLabel.setText("Database directory");
 
         usernameLabel.setText("Username");
 
@@ -83,14 +85,14 @@ public class DerbyEmbeddedPersistenceStorageConfPanel extends StorageConfPanel<D
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(connectionURLLabel)
+                    .addComponent(databaseDirTextFieldLabel)
                     .addComponent(usernameLabel)
                     .addComponent(passwordLabel))
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(usernameTextField)
-                    .addComponent(connectionURLTextField)
-                    .addComponent(passwordPasswordField, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 248, Short.MAX_VALUE))
+                    .addComponent(databaseDirTextField)
+                    .addComponent(passwordPasswordField, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 224, Short.MAX_VALUE))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -98,8 +100,8 @@ public class DerbyEmbeddedPersistenceStorageConfPanel extends StorageConfPanel<D
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(connectionURLTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(connectionURLLabel))
+                    .addComponent(databaseDirTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(databaseDirTextFieldLabel))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(usernameTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -114,8 +116,8 @@ public class DerbyEmbeddedPersistenceStorageConfPanel extends StorageConfPanel<D
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JLabel connectionURLLabel;
-    private javax.swing.JTextField connectionURLTextField;
+    private javax.swing.JTextField databaseDirTextField;
+    private javax.swing.JLabel databaseDirTextFieldLabel;
     private javax.swing.JLabel passwordLabel;
     private javax.swing.JPasswordField passwordPasswordField;
     private javax.swing.JLabel usernameLabel;
@@ -124,7 +126,7 @@ public class DerbyEmbeddedPersistenceStorageConfPanel extends StorageConfPanel<D
 
     @Override
     public void save() {
-        this.storageConf.setConnectionURL(this.connectionURLTextField.getText());
+        this.storageConf.setDatabaseDir(new File(this.databaseDirTextField.getText()));
         this.storageConf.setUsername(this.usernameTextField.getText());
         this.storageConf.setPassword(new String(this.passwordPasswordField.getPassword()));
     }

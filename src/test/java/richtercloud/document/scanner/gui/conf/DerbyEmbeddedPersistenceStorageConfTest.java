@@ -15,7 +15,6 @@
 package richtercloud.document.scanner.gui.conf;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -23,16 +22,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
 import org.apache.derby.jdbc.EmbeddedDriver;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.conf.model.TestClass;
-import richtercloud.document.scanner.storage.DerbyEmbeddedPersistenceStorage;
+import richtercloud.reflection.form.builder.jpa.storage.DerbyEmbeddedPersistenceStorageConf;
+import richtercloud.reflection.form.builder.storage.StorageConfInitializationException;
 
 /**
  *
@@ -40,17 +37,6 @@ import richtercloud.document.scanner.storage.DerbyEmbeddedPersistenceStorage;
  */
 public class DerbyEmbeddedPersistenceStorageConfTest {
     private final static Logger LOGGER = LoggerFactory.getLogger(DerbyEmbeddedPersistenceStorageConfTest.class);
-
-    /**
-     * Test of getStorage method, of class DerbyEmbeddedPersistenceStorageConf.
-     * @throws java.io.FileNotFoundException
-     */
-    @Test
-    public void testGetStorage() throws FileNotFoundException {
-        DerbyEmbeddedPersistenceStorageConf instance = new DerbyEmbeddedPersistenceStorageConf();
-        DerbyEmbeddedPersistenceStorage result = instance.getStorage();
-        assertNotNull(result);
-    }
 
     /**
      * Test of validate method, of class DerbyEmbeddedPersistenceStorageConf. Mocking
@@ -72,18 +58,16 @@ public class DerbyEmbeddedPersistenceStorageConfTest {
                 String.format("jdbc:derby:%s;create=true", connTempFile.getAbsolutePath()) //create parameter is always true because using a temporary
                 //directory
         );
-        EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("document-scanner-test", entityManagerFactoryProperties);
         Class<?> driver = EmbeddedDriver.class; //this declaration facilitates
         //dependency management with an IDE with maven support and doesn't cause
         //any harm
         driver.newInstance();
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
-        Set<Class<?>> entityClasses = new HashSet<Class<?>>(Arrays.asList(TestClass.class));
+        Set<Class<?>> entityClasses = new HashSet<>(Arrays.asList(TestClass.class));
         File lastSchemeStorageTempFile = File.createTempFile("document-scanner-test", null);
         lastSchemeStorageTempFile.delete(); //needs to be inexisting to trigger generation of default values in file
         LOGGER.info(String.format("using '%s' for temporary storage of last scheme", lastSchemeStorageTempFile.getAbsolutePath()));
-        DerbyEmbeddedPersistenceStorageConf instance = new DerbyEmbeddedPersistenceStorageConf(entityManager,
-                entityClasses,
+        DerbyEmbeddedPersistenceStorageConf instance = new DerbyEmbeddedPersistenceStorageConf(entityClasses,
+                connTempFile,
                 lastSchemeStorageTempFile //prevent creating file with TestClass which isn't accessible outside tests
         );
         try {

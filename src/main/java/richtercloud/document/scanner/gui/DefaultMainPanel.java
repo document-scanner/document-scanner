@@ -35,7 +35,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import javax.persistence.EntityManager;
 import javax.swing.GroupLayout;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -96,6 +95,7 @@ import richtercloud.reflection.form.builder.jpa.JPACachedFieldRetriever;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.fieldhandler.factory.JPAAmountMoneyMappingFieldHandlerFactory;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
+import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 import richtercloud.reflection.form.builder.jpa.typehandler.ElementCollectionTypeHandler;
 import richtercloud.reflection.form.builder.jpa.typehandler.ToManyTypeHandler;
 import richtercloud.reflection.form.builder.jpa.typehandler.ToOneTypeHandler;
@@ -169,7 +169,7 @@ public class DefaultMainPanel extends MainPanel {
     private final Set<Class<?>> entityClasses;
     private final Class<?> primaryClassSelection;
     private final Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping;
-    private final EntityManager entityManager;
+    private PersistenceStorage storage;
     private final MessageHandler messageHandler;
     private final ConfirmMessageHandler confirmMessageHandler;
     private final AutoOCRValueDetectionReflectionFormBuilder reflectionFormBuilder;
@@ -199,7 +199,7 @@ public class DefaultMainPanel extends MainPanel {
 
     public DefaultMainPanel(Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
-            EntityManager entityManager,
+            PersistenceStorage storage,
             AmountMoneyUsageStatisticsStorage amountMoneyUsageStatisticsStorage,
             AmountMoneyCurrencyStorage amountMoneyAdditionalCurrencyStorage,
             AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever,
@@ -217,7 +217,7 @@ public class DefaultMainPanel extends MainPanel {
         this(entityClasses,
                 primaryClassSelection,
                 DocumentScanner.VALUE_SETTER_MAPPING_DEFAULT,
-                entityManager,
+                storage,
                 amountMoneyUsageStatisticsStorage,
                 amountMoneyAdditionalCurrencyStorage,
                 amountMoneyExchangeRateRetriever,
@@ -237,7 +237,7 @@ public class DefaultMainPanel extends MainPanel {
     public DefaultMainPanel(Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
             Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping,
-            EntityManager entityManager,
+            PersistenceStorage storage,
             AmountMoneyUsageStatisticsStorage amountMoneyUsageStatisticsStorage,
             AmountMoneyCurrencyStorage amountMoneyCurrencyStorage,
             AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever,
@@ -269,12 +269,12 @@ public class DefaultMainPanel extends MainPanel {
         this.entityClasses = entityClasses;
         this.primaryClassSelection = primaryClassSelection;
         this.valueSetterMapping = valueSetterMapping;
-        this.entityManager = entityManager;
+        this.storage = storage;
         this.amountMoneyUsageStatisticsStorage = amountMoneyUsageStatisticsStorage;
         this.amountMoneyCurrencyStorage = amountMoneyCurrencyStorage;
         this.amountMoneyExchangeRateRetriever = amountMoneyExchangeRateRetriever;
         this.typeHandlerMapping = typeHandlerMapping;
-        this.reflectionFormBuilder = new AutoOCRValueDetectionReflectionFormBuilder(entityManager,
+        this.reflectionFormBuilder = new AutoOCRValueDetectionReflectionFormBuilder(storage,
                 DocumentScanner.generateApplicationWindowTitle("Field description",
                         DocumentScanner.APP_NAME,
                         DocumentScanner.APP_VERSION),
@@ -297,6 +297,11 @@ public class DefaultMainPanel extends MainPanel {
         this.mainPanelDockingManager = new MainPanelDockingManagerFlexdock();
         this.mainPanelDockingManager.init(dockingControlFrame,
                 this);
+    }
+
+    @Override
+    public void setStorage(PersistenceStorage storage) {
+        this.storage = storage;
     }
 
     @Override
@@ -612,19 +617,19 @@ public class DefaultMainPanel extends MainPanel {
                     typeHandlerMapping,
                     messageHandler,
                     embeddableFieldHandler);
-            JPAAmountMoneyMappingFieldHandlerFactory jPAAmountMoneyMappingFieldHandlerFactory = JPAAmountMoneyMappingFieldHandlerFactory.create(entityManager,
+            JPAAmountMoneyMappingFieldHandlerFactory jPAAmountMoneyMappingFieldHandlerFactory = JPAAmountMoneyMappingFieldHandlerFactory.create(storage,
                     INITIAL_QUERY_LIMIT_DEFAULT,
                     messageHandler,
                     amountMoneyUsageStatisticsStorage,
                     amountMoneyCurrencyStorage,
                     amountMoneyExchangeRateRetriever,
                     BIDIRECTIONAL_HELP_DIALOG_TITLE);
-            ToManyTypeHandler toManyTypeHandler = new ToManyTypeHandler(entityManager,
+            ToManyTypeHandler toManyTypeHandler = new ToManyTypeHandler(storage,
                     messageHandler,
                     typeHandlerMapping,
                     typeHandlerMapping,
                     BIDIRECTIONAL_HELP_DIALOG_TITLE);
-            ToOneTypeHandler toOneTypeHandler = new ToOneTypeHandler(entityManager,
+            ToOneTypeHandler toOneTypeHandler = new ToOneTypeHandler(storage,
                     messageHandler,
                     BIDIRECTIONAL_HELP_DIALOG_TITLE);
             FieldHandler fieldHandler = new DocumentScannerFieldHandler(jPAAmountMoneyMappingFieldHandlerFactory.generateClassMapping(),
@@ -640,7 +645,7 @@ public class DefaultMainPanel extends MainPanel {
                     scanResultPanelFetcher,
                     this.documentScannerConf,
                     oCRProgressMonitorParent, //oCRProgressMonitorParent
-                    entityManager,
+                    storage,
                     entityClasses,
                     primaryClassSelection,
                     this,
@@ -715,7 +720,7 @@ public class DefaultMainPanel extends MainPanel {
             OCRPanel oCRPanel = new DefaultOCRPanel(entityClasses0,
                     reflectionFormPanelMap,
                     valueSetterMapping,
-                    entityManager,
+                    storage,
                     messageHandler,
                     reflectionFormBuilder,
                     documentScannerConf);

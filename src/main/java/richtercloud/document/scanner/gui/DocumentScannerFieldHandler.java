@@ -21,7 +21,6 @@ import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.persistence.EntityManager;
 import javax.swing.JComponent;
 import javax.swing.SwingUtilities;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -67,6 +66,7 @@ import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.fieldhandler.JPAMappingFieldHandler;
 import richtercloud.reflection.form.builder.jpa.fieldhandler.factory.JPAAmountMoneyMappingFieldHandlerFactory;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
+import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 import richtercloud.reflection.form.builder.jpa.typehandler.ElementCollectionTypeHandler;
 import richtercloud.reflection.form.builder.jpa.typehandler.ToManyTypeHandler;
 import richtercloud.reflection.form.builder.jpa.typehandler.ToOneTypeHandler;
@@ -105,7 +105,7 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
     private final ScanResultPanelFetcher scanResultPanelFetcher;
     private final DocumentScannerConf documentScannerConf;
     private final Window oCRProgressMonitorParent;
-    private final EntityManager entityManager;
+    private final PersistenceStorage storage;
     private final Set<Class<?>> entityClasses;
     private final Class<?> primaryClassSelection;
     private final MainPanel mainPanel;
@@ -146,7 +146,7 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
             MessageHandler messageHandler,
             ConfirmMessageHandler confirmMessageHandler,
             Map<java.lang.reflect.Type, TypeHandler<?, ?,?, ?>> typeHandlerMapping,
-            EntityManager entityManager,
+            PersistenceStorage storage,
             FieldRetriever fieldRetriever,
             OCRResultPanelFetcher oCRResultPanelFetcher,
             ScanResultPanelFetcher scanResultPanelFetcher,
@@ -170,19 +170,19 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
                 typeHandlerMapping,
                 messageHandler,
                 embeddableFieldHandler);
-        JPAAmountMoneyMappingFieldHandlerFactory jPAAmountMoneyMappingFieldHandlerFactory = JPAAmountMoneyMappingFieldHandlerFactory.create(entityManager,
+        JPAAmountMoneyMappingFieldHandlerFactory jPAAmountMoneyMappingFieldHandlerFactory = JPAAmountMoneyMappingFieldHandlerFactory.create(storage,
                 initialQueryLimit,
                 messageHandler,
                 amountMoneyUsageStatisticsStorage,
                 amountMoneyCurrencyStorage,
                 amountMoneyExchangeRateRetriever,
                 bidirectionalHelpDialogTitle);
-        ToManyTypeHandler toManyTypeHandler = new ToManyTypeHandler(entityManager,
+        ToManyTypeHandler toManyTypeHandler = new ToManyTypeHandler(storage,
                 messageHandler,
                 typeHandlerMapping,
                 typeHandlerMapping,
                 bidirectionalHelpDialogTitle);
-        ToOneTypeHandler toOneTypeHandler = new ToOneTypeHandler(entityManager,
+        ToOneTypeHandler toOneTypeHandler = new ToOneTypeHandler(storage,
                 messageHandler,
                 bidirectionalHelpDialogTitle);
         DocumentScannerFieldHandler retValue = new DocumentScannerFieldHandler(jPAAmountMoneyMappingFieldHandlerFactory.generateClassMapping(),
@@ -198,7 +198,7 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
                 scanResultPanelFetcher,
                 documentScannerConf,
                 oCRProgressMonitorParent,
-                entityManager,
+                storage,
                 entityClasses,
                 primaryClassSelection,
                 mainPanel,
@@ -221,7 +221,7 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
             ScanResultPanelFetcher scanResultPanelFetcher,
             DocumentScannerConf documentScannerConf,
             Window oCRProgressMonitorParent,
-            EntityManager entityManager,
+            PersistenceStorage storage,
             Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
             MainPanel mainPanel,
@@ -241,10 +241,10 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
         this.scanResultPanelFetcher = scanResultPanelFetcher;
         this.documentScannerConf = documentScannerConf;
         this.oCRProgressMonitorParent = oCRProgressMonitorParent;
-        if(entityManager == null) {
-            throw new IllegalArgumentException("entityManager mustn't be null");
+        if(storage == null) {
+            throw new IllegalArgumentException("storage mustn't be null");
         }
-        this.entityManager = entityManager;
+        this.storage = storage;
         this.entityClasses = entityClasses;
         this.primaryClassSelection = primaryClassSelection;
         this.mainPanel = mainPanel;
@@ -312,7 +312,7 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
         }
         if(field.getAnnotation(CommunicationTree.class) != null) {
             List<WorkflowItem> fieldValue = (List<WorkflowItem>) field.get(instance);
-            WorkflowItemTreePanel retValue = new WorkflowItemTreePanel(entityManager,
+            WorkflowItemTreePanel retValue = new WorkflowItemTreePanel(storage,
                     fieldValue,
                     getMessageHandler(),
                     confirmMessageHandler,

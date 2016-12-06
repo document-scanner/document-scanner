@@ -15,29 +15,27 @@
 package richtercloud.document.scanner.model.warninghandler;
 
 import java.util.List;
-import javax.persistence.EntityManager;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Root;
 import javax.swing.JOptionPane;
 import richtercloud.document.scanner.model.Company;
 import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.Message;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
+import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 
 /**
  *
  * @author richter
  */
 public class CompanyWarningHandler implements WarningHandler<Company> {
-    private final EntityManager entityManager;
+    private final PersistenceStorage storage;
     private final ConfirmMessageHandler confirmMessageHandler;
 
-    public CompanyWarningHandler(EntityManager entityManager,
+    public CompanyWarningHandler(PersistenceStorage storage,
             ConfirmMessageHandler confirmMessageHandler) {
-        if(entityManager == null) {
-            throw new IllegalArgumentException("entityManager mustn't be null");
+        if(storage == null) {
+            throw new IllegalArgumentException("storage mustn't be null");
         }
-        this.entityManager = entityManager;
+        this.storage = storage;
         if(confirmMessageHandler == null) {
             throw new IllegalArgumentException("confirmMessageHandler mustn't be null");
         }
@@ -46,13 +44,7 @@ public class CompanyWarningHandler implements WarningHandler<Company> {
 
     @Override
     public boolean handleWarning(Company instance) {
-        CriteriaQuery<Company> criteria = entityManager.getCriteriaBuilder().createQuery( Company.class );
-        Root<Company> personRoot = criteria.from( Company.class );
-        criteria.select( personRoot );
-        criteria.where( entityManager.getCriteriaBuilder().equal( personRoot.get("name"), instance.getName() ) );
-            //attributeName Company.name was used before, unclear why (causes
-            //` java.lang.IllegalArgumentException: The attribute [Company.name] is not present in the managed type [EntityTypeImpl@553585467:Company [ javaType: class richtercloud.document.scanner.model.Company descriptor: RelationalDescriptor(richtercloud.document.scanner.model.Company --> [DatabaseTable(COMPANY)]), mappings: 8]].`)
-        List<Company> results = entityManager.createQuery( criteria ).getResultList();
+        List<Company> results = storage.runQuery("name", instance.getName(), Company.class);
         if(!results.isEmpty()) {
             int answer = confirmMessageHandler.confirm(new Message(String.format("An instance with the name '%s' already exists in the database. Continue anyway?", instance.getName()),
                     JOptionPane.WARNING_MESSAGE,

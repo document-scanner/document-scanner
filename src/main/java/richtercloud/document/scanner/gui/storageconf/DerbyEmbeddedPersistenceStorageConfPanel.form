@@ -19,15 +19,15 @@
           <Group type="102" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="connectionURLLabel" alignment="0" min="-2" max="-2" attributes="0"/>
+                  <Component id="databaseDirTextFieldLabel" alignment="0" min="-2" max="-2" attributes="0"/>
                   <Component id="usernameLabel" alignment="0" min="-2" max="-2" attributes="0"/>
                   <Component id="passwordLabel" alignment="0" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace type="separate" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
                   <Component id="usernameTextField" alignment="0" max="32767" attributes="0"/>
-                  <Component id="connectionURLTextField" alignment="0" max="32767" attributes="0"/>
-                  <Component id="passwordPasswordField" alignment="1" pref="248" max="32767" attributes="0"/>
+                  <Component id="databaseDirTextField" alignment="0" max="32767" attributes="0"/>
+                  <Component id="passwordPasswordField" alignment="1" pref="224" max="32767" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
           </Group>
@@ -38,8 +38,8 @@
           <Group type="102" alignment="0" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
-                  <Component id="connectionURLTextField" alignment="3" min="-2" max="-2" attributes="0"/>
-                  <Component id="connectionURLLabel" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="databaseDirTextField" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="databaseDirTextFieldLabel" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
@@ -57,11 +57,11 @@
     </DimensionLayout>
   </Layout>
   <SubComponents>
-    <Component class="javax.swing.JTextField" name="connectionURLTextField">
+    <Component class="javax.swing.JTextField" name="databaseDirTextField">
     </Component>
-    <Component class="javax.swing.JLabel" name="connectionURLLabel">
+    <Component class="javax.swing.JLabel" name="databaseDirTextFieldLabel">
       <Properties>
-        <Property name="text" type="java.lang.String" value="Connection URL"/>
+        <Property name="text" type="java.lang.String" value="Database directory"/>
       </Properties>
     </Component>
     <Component class="javax.swing.JTextField" name="usernameTextField">

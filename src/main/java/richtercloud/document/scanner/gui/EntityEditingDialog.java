@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.persistence.EntityManager;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JComboBox;
@@ -32,6 +31,7 @@ import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
 import richtercloud.document.scanner.ifaces.Constants;
 import richtercloud.message.handler.ConfirmMessageHandler;
+import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.reflection.form.builder.jpa.JPACachedFieldRetriever;
@@ -39,6 +39,8 @@ import richtercloud.reflection.form.builder.jpa.JPAReflectionFormBuilder;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
 import richtercloud.reflection.form.builder.jpa.panels.QueryPanel;
+import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
+import richtercloud.reflection.form.builder.storage.StorageException;
 
 /**
  * A dialog to select the class and the concrete entity to edit or delete it.
@@ -78,7 +80,7 @@ public class EntityEditingDialog extends javax.swing.JDialog {
         }
     };
     private final DefaultComboBoxModel<Class<?>> entityEditingClassComboBoxModel = new DefaultComboBoxModel<>();
-    private final EntityManager entityManager;
+    private final PersistenceStorage storage;
     private final JPAReflectionFormBuilder reflectionFormBuilder;
     private QueryPanel<Object> entityEditingQueryPanel;
     /**
@@ -95,7 +97,7 @@ public class EntityEditingDialog extends javax.swing.JDialog {
     public EntityEditingDialog(Window parent,
             Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
-            EntityManager entityManager,
+            PersistenceStorage storage,
             MessageHandler messageHandler,
             ConfirmMessageHandler confirmMessageHandler,
             IdApplier<?> idApplier,
@@ -103,9 +105,9 @@ public class EntityEditingDialog extends javax.swing.JDialog {
         super(parent,
                 ModalityType.APPLICATION_MODAL);
         this.messageHandler = messageHandler;
-        this.entityManager = entityManager;
-        init(entityClasses, primaryClassSelection, entityManager);
-        reflectionFormBuilder = new JPAReflectionFormBuilder(entityManager,
+        this.storage = storage;
+        init(entityClasses, primaryClassSelection, storage);
+        reflectionFormBuilder = new JPAReflectionFormBuilder(storage,
                 DocumentScanner.generateApplicationWindowTitle("Field description", DocumentScanner.APP_NAME, DocumentScanner.APP_VERSION),
                 messageHandler,
                 confirmMessageHandler,
@@ -127,7 +129,7 @@ public class EntityEditingDialog extends javax.swing.JDialog {
     public EntityEditingDialog(java.awt.Frame parent,
             Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
-            EntityManager entityManager,
+            PersistenceStorage storage,
             MessageHandler messageHandler,
             ConfirmMessageHandler confirmMessageHandler,
             IdApplier<?> idApplier,
@@ -136,9 +138,9 @@ public class EntityEditingDialog extends javax.swing.JDialog {
                 true //modal
         );
         this.messageHandler = messageHandler;
-        this.entityManager = entityManager;
-        init(entityClasses, primaryClassSelection, entityManager);
-        reflectionFormBuilder = new JPAReflectionFormBuilder(entityManager,
+        this.storage = storage;
+        init(entityClasses, primaryClassSelection, storage);
+        reflectionFormBuilder = new JPAReflectionFormBuilder(storage,
                 DocumentScanner.generateApplicationWindowTitle("Field description", DocumentScanner.APP_NAME, DocumentScanner.APP_VERSION),
                 messageHandler,
                 confirmMessageHandler,
@@ -150,13 +152,13 @@ public class EntityEditingDialog extends javax.swing.JDialog {
 
     private void init(Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
-            EntityManager entityManager) {
+            PersistenceStorage storage) {
         initComponents();
         if(messageHandler == null) {
             throw new IllegalArgumentException("messageHandler mustn't be null");
         }
-        if(entityManager == null) {
-            throw new IllegalArgumentException("entityManager mustn't be null");
+        if(storage == null) {
+            throw new IllegalArgumentException("storage mustn't be null");
         }
         if(entityClasses == null) {
             throw new IllegalArgumentException("entityClasses mustn't be null");
@@ -193,7 +195,7 @@ public class EntityEditingDialog extends javax.swing.JDialog {
         entityEditingQueryPanel = this.entityEditingQueryPanelCache.get(selectedEntityClass);
         if(entityEditingQueryPanel == null) {
             try {
-                this.entityEditingQueryPanel = new QueryPanel(entityManager,
+                this.entityEditingQueryPanel = new QueryPanel(storage,
                         selectedEntityClass,
                         messageHandler,
                         reflectionFormBuilder,
@@ -339,9 +341,12 @@ public class EntityEditingDialog extends javax.swing.JDialog {
         if(answer == JOptionPane.YES_OPTION) {
             List<Object> selectedEntities = this.entityEditingQueryPanel.getSelectedObjects();
             for(Object selectedEntity : selectedEntities) {
-                this.entityManager.getTransaction().begin();
-                this.entityManager.remove(selectedEntity);
-                this.entityManager.getTransaction().commit();
+                try {
+                    this.storage.delete(selectedEntity);
+                } catch (StorageException ex) {
+                    messageHandler.handle(new Message(ex,
+                            JOptionPane.ERROR_MESSAGE));
+                }
             }
             this.entityEditingQueryPanel.getQueryComponent().repeatLastQuery();
         }

@@ -27,7 +27,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import javax.persistence.EntityManager;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 import javax.swing.JRadioButtonMenuItem;
@@ -42,6 +41,7 @@ import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.ReflectionFormBuilder;
 import richtercloud.reflection.form.builder.ReflectionFormPanel;
+import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 
 /**
  * The counterpart of every {@link OCRSelectPanel} which contains a text field
@@ -92,7 +92,7 @@ public class DefaultOCRPanel extends OCRPanel {
     public DefaultOCRPanel(Set<Class<?>> entityClasses,
             Map<Class<?>, ReflectionFormPanel<?>> reflectionFormPanelMap,
             Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping,
-            EntityManager entityManager,
+            PersistenceStorage storage,
             MessageHandler messageHandler,
             ReflectionFormBuilder reflectionFormBuilder,
             DocumentScannerConf documentScannerConf) {

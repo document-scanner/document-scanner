@@ -17,8 +17,6 @@ package richtercloud.document.scanner.gui.conf;
 import java.io.File;
 import java.io.IOException;
 import java.util.Set;
-import javax.persistence.EntityManager;
-import richtercloud.message.handler.MessageHandler;
 
 /**
  *
@@ -26,14 +24,12 @@ import richtercloud.message.handler.MessageHandler;
  */
 public class DocumentScannerConfFactory {
 
-    public DocumentScannerConf create(EntityManager entityManager,
-            MessageHandler messageHandler,
-            Set<Class<?>> entityClasses,
+    public DocumentScannerConf create(Set<Class<?>> entityClasses,
+            File databaseDir,
             File schemeChecksumFile,
             File xMLStorageFile) throws IOException {
-        return new DocumentScannerConf(entityManager,
-                messageHandler,
-                entityClasses,
+        return new DocumentScannerConf(entityClasses,
+                databaseDir,
                 schemeChecksumFile,
                 xMLStorageFile);
     }

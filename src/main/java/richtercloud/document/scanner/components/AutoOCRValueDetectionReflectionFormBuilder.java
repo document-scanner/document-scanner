@@ -24,7 +24,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import javax.persistence.EntityManager;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.GroupLayout;
 import javax.swing.JComboBox;
@@ -45,6 +44,7 @@ import richtercloud.reflection.form.builder.jpa.JPACachedFieldRetriever;
 import richtercloud.reflection.form.builder.jpa.JPAReflectionFormBuilder;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
+import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 
 /**
  * The value of the Auto OCR value detection could be set on the field, but then
@@ -67,7 +67,7 @@ public class AutoOCRValueDetectionReflectionFormBuilder extends JPAReflectionFor
     private final Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping;
     private final Set<JPanel> autoOCRValueDetectionPanels = new HashSet<>();
 
-    public AutoOCRValueDetectionReflectionFormBuilder(EntityManager entityManager,
+    public AutoOCRValueDetectionReflectionFormBuilder(PersistenceStorage storage,
             String fieldDescriptionDialogTitle,
             MessageHandler messageHandler,
             ConfirmMessageHandler confirmMessageHandler,
@@ -75,7 +75,7 @@ public class AutoOCRValueDetectionReflectionFormBuilder extends JPAReflectionFor
             IdApplier idApplier,
             Map<Class<?>, WarningHandler<?>> warningHandlers,
             Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping) {
-        super(entityManager,
+        super(storage,
                 fieldDescriptionDialogTitle,
                 messageHandler,
                 confirmMessageHandler,
