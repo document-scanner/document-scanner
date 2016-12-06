@@ -513,6 +513,26 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             }
         }
     };
+    /**
+     * Allows early initialization of Apache Ignite in the background.
+     */
+    /*
+    internal implementatio notes:
+    - not necessary that this is a property, but kept as such for convenience.
+    */
+    private final Thread cachingImageWrapperInitThread = new Thread() {
+        @Override
+        public void run() {
+            try {
+                Class.forName(CachingImageWrapper.class.getName());
+                    //loads the static block in CachingImageWrapper in order
+                    //to minimize delay when initializing the first
+                    //CachingImageWrapper
+            } catch (ClassNotFoundException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+    };
 
     /**
      * Creates new DocumentScanner which does nothing unless
@@ -531,7 +551,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             rootLogger.setLevel(Level.DEBUG);
         }
 
-        amountMoneyExchangeRetrieverInitThread.start();
+        this.amountMoneyExchangeRetrieverInitThread.start();
+        this.cachingImageWrapperInitThread.start();
 
         StorageConf storageConf = documentScannerConf.getStorageConf();
         assert storageConf instanceof AbstractPersistenceStorageConf;
@@ -657,6 +678,22 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 LOGGER.error("an exception during shutdown of scanner device occured", ex);
             }
             this.scannerDevice = null;
+        }
+        try {
+            //@TODO: this can hang a shutdown (difficult to abort initialization
+            //of resources)
+            if(this.amountMoneyExchangeRetrieverInitThread.isAlive()) {
+                LOGGER.debug("waiting for exchange rate retriever initialization "
+                        + "to finish in order to allow clean shutdown");
+                this.amountMoneyExchangeRetrieverInitThread.join();
+            }
+            if(this.cachingImageWrapperInitThread.isAlive()) {
+                LOGGER.debug("waiting for caching framework initialization "
+                        + "to finish in order to allow clean shutdown");
+                this.cachingImageWrapperInitThread.join();
+            }
+        } catch (InterruptedException ex) {
+            LOGGER.error("an exception during shutdown of threads occured, see nested exception for details", ex);
         }
     }
 
