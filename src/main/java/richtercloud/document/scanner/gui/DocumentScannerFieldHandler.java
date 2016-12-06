@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.swing.JComponent;
-import javax.swing.SwingUtilities;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import richtercloud.document.scanner.components.OCRResultPanel;
@@ -301,11 +300,8 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
             if(documentScannerConf.isAutoSaveImageData()
                     && fieldValue == null) {
                 //if fieldValue != null there's no need to save the image data
-                retValue.setEnabled(false);
-                SwingUtilities.invokeLater(() -> {
-                    retValue.save();
-                    retValue.setEnabled(true);
-                });
+                retValue.save(true //async
+                );
             }
             return new ImmutablePair<JComponent, ComponentHandler<?>>(retValue,
                     SCAN_RESULT_PANEL_COMPONENT_RESETTABLE);

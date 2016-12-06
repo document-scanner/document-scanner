@@ -17,6 +17,7 @@ package richtercloud.document.scanner.components;
 import java.util.HashSet;
 import java.util.Set;
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 
 /**
  *
@@ -152,13 +153,33 @@ public class ScanResultPanel extends JPanel {
         );
     }// </editor-fold>//GEN-END:initComponents
 
-    public void save() {
+    public void save(boolean async) {
+        if(!async) {
+            saveNonGUI();
+            saveGUI();
+        }else {
+            this.setEnabled(false);
+            Thread thread = new Thread(() -> {
+                saveNonGUI();
+                SwingUtilities.invokeLater(() -> {
+                    saveGUI();
+                    ScanResultPanel.this.setEnabled(true);
+                });
+            });
+            thread.start();
+        }
+    }
+
+    public void saveNonGUI() {
         this.scanData = this.retriever.fetch();
+    }
+
+    public void saveGUI() {
         setValue(scanData);
     }
 
     private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveButtonActionPerformed
-        save();
+        save(false);
     }//GEN-LAST:event_saveButtonActionPerformed
 
     private void deleteButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteButtonActionPerformed
