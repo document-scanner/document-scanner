@@ -16,6 +16,7 @@ package richtercloud.document.scanner.model;
 
 import java.io.Serializable;
 import javax.persistence.Embeddable;
+import richtercloud.reflection.form.builder.FieldInfo;
 
 /**
  *
@@ -31,16 +32,24 @@ entity)
 @Embeddable
 public class Address implements Serializable, Comparable<Address> {
     private static final long serialVersionUID = 1L;
+    @FieldInfo(name = "Street", description = "Street")
     private String street;
+    @FieldInfo(name = "Number", description = "Number")
     private String number;
     /**
      * A specification describing a post office box.
      */
+    @FieldInfo(name = "Post office box", description = "A description (code) for the post office box (alternative to specification of street and number)")
     private String postOfficeBox;
+    @FieldInfo(name = "Region", description = "The region where the city is located (avoids ambiguity of city in country)")
     private String region;
+    @FieldInfo(name = "Zipcode", description = "Zipcode")
     private String zipcode;
+    @FieldInfo(name = "City", description = "City")
     private String city;
+    @FieldInfo(name= "Country", description = "Country")
     private String country;
+    @FieldInfo(name = "Additional", description = "An additional address like (c/o information, etc.)")
     private String additional;
 
     protected Address() {
