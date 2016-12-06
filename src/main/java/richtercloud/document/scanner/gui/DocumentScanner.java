@@ -1221,7 +1221,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                     while (true) {
                         try {
                             BufferedImage scannedImage = scannerDevice.acquireImage();
-                            ImageWrapper imageWrapper = new ImageWrapper(documentScannerConf.getImageWrapperStorageDir(), scannedImage);
+                            ImageWrapper imageWrapper = new CachingImageWrapper(documentScannerConf.getImageWrapperStorageDir(), scannedImage);
                             scannedImages.add(imageWrapper);
                         } catch (SaneException e) {
                             if (e.getStatus() == SaneStatus.STATUS_NO_DOCS) {
@@ -1239,7 +1239,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         LOGGER.info(String.format("requested scan of %d pages", scannerPageSelectDialog.getPageCount()));
                         try {
                             BufferedImage scannedImage = scannerDevice.acquireImage();
-                            ImageWrapper imageWrapper = new ImageWrapper(documentScannerConf.getImageWrapperStorageDir(), scannedImage);
+                            ImageWrapper imageWrapper = new CachingImageWrapper(documentScannerConf.getImageWrapperStorageDir(), scannedImage);
                             scannedImages.add(imageWrapper);
                         } catch (SaneException e) {
                             if (e.getStatus() == SaneStatus.STATUS_NO_DOCS) {
@@ -1257,7 +1257,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 }
             }else {
                 BufferedImage scannedImage = this.scannerDevice.acquireImage();
-                ImageWrapper imageWrapper = new ImageWrapper(documentScannerConf.getImageWrapperStorageDir(), scannedImage);
+                ImageWrapper imageWrapper = new CachingImageWrapper(documentScannerConf.getImageWrapperStorageDir(), scannedImage);
                 scannedImages.add(imageWrapper);
             }
             if(!scannedImages.isEmpty()) {

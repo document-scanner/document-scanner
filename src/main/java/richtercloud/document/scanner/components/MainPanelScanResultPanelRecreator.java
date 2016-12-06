@@ -24,6 +24,7 @@ import java.io.ObjectInputStream;
 import java.util.LinkedList;
 import java.util.List;
 import javax.swing.ImageIcon;
+import richtercloud.document.scanner.gui.CachingImageWrapper;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
 
 /**
@@ -72,7 +73,7 @@ public class MainPanelScanResultPanelRecreator implements ScanResultPanelRecreat
             assert imageIcons != null;
             for(ImageIcon imageIcon : imageIcons) {
                 BufferedImage image = toBufferedImage(imageIcon.getImage());
-                ImageWrapper imageWrapper = new ImageWrapper(this.imageWrapperStorageDir,
+                ImageWrapper imageWrapper = new CachingImageWrapper(this.imageWrapperStorageDir,
                         image);
                 retValue.add(imageWrapper);
             }

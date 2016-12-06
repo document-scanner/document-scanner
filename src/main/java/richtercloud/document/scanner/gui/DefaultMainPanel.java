@@ -365,7 +365,7 @@ public class DefaultMainPanel extends MainPanel {
                             return null;
                         }
                         BufferedImage image = page.convertToImage();
-                        ImageWrapper imageWrapper = new ImageWrapper(documentScannerConf.getImageWrapperStorageDir(), image);
+                        ImageWrapper imageWrapper = new CachingImageWrapper(documentScannerConf.getImageWrapperStorageDir(), image);
                         retValue.add(imageWrapper);
                     }
                     document.close();
