@@ -34,11 +34,27 @@ public class AddressTest {
         String region = "region";
         String city = "city";
         String country = "country";
-        Address instance = new Address(street, number, zipcode, region, city, country);
+        Address instance = new Address(street,
+                number,
+                null, //postOfficeBox
+                zipcode,
+                region,
+                city,
+                country);
         String expResult = street+" "+number+", "+zipcode+" "+city+" ("+region+"), "
                 +country;
         String result = instance.toString();
         assertEquals(expResult, result);
+        String postOfficeBox = "POB 123";
+        instance = new Address(street,
+                number,
+                postOfficeBox,
+                zipcode,
+                region,
+                city,
+                country);
+        expResult = street+" "+number+"/"+postOfficeBox+", "+zipcode+" "+city+" ("+region+"), "
+                +country;
+        assertEquals(expResult, result);
     }
-
 }

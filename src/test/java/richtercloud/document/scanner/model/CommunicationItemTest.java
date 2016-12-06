@@ -35,7 +35,13 @@ public class CommunicationItemTest extends AbstractTest {
         Long id = getRandom().nextLong();
         String senderName = "company";
         List<String> senderAllNames = new LinkedList<>(Arrays.asList("Some", "new", "company"));
-        List<Address> senderAddresses = new LinkedList<>(Arrays.asList(new Address("street", "number", "zipcode", "region", "city", "country")));
+        List<Address> senderAddresses = new LinkedList<>(Arrays.asList(new Address("street",
+                "number",
+                "postofficebox",
+                "zipcode",
+                "region",
+                "city",
+                "country")));
         List<EmailAddress> senderEmailAddresses = new LinkedList<>(Arrays.asList(new EmailAddress("company@bla.net",
                 new LinkedList<String>())));
         List<TelephoneNumber> senderTelephoneNumbers = new LinkedList<>(Arrays.asList(new TelephoneNumber(0,
@@ -43,7 +49,13 @@ public class CommunicationItemTest extends AbstractTest {
                 0,
                 null, TelephoneNumber.TYPE_LANDLINE)));
         Company sender = new Company(senderName, senderAllNames, senderAddresses, senderEmailAddresses, senderTelephoneNumbers);
-        List<Address> recipientAddresses = new LinkedList<>(Arrays.asList(new Address("street", "number", "zipcode", "region", "city", "country")));
+        List<Address> recipientAddresses = new LinkedList<>(Arrays.asList(new Address("street",
+                "number",
+                "postofficebox",
+                "zipcode",
+                "region",
+                "city",
+                "country")));
         List<EmailAddress> recipientEmailAddresses = new LinkedList<>(Arrays.asList(new EmailAddress("recipient@blu.net", new LinkedList<String>())));
         List<TelephoneNumber> recipientTelephoneNumbers = new LinkedList<>(Arrays.asList(new TelephoneNumber(0, 0, 0, null, TelephoneNumber.TYPE_LANDLINE)));
         Company recipient = new Company("recipientCompany", new LinkedList<>(Arrays.asList("Some", "other", "company")), recipientAddresses, recipientEmailAddresses, recipientTelephoneNumbers);

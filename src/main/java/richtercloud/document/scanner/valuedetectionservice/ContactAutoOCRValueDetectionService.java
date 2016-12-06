@@ -104,7 +104,14 @@ public class ContactAutoOCRValueDetectionService extends AbstractAutoOCRValueDet
                         StringBuilder oCRSourceBuilder = new StringBuilder();
                         oCRSourceBuilder.append(queue.get(0)).append(queue.get(1)).append(queue.get(2));
                         String oCRSource = oCRSourceBuilder.toString();
-                        Address address = new Address(street, number, zipcode, null, city, null);
+                        Address address = new Address(street,
+                                number,
+                                null, //postOfficeBox
+                                zipcode,
+                                null, //region
+                                city,
+                                null //country
+                        );
                         Company company = new Company(name,
                                 new LinkedList<>(Arrays.asList(name.split("[\\s]+"))),
                                 new LinkedList<>(Arrays.asList(address)),

@@ -33,6 +33,10 @@ public class Address implements Serializable, Comparable<Address> {
     private static final long serialVersionUID = 1L;
     private String street;
     private String number;
+    /**
+     * A specification describing a post office box.
+     */
+    private String postOfficeBox;
     private String region;
     private String zipcode;
     private String city;
@@ -44,12 +48,14 @@ public class Address implements Serializable, Comparable<Address> {
 
     public Address(String street,
             String number,
+            String postOfficeBox,
             String zipcode,
             String region,
             String city,
             String country) {
         this.street = street;
         this.number = number;
+        this.postOfficeBox = postOfficeBox;
         this.zipcode = zipcode;
         this.region = region;
         this.city = city;
@@ -148,15 +154,24 @@ public class Address implements Serializable, Comparable<Address> {
         this.additional = additional;
     }
 
+    public String getPostOfficeBox() {
+        return postOfficeBox;
+    }
+
+    public void setPostOfficeBox(String postOfficeBox) {
+        this.postOfficeBox = postOfficeBox;
+    }
+
     @Override
     public String toString() {
         String regionString = "";
         if(this.getRegion() != null && !this.getRegion().isEmpty()) {
             regionString = String.format(" (%s)", this.getRegion());
         }
-        return String.format("%s %s, %s %s%s, %s",
+        return String.format("%s %s%s, %s %s%s, %s",
                 this.getStreet(),
                 this.getNumber(),
+                this.getPostOfficeBox() != null ? "/"+getPostOfficeBox() : "",
                 this.getZipcode(),
                 this.getCity(),
                 regionString,

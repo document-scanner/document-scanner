@@ -41,7 +41,13 @@ public class AbstractTest {
         List<Address> addresses = new LinkedList<>();
         int addressCount = random.nextInt(3);
         for(int i=0; i<addressCount; i++) {
-            addresses.add(new Address("street"+random.nextInt(), "number"+random.nextInt(), "zipcode"+random.nextInt(), "region"+random.nextInt(), "city"+random.nextInt(), "country"+random.nextInt()));
+            addresses.add(new Address("street"+random.nextInt(),
+                    "number"+random.nextInt(),
+                    "postofficebox"+random.nextInt(),
+                    "zipcode"+random.nextInt(),
+                    "region"+random.nextInt(),
+                    "city"+random.nextInt(),
+                    "country"+random.nextInt()));
         }
         List<EmailAddress> emails = new LinkedList<>();
         int emailCount = random.nextInt(3);

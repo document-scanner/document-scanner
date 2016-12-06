@@ -33,7 +33,13 @@ public class CompanyTest extends AbstractTest {
     public void testToString() {
         String name = "company";
         List<String> allNames = new LinkedList<>(Arrays.asList("Some", "old", "company"));
-        List<Address> addresses = new LinkedList<>(Arrays.asList(new Address("street", "number", "zipcode", "region", "city", "country")));
+        List<Address> addresses = new LinkedList<>(Arrays.asList(new Address("street",
+                "number",
+                "postofficebox",
+                "zipcode",
+                "region",
+                "city",
+                "country")));
         List<EmailAddress> emailAddresses = new LinkedList<>(Arrays.asList(new EmailAddress("comp@bli.net",
                 new LinkedList<String>())));
         List<TelephoneNumber> telephoneNumbers = new LinkedList<>(Arrays.asList(new TelephoneNumber(0,

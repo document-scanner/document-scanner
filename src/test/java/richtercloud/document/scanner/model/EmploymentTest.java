@@ -38,6 +38,7 @@ public class EmploymentTest extends AbstractTest {
                 new LinkedList<>(Arrays.asList("company")),
                 new LinkedList<>(Arrays.asList(new Address("street",
                         "number",
+                        "postofficebox",
                         "zipcode",
                         "region",
                         "city",

@@ -38,6 +38,7 @@ public class FinanceAccountTest extends AbstractTest {
                         new LinkedList<>(Arrays.asList("name")),
                         new LinkedList<>(Arrays.asList(new Address("street",
                                 "number",
+                                "postofficebox",
                                 "zipcode",
                                 "region",
                                 "city",
