@@ -14,7 +14,6 @@
  */
 package richtercloud.document.scanner.gui;
 
-import richtercloud.document.scanner.gui.storageconf.StorageSelectionDialog;
 import au.com.southsky.jfreesane.SaneDevice;
 import au.com.southsky.jfreesane.SaneException;
 import au.com.southsky.jfreesane.SaneSession;
@@ -69,6 +68,7 @@ import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.ListCellRenderer;
 import javax.swing.MutableComboBoxModel;
+import javax.swing.SwingWorker;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.jscience.economics.money.Currency;
@@ -80,6 +80,7 @@ import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.gui.conf.OCREngineConf;
 import richtercloud.document.scanner.gui.conf.TesseractOCREngineConf;
 import richtercloud.document.scanner.gui.engineconf.OCREngineConfPanel;
+import richtercloud.document.scanner.gui.storageconf.StorageSelectionDialog;
 import richtercloud.document.scanner.ifaces.DocumentAddException;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.ifaces.MainPanel;
@@ -148,6 +149,8 @@ import richtercloud.reflection.form.builder.storage.StorageConf;
 import richtercloud.reflection.form.builder.storage.StorageConfInitializationException;
 import richtercloud.reflection.form.builder.storage.StorageCreationException;
 import richtercloud.reflection.form.builder.typehandler.TypeHandler;
+import richtercloud.swing.worker.get.wait.dialog.SwingWorkerCompletionWaiter;
+import richtercloud.swing.worker.get.wait.dialog.SwingWorkerGetWaitDialog;
 
 /**
  * <h2>Status bar</h2>
@@ -1240,62 +1243,98 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         return retValue;
     }
 
+    private List<ImageWrapper> retrieveImages() throws SaneException, IOException {
+        final ScannerPageSelectDialog scannerPageSelectDialog = new ScannerPageSelectDialog(this);
+        if(scannerDocumentSourceRequiresLoop()) {
+            //using ADF according to https://github.com/sjamesr/jfreesane/blob/master/README.md
+            scannerPageSelectDialog.setVisible(true);
+            if(scannerPageSelectDialog.isCanceled()) {
+                return null;
+            }
+        }
+        final SwingWorkerGetWaitDialog dialog = new SwingWorkerGetWaitDialog(this,
+                DocumentScanner.generateApplicationWindowTitle("Scanning",
+                        DocumentScanner.APP_NAME,
+                        DocumentScanner.APP_VERSION),
+                "Scanning",
+                "Scanning");
+        SwingWorkerCompletionWaiter swingWorkerCompletionWaiter = new SwingWorkerCompletionWaiter(dialog);
+        SwingWorker<List<ImageWrapper>, Void> worker = new SwingWorker<List<ImageWrapper>, Void>() {
+            @Override
+            protected List<ImageWrapper> doInBackground() throws Exception {
+                List<ImageWrapper> retValue = new LinkedList<>();
+                if(scannerDocumentSourceRequiresLoop()) {
+                    if(scannerPageSelectDialog.isScanAll()) {
+                        while (true) {
+                            try {
+                                BufferedImage scannedImage = scannerDevice.acquireImage();
+                                ImageWrapper imageWrapper = new CachingImageWrapper(documentScannerConf.getImageWrapperStorageDir(), scannedImage);
+                                retValue.add(imageWrapper);
+                            } catch (SaneException e) {
+                                if (e.getStatus() == SaneStatus.STATUS_NO_DOCS) {
+                                    // this is the out of paper condition that we expect
+                                    LOGGER.info("no pages left to scan");
+                                    break;
+                                } else {
+                                    // some other exception that was not expected
+                                    throw e;
+                                }
+                            }
+                        }
+                    }else {
+                        int scannedPagesCount = 0;
+                        while(scannedPagesCount < scannerPageSelectDialog.getPageCount()) {
+                            LOGGER.info(String.format("requested scan of %d pages", scannerPageSelectDialog.getPageCount()));
+                            try {
+                                BufferedImage scannedImage = scannerDevice.acquireImage();
+                                ImageWrapper imageWrapper = new CachingImageWrapper(documentScannerConf.getImageWrapperStorageDir(), scannedImage);
+                                retValue.add(imageWrapper);
+                            } catch (SaneException e) {
+                                if (e.getStatus() == SaneStatus.STATUS_NO_DOCS) {
+                                    // this is the out of paper condition that we expect
+                                    LOGGER.info("no pages left to scan");
+                                    break;
+                                } else {
+                                    // some other exception that was not expected
+                                    throw e;
+                                }
+                            }
+                            scannedPagesCount += 1;
+                        }
+                        scannerDevice.cancel(); //scanner remains in scan mode otherwise
+                    }
+                }else {
+                    BufferedImage scannedImage = scannerDevice.acquireImage();
+                    ImageWrapper imageWrapper = new CachingImageWrapper(documentScannerConf.getImageWrapperStorageDir(), scannedImage);
+                    retValue.add(imageWrapper);
+                }
+                return retValue;
+            }
+        };
+        worker.addPropertyChangeListener(swingWorkerCompletionWaiter);
+        worker.execute();
+        //the dialog will be visible until the SwingWorker is done
+        dialog.setVisible(true);
+        if(dialog.isCanceled()) {
+            return null;
+        }
+        try {
+            return worker.get();
+        } catch (InterruptedException | ExecutionException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
     private void scan() {
         assert this.scannerDevice != null;
         try {
             if(!this.scannerDevice.isOpen()) {
                 this.scannerDevice.open();
             }
-            List<ImageWrapper> scannedImages = new LinkedList<>();
-            if(scannerDocumentSourceRequiresLoop()) {
-                //using ADF according to https://github.com/sjamesr/jfreesane/blob/master/README.md
-                ScannerPageSelectDialog scannerPageSelectDialog = new ScannerPageSelectDialog(this);
-                scannerPageSelectDialog.setVisible(true);
-                if(scannerPageSelectDialog.isCanceled()) {
-                    return;
-                }
-                if(scannerPageSelectDialog.isScanAll()) {
-                    while (true) {
-                        try {
-                            BufferedImage scannedImage = scannerDevice.acquireImage();
-                            ImageWrapper imageWrapper = new CachingImageWrapper(documentScannerConf.getImageWrapperStorageDir(), scannedImage);
-                            scannedImages.add(imageWrapper);
-                        } catch (SaneException e) {
-                            if (e.getStatus() == SaneStatus.STATUS_NO_DOCS) {
-                                // this is the out of paper condition that we expect
-                                break;
-                            } else {
-                                // some other exception that was not expected
-                                throw e;
-                            }
-                        }
-                    }
-                }else {
-                    int scannedPagesCount = 0;
-                    while(scannedPagesCount < scannerPageSelectDialog.getPageCount()) {
-                        LOGGER.info(String.format("requested scan of %d pages", scannerPageSelectDialog.getPageCount()));
-                        try {
-                            BufferedImage scannedImage = scannerDevice.acquireImage();
-                            ImageWrapper imageWrapper = new CachingImageWrapper(documentScannerConf.getImageWrapperStorageDir(), scannedImage);
-                            scannedImages.add(imageWrapper);
-                        } catch (SaneException e) {
-                            if (e.getStatus() == SaneStatus.STATUS_NO_DOCS) {
-                                // this is the out of paper condition that we expect
-                                LOGGER.info("no pages left to scan");
-                                break;
-                            } else {
-                                // some other exception that was not expected
-                                throw e;
-                            }
-                        }
-                        scannedPagesCount += 1;
-                    }
-                    scannerDevice.cancel(); //scanner remains in scan mode otherwise
-                }
-            }else {
-                BufferedImage scannedImage = this.scannerDevice.acquireImage();
-                ImageWrapper imageWrapper = new CachingImageWrapper(documentScannerConf.getImageWrapperStorageDir(), scannedImage);
-                scannedImages.add(imageWrapper);
+            List<ImageWrapper> scannedImages = retrieveImages();
+            if(scannedImages == null) {
+                //canceled
+                return;
             }
             if(!scannedImages.isEmpty()) {
                 final List<List<ImageWrapper>> scannerResults = new LinkedList<>();
