@@ -97,6 +97,14 @@ public class TesseractOCREngine extends ProcessOCREngine {
             if(tesseractProcessExitValue != 0) {
                 //tesseractProcess.destroy might cause IOException, but
                 //termination with exit value != 0 might occur as well
+                StringWriter tesseractStderrWriter = new StringWriter();
+                IOUtils.copy(tesseractProcess.getErrorStream(), tesseractStderrWriter);
+                String tesseractProcessStderr = tesseractStderrWriter.toString();
+                LOGGER.debug(String.format("tesseract process '%s' failed with "
+                        + "returncode %d and output '%s'",
+                        this.getBinary(),
+                        tesseractProcessExitValue,
+                        tesseractProcessStderr));
                 return null;
             }
             StringWriter tesseractResultWriter = new StringWriter();
