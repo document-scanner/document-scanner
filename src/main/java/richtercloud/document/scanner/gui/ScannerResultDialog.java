@@ -344,11 +344,11 @@ public class ScannerResultDialog extends JDialog {
             float oldZoomLevel,
             float newZoomLevel) {
         for(ImageViewPane imageViewPane : imageViewPanes) {
-            double newWidth = imageViewPane.getImageView().getFitWidth()/oldZoomLevel*newZoomLevel;
+            double newWidth = imageViewPane.getWidth()/oldZoomLevel*newZoomLevel;
             LOGGER.debug(String.format("resizing from fit width %f to %f after zoom change",
-                    imageViewPane.getImageView().getFitWidth(),
+                    imageViewPane.getWidth(),
                     newWidth));
-            imageViewPane.changeZoom(newZoomLevel);
+            imageViewPane.changeZoom((int) newWidth);
         }
     }
 

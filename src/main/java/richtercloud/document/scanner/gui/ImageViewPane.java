@@ -56,7 +56,6 @@ public class ImageViewPane extends GridPane {
      */
     private ImageWrapperView imageView;
     private final List<ImageWrapper> scanResults = new LinkedList<>();
-    private float zoomLevel = 1.0f;
 
     public ImageViewPane(int imageWidth, int imageHeight) {
         this();
@@ -88,9 +87,17 @@ public class ImageViewPane extends GridPane {
         return scanResults;
     }
 
-    public void changeZoom(float zoomLevel) {
-        imageView.setFitWidth(imageView.getFitWidth()/this.zoomLevel*zoomLevel);
-        this.zoomLevel = zoomLevel;
+    /**
+     * In order to avoid keeping images in memory replace {@code imageWrapper}'s
+     * {@code image} property with new preview.
+     * @param newWidth the externally calculated width
+     */
+    public void changeZoom(int newWidth) {
+        try {
+            this.imageView.setImage(this.imageView.imageWrapper.getImagePreviewFX(newWidth));
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     private void addScanResult(ImageWrapperView scanResultImageView) {
