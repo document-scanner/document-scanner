@@ -16,6 +16,7 @@ package richtercloud.document.scanner.gui;
 
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Image;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -149,7 +150,9 @@ public class DefaultOCRSelectPanel extends OCRSelectPanel implements MouseListen
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         try {
-            g.drawImage(this.image.getImagePreview((int) (preferredWidth*zoomLevel)),
+            int width = (int) (preferredWidth*zoomLevel);
+            Image drawImage = this.image.getImagePreview(width);
+            g.drawImage(drawImage,
                     0, //x
                     0, //y
                     null //imageObserver
