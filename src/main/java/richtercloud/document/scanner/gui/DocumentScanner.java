@@ -47,12 +47,9 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReentrantLock;
-import javafx.application.Platform;
-import javafx.embed.swing.JFXPanel;
 import javax.persistence.EntityManager;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultComboBoxModel;
@@ -60,7 +57,6 @@ import javax.swing.DefaultListCellRenderer;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.JComponent;
-import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
@@ -322,7 +318,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     - This could be handled by a flag as well, but all resources aquired by the
     panel will remain in use and thus not be GCed anyway.
     */
-    private JFXPanel javaFXInitPanel;
     private PersistenceStorage storage;
     private final DelegatingPersistenceStorageFactory delegatingStorageFactory = new DelegatingPersistenceStorageFactory();
 
@@ -1153,33 +1148,17 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             }
             if(!images.isEmpty()) {
                 final List<List<ImageWrapper>> scannerResults = new LinkedList<>();
-                JDialog invisibleWaitDialog = new JDialog();
-                    //working with Object.wait and Object.notify fails due to
-                    //java.lang.IllegalMonitorStateException
-                invisibleWaitDialog.setBounds(0, 0, 1, 1);
-                invisibleWaitDialog.setModal(true);
-                invisibleWaitDialog.setUndecorated(true);
-                if(this.javaFXInitPanel == null) {
-                    this.javaFXInitPanel = new JFXPanel();
-                        //necessary to initialize JavaFX and avoid
-                        //failure of Platform.runLater with
-                        //`java.lang.IllegalStateException: Toolkit not initialized`
+                ScannerResultDialog scannerResultDialog = new ScannerResultDialog(this,
+                        images,
+                        this.documentScannerConf);
+                scannerResultDialog.setLocationRelativeTo(this);
+                scannerResultDialog.setVisible(true);
+                List<List<ImageWrapper>> dialogResult = scannerResultDialog.getSortedDocuments();
+                if(dialogResult == null) {
+                    //dialog canceled
+                    return;
                 }
-                Platform.runLater(() -> {
-                    ScannerResultDialog scannerResultDialog;
-                    try {
-                        scannerResultDialog = new ScannerResultDialog(images,
-                                this.documentScannerConf);
-                    } catch (IOException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                    Optional<List<List<ImageWrapper>>> dialogResult = scannerResultDialog.showAndWait();
-                    if(dialogResult.isPresent()) {
-                        scannerResults.addAll(scannerResultDialog.getResult());
-                    }
-                    invisibleWaitDialog.setVisible(false);
-                });
-                invisibleWaitDialog.setVisible(true);
+                scannerResults.addAll(scannerResultDialog.getSortedDocuments());
                 for(List<ImageWrapper> scannerResult : scannerResults) {
                     addDocument(scannerResult,
                             null //selectedFile
@@ -1337,39 +1316,19 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 return;
             }
             if(!scannedImages.isEmpty()) {
+                LOGGER.debug(String.format("scanned %d pages", scannedImages.size()));
                 final List<List<ImageWrapper>> scannerResults = new LinkedList<>();
-                JDialog invisibleWaitDialog = new JDialog();
-                    //working with Object.wait and Object.notify fails due to
-                    //java.lang.IllegalMonitorStateException
-                invisibleWaitDialog.setBounds(0, 0, 1, 1);
-                invisibleWaitDialog.setModal(true);
-                invisibleWaitDialog.setUndecorated(true);
-                if(this.javaFXInitPanel == null) {
-                    this.javaFXInitPanel = new JFXPanel(); //necessary to initialize JavaFX and avoid
-                        //failure of Platform.runLater with
-                        //`java.lang.IllegalStateException: Toolkit not initialized`
+                ScannerResultDialog scannerResultDialog = scannerResultDialog = new ScannerResultDialog(this,
+                        scannedImages,
+                            this.documentScannerConf);
+                scannerResultDialog.setLocationRelativeTo(this);
+                scannerResultDialog.setVisible(true);
+                List<List<ImageWrapper>> dialogResult = scannerResultDialog.getSortedDocuments();
+                if(dialogResult == null) {
+                    //dialog canceled
+                    return;
                 }
-                Platform.runLater(() -> {
-                    ScannerResultDialog scannerResultDialog;
-                    try {
-                        scannerResultDialog = new ScannerResultDialog(scannedImages,
-                                this.documentScannerConf);
-                    } catch (IOException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                    Optional<List<List<ImageWrapper>>> dialogResult = scannerResultDialog.showAndWait();
-                    if(dialogResult.isPresent()) {
-                        scannerResults.addAll(scannerResultDialog.getResult());
-                    }
-                    invisibleWaitDialog.setVisible(false);
-                });
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException ex) {
-                    throw new RuntimeException(ex);
-                }
-                    //try to avoid deadlock between Swing and JavaFX thread
-                invisibleWaitDialog.setVisible(true);
+                scannerResults.addAll(scannerResultDialog.getSortedDocuments());
                 for(List<ImageWrapper> scannerResult : scannerResults) {
                     addDocument(scannerResult,
                             null //selectedFile

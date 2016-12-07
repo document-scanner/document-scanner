@@ -14,18 +14,23 @@
  */
 package richtercloud.document.scanner.gui;
 
+import java.awt.Dimension;
+import java.awt.Window;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
+import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonBar.ButtonData;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.Dialog;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SplitPane;
 import javafx.scene.input.MouseEvent;
@@ -39,6 +44,9 @@ import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javax.swing.GroupLayout;
+import javax.swing.JButton;
+import javax.swing.JDialog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
@@ -49,7 +57,7 @@ import richtercloud.document.scanner.ifaces.ImageWrapper;
  * scan results. Callers can open a document tag for each document.
  * @author richter
  */
-public class ScannerResultDialog extends Dialog<List<List<ImageWrapper>>> {
+public class ScannerResultDialog extends JDialog {
     private final static Logger LOGGER = LoggerFactory.getLogger(ScannerResultDialog.class);
     private final static Border BORDER_UNSELECTED = new Border(new BorderStroke(Color.BLACK,
             BorderStrokeStyle.SOLID,
@@ -92,200 +100,244 @@ public class ScannerResultDialog extends Dialog<List<List<ImageWrapper>>> {
      */
     private final int panelHeight;
     private int centralPanelPadding = 15;
+    private final JFXPanel mainPanel = new JFXPanel();
+    private final JButton openButton = new JButton("Open documents");
+    private final JButton cancelButton = new JButton("Cancel");
+    /**
+     * The result of the dialog. {@code null} indicates that the dialog has been
+     * canceled.
+     */
+    private List<List<ImageWrapper>> sortedDocuments = null;
+    private final DocumentPane documentPane;
+    private final SplitPane splitPane;
 
-    public ScannerResultDialog(List<ImageWrapper> scanResultImages,
+    public ScannerResultDialog(Window owner,
+            List<ImageWrapper> scanResultImages,
             DocumentScannerConf documentScannerConf) throws IOException {
+        super(owner,
+                ModalityType.APPLICATION_MODAL);
         this.panelWidth = documentScannerConf.getPreferredWidth();
         this.panelHeight = panelWidth * 297 / 210;
-        setResizable(true);
-        getDialogPane().setPrefSize(initialWidth, initialHeight);
+
+        mainPanel.setPreferredSize(new Dimension(initialWidth, initialHeight));
 
         setTitle(DocumentScanner.generateApplicationWindowTitle("Scanner result",
                 DocumentScanner.APP_NAME,
                 DocumentScanner.APP_VERSION));
-        setHeaderText("Sort scanned pages into documents");
 
-        // Set the icon (must be included in the project).
-        //setGraphic(new ImageView(this.getClass().getResource("login.png").toString()));
+        this.documentPane = new DocumentPane();
+        this.splitPane = new SplitPane();
+        Platform.runLater(() -> {
+            // Create the username and password labels and fields.
+            documentPane.setHgap(10);
+            documentPane.setVgap(10);
+            documentPane.setPadding(new Insets(10, 10, 10, 10));
+            documentPane.setPrefHeight(Short.MAX_VALUE);
 
-        // Set the button types.
-        ButtonType loginButtonType = new ButtonType("Open documents", ButtonData.OK_DONE);
-        getDialogPane().getButtonTypes().addAll(loginButtonType, ButtonType.CANCEL);
-
-        // Create the username and password labels and fields.
-        DocumentPane documentPane = new DocumentPane();
-        documentPane.setHgap(10);
-        documentPane.setVgap(10);
-        documentPane.setPadding(new Insets(10, 10, 10, 10));
-        documentPane.setPrefHeight(Short.MAX_VALUE);
-
-        SplitPane splitPane = new SplitPane();
-        splitPane.setOrientation(Orientation.HORIZONTAL);
-        ScanResultPane scanResultPane = new ScanResultPane(Orientation.VERTICAL,
-                centralPanelPadding,
-                centralPanelPadding);
-        ScrollPane scanResultPaneScrollPane = new ScrollPane(scanResultPane);
-        scanResultPaneScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        scanResultPane.setPadding(new Insets(10));
-        BorderPane leftPane = new BorderPane();
-            //GridPane doesn't allow sufficient control over resizing
-        leftPane.setPadding(new Insets(10));
-        Button addDocumentButton = new Button("New document");
-        Button removeDocumentButton = new Button("Remove document");
-        Button addImagesButton = new Button("Add to document");
-        ScrollPane documentPaneScrollPane = new ScrollPane(documentPane);
-        leftPane.setCenter(documentPaneScrollPane);
-        GridPane buttonPaneLeft = new GridPane();
-        buttonPaneLeft.setHgap(5);
-        buttonPaneLeft.setPadding(new Insets(5));
-        buttonPaneLeft.add(addDocumentButton, 0, 0);
-        buttonPaneLeft.add(removeDocumentButton, 1, 0);
-        buttonPaneLeft.add(addImagesButton, 2, 0);
-        leftPane.setBottom(buttonPaneLeft);
-        ReturnValue<ImageViewPane> selectedDocument = new ReturnValue<>();
-            //Shouldn't be a ReturnValue<ScanResult> because that requires
-            //searching in ScanResults of ImageViewPanes
-        List<ImageViewPane> selectedScanResults = new LinkedList<>();
-        addDocumentButton.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent event) {
-                ImageViewPane addedDocument = addNewDocument(scanResultPane,
-                        documentPane,
-                        panelWidth,
-                        panelHeight,
-                        selectedDocument);
-                //always select the newly added document because chances are
-                //high that the user wants to proceed with the newly added
-                //document
-                handleScanResultSelection(new LinkedList<>(Arrays.asList(addedDocument)),
-                        documentPane.getDocumentNodes());
-                selectedDocument.setValue(addedDocument);
-            }
-        });
-        removeDocumentButton.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent event) {
-                //enqueue the scan results which were grouped in the document
-                //back into the scan result pane...
-                for(ImageWrapper selectedDocumentScanResult : selectedDocument.getValue().getScanResults()) {
+            splitPane.setOrientation(Orientation.HORIZONTAL);
+            ScanResultPane scanResultPane = new ScanResultPane(Orientation.VERTICAL,
+                    centralPanelPadding,
+                    centralPanelPadding);
+            ScrollPane scanResultPaneScrollPane = new ScrollPane(scanResultPane);
+            scanResultPaneScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+            scanResultPane.setPadding(new Insets(10));
+            BorderPane leftPane = new BorderPane();
+                //GridPane doesn't allow sufficient control over resizing
+            leftPane.setPadding(new Insets(10));
+            Button addDocumentButton = new Button("New document");
+            Button removeDocumentButton = new Button("Remove document");
+            Button addImagesButton = new Button("Add to document");
+            ScrollPane documentPaneScrollPane = new ScrollPane(documentPane);
+            leftPane.setCenter(documentPaneScrollPane);
+            GridPane buttonPaneLeft = new GridPane();
+            buttonPaneLeft.setHgap(5);
+            buttonPaneLeft.setPadding(new Insets(5));
+            buttonPaneLeft.add(addDocumentButton, 0, 0);
+            buttonPaneLeft.add(removeDocumentButton, 1, 0);
+            buttonPaneLeft.add(addImagesButton, 2, 0);
+            leftPane.setBottom(buttonPaneLeft);
+            ReturnValue<ImageViewPane> selectedDocument = new ReturnValue<>();
+                //Shouldn't be a ReturnValue<ScanResult> because that requires
+                //searching in ScanResults of ImageViewPanes
+            List<ImageViewPane> selectedScanResults = new LinkedList<>();
+            addDocumentButton.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
+                @Override
+                public void handle(MouseEvent event) {
+                    ImageViewPane addedDocument = addNewDocument(scanResultPane,
+                            documentPane,
+                            panelWidth,
+                            panelHeight,
+                            selectedDocument);
+                    //always select the newly added document because chances are
+                    //high that the user wants to proceed with the newly added
+                    //document
+                    handleScanResultSelection(new LinkedList<>(Arrays.asList(addedDocument)),
+                            documentPane.getDocumentNodes());
+                    selectedDocument.setValue(addedDocument);
+                }
+            });
+            removeDocumentButton.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
+                @Override
+                public void handle(MouseEvent event) {
+                    //enqueue the scan results which were grouped in the document
+                    //back into the scan result pane...
+                    for(ImageWrapper selectedDocumentScanResult : selectedDocument.getValue().getScanResults()) {
+                        try {
+                            addScanResult(selectedDocumentScanResult, scanResultPane, selectedScanResults);
+                        } catch (IOException ex) {
+                            throw new RuntimeException(ex);
+                        }
+                    }
+                    //...and remove the document
+                    documentPane.getChildren().remove(documentPane.getChildren().size()-1);
+                }
+            });
+            addImagesButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent event) -> {
+                if(documentPane.getChildrenUnmodifiable().isEmpty()) {
+                    ImageViewPane addedDocument = addNewDocument(scanResultPane,
+                            documentPane,
+                            panelWidth,
+                            panelHeight,
+                            selectedDocument);
+                    selectedDocument.setValue(addedDocument);
+                }
+                assert selectedDocument.getValue() != null;
+                assert documentPane.containsDocumentNode(selectedDocument.getValue());
+                for(ImageViewPane selectedScanResult : selectedScanResults) {
+                    assert selectedDocument.getValue() != null;
+                    //...and add to selected document in document pane
+                    assert selectedScanResult.getScanResults().size() == 1;
                     try {
-                        addScanResult(selectedDocumentScanResult, scanResultPane, selectedScanResults);
+                        //ImageViewPanes in the scan result pane only have one
+                        //ScanResult
+                        selectedDocument.getValue().addScanResult(selectedScanResult.getScanResults().get(0),
+                                panelWidth);
                     } catch (IOException ex) {
                         throw new RuntimeException(ex);
                     }
                 }
-                //...and remove the document
-                documentPane.getChildren().remove(documentPane.getChildren().size()-1);
-            }
-        });
-        addImagesButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent event) -> {
-            if(documentPane.getChildrenUnmodifiable().isEmpty()) {
-                ImageViewPane addedDocument = addNewDocument(scanResultPane,
-                        documentPane,
-                        panelWidth,
-                        panelHeight,
-                        selectedDocument);
-                selectedDocument.setValue(addedDocument);
-            }
-            assert selectedDocument.getValue() != null;
-            assert documentPane.containsDocumentNode(selectedDocument.getValue());
-            for(ImageViewPane selectedScanResult : selectedScanResults) {
-                assert selectedDocument.getValue() != null;
-                //...and add to selected document in document pane
-                assert selectedScanResult.getScanResults().size() == 1;
+                scanResultPane.removeScanResultPanes(selectedScanResults);
+                selectedScanResults.clear();
+            });
+
+            for(ImageWrapper scanResultImage : scanResultImages) {
                 try {
-                    //ImageViewPanes in the scan result pane only have one
-                    //ScanResult
-                    selectedDocument.getValue().addScanResult(selectedScanResult.getScanResults().get(0),
-                            panelWidth);
+                    addScanResult(scanResultImage,
+                            scanResultPane,
+                            selectedScanResults);
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 }
             }
-            scanResultPane.removeScanResultPanes(selectedScanResults);
-            selectedScanResults.clear();
+
+            BorderPane rightPane = new BorderPane();
+            rightPane.setCenter(scanResultPaneScrollPane);
+            GridPane buttonPaneRight = new GridPane();
+            buttonPaneRight.setHgap(5);
+            buttonPaneRight.setPadding(new Insets(5));
+            Button zoomInButton = new Button("+");
+            Button zoomOutButton = new Button("-");
+            Button deletePageButton = new Button("Delete page");
+            Button selectAllButton = new Button("Select all");
+            buttonPaneRight.add(zoomInButton,
+                    0, //columnIndex
+                    0 //rowIndex
+            );
+            buttonPaneRight.add(zoomOutButton,
+                    1, //columnIndex
+                    0 //rowIndex
+            );
+            buttonPaneRight.add(deletePageButton,
+                    2, //columnIndex
+                    0 //rowIndex
+            );
+            buttonPaneRight.add(selectAllButton,
+                    3, //columnIndex
+                    0 //rowIndex
+            );
+            zoomInButton.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
+                @Override
+                public void handle(MouseEvent event) {
+                    float oldZoomLevel = ScannerResultDialog.this.zoomLevel;
+                    ScannerResultDialog.this.zoomLevel = ScannerResultDialog.this.zoomLevel*(1+ScannerResultDialog.this.zoomMultiplicator);
+                    handleZoomChange(scanResultPane.getScanResultPanes(),
+                            oldZoomLevel,
+                            ScannerResultDialog.this.zoomLevel);
+                }
+            });
+            zoomOutButton.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
+                @Override
+                public void handle(MouseEvent event) {
+                    float oldZoomLevel = zoomLevel;
+                    ScannerResultDialog.this.zoomLevel = ScannerResultDialog.this.zoomLevel*(1-ScannerResultDialog.this.zoomMultiplicator);
+                    handleZoomChange(scanResultPane.getScanResultPanes(),
+                            oldZoomLevel,
+                            ScannerResultDialog.this.zoomLevel);
+                }
+            });
+            deletePageButton.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
+                @Override
+                public void handle(MouseEvent event) {
+                    scanResultPane.removeScanResultPanes(selectedScanResults);
+                }
+            });
+            selectAllButton.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
+                @Override
+                public void handle(MouseEvent event) {
+                    handleScanResultSelection(scanResultPane.getScanResultPanes(),
+                            scanResultPane.getScanResultPanes());
+                    selectedScanResults.clear();
+                    selectedScanResults.addAll(scanResultPane.getScanResultPanes());
+                }
+            });
+            rightPane.setBottom(buttonPaneRight);
+            splitPane.getItems().addAll(leftPane,
+                    rightPane);
+            Group  root  =  new  Group();
+            Scene  scene  =  new  Scene(root, Color.ALICEBLUE);
+            root.getChildren().add(splitPane);
+            mainPanel.setScene(scene);
         });
 
-        for(ImageWrapper scanResultImage : scanResultImages) {
-            addScanResult(scanResultImage,
-                    scanResultPane,
-                    selectedScanResults);
-        }
+        GroupLayout layout = new GroupLayout(this.getContentPane());
+        setLayout(layout);
+        layout.setAutoCreateContainerGaps(true);
+        layout.setAutoCreateGaps(true);
+        layout.setHorizontalGroup(layout.createParallelGroup()
+                .addComponent(mainPanel, 0, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE)
+                .addGroup(layout.createSequentialGroup()
+                        .addComponent(cancelButton)
+                        .addComponent(openButton)));
+        layout.setVerticalGroup(layout.createSequentialGroup()
+                .addComponent(mainPanel, 0, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE)
+                .addGroup(layout.createParallelGroup()
+                        .addComponent(cancelButton)
+                        .addComponent(openButton)));
+        pack();
 
-        BorderPane rightPane = new BorderPane();
-        rightPane.setCenter(scanResultPaneScrollPane);
-        GridPane buttonPaneRight = new GridPane();
-        buttonPaneRight.setHgap(5);
-        buttonPaneRight.setPadding(new Insets(5));
-        Button zoomInButton = new Button("+");
-        Button zoomOutButton = new Button("-");
-        Button deletePageButton = new Button("Delete page");
-        Button selectAllButton = new Button("Select all");
-        buttonPaneRight.add(zoomInButton,
-                0, //columnIndex
-                0 //rowIndex
-        );
-        buttonPaneRight.add(zoomOutButton,
-                1, //columnIndex
-                0 //rowIndex
-        );
-        buttonPaneRight.add(deletePageButton,
-                2, //columnIndex
-                0 //rowIndex
-        );
-        buttonPaneRight.add(selectAllButton,
-                3, //columnIndex
-                0 //rowIndex
-        );
-        zoomInButton.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
+        this.cancelButton.addActionListener((event) -> this.setVisible(false));
+        this.openButton.addActionListener((event) -> {
+            this.sortedDocuments = new LinkedList<>();
+            this.documentPane.getDocumentNodes().forEach((ImageViewPane imageViewPane) -> this.sortedDocuments.add(imageViewPane.getScanResults()));
+            this.setVisible(false);
+        });
+
+        //since GroupLayout's resize capabilities have no effect on JFXPanel
+        //the following extremely hacky workaround has to be used @TODO:
+        //create minimal example and ask on SO
+        this.addComponentListener(new ComponentAdapter() {
             @Override
-            public void handle(MouseEvent event) {
-                float oldZoomLevel = ScannerResultDialog.this.zoomLevel;
-                ScannerResultDialog.this.zoomLevel = ScannerResultDialog.this.zoomLevel*(1+ScannerResultDialog.this.zoomMultiplicator);
-                handleZoomChange(scanResultPane.getScanResultPanes(),
-                        oldZoomLevel,
-                        ScannerResultDialog.this.zoomLevel);
+            public void componentResized(ComponentEvent e) {
+                Platform.runLater(() -> {
+                    ScannerResultDialog.this.splitPane.setPrefSize(getWidth()-10,
+                            getHeight()-30);
+                });
             }
         });
-        zoomOutButton.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent event) {
-                float oldZoomLevel = zoomLevel;
-                ScannerResultDialog.this.zoomLevel = ScannerResultDialog.this.zoomLevel*(1-ScannerResultDialog.this.zoomMultiplicator);
-                handleZoomChange(scanResultPane.getScanResultPanes(),
-                        oldZoomLevel,
-                        ScannerResultDialog.this.zoomLevel);
-            }
-        });
-        deletePageButton.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent event) {
-                scanResultPane.removeScanResultPanes(selectedScanResults);
-            }
-        });
-        selectAllButton.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent event) {
-                handleScanResultSelection(scanResultPane.getScanResultPanes(),
-                        scanResultPane.getScanResultPanes());
-                selectedScanResults.clear();
-                selectedScanResults.addAll(scanResultPane.getScanResultPanes());
-            }
-        });
-        rightPane.setBottom(buttonPaneRight);
-        splitPane.getItems().addAll(leftPane,
-                rightPane);
-        getDialogPane().setPadding(Insets.EMPTY); //set padding in items of
-            //splitPane in order to avoid divider to be displayed with padding
-        getDialogPane().setContent(splitPane);
-        setResultConverter((ButtonType param) -> {
-            if(param.getButtonData().isCancelButton()) {
-                return null;
-            }
-            List<List<ImageWrapper>> retValue = new LinkedList<>();
-            documentPane.getDocumentNodes().forEach((ImageViewPane imageViewPane) -> retValue.add(imageViewPane.getScanResults()));
-            return retValue;
-        });
+    }
+
+    public List<List<ImageWrapper>> getSortedDocuments() {
+        return sortedDocuments;
     }
 
     private void handleZoomChange(List<ImageViewPane> imageViewPanes,
