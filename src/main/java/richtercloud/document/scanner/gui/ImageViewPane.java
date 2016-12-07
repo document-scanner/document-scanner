@@ -98,6 +98,27 @@ public class ImageViewPane extends GridPane {
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
+        this.setWidth(newWidth);
+    }
+
+    private void turn(int rotationDegreesDiff,
+            int width) {
+        this.imageView.imageWrapper.setRotationDegrees(this.imageView.imageWrapper.getRotationDegrees()+rotationDegreesDiff);
+        try {
+            this.imageView.setImage(this.imageView.imageWrapper.getImagePreviewFX(width));
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public void turnRight(int width) {
+        turn(90,
+                width);
+    }
+
+    public void turnLeft(int width) {
+        turn(-90,
+                width);
     }
 
     private void addScanResult(ImageWrapperView scanResultImageView) {

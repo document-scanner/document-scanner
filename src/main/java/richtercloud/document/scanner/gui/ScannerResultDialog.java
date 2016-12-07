@@ -58,6 +58,7 @@ import richtercloud.document.scanner.ifaces.ImageWrapper;
  * @author richter
  */
 public class ScannerResultDialog extends JDialog {
+    private static final long serialVersionUID = 1L;
     private final static Logger LOGGER = LoggerFactory.getLogger(ScannerResultDialog.class);
     private final static Border BORDER_UNSELECTED = new Border(new BorderStroke(Color.BLACK,
             BorderStrokeStyle.SOLID,
@@ -88,7 +89,10 @@ public class ScannerResultDialog extends JDialog {
     private float zoomMultiplicator = 0.3f;
     private int initialWidth = 600;
     private int initialHeight = 400;
-    private final int panelWidth;
+    /**
+     * The current desired with including zoom level.
+     */
+    private int panelWidth;
     /**
      * The height of empty document panels which are added to {@code leftPane}
      * whose relation can't already be known. Scan result objects' height is
@@ -239,6 +243,8 @@ public class ScannerResultDialog extends JDialog {
             Button zoomOutButton = new Button("-");
             Button deletePageButton = new Button("Delete page");
             Button selectAllButton = new Button("Select all");
+            Button turnRightButton = new Button("Turn right");
+            Button turnLeftButton = new Button("Turn left");
             buttonPaneRight.add(zoomInButton,
                     0, //columnIndex
                     0 //rowIndex
@@ -253,6 +259,14 @@ public class ScannerResultDialog extends JDialog {
             );
             buttonPaneRight.add(selectAllButton,
                     3, //columnIndex
+                    0 //rowIndex
+            );
+            buttonPaneRight.add(turnRightButton,
+                    4, //columnIndex
+                    0 //rowIndex
+            );
+            buttonPaneRight.add(turnLeftButton,
+                    5, //columnIndex
                     0 //rowIndex
             );
             zoomInButton.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
@@ -288,6 +302,16 @@ public class ScannerResultDialog extends JDialog {
                             scanResultPane.getScanResultPanes());
                     selectedScanResults.clear();
                     selectedScanResults.addAll(scanResultPane.getScanResultPanes());
+                }
+            });
+            turnRightButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent event) -> {
+                for(ImageViewPane selectedScanResult : selectedScanResults) {
+                    selectedScanResult.turnRight(panelWidth);
+                }
+            });
+            turnLeftButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent event) -> {
+                for(ImageViewPane selectedScanResult : selectedScanResults) {
+                    selectedScanResult.turnLeft(panelWidth);
                 }
             });
             rightPane.setBottom(buttonPaneRight);
@@ -343,13 +367,14 @@ public class ScannerResultDialog extends JDialog {
     private void handleZoomChange(List<ImageViewPane> imageViewPanes,
             float oldZoomLevel,
             float newZoomLevel) {
+        int newWidth = (int) (panelWidth/oldZoomLevel*newZoomLevel);
         for(ImageViewPane imageViewPane : imageViewPanes) {
-            double newWidth = imageViewPane.getWidth()/oldZoomLevel*newZoomLevel;
-            LOGGER.debug(String.format("resizing from fit width %f to %f after zoom change",
-                    imageViewPane.getWidth(),
+            LOGGER.debug(String.format("resizing from fit width %d to %d after zoom change",
+                    panelWidth,
                     newWidth));
-            imageViewPane.changeZoom((int) newWidth);
+            imageViewPane.changeZoom(newWidth);
         }
+        panelWidth = newWidth;
     }
 
     private void addScanResult(ImageWrapper scanResult,

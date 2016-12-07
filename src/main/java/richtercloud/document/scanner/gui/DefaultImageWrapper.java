@@ -39,6 +39,7 @@ public class DefaultImageWrapper implements ImageWrapper {
     private final File storageFile;
     private final int initialWidth;
     private final int initialHeight;
+    private double rotationDegrees;
 
     public DefaultImageWrapper(File storageDir,
             BufferedImage image) throws IOException {
@@ -62,6 +63,16 @@ public class DefaultImageWrapper implements ImageWrapper {
     }
 
     @Override
+    public double getRotationDegrees() {
+        return this.rotationDegrees;
+    }
+
+    @Override
+    public void setRotationDegrees(double rotationDegrees) {
+        this.rotationDegrees = rotationDegrees;
+    }
+
+    @Override
     public BufferedImage getOriginalImage() throws IOException {
         BufferedImage retValue = ImageIO.read(this.storageFile);
         return retValue;
@@ -70,12 +81,16 @@ public class DefaultImageWrapper implements ImageWrapper {
     @Override
     public BufferedImage getImagePreview(int width) throws IOException {
         BufferedImage image = getOriginalImage();
+        if(width == initialWidth) {
+            return image;
+        }
         BufferedImage retValue = new BufferedImage(width,
                 getImageHeightScaled(width),
                 image.getType());
         Graphics2D bGr = retValue.createGraphics();
         bGr.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
                 RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        bGr.rotate(rotationDegrees);
         boolean drawingCompleted = bGr.drawImage(image,
                 0, //x
                 0, //y
@@ -96,6 +111,9 @@ public class DefaultImageWrapper implements ImageWrapper {
                     //width and height doesn't cause the created image to be
                     //scaled)
         );
+        if(width == initialWidth) {
+            return originalImage;
+        }
         //Since there's no way to scale a WritableImage without an ImageView
         //<ref>http://stackoverflow.com/questions/35611176/how-can-i-resize-a-javafx-image</ref>
         //use the following:
@@ -103,6 +121,7 @@ public class DefaultImageWrapper implements ImageWrapper {
         imageView.setPreserveRatio(true);
         imageView.setFitWidth(width);
         //omitting fitHeight cause the ratio to be preserved
+        imageView.setRotate(rotationDegrees);
         imageView.setSmooth(false //allows faster scaling
         );
         WritableImage retValue = imageView.snapshot(null, null);
