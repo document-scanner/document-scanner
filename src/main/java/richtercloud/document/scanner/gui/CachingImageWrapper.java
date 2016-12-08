@@ -99,4 +99,11 @@ public class CachingImageWrapper extends DefaultImageWrapper {
         }
         return imagePreview;
     }
+
+    @Override
+    public void setRotationDegrees(double rotationDegrees) {
+        super.setRotationDegrees(rotationDegrees);
+        CACHE.remove(cacheId);
+        JAVAFX_CACHE.remove(cacheId);
+    }
 }
