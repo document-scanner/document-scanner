@@ -57,6 +57,14 @@ import richtercloud.document.scanner.ifaces.ImageWrapper;
  * scan results. Callers can open a document tag for each document.
  * @author richter
  */
+/*
+internal implementation notes:
+- asked http://stackoverflow.com/questions/41034366/how-to-provide-javafx-components-in-a-dialog-in-a-swing-application
+for solution about layout problem (JavaFX ScrollPanes don't work) (neither
+putting mainPanel in a JScrollPane doesn't help nor removing components outside
+mainPanel (cancel and open button, see example reference in SO question for
+proof)
+*/
 public class ScannerResultDialog extends JDialog {
     private static final long serialVersionUID = 1L;
     private final static Logger LOGGER = LoggerFactory.getLogger(ScannerResultDialog.class);
@@ -328,12 +336,18 @@ public class ScannerResultDialog extends JDialog {
         layout.setAutoCreateContainerGaps(true);
         layout.setAutoCreateGaps(true);
         layout.setHorizontalGroup(layout.createParallelGroup()
-                .addComponent(mainPanel, 0, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE)
+                .addComponent(mainPanel,
+                        0,
+                        GroupLayout.PREFERRED_SIZE,
+                        Short.MAX_VALUE)
                 .addGroup(layout.createSequentialGroup()
                         .addComponent(cancelButton)
                         .addComponent(openButton)));
         layout.setVerticalGroup(layout.createSequentialGroup()
-                .addComponent(mainPanel, 0, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE)
+                .addComponent(mainPanel,
+                        0,
+                        GroupLayout.PREFERRED_SIZE,
+                        Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup()
                         .addComponent(cancelButton)
                         .addComponent(openButton)));
@@ -354,7 +368,7 @@ public class ScannerResultDialog extends JDialog {
             public void componentResized(ComponentEvent e) {
                 Platform.runLater(() -> {
                     ScannerResultDialog.this.splitPane.setPrefSize(getWidth()-10,
-                            getHeight()-30);
+                            getHeight()-40);
                 });
             }
         });
