@@ -22,6 +22,7 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
@@ -39,6 +40,10 @@ public class DefaultImageWrapper implements ImageWrapper {
     private final int initialWidth;
     private final int initialHeight;
     private double rotationDegrees;
+    static {
+        new JFXPanel();
+            //initialize JavaFX once
+    }
 
     public DefaultImageWrapper(File storageDir,
             BufferedImage image) throws IOException {
