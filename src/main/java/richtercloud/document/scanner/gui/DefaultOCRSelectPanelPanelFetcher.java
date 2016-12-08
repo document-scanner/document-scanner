@@ -137,7 +137,8 @@ public class DefaultOCRSelectPanelPanelFetcher implements OCRSelectPanelPanelFet
                     public String call() throws Exception {
                         OCREngine oCREngine = oCREngineFactory.create(oCREngineConf);
                         usedEngines.add(oCREngine);
-                        String oCRResult = oCREngine.recognizeImage(imagePanel.getImage().getOriginalImage());
+                        String oCRResult = oCREngine.recognizeImage(imagePanel.getImage().getImagePreview(imagePanel.getImage().getInitialWidth()) //need to pay attention to rotation
+                        );
                             //need to operate on original image in order to get
                             //acceptable OCR results
                         if(oCRResult == null) {
