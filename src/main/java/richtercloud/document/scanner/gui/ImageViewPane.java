@@ -103,9 +103,12 @@ public class ImageViewPane extends GridPane {
 
     private void turn(int rotationDegreesDiff,
             int width) {
+        //not necessary to set rotation of ImageView or ImageViewPane because
+        //they adjust automatically to the newly set image
         this.imageView.imageWrapper.setRotationDegrees(this.imageView.imageWrapper.getRotationDegrees()+rotationDegreesDiff);
         try {
-            this.imageView.setImage(this.imageView.imageWrapper.getImagePreviewFX(width));
+            WritableImage newImage = this.imageView.imageWrapper.getImagePreviewFX(width);
+            this.imageView.setImage(newImage);
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }

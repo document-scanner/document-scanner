@@ -14,8 +14,6 @@
  */
 package richtercloud.document.scanner.gui;
 
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -23,6 +21,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
@@ -72,35 +71,122 @@ public class DefaultImageWrapper implements ImageWrapper {
         this.rotationDegrees = rotationDegrees;
     }
 
+    /**
+     * Since it's overly hard to handle already rotated images in JavaFX (need
+     * to figure out whether to set {@link ImageView#setFitWidth(double) } or
+     * {@link ImageView#setFitHeight(double) }, etc.) always return the
+     * unrotated image and rotate in Swing and JavaFX separately since that's
+     * easier to maintain and no computation overhead.
+     *
+     * @return
+     * @throws IOException
+     */
     @Override
     public BufferedImage getOriginalImage() throws IOException {
-        BufferedImage retValue = ImageIO.read(this.storageFile);
-        return retValue;
+        BufferedImage original = ImageIO.read(this.storageFile);
+        return original;
     }
 
     @Override
     public BufferedImage getImagePreview(int width) throws IOException {
-        BufferedImage image = getOriginalImage();
-        if(width == initialWidth) {
-            return image;
+        BufferedImage original = getOriginalImage();
+        if(width == initialWidth && rotationDegrees/360 == 0) {
+            return original;
         }
-        BufferedImage retValue = new BufferedImage(width,
-                getImageHeightScaled(width),
-                image.getType());
-        Graphics2D bGr = retValue.createGraphics();
-        bGr.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-                RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-        bGr.rotate(rotationDegrees);
-        boolean drawingCompleted = bGr.drawImage(image,
-                0, //x
-                0, //y
-                width, //width (specifying width and height is as good as specifying the scale factory
-                getImageHeightScaled(width), //height
-                null //imageObserver
+        //Implementations using Java AWT are quite complicated (because and don't work,
+        //so using JavaFX is fine as a workaround
+        WritableImage originalImage = SwingFXUtils.toFXImage(original,
+                null //wimg (specifying an existing empty image with desired
+                    //width and height doesn't cause the created image to be
+                    //scaled)
         );
-        assert drawingCompleted;
-        bGr.dispose();
-        return retValue;
+        ImageView imageView = getImagePreviewFXImageView(originalImage,
+                width);
+        BufferedImage[] imageValue = new BufferedImage[1];
+        //this will be called form Swing EDT
+        Platform.runLater(() -> {
+            BufferedImage image = SwingFXUtils.fromFXImage(imageView.snapshot(null, null), null);
+            imageValue[0] = image;
+        });
+        while(imageValue[0] == null) {
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+        BufferedImage image = imageValue[0];
+        return image;
+
+        //Implementation using Graphics2D
+//        int width0, height0;
+//        if(this.rotationDegrees/90 % 2 == 0) {
+//            width0 = width;
+//            height0 = getImageHeightScaled(width);
+//        }else {
+//            width0 = getImageHeightScaled(width);
+//            height0 = width;
+//        }
+//        BufferedImage retValue = new BufferedImage(width0,
+//                height0,
+//                BufferedImage.TYPE_INT_ARGB);
+//        Graphics2D bGr = retValue.createGraphics();
+//        bGr.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+//                RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            //prevents bad quality after scaling
+//        bGr.rotate(Math.toRadians(rotationDegrees),
+//                original.getWidth()/2,
+//                original.getHeight()/2);
+//        boolean drawingCompleted = bGr.drawImage(original,
+//                0, //x
+//                0, //y
+//                width0, //width (specifying width and height is as good as specifying the scale factory
+//                height0, //height
+//                null //imageObserver
+//        );
+//        assert drawingCompleted;
+//        bGr.dispose();
+
+        //Implementation using AffineTransform (causing empty image (except for
+        //small white strip in the lower left corner
+//        AffineTransform at = new AffineTransform();
+//        at.rotate(Math.toRadians(rotationDegrees),
+//                original.getWidth()/(double)2, //center for rotating
+//                original.getHeight()/(double)2);
+//        double scale = width/(double)original.getWidth();
+//        at.scale(scale,
+//                scale);
+//        AffineTransformOp affineTransformOp = new AffineTransformOp(at,
+//                new RenderingHints(RenderingHints.KEY_INTERPOLATION,
+//                        RenderingHints.VALUE_INTERPOLATION_BILINEAR));
+//        retValue = affineTransformOp.filter(original,
+//                null);
+//        return retValue;
+    }
+
+    /**
+     * Allows invoking {@link ImageView#snapshot(javafx.scene.SnapshotParameters, javafx.scene.image.WritableImage) }
+     * on return value from JavaFX thread and from Swing EDT (inside a
+     * {@link Platform#runLater(java.lang.Runnable) } lambda).
+     *
+     * @param width
+     * @return
+     */
+    private ImageView getImagePreviewFXImageView(WritableImage originalImage,
+            int width) throws IOException {
+        //Since there's no way to scale a WritableImage without an ImageView
+        //<ref>http://stackoverflow.com/questions/35611176/how-can-i-resize-a-javafx-image</ref>
+        //use the following:
+        ImageView imageView = new ImageView(originalImage);
+        imageView.setPreserveRatio(true);
+        imageView.setFitWidth(width);
+            //omitting fitHeight cause the ratio to be preserved
+            //setting fitWidth and then rotating avoid to figure out whether
+            //fitWidth or fitHeight has to be set depending on rotation
+        imageView.setRotate(this.rotationDegrees);
+        imageView.setSmooth(false //allows faster scaling
+        );
+        return imageView;
     }
 
     @Override
@@ -114,16 +200,8 @@ public class DefaultImageWrapper implements ImageWrapper {
         if(width == initialWidth) {
             return originalImage;
         }
-        //Since there's no way to scale a WritableImage without an ImageView
-        //<ref>http://stackoverflow.com/questions/35611176/how-can-i-resize-a-javafx-image</ref>
-        //use the following:
-        ImageView imageView = new ImageView(originalImage);
-        imageView.setPreserveRatio(true);
-        imageView.setFitWidth(width);
-        //omitting fitHeight cause the ratio to be preserved
-        imageView.setRotate(rotationDegrees);
-        imageView.setSmooth(false //allows faster scaling
-        );
+        ImageView imageView = getImagePreviewFXImageView(originalImage,
+                width);
         WritableImage retValue = imageView.snapshot(null, null);
         return retValue;
     }

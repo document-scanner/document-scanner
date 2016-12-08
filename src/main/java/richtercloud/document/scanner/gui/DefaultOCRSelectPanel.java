@@ -66,8 +66,14 @@ public class DefaultOCRSelectPanel extends OCRSelectPanel implements MouseListen
     }
 
     private void updatePreferredSize() throws IOException {
-        int width = (int)(preferredWidth*zoomLevel);
-        int height = image.getImagePreview((int) (preferredWidth*zoomLevel)).getHeight();
+        int width, height;
+        if(image.getRotationDegrees()/90%2 == 0) {
+            width = (int)(preferredWidth*zoomLevel);
+            height = image.getImagePreview((int) (preferredWidth*zoomLevel)).getHeight();
+        }else {
+            width = image.getImagePreview((int) (preferredWidth*zoomLevel)).getWidth();
+            height = (int)(preferredWidth*zoomLevel);
+        }
         this.setPreferredSize(new Dimension(width,
                 height));
     }
