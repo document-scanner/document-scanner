@@ -82,6 +82,10 @@ public abstract class Identifiable implements Serializable {
         return this.id;
     }
 
+    /**
+     * IDs are supposed to be set using an {@link IdApplier}.
+     * @param id the ID to set
+     */
     protected void setId(Long id) {
         this.id = id;
     }
