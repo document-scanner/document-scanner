@@ -166,12 +166,22 @@
             <version>1.0-SNAPSHOT</version>
             <type>jar</type>
         </dependency>
+
+        <!--Caching-->
+        <!--Apache Ignite doesn't cache values, asked
+                http://stackoverflow.com/questions/41010708/how-to-use-apache-ignite-as-jsr-107-cache
+                for input-->
         <dependency>
+            <groupId>org.ehcache</groupId>
+            <artifactId>jcache</artifactId>
+            <version>1.0.1</version>
+        </dependency>
+        <!--<dependency>
             <groupId>org.apache.ignite</groupId>
             <artifactId>ignite-core</artifactId>
             <version>1.7.0</version>
-            <type>jar</type>
-        </dependency>
+        </dependency>-->
+
         <dependency>
             <groupId>javax</groupId>
             <artifactId>javaee-api</artifactId>
