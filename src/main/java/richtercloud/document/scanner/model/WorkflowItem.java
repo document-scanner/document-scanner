@@ -17,6 +17,7 @@ package richtercloud.document.scanner.model;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.ManyToMany;
@@ -43,12 +44,12 @@ not investigated further
 @ValidWorkflowItem
 public abstract class WorkflowItem extends CommunicationItem {
     private static final long serialVersionUID = 1L;
-    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "followingItems")
+    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "followingItems", cascade = CascadeType.PERSIST)
     @CommunicationTree
     @FieldInfo(name = "Previous items", description="Communication items to "
             + "which this item is a reply")
     private List<WorkflowItem> previousItems = new LinkedList<>();
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     //@CommunicationTree //there's no need to a second communication tree
         //because referenced ought to be updated correctly due to mappedBy
         //parameter of ManyToMany on previousItems
