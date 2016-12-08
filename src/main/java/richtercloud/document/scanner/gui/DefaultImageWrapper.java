@@ -197,7 +197,7 @@ public class DefaultImageWrapper implements ImageWrapper {
                     //width and height doesn't cause the created image to be
                     //scaled)
         );
-        if(width == initialWidth) {
+        if(width == initialWidth && rotationDegrees/360 == 0) {
             return originalImage;
         }
         ImageView imageView = getImagePreviewFXImageView(originalImage,
