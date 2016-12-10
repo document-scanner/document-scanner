@@ -319,7 +319,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     panel will remain in use and thus not be GCed anyway.
     */
     private PersistenceStorage storage;
-    private final DelegatingPersistenceStorageFactory delegatingStorageFactory = new DelegatingPersistenceStorageFactory();
+    private final DelegatingPersistenceStorageFactory delegatingStorageFactory = new DelegatingPersistenceStorageFactory("richtercloud_document-scanner_jar_1.0-SNAPSHOTPU");
 
     public static SaneDevice getScannerDevice(String scannerName,
             Map<String, ScannerConf> scannerConfMap,

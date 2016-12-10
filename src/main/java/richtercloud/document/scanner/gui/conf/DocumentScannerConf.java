@@ -28,6 +28,7 @@ import richtercloud.document.scanner.gui.DocumentScanner;
 import richtercloud.document.scanner.gui.ScannerConf;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyEmbeddedPersistenceStorageConf;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyNetworkPersistenceStorageConf;
+import richtercloud.reflection.form.builder.jpa.storage.PostgresqlAutoPersistenceStorageConf;
 import richtercloud.reflection.form.builder.storage.StorageConf;
 import richtercloud.reflection.form.builder.storage.XMLStorageConf;
 
@@ -82,14 +83,14 @@ public class DocumentScannerConf implements Serializable {
     private final static File SCHEME_CHECKSUM_FILE_DEFAULT = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT,
             SCHEME_CHECKSUM_FILE_NAME_DEFAULT);
     public static final String DATABASE_DIR_NAME_DEFAULT = "databases";
-    public final static File DATABASE_DIR_DEFAULT = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT,
-            DATABASE_DIR_NAME_DEFAULT);
+    public final static String DATABASE_NAME_DEFAULT = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT,
+            DATABASE_DIR_NAME_DEFAULT).getAbsolutePath();
 
     private static Set<StorageConf> generateAvailableStorageConfsDefault(Set<Class<?>> entityClasses,
             File xMLStorageFile) throws IOException {
         Set<StorageConf> availableStorageConfs = new HashSet<>();
         availableStorageConfs.add(new DerbyEmbeddedPersistenceStorageConf(entityClasses,
-                        DATABASE_DIR_DEFAULT,
+                        DATABASE_NAME_DEFAULT,
                         SCHEME_CHECKSUM_FILE_DEFAULT));
         availableStorageConfs.add(new XMLStorageConf(xMLStorageFile));
         return availableStorageConfs;
@@ -175,26 +176,31 @@ public class DocumentScannerConf implements Serializable {
     @Parameter(names= {"-d", "--debug"}, description= "Print extra debugging statements")
     private boolean debug = false;
     private final static String HOSTNAME_DEFAULT = "localhost";
+    private final static String POSTGRESQL_DATABASE_DIR_DEFAULT = new File(CONFIG_DIR_DEFAULT, "databases-postgresql").getAbsolutePath();
 
     /**
      * Creates an configuration with default values.
      */
     public DocumentScannerConf() throws IOException {
         this.storageConf = new DerbyEmbeddedPersistenceStorageConf(DocumentScanner.ENTITY_CLASSES,
-            DATABASE_DIR_DEFAULT,
+            DATABASE_NAME_DEFAULT,
             SCHEME_CHECKSUM_FILE_DEFAULT);
         this.availableStorageConfs.add(this.storageConf);
         this.availableStorageConfs.add(new DerbyNetworkPersistenceStorageConf(DocumentScanner.ENTITY_CLASSES,
                 HOSTNAME_DEFAULT,
                 SCHEME_CHECKSUM_FILE_DEFAULT));
+        this.availableStorageConfs.add(new PostgresqlAutoPersistenceStorageConf(DocumentScanner.ENTITY_CLASSES,
+                "document-scanner",
+                SCHEME_CHECKSUM_FILE_DEFAULT,
+                POSTGRESQL_DATABASE_DIR_DEFAULT));
     }
 
     public DocumentScannerConf(Set<Class<?>> entityClasses,
-            File databaseDir,
+            String databaseName,
             File schemeChecksumFile,
             File xMLStorageFile) throws IOException {
         this(new DerbyEmbeddedPersistenceStorageConf(entityClasses,
-                        databaseDir,
+                        databaseName,
                         schemeChecksumFile),
                 generateAvailableStorageConfsDefault(entityClasses,
                         xMLStorageFile),

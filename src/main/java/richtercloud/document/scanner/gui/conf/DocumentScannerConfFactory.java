@@ -25,11 +25,11 @@ import java.util.Set;
 public class DocumentScannerConfFactory {
 
     public DocumentScannerConf create(Set<Class<?>> entityClasses,
-            File databaseDir,
+            String databaseName,
             File schemeChecksumFile,
             File xMLStorageFile) throws IOException {
         return new DocumentScannerConf(entityClasses,
-                databaseDir,
+                databaseName,
                 schemeChecksumFile,
                 xMLStorageFile);
     }

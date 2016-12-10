@@ -14,9 +14,9 @@
  */
 package richtercloud.document.scanner.gui.storageconf;
 
-import richtercloud.document.scanner.gui.storageconf.StorageConfPanel;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyEmbeddedPersistenceStorageConf;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyNetworkPersistenceStorageConf;
+import richtercloud.reflection.form.builder.jpa.storage.PostgresqlAutoPersistenceStorageConf;
 import richtercloud.reflection.form.builder.storage.StorageConf;
 
 /**
@@ -26,6 +26,7 @@ import richtercloud.reflection.form.builder.storage.StorageConf;
 public class DefaultStorageConfPanelFactory implements StorageConfPanelFactory {
     private final DerbyEmbeddedPersistenceStorageConfPanel derbyEmbeddedPersistenceStorageConfPanel = new DerbyEmbeddedPersistenceStorageConfPanel();
     private final DerbyNetworkPersistenceStorageConfPanel derbyNetworkPersistenceStorageConfPanel = new DerbyNetworkPersistenceStorageConfPanel();
+    private final PostgresqlAutoPersistenceStorageConfPanel postgresqlAutoPersistenceStorageConfPanel = new PostgresqlAutoPersistenceStorageConfPanel();
 
     @Override
     public StorageConfPanel create(StorageConf storageConf) {
@@ -36,6 +37,9 @@ public class DefaultStorageConfPanelFactory implements StorageConfPanelFactory {
         }else if(storageConf instanceof DerbyNetworkPersistenceStorageConf) {
             derbyNetworkPersistenceStorageConfPanel.applyStorageConf((DerbyNetworkPersistenceStorageConf) storageConf);
             retValue = derbyNetworkPersistenceStorageConfPanel;
+        }else if(storageConf instanceof PostgresqlAutoPersistenceStorageConf) {
+            postgresqlAutoPersistenceStorageConfPanel.applyStorageConf((PostgresqlAutoPersistenceStorageConf) storageConf);
+            retValue = postgresqlAutoPersistenceStorageConfPanel;
         }else {
             throw new IllegalArgumentException(String.format("Storage configuration of type '%s' isn't supported", storageConf.getClass()));
         }

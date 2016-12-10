@@ -14,9 +14,7 @@
  */
 package richtercloud.document.scanner.gui.storageconf;
 
-import java.io.File;
 import java.io.IOException;
-import richtercloud.document.scanner.gui.storageconf.StorageConfPanel;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyEmbeddedPersistenceStorageConf;
 import richtercloud.reflection.form.builder.storage.StorageConfInitializationException;
 
@@ -50,7 +48,7 @@ public class DerbyEmbeddedPersistenceStorageConfPanel extends StorageConfPanel<D
     @Override
     public void applyStorageConf(DerbyEmbeddedPersistenceStorageConf storageConf) {
         this.storageConf = storageConf;
-        this.databaseDirTextField.setText(storageConf.getDatabaseDir().getAbsolutePath());
+        this.databaseDirTextField.setText(storageConf.getDatabaseName());
         this.usernameTextField.setText(storageConf.getUsername());
     }
 
@@ -126,7 +124,7 @@ public class DerbyEmbeddedPersistenceStorageConfPanel extends StorageConfPanel<D
 
     @Override
     public void save() {
-        this.storageConf.setDatabaseDir(new File(this.databaseDirTextField.getText()));
+        this.storageConf.setDatabaseName(this.databaseDirTextField.getText());
         this.storageConf.setUsername(this.usernameTextField.getText());
         this.storageConf.setPassword(new String(this.passwordPasswordField.getPassword()));
     }

@@ -67,7 +67,7 @@ public class DerbyEmbeddedPersistenceStorageConfTest {
         lastSchemeStorageTempFile.delete(); //needs to be inexisting to trigger generation of default values in file
         LOGGER.info(String.format("using '%s' for temporary storage of last scheme", lastSchemeStorageTempFile.getAbsolutePath()));
         DerbyEmbeddedPersistenceStorageConf instance = new DerbyEmbeddedPersistenceStorageConf(entityClasses,
-                connTempFile,
+                connTempFile.getAbsolutePath(),
                 lastSchemeStorageTempFile //prevent creating file with TestClass which isn't accessible outside tests
         );
         try {
