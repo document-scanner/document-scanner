@@ -14,9 +14,7 @@
  */
 package richtercloud.document.scanner.gui.storageconf;
 
-import java.io.IOException;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyEmbeddedPersistenceStorageConf;
-import richtercloud.reflection.form.builder.storage.StorageConfInitializationException;
 
 /**
  *
@@ -24,32 +22,18 @@ import richtercloud.reflection.form.builder.storage.StorageConfInitializationExc
  */
 public class DerbyEmbeddedPersistenceStorageConfPanel extends StorageConfPanel<DerbyEmbeddedPersistenceStorageConf> {
     private static final long serialVersionUID = 1L;
-    private DerbyEmbeddedPersistenceStorageConf storageConf;
+    private final DerbyEmbeddedPersistenceStorageConf storageConf;
 
-    /**
-     * Creates new form DerbyStorageConfPanel
-     */
-    protected DerbyEmbeddedPersistenceStorageConfPanel() {
+    public DerbyEmbeddedPersistenceStorageConfPanel(DerbyEmbeddedPersistenceStorageConf storageConf) {
         this.initComponents();
-    }
-
-    public DerbyEmbeddedPersistenceStorageConfPanel(DerbyEmbeddedPersistenceStorageConf storageConf) throws StorageConfInitializationException, IOException, StorageConfInitializationException {
-        this();
         this.storageConf = storageConf;
-        applyStorageConf(storageConf);
-        this.storageConf.validate();
+        this.databaseDirTextField.setText(storageConf.getDatabaseName());
+        this.usernameTextField.setText(storageConf.getUsername());
     }
 
     @Override
     public DerbyEmbeddedPersistenceStorageConf getStorageConf() {
         return this.storageConf;
-    }
-
-    @Override
-    public void applyStorageConf(DerbyEmbeddedPersistenceStorageConf storageConf) {
-        this.storageConf = storageConf;
-        this.databaseDirTextField.setText(storageConf.getDatabaseName());
-        this.usernameTextField.setText(storageConf.getUsername());
     }
 
     /**
@@ -108,7 +92,7 @@ public class DerbyEmbeddedPersistenceStorageConfPanel extends StorageConfPanel<D
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(passwordLabel)
                     .addComponent(passwordPasswordField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(213, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 

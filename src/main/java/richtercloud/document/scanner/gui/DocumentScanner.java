@@ -466,7 +466,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
      * @see #close()
      */
     private void shutdownHook() {
-        LOGGER.info("running {} shutdown hooks", DocumentScanner.class);
+        LOGGER.info(String.format("running shutdown hooks in %s", DocumentScanner.class));
         if (this.documentScannerConf != null) {
             try {
                 XStream xStream = new XStream();
@@ -490,6 +490,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             this.storage.shutdown();
         }
         close();
+        LOGGER.info(String.format("shutdown hooks in %s finished", DocumentScanner.class));
     }
 
     /**
@@ -637,7 +638,9 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     @Override
     public void init() throws StorageConfInitializationException, IOException, StorageConfInitializationException {
         warningHandlers.put(Company.class,
-                new CompanyWarningHandler(storage, confirmMessageHandler));
+                new CompanyWarningHandler(storage,
+                        messageHandler,
+                        confirmMessageHandler));
             //after entityManager has been initialized
 
         this.mainPanel = new DefaultMainPanel(ENTITY_CLASSES,

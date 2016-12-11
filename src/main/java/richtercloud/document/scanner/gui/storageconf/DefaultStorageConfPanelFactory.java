@@ -14,8 +14,10 @@
  */
 package richtercloud.document.scanner.gui.storageconf;
 
+import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyEmbeddedPersistenceStorageConf;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyNetworkPersistenceStorageConf;
+import richtercloud.reflection.form.builder.jpa.storage.MySQLAutoPersistenceStorageConf;
 import richtercloud.reflection.form.builder.jpa.storage.PostgresqlAutoPersistenceStorageConf;
 import richtercloud.reflection.form.builder.storage.StorageConf;
 
@@ -24,22 +26,28 @@ import richtercloud.reflection.form.builder.storage.StorageConf;
  * @author richter
  */
 public class DefaultStorageConfPanelFactory implements StorageConfPanelFactory {
-    private final DerbyEmbeddedPersistenceStorageConfPanel derbyEmbeddedPersistenceStorageConfPanel = new DerbyEmbeddedPersistenceStorageConfPanel();
-    private final DerbyNetworkPersistenceStorageConfPanel derbyNetworkPersistenceStorageConfPanel = new DerbyNetworkPersistenceStorageConfPanel();
-    private final PostgresqlAutoPersistenceStorageConfPanel postgresqlAutoPersistenceStorageConfPanel = new PostgresqlAutoPersistenceStorageConfPanel();
+    private final MessageHandler messageHandler;
+    private final boolean skipMD5SumCheck;
+
+    public DefaultStorageConfPanelFactory(MessageHandler messageHandler,
+            boolean skipMD5SumCheck) {
+        this.messageHandler = messageHandler;
+        this.skipMD5SumCheck = skipMD5SumCheck;
+    }
 
     @Override
     public StorageConfPanel create(StorageConf storageConf) {
         StorageConfPanel retValue;
         if(storageConf instanceof DerbyEmbeddedPersistenceStorageConf) {
-            derbyEmbeddedPersistenceStorageConfPanel.applyStorageConf((DerbyEmbeddedPersistenceStorageConf) storageConf);
-            retValue = derbyEmbeddedPersistenceStorageConfPanel;
+            retValue = new DerbyEmbeddedPersistenceStorageConfPanel((DerbyEmbeddedPersistenceStorageConf) storageConf);
         }else if(storageConf instanceof DerbyNetworkPersistenceStorageConf) {
-            derbyNetworkPersistenceStorageConfPanel.applyStorageConf((DerbyNetworkPersistenceStorageConf) storageConf);
-            retValue = derbyNetworkPersistenceStorageConfPanel;
+            retValue = new DerbyNetworkPersistenceStorageConfPanel((DerbyNetworkPersistenceStorageConf) storageConf);
         }else if(storageConf instanceof PostgresqlAutoPersistenceStorageConf) {
-            postgresqlAutoPersistenceStorageConfPanel.applyStorageConf((PostgresqlAutoPersistenceStorageConf) storageConf);
-            retValue = postgresqlAutoPersistenceStorageConfPanel;
+            retValue = new PostgresqlAutoPersistenceStorageConfPanel((PostgresqlAutoPersistenceStorageConf) storageConf);
+        }else if(storageConf instanceof MySQLAutoPersistenceStorageConf) {
+            retValue = new MySQLAutoPersistenceStorageConfPanel((MySQLAutoPersistenceStorageConf) storageConf,
+                    messageHandler,
+                    skipMD5SumCheck);
         }else {
             throw new IllegalArgumentException(String.format("Storage configuration of type '%s' isn't supported", storageConf.getClass()));
         }

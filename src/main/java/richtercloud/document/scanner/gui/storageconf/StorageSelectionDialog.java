@@ -27,7 +27,6 @@ import javax.swing.ListCellRenderer;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
-import richtercloud.document.scanner.gui.storageconf.StorageConfPanel;
 import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.storage.StorageConf;
@@ -81,7 +80,8 @@ public class StorageSelectionDialog extends javax.swing.JDialog {
         this.documentScannerConf = documentScannerConf;
         this.messageHandler = messageHandler;
 
-        StorageConfPanelFactory storageConfPanelFactory = new DefaultStorageConfPanelFactory();
+        StorageConfPanelFactory storageConfPanelFactory = new DefaultStorageConfPanelFactory(messageHandler,
+                documentScannerConf.isSkipMD5SumCheck());
         for(StorageConf availableStorageConf : this.documentScannerConf.getAvailableStorageConfs()) {
             this.storageListModel.addElement(availableStorageConf);
             StorageConfPanel storageConfPanel = storageConfPanelFactory.create(availableStorageConf);

@@ -181,7 +181,12 @@
             <artifactId>ignite-core</artifactId>
             <version>1.7.0</version>
         </dependency>-->
-
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-compress</artifactId>
+            <version>1.12</version>
+            <type>jar</type>
+        </dependency>
         <dependency>
             <groupId>javax</groupId>
             <artifactId>javaee-api</artifactId>

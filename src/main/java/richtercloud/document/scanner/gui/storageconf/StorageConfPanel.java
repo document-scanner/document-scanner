@@ -24,9 +24,7 @@ import richtercloud.reflection.form.builder.storage.StorageConf;
  */
 /*
 internal implementation notes:
-- in order to be usable as panel StorageConfPanel needs to expose save and
-cancel methods because buttons can not be included in the panel itself in order
-to provide sane GUI elements
+- threre's few sense in making the panel reusable, so don't do it
 */
 public abstract class StorageConfPanel<C extends StorageConf> extends JPanel {
     private static final long serialVersionUID = 1L;
@@ -40,11 +38,4 @@ public abstract class StorageConfPanel<C extends StorageConf> extends JPanel {
     public abstract void save();
 
     public abstract void cancel();
-
-    /**
-     * Applies values of {@code storageConf} on components of panel which allows
-     * the panel to be reusable.
-     * @param storageConf the configuration with values to apply
-     */
-    public abstract void applyStorageConf(C storageConf);
 }

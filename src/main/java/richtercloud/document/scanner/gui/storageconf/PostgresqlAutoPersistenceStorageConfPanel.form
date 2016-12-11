@@ -16,22 +16,24 @@
   <Layout>
     <DimensionLayout dim="0">
       <Group type="103" groupAlignment="0" attributes="0">
-          <Group type="102" attributes="0">
+          <Group type="102" alignment="0" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="databaseDirTextFieldLabel" alignment="0" min="-2" max="-2" attributes="0"/>
+                  <Component id="databaseNameTextFieldLabel" alignment="0" min="-2" max="-2" attributes="0"/>
                   <Component id="hostnameTextFieldLabel" alignment="0" min="-2" max="-2" attributes="0"/>
                   <Component id="jLabel1" alignment="0" min="-2" max="-2" attributes="0"/>
                   <Component id="usernameLabel" alignment="0" min="-2" max="-2" attributes="0"/>
                   <Component id="passwordLabel" alignment="0" min="-2" max="-2" attributes="0"/>
+                  <Component id="databaseDirTextFieldLabel" alignment="0" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace type="separate" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="passwordPasswordField" pref="517" max="32767" attributes="0"/>
+                  <Component id="databaseDirTextField" max="32767" attributes="0"/>
+                  <Component id="passwordPasswordField" pref="584" max="32767" attributes="0"/>
                   <Component id="usernameTextField" max="32767" attributes="0"/>
                   <Component id="portSpinner" max="32767" attributes="0"/>
                   <Component id="hostnameTextField" max="32767" attributes="0"/>
-                  <Component id="databaseDirTextField" max="32767" attributes="0"/>
+                  <Component id="databaseNameTextField" max="32767" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
           </Group>
@@ -40,6 +42,11 @@
     <DimensionLayout dim="1">
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" alignment="0" attributes="0">
+              <EmptySpace max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="3" attributes="0">
+                  <Component id="databaseNameTextField" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="databaseNameTextFieldLabel" alignment="3" min="-2" max="-2" attributes="0"/>
+              </Group>
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="databaseDirTextField" alignment="3" min="-2" max="-2" attributes="0"/>
@@ -71,11 +78,11 @@
     </DimensionLayout>
   </Layout>
   <SubComponents>
-    <Component class="javax.swing.JTextField" name="databaseDirTextField">
+    <Component class="javax.swing.JTextField" name="databaseNameTextField">
     </Component>
-    <Component class="javax.swing.JLabel" name="databaseDirTextFieldLabel">
+    <Component class="javax.swing.JLabel" name="databaseNameTextFieldLabel">
       <Properties>
-        <Property name="text" type="java.lang.String" value="Database name or directory"/>
+        <Property name="text" type="java.lang.String" value="Database name"/>
       </Properties>
     </Component>
     <Component class="javax.swing.JTextField" name="hostnameTextField">
@@ -107,6 +114,13 @@
     <Component class="javax.swing.JLabel" name="jLabel1">
       <Properties>
         <Property name="text" type="java.lang.String" value="Port"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JTextField" name="databaseDirTextField">
+    </Component>
+    <Component class="javax.swing.JLabel" name="databaseDirTextFieldLabel">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Database directory"/>
       </Properties>
     </Component>
   </SubComponents>

@@ -28,6 +28,7 @@ import richtercloud.document.scanner.gui.DocumentScanner;
 import richtercloud.document.scanner.gui.ScannerConf;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyEmbeddedPersistenceStorageConf;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyNetworkPersistenceStorageConf;
+import richtercloud.reflection.form.builder.jpa.storage.MySQLAutoPersistenceStorageConf;
 import richtercloud.reflection.form.builder.jpa.storage.PostgresqlAutoPersistenceStorageConf;
 import richtercloud.reflection.form.builder.storage.StorageConf;
 import richtercloud.reflection.form.builder.storage.XMLStorageConf;
@@ -177,6 +178,14 @@ public class DocumentScannerConf implements Serializable {
     private boolean debug = false;
     private final static String HOSTNAME_DEFAULT = "localhost";
     private final static String POSTGRESQL_DATABASE_DIR_DEFAULT = new File(CONFIG_DIR_DEFAULT, "databases-postgresql").getAbsolutePath();
+    private final static String MYSQL_DATABASE_DIR_DEFAULT = new File(CONFIG_DIR_DEFAULT, "databases-mysql").getAbsolutePath();
+    /**
+     * Skip validation of MD5 sums in download routine in
+     * {@link MySQLAutoPersistenceStorageConfPanel} which is extremely slow
+     * (takes up to 10 minutes for an average MySQL download) when debugging.
+     * This should only be configurable by editing the configuration file.
+     */
+    private boolean skipMD5SumCheck = false;
 
     /**
      * Creates an configuration with default values.
@@ -193,6 +202,11 @@ public class DocumentScannerConf implements Serializable {
                 "document-scanner",
                 SCHEME_CHECKSUM_FILE_DEFAULT,
                 POSTGRESQL_DATABASE_DIR_DEFAULT));
+        this.availableStorageConfs.add(new MySQLAutoPersistenceStorageConf(DocumentScanner.ENTITY_CLASSES,
+                "document-scanner",
+                MYSQL_DATABASE_DIR_DEFAULT,
+                SCHEME_CHECKSUM_FILE_DEFAULT
+        ));
     }
 
     public DocumentScannerConf(Set<Class<?>> entityClasses,
@@ -258,6 +272,14 @@ public class DocumentScannerConf implements Serializable {
                 documentScannerConf.getZoomLevelMultiplier(),
                 documentScannerConf.getPreferredWidth()
         );
+    }
+
+    public boolean isSkipMD5SumCheck() {
+        return skipMD5SumCheck;
+    }
+
+    public void setSkipMD5SumCheck(boolean skipMD5SumCheck) {
+        this.skipMD5SumCheck = skipMD5SumCheck;
     }
 
     public File getConfigFile() {

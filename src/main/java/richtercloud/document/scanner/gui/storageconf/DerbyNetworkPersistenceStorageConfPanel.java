@@ -14,9 +14,7 @@
  */
 package richtercloud.document.scanner.gui.storageconf;
 
-import java.io.IOException;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyNetworkPersistenceStorageConf;
-import richtercloud.reflection.form.builder.storage.StorageConfInitializationException;
 
 /**
  *
@@ -24,37 +22,23 @@ import richtercloud.reflection.form.builder.storage.StorageConfInitializationExc
  */
 public class DerbyNetworkPersistenceStorageConfPanel extends StorageConfPanel<DerbyNetworkPersistenceStorageConf> {
     private static final long serialVersionUID = 1L;
-    private DerbyNetworkPersistenceStorageConf storageConf;
+    private final DerbyNetworkPersistenceStorageConf storageConf;
 
-    /**
-     * Creates new form DerbyStorageConfPanel
-     */
-    protected DerbyNetworkPersistenceStorageConfPanel() {
+    public DerbyNetworkPersistenceStorageConfPanel(DerbyNetworkPersistenceStorageConf storageConf) {
         this.initComponents();
-    }
-
-    public DerbyNetworkPersistenceStorageConfPanel(DerbyNetworkPersistenceStorageConf storageConf) throws StorageConfInitializationException, IOException, StorageConfInitializationException {
-        this();
         if(storageConf == null) {
             throw new IllegalArgumentException("storageConf mustn't be null");
         }
-        this.storageConf = storageConf;
-        applyStorageConf(storageConf);
-        this.storageConf.validate();
-    }
-
-    @Override
-    public DerbyNetworkPersistenceStorageConf getStorageConf() {
-        return this.storageConf;
-    }
-
-    @Override
-    public void applyStorageConf(DerbyNetworkPersistenceStorageConf storageConf) {
         this.storageConf = storageConf;
         this.databaseDirTextField.setText(storageConf.getDatabaseName());
         this.hostnameTextField.setText(storageConf.getHostname());
         this.portSpinner.setValue(storageConf.getPort());
         this.usernameTextField.setText(storageConf.getUsername());
+    }
+
+    @Override
+    public DerbyNetworkPersistenceStorageConf getStorageConf() {
+        return this.storageConf;
     }
 
     /**

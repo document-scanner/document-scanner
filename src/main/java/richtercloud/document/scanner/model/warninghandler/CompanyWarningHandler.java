@@ -19,8 +19,10 @@ import javax.swing.JOptionPane;
 import richtercloud.document.scanner.model.Company;
 import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.Message;
+import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
+import richtercloud.reflection.form.builder.storage.StorageException;
 
 /**
  *
@@ -28,14 +30,20 @@ import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
  */
 public class CompanyWarningHandler implements WarningHandler<Company> {
     private final PersistenceStorage storage;
+    private final MessageHandler messageHandler;
     private final ConfirmMessageHandler confirmMessageHandler;
 
     public CompanyWarningHandler(PersistenceStorage storage,
+            MessageHandler messageHandler,
             ConfirmMessageHandler confirmMessageHandler) {
         if(storage == null) {
             throw new IllegalArgumentException("storage mustn't be null");
         }
         this.storage = storage;
+        if(messageHandler == null) {
+            throw new IllegalArgumentException("messageHandler mustn't be null");
+        }
+        this.messageHandler = messageHandler;
         if(confirmMessageHandler == null) {
             throw new IllegalArgumentException("confirmMessageHandler mustn't be null");
         }
@@ -44,7 +52,13 @@ public class CompanyWarningHandler implements WarningHandler<Company> {
 
     @Override
     public boolean handleWarning(Company instance) {
-        List<Company> results = storage.runQuery("name", instance.getName(), Company.class);
+        List<Company> results;
+        try {
+            results = storage.runQuery("name", instance.getName(), Company.class);
+        } catch (StorageException ex) {
+            messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+            return false;
+        }
         if(!results.isEmpty()) {
             int answer = confirmMessageHandler.confirm(new Message(String.format("An instance with the name '%s' already exists in the database. Continue anyway?", instance.getName()),
                     JOptionPane.WARNING_MESSAGE,
