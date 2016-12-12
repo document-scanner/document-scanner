@@ -66,6 +66,7 @@ import javax.swing.ListCellRenderer;
 import javax.swing.MutableComboBoxModel;
 import javax.swing.SwingWorker;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.jscience.economics.money.Currency;
 import org.slf4j.Logger;
@@ -456,6 +457,15 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
         if(this.storage != null) {
             this.storage.shutdown();
+        }
+        LOGGER.info(String.format("emptying image wrapper storage directory '%s'", this.documentScannerConf.getImageWrapperStorageDir().getAbsolutePath()));
+        try {
+            FileUtils.deleteDirectory(this.documentScannerConf.getImageWrapperStorageDir());
+        } catch (IOException ex) {
+            LOGGER.error("removal of image wrapper storage directory failed, see nested exception for details", ex);
+        }
+        if(!this.documentScannerConf.getImageWrapperStorageDir().mkdirs()) {
+            LOGGER.error(String.format("re-creation of image wrapper storage dir '%s' failed", this.documentScannerConf.getImageWrapperStorageDir().getAbsolutePath()));
         }
         Caching.getCachingProvider().close();
         Platform.exit();

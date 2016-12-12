@@ -15,52 +15,74 @@
 package richtercloud.document.scanner.gui;
 
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javax.imageio.ImageIO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
 
 /**
  * Quite bad implementation of {@link ImageWrapper} which loads every request
  * from disk and reexecutes every transformation.
  *
+ * Stores files inside directory {@code storageDir} naming them with an
+ * increased counter. Storage fails if {@code storageDir} contains a file with
+ * a name equals to the counter. That means that the directory should be emptied
+ * at application shutdown.
+ *
  * @author richter
  */
+/*
+internal implementation notes:
+- It's not worth storing images on disk using their MD5 hash as filename since
+that only prevents waste of a small amount of disk space until shutdown of the
+application in case more than one ImageWrapper is created for the same
+BufferedImage. Currently instances are only created when needed and references
+passed to data consumers.
+*/
 public class DefaultImageWrapper implements ImageWrapper {
+    private final static Logger LOGGER = LoggerFactory.getLogger(DefaultImageWrapper.class);
+    private static int storageFileNameCounter = 0;
+    static {
+        new JFXPanel();
+            //initialize JavaFX once
+        ImageIO.setUseCache(true);
+            //use ImageIO parallel to the cache implemented in
+            //DefaultImageWrapper because it can't hurt
+        try {
+            File imageIOCacheDir = File.createTempFile("document-scanner-image-io-cache", null);
+            if(!imageIOCacheDir.delete()) {
+                throw new IOException(String.format("deletion of file '%s' failed", imageIOCacheDir.getAbsolutePath()));
+            }
+            if(!imageIOCacheDir.mkdirs()) {
+                throw new IOException(String.format("creation of directory '%s' failed", imageIOCacheDir.getAbsolutePath()));
+            }
+            ImageIO.setCacheDirectory(imageIOCacheDir);
+            LOGGER.debug(String.format("set '%s' as cache directory for ImageIO", imageIOCacheDir.getAbsolutePath()));
+        } catch (IOException ex) {
+            LOGGER.error("creation of ImageIO cache directory failed, skipping setting of cache");
+        }
+    }
     private final File storageFile;
     private final int initialWidth;
     private final int initialHeight;
     private double rotationDegrees;
-    static {
-        new JFXPanel();
-            //initialize JavaFX once
-    }
 
     public DefaultImageWrapper(File storageDir,
             BufferedImage image) throws IOException {
         assert storageDir.exists();
         assert storageDir.isDirectory();
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        ImageIO.write(image, "png", byteArrayOutputStream);
-        byte[] imageBytes = byteArrayOutputStream.toByteArray();
-        byte[] md5Bytes;
-        try {
-            md5Bytes = MessageDigest.getInstance("MD5").digest(imageBytes);
-        } catch (NoSuchAlgorithmException ex) {
-            throw new RuntimeException(ex);
+        synchronized(this) {
+            this.storageFile = new File(storageDir, String.valueOf(storageFileNameCounter));
+            storageFileNameCounter += 1;
         }
-        String md5 = new BigInteger(1,md5Bytes).toString(16);
-            //from http://stackoverflow.com/questions/7776116/java-calculate-md5-hash
-        this.storageFile = new File(storageDir, md5);
+        assert !storageFile.exists();
         ImageIO.write(image, "png", this.storageFile);
         this.initialWidth = image.getWidth();
         this.initialHeight = image.getHeight();
