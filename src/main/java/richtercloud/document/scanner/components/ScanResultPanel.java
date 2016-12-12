@@ -159,14 +159,15 @@ public class ScanResultPanel extends JPanel {
             saveGUI();
         }else {
             this.setEnabled(false);
-            Thread thread = new Thread(() -> {
+            Thread saveScanResultThread = new Thread(() -> {
                 saveNonGUI();
                 SwingUtilities.invokeLater(() -> {
                     saveGUI();
                     ScanResultPanel.this.setEnabled(true);
                 });
-            });
-            thread.start();
+            },
+                    "save-scan-result-thread");
+            saveScanResultThread.start();
         }
     }
 

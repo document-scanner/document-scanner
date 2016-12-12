@@ -61,7 +61,8 @@ public class DelegatingAutoOCRValueDetectionService extends AbstractAutoOCRValue
                     }
                 }
             };
-            Thread thread = new Thread(runnable);
+            Thread thread = new Thread(runnable,
+                    "delegating-auto-value-detection-service-thread");
             thread.start();
             threads.add(thread);
         }

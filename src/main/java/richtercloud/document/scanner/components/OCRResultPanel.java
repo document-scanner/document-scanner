@@ -219,7 +219,7 @@ public class OCRResultPanel extends JPanel {
                 public String doInBackground() {
                     oCRResultPanelFetcher.addProgressListener(progressListener);
                     try {
-                        Thread thread1 = new Thread() {
+                        Thread oCRResultPanelFetchThread = new Thread("ocr-result-panel-fetcher-thread") {
                             @Override
                             public void run() {
                                 while(!isDone()) {
@@ -236,7 +236,7 @@ public class OCRResultPanel extends JPanel {
                                 }
                             }
                         };
-                        thread1.start();
+                        oCRResultPanelFetchThread.start();
                         String retValue = oCRResultPanelFetcher.fetch();
                         return retValue;
                     }catch(Exception ex) {

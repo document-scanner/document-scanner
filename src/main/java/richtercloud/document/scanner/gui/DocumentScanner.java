@@ -50,6 +50,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReentrantLock;
+import javafx.application.Platform;
+import javax.cache.Caching;
 import javax.persistence.EntityManager;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultComboBoxModel;
@@ -490,6 +492,10 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         if(this.storage != null) {
             this.storage.shutdown();
         }
+        Caching.getCachingProvider().close();
+        Platform.exit();
+            //necessary in order to prevent hanging after all shutdown hooks
+            //have been processed
         close();
         LOGGER.info(String.format("shutdown hooks in %s finished", DocumentScanner.class));
     }
@@ -497,7 +503,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     /**
      * Start to fetch results and warm up the cache after start.
      */
-    private final Thread amountMoneyExchangeRetrieverInitThread = new Thread() {
+    private final Thread amountMoneyExchangeRetrieverInitThread = new Thread("amount-money-exchange-rate-retriever-init-thread") {
         @Override
         public void run() {
             LOGGER.debug("Starting prefetching of currency exchange rates in "
@@ -520,7 +526,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     internal implementatio notes:
     - not necessary that this is a property, but kept as such for convenience.
     */
-    private final Thread cachingImageWrapperInitThread = new Thread() {
+    private final Thread cachingImageWrapperInitThread = new Thread("caching-image-wrapper-init-thread") {
         @Override
         public void run() {
             try {
