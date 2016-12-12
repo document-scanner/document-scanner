@@ -16,8 +16,6 @@ package richtercloud.document.scanner.gui;
 
 import java.awt.Dimension;
 import java.awt.Window;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -27,7 +25,6 @@ import javafx.embed.swing.JFXPanel;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
-import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -57,14 +54,6 @@ import richtercloud.document.scanner.ifaces.ImageWrapper;
  * scan results. Callers can open a document tag for each document.
  * @author richter
  */
-/*
-internal implementation notes:
-- asked http://stackoverflow.com/questions/41034366/how-to-provide-javafx-components-in-a-dialog-in-a-swing-application
-for solution about layout problem (JavaFX ScrollPanes don't work) (neither
-putting mainPanel in a JScrollPane doesn't help nor removing components outside
-mainPanel (cancel and open button, see example reference in SO question for
-proof)
-*/
 public class ScannerResultDialog extends JDialog {
     private static final long serialVersionUID = 1L;
     private final static Logger LOGGER = LoggerFactory.getLogger(ScannerResultDialog.class);
@@ -325,9 +314,9 @@ public class ScannerResultDialog extends JDialog {
             rightPane.setBottom(buttonPaneRight);
             splitPane.getItems().addAll(leftPane,
                     rightPane);
-            Group  root  =  new  Group();
-            Scene  scene  =  new  Scene(root, Color.ALICEBLUE);
-            root.getChildren().add(splitPane);
+            Scene  scene  =  new  Scene(splitPane, Color.ALICEBLUE);
+            //putting splitPane inside a Group causes JFXPanel to be not resized
+            //<ref>http://stackoverflow.com/questions/41034366/how-to-provide-javafx-components-in-a-dialog-in-a-swing-application/41047426#41047426</ref>
             mainPanel.setScene(scene);
         });
 
@@ -358,19 +347,6 @@ public class ScannerResultDialog extends JDialog {
             this.sortedDocuments = new LinkedList<>();
             this.documentPane.getDocumentNodes().forEach((ImageViewPane imageViewPane) -> this.sortedDocuments.add(imageViewPane.getScanResults()));
             this.setVisible(false);
-        });
-
-        //since GroupLayout's resize capabilities have no effect on JFXPanel
-        //the following extremely hacky workaround has to be used @TODO:
-        //create minimal example and ask on SO
-        this.addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(ComponentEvent e) {
-                Platform.runLater(() -> {
-                    ScannerResultDialog.this.splitPane.setPrefSize(getWidth()-10,
-                            getHeight()-40);
-                });
-            }
         });
     }
 
