@@ -1437,7 +1437,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         documentScanner.shutdownHook();
                         documentScanner.dispose();
                     }
-                } catch(StorageConfInitializationException ex) {
+                } catch(StorageConfInitializationException | StorageCreationException ex) {
                     LOGGER.error("An unexpected exception during initialization of storage occured, see nested exception for details", ex);
                     messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
                     if(documentScanner != null) {
