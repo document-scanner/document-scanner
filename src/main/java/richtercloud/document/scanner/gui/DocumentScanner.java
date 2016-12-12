@@ -56,8 +56,6 @@ import javax.persistence.EntityManager;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListCellRenderer;
-import javax.swing.GroupLayout;
-import javax.swing.GroupLayout.Alignment;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JList;
@@ -404,39 +402,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         return retValue;
     }
 
-    private void onDeviceSet() {
-        assert this.scannerDevice != null;
-        this.scannerLabel.setText(this.scannerDevice.toString());
-        GroupLayout layout = new GroupLayout(this.statusBar);
-        GroupLayout.SequentialGroup hGroup = layout.createSequentialGroup();
-        hGroup.addGroup(layout.createParallelGroup().
-                addComponent(this.scannerLabel));
-        layout.setHorizontalGroup(hGroup);
-        GroupLayout.SequentialGroup vGroup = layout.createSequentialGroup();
-        vGroup.addGroup(layout.createParallelGroup(Alignment.BASELINE).
-                addComponent(this.scannerLabel));
-        layout.setVerticalGroup(vGroup);
-        this.statusBar.setLayout(layout);
-        this.pack();
-        this.invalidate();
-    }
-
-    private void onDeviceUnset() {
-        assert this.scannerDevice == null;
-        GroupLayout layout = new GroupLayout(this.statusBar);
-        GroupLayout.SequentialGroup hGroup = layout.createSequentialGroup();
-        hGroup.addGroup(layout.createParallelGroup().
-                addComponent(this.scannerLabel).addComponent(this.selectScannerButton));
-        layout.setHorizontalGroup(hGroup);
-        GroupLayout.SequentialGroup vGroup = layout.createSequentialGroup();
-        vGroup.addGroup(layout.createParallelGroup(Alignment.BASELINE).
-                addComponent(this.scannerLabel).addComponent(this.selectScannerButton));
-        layout.setVerticalGroup(vGroup);
-        this.statusBar.setLayout(layout);
-        this.pack();
-        this.invalidate();
-    }
-
     private void afterScannerSelection() {
         this.scanMenuItem.setEnabled(true);
         this.scanMenuItem.getParent().revalidate();
@@ -578,7 +543,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             throw new RuntimeException(ex);
         }
 
-        this.onDeviceUnset();
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
@@ -714,8 +678,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        scannerLabel = new javax.swing.JLabel();
-        selectScannerButton = new javax.swing.JButton();
         oCRDialog = new javax.swing.JDialog();
         oCRDialogEngineComboBox = new javax.swing.JComboBox<>();
         oCRDialogEngineLabel = new javax.swing.JLabel();
@@ -723,7 +685,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         oCRDialogPanel = new javax.swing.JPanel();
         oCRDialogCancelButton = new javax.swing.JButton();
         oCRDialogSaveButton = new javax.swing.JButton();
-        statusBar = new javax.swing.JPanel();
         mainPanelPanel = new javax.swing.JPanel();
         mainMenuBar = new javax.swing.JMenuBar();
         fileMenu = new javax.swing.JMenu();
@@ -749,15 +710,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         aboutMenuItem = new javax.swing.JMenuItem();
         toolsMenu = new javax.swing.JMenu();
         optionsMenuItem = new javax.swing.JMenuItem();
-
-        scannerLabel.setText("No scanner selected");
-
-        selectScannerButton.setText("Select Scanner");
-        selectScannerButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                selectScannerButtonActionPerformed(evt);
-            }
-        });
 
         oCRDialog.setTitle(DocumentScanner.generateApplicationWindowTitle("OCR setup", APP_NAME, APP_VERSION));
         oCRDialog.setModal(true);
@@ -835,17 +787,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         );
         setBounds(new java.awt.Rectangle(0, 0, 800, 600));
         setSize(new java.awt.Dimension(800, 600));
-
-        javax.swing.GroupLayout statusBarLayout = new javax.swing.GroupLayout(statusBar);
-        statusBar.setLayout(statusBarLayout);
-        statusBarLayout.setHorizontalGroup(
-            statusBarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 800, Short.MAX_VALUE)
-        );
-        statusBarLayout.setVerticalGroup(
-            statusBarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 23, Short.MAX_VALUE)
-        );
 
         mainPanelPanel.setLayout(new java.awt.BorderLayout());
 
@@ -972,15 +913,11 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(statusBar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addComponent(mainPanelPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(mainPanelPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 800, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addComponent(mainPanelPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 437, Short.MAX_VALUE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(statusBar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+            .addComponent(mainPanelPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 472, Short.MAX_VALUE)
         );
 
         pack();
@@ -992,10 +929,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         this.shutdownHook();
         this.dispose();
     }//GEN-LAST:event_exitMenuItemActionPerformed
-
-    private void selectScannerButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectScannerButtonActionPerformed
-
-    }//GEN-LAST:event_selectScannerButtonActionPerformed
 
     private void scanMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_scanMenuItemActionPerformed
         this.scan();
@@ -1499,11 +1432,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private javax.swing.JMenuItem optionsMenuItem;
     private javax.swing.JMenuItem saveMenuItem;
     private javax.swing.JMenuItem scanMenuItem;
-    private javax.swing.JLabel scannerLabel;
     private javax.swing.JMenu scannerSelectionMenu;
-    private javax.swing.JButton selectScannerButton;
     private javax.swing.JMenuItem selectScannerMenuItem;
-    private javax.swing.JPanel statusBar;
     private javax.swing.JMenu storageSelectionMenu;
     private javax.swing.JMenuItem storageSelectionMenuItem;
     private javax.swing.JMenu toolsMenu;
