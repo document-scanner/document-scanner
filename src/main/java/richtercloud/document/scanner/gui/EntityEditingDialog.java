@@ -184,7 +184,7 @@ public class EntityEditingDialog extends javax.swing.JDialog {
                 }
             }
         });
-        List<Class<?>> entityClassesSort = DefaultEntityPanel.sortEntityClasses(entityClasses);
+        List<Class<?>> entityClassesSort = Tools.sortEntityClasses(entityClasses);
         for(Class<?> entityClass : entityClassesSort) {
             this.entityEditingClassComboBoxModel.addElement(entityClass);
         }

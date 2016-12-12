@@ -85,7 +85,6 @@ import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrency
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyUsageStatisticsStorage;
 import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
-import richtercloud.reflection.form.builder.fieldhandler.FieldHandlingException;
 import richtercloud.reflection.form.builder.fieldhandler.MappingFieldHandler;
 import richtercloud.reflection.form.builder.fieldhandler.factory.AmountMoneyMappingFieldHandlerFactory;
 import richtercloud.reflection.form.builder.jpa.JPACachedFieldRetriever;
@@ -651,44 +650,14 @@ public class DefaultMainPanel extends MainPanel {
                     warningHandlers
             );
 
-            Map<Class<?>, ReflectionFormPanel<?>> reflectionFormPanelMap = new HashMap<>();
+            ReflectionFormPanelTabbedPane reflectionFormPanelTabbedPane =
+                    new ReflectionFormPanelTabbedPane(entityClasses,
+                            primaryClassSelection,
+                            reflectionFormBuilder,
+                            fieldHandler);
             Set<Class<?>> entityClasses0;
             Class<?> primaryClassSelection0;
             if(entityToEdit == null) {
-                for(Class<?> entityClass : entityClasses) {
-                    //There's no way to parallelize creation of
-                    //ReflectionFormPanels here because creation has to occur on
-                    //EDT
-                    ReturnValue<Exception> innerEx = new ReturnValue<>();
-                    SwingUtilities.invokeAndWait(() -> {
-                        ReflectionFormPanel reflectionFormPanel;
-                        try {
-                            reflectionFormPanel = reflectionFormBuilder.transformEntityClass(entityClass,
-                                    null, //entityToUpdate
-                                    false, //editingMode
-                                    fieldHandler
-                            );
-                            reflectionFormPanelMap.put(entityClass, reflectionFormPanel);
-                        } catch (FieldHandlingException ex) {
-                            String message = String.format("An exception during creation of components occured (details: %s)",
-                                    ex.getMessage());
-                            JOptionPane.showMessageDialog(DefaultMainPanel.this,
-                                    message,
-                                    DocumentScanner.generateApplicationWindowTitle("Exception",
-                                            DocumentScanner.APP_NAME,
-                                            DocumentScanner.APP_VERSION),
-                                    JOptionPane.WARNING_MESSAGE);
-                            LOGGER.error(message, ex);
-                            innerEx.setValue(ex);
-                        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException ex) {
-                            throwDocumentAddException(progressMonitor);
-                            innerEx.setValue(ex);
-                        }
-                    });
-                    if(innerEx.getValue() != null) {
-                        throw innerEx.getValue();
-                    }
-                }
                 entityClasses0 = entityClasses;
                 primaryClassSelection0 = this.primaryClassSelection;
             }else {
@@ -697,13 +666,12 @@ public class DefaultMainPanel extends MainPanel {
                         true, //editingMode
                         fieldHandler
                 );
-                reflectionFormPanelMap.put(entityToEdit.getClass(), reflectionFormPanel);
                 entityClasses0 = new HashSet<>(Arrays.asList(entityToEdit.getClass()));
                 primaryClassSelection0 = entityToEdit.getClass();
             }
 
             OCRPanel oCRPanel = new DefaultOCRPanel(entityClasses0,
-                    reflectionFormPanelMap,
+                    reflectionFormPanelTabbedPane,
                     valueSetterMapping,
                     storage,
                     messageHandler,
@@ -711,7 +679,6 @@ public class DefaultMainPanel extends MainPanel {
                     documentScannerConf);
             EntityPanel entityPanel = new DefaultEntityPanel(entityClasses0,
                     primaryClassSelection0,
-                    reflectionFormPanelMap,
                     valueSetterMapping,
                     oCRResultPanelFetcher,
                     scanResultPanelFetcher,
@@ -719,8 +686,10 @@ public class DefaultMainPanel extends MainPanel {
                     amountMoneyCurrencyStorage,
                     amountMoneyExchangeRateRetriever,
                     reflectionFormBuilder,
+                    fieldHandler,
                     messageHandler,
-                    documentScannerConf);
+                    documentScannerConf,
+                    reflectionFormPanelTabbedPane);
             OCRSelectComponent oCRSelectComponent = new DefaultOCRSelectComponent(oCRSelectPanelPanel,
                     entityPanel,
                     oCREngineFactory,

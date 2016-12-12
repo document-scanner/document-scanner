@@ -23,11 +23,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import richtercloud.document.scanner.components.AutoOCRValueDetectionPanel;
-import richtercloud.document.scanner.gui.ocrresult.OCRResult;
 import richtercloud.document.scanner.setter.ValueSetter;
-import richtercloud.reflection.form.builder.ClassInfo;
-import richtercloud.reflection.form.builder.FieldInfo;
 import richtercloud.reflection.form.builder.ReflectionFormBuilder;
 import richtercloud.reflection.form.builder.ReflectionFormPanel;
 
@@ -70,56 +66,15 @@ public abstract class AbstractFieldPopupMenuFactory {
      * @return the generated menu items
      */
     public List<JMenuItem> createFieldPopupMenuItems(List<Class<?>> entityClassesSort,
-            Map<Class<?>, ReflectionFormPanel<?>> reflectionFormPanelMap,
+            ReflectionFormPanelTabbedPane reflectionFormPanelMap,
             ReflectionFormBuilder reflectionFormBuilder) {
         List<JMenuItem> retValue = new LinkedList<>();
         for(Class<?> entityClass : entityClassesSort) {
-            ReflectionFormPanel<?> reflectionFormPanel = reflectionFormPanelMap.get(entityClass);
-            if(reflectionFormPanel == null) {
-                throw new IllegalArgumentException(String.format("entityClass %s has no %s mapped in reflectionFormPanelMap",
-                        entityClass,
-                        ReflectionFormPanel.class));
-            }
-            String className;
-            ClassInfo classInfo = entityClass.getAnnotation(ClassInfo.class);
-            if(classInfo != null) {
-                className = classInfo.name();
-            }else {
-                className = entityClass.getSimpleName();
-            }
-            JMenu entityClassMenu = new JMenu(className);
-            List<Field> relevantFields = reflectionFormBuilder.getFieldRetriever().retrieveRelevantFields(entityClass);
-            for(Field relevantField : relevantFields) {
-                JComponent relevantFieldComponent = reflectionFormPanel.getComponentByField(relevantField);
-                assert relevantFieldComponent instanceof AutoOCRValueDetectionPanel;
-                AutoOCRValueDetectionPanel autoOCRValueDetectionPanel = (AutoOCRValueDetectionPanel) relevantFieldComponent;
-                JComponent autoOCRValueDetectionPanelComponent = autoOCRValueDetectionPanel.getClassComponent();
-                ValueSetter relevantFieldValueSetter = valueSetterMapping.get(autoOCRValueDetectionPanelComponent.getClass());
-                if(relevantFieldValueSetter == null) {
-                    LOGGER.debug(String.format("skipping field %s because it doesn't have a %s mapped",
-                            relevantField,
-                            ValueSetter.class));
-                    continue;
-                }
-                if(!relevantFieldValueSetter.isSupportsOCRResultSetting()) {
-                    LOGGER.debug(String.format("skipping field %s because its %s doesn't support setting %ss",
-                            relevantField,
-                            ValueSetter.class,
-                            OCRResult.class));
-                    continue;
-                }
-                String fieldName;
-                FieldInfo fieldInfo = relevantField.getAnnotation(FieldInfo.class);
-                if(fieldInfo != null) {
-                    fieldName = fieldInfo.name();
-                }else {
-                    fieldName = relevantField.getName();
-                }
-                JMenuItem relevantFieldMenuItem = new JMenuItem(fieldName);
-                relevantFieldMenuItem.addActionListener(createFieldActionListener(relevantField,
-                        reflectionFormPanel));
-                entityClassMenu.add(relevantFieldMenuItem);
-            }
+            JMenu entityClassMenu = new EntityClassMenu(entityClass,
+                    reflectionFormBuilder,
+                    reflectionFormPanelMap,
+                    valueSetterMapping,
+                    this);
             retValue.add(entityClassMenu);
         }
         return retValue;

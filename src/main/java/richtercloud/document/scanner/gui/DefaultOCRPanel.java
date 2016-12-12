@@ -40,7 +40,6 @@ import richtercloud.document.scanner.ifaces.OCRPanel;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.ReflectionFormBuilder;
-import richtercloud.reflection.form.builder.ReflectionFormPanel;
 import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 
 /**
@@ -90,7 +89,7 @@ public class DefaultOCRPanel extends OCRPanel {
      * the context menu items
      */
     public DefaultOCRPanel(Set<Class<?>> entityClasses,
-            Map<Class<?>, ReflectionFormPanel<?>> reflectionFormPanelMap,
+            ReflectionFormPanelTabbedPane reflectionFormPanelTabbedPane,
             Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping,
             PersistenceStorage storage,
             MessageHandler messageHandler,
@@ -106,7 +105,7 @@ public class DefaultOCRPanel extends OCRPanel {
                     + "null");
         }
         this.documentScannerConf = documentScannerConf;
-        List<Class<?>> entityClassesSort = DefaultEntityPanel.sortEntityClasses(entityClasses);
+        List<Class<?>> entityClassesSort = Tools.sortEntityClasses(entityClasses);
         FormatOCRFieldMenuPopupFactory oCRFieldMenuPopupFactory = new FormatOCRFieldMenuPopupFactory(numberFormatPopupButtonGroup,
                 percentFormatPopupButtonGroup,
                 currencyFormatPopupButtonGroup,
@@ -117,7 +116,7 @@ public class DefaultOCRPanel extends OCRPanel {
                 messageHandler,
                 valueSetterMapping);
         List<JMenuItem> oCRResultPopupPasteIntoMenuItems = oCRFieldMenuPopupFactory.createFieldPopupMenuItems(entityClassesSort,
-                reflectionFormPanelMap,
+                reflectionFormPanelTabbedPane,
                 reflectionFormBuilder);
         for(JMenuItem oCRResultPopupPasteIntoMenuItem : oCRResultPopupPasteIntoMenuItems) {
             oCRResultPopupPasteIntoMenu.add(oCRResultPopupPasteIntoMenuItem);

@@ -16,20 +16,14 @@ package richtercloud.document.scanner.gui;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URL;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import javax.swing.DefaultComboBoxModel;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JOptionPane;
-import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.SwingWorker;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -38,7 +32,6 @@ import richtercloud.document.scanner.components.AutoOCRValueDetectionReflectionF
 import richtercloud.document.scanner.components.OCRResultPanelFetcher;
 import richtercloud.document.scanner.components.ScanResultPanelFetcher;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
-import richtercloud.document.scanner.ifaces.Constants;
 import richtercloud.document.scanner.ifaces.EntityPanel;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcher;
 import richtercloud.document.scanner.setter.ValueSetter;
@@ -47,29 +40,17 @@ import richtercloud.document.scanner.valuedetectionservice.AutoOCRValueDetection
 import richtercloud.document.scanner.valuedetectionservice.AutoOCRValueDetectionServiceUpdateListener;
 import richtercloud.document.scanner.valuedetectionservice.DelegatingAutoOCRValueDetectionService;
 import richtercloud.message.handler.MessageHandler;
-import richtercloud.reflection.form.builder.ClassInfo;
-import richtercloud.reflection.form.builder.ReflectionFormPanel;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyUsageStatisticsStorage;
+import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
 import richtercloud.swing.worker.get.wait.dialog.SwingWorkerCompletionWaiter;
 import richtercloud.swing.worker.get.wait.dialog.SwingWorkerGetWaitDialog;
 
 /**
- * Contains the {@link ReflectionFormPanel}s to
- * create or edit entities (including a  {@link JRadioButton} to switch between
- * creation and editing mode).
+ *
  * @author richter
  */
-/*
-internal implementation notes:
-- it's legitimate that QueryPanel enforces it's entityClass property to be
-non-null -> don't initialize it because it's used in the GUI builder, but add a
-placeholder panel entityEditingQueryPanelPanel
-- adding JScrollPanes to a JSplitPanel causes trouble with left and right
-component -> add two panels as left and right component and move components
-between them
-*/
 public class DefaultEntityPanel extends EntityPanel {
     private static final long serialVersionUID = 1L;
     private final static Logger LOGGER = LoggerFactory.getLogger(DefaultEntityPanel.class);
@@ -78,17 +59,14 @@ public class DefaultEntityPanel extends EntityPanel {
     private final AutoOCRValueDetectionReflectionFormBuilder reflectionFormBuilder;
     private final Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping;
     private final MessageHandler messageHandler;
-    private final Map<Class<?>, ReflectionFormPanel<?>> reflectionFormPanelMap;
     private final DocumentScannerConf documentScannerConf;
+    private ReflectionFormPanelTabbedPane entityCreationTabbedPane;
 
     /**
      * Creates new form EntityPanel
-     * @param reflectionFormPanelMap allows sharing of already generated
-     * {@link ReflectionFormPanel}s
      */
     public DefaultEntityPanel(Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
-            Map<Class<?>, ReflectionFormPanel<?>> reflectionFormPanelMap,
             Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping,
             final OCRResultPanelFetcher oCRResultPanelRetriever,
             final ScanResultPanelFetcher scanResultPanelRetriever,
@@ -96,12 +74,18 @@ public class DefaultEntityPanel extends EntityPanel {
             AmountMoneyCurrencyStorage amountMoneyAdditionalCurrencyStorage,
             AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever,
             AutoOCRValueDetectionReflectionFormBuilder reflectionFormBuilder,
+            FieldHandler fieldHandler,
             MessageHandler messageHandler,
-            DocumentScannerConf documentScannerConf) throws InstantiationException,
+            DocumentScannerConf documentScannerConf,
+            ReflectionFormPanelTabbedPane reflectionFormPanelTabbedPane) throws InstantiationException,
             IllegalAccessException,
             IllegalArgumentException,
             InvocationTargetException,
             NoSuchMethodException {
+        if(fieldHandler == null) {
+            throw new IllegalArgumentException("fieldHandler mustn't be null");
+        }
+        entityCreationTabbedPane = reflectionFormPanelTabbedPane;
         this.initComponents();
         if(entityClasses == null) {
             throw new IllegalArgumentException("entityClasses mustn't be null");
@@ -125,54 +109,16 @@ public class DefaultEntityPanel extends EntityPanel {
             throw new IllegalArgumentException("messageHandler mustn't be null");
         }
         this.messageHandler = messageHandler;
-        this.reflectionFormPanelMap = reflectionFormPanelMap;
         if(documentScannerConf == null) {
             throw new IllegalArgumentException("documentScannerConf mustn't be null");
         }
         this.documentScannerConf = documentScannerConf;
         this.autoOCRValueDetectionService = new DelegatingAutoOCRValueDetectionService(amountMoneyAdditionalCurrencyStorage,
                 amountMoneyExchangeRateRetriever);
-        List<Class<?>> entityClassesSort = sortEntityClasses(entityClasses);
-        for(Class<?> entityClass : entityClassesSort) {
-            ReflectionFormPanel reflectionFormPanel = reflectionFormPanelMap.get(entityClass);
-            if(reflectionFormPanel == null) {
-                throw new IllegalArgumentException(String.format("entityClass %s has no %s mapped in reflectionFormPanelMap",
-                        entityClass,
-                        ReflectionFormPanel.class));
-            }
-            JScrollPane reflectionFormPanelScrollPane = new JScrollPane(reflectionFormPanel);
-            reflectionFormPanelScrollPane.getVerticalScrollBar().setUnitIncrement(Constants.DEFAULT_SCROLL_INTERVAL);
-            reflectionFormPanelScrollPane.getHorizontalScrollBar().setUnitIncrement(Constants.DEFAULT_SCROLL_INTERVAL);
-            String newTabTip = null;
-            Icon newTabIcon = null;
-            ClassInfo entityClassClassInfo = entityClass.getAnnotation(ClassInfo.class);
-            if(entityClassClassInfo != null) {
-                newTabTip = entityClassClassInfo.description();
-                String newTabIconResourcePath = entityClassClassInfo.iconResourcePath();
-                if(!newTabIconResourcePath.isEmpty()) {
-                    URL newTabIconURL = Thread.currentThread().getContextClassLoader().getResource(newTabIconResourcePath);
-                    newTabIcon = new ImageIcon(newTabIconURL);
-                }
-            }
-            this.entityCreationTabbedPane.insertTab(createClassTabTitle(entityClass),
-                    newTabIcon,
-                    reflectionFormPanelScrollPane,
-                    newTabTip,
-                    this.entityCreationTabbedPane.getTabCount()
-            );
-        }
-        this.entityCreationTabbedPane.setSelectedIndex(this.entityCreationTabbedPane.indexOfTab(createClassTabTitle(primaryClassSelection)));
     }
 
-    private String createClassTabTitle(Class<?> entityClass) {
-        String retValue;
-        ClassInfo entityClassClassInfo = entityClass.getAnnotation(ClassInfo.class);
-        if(entityClassClassInfo != null) {
-            retValue = entityClassClassInfo.name();
-        }else {
-            retValue = entityClass.getSimpleName();
-        }
-        return retValue;
+    public JTabbedPane getEntityCreationTabbedPane() {
+        return entityCreationTabbedPane;
     }
 
     /**
@@ -244,42 +190,7 @@ public class DefaultEntityPanel extends EntityPanel {
         }
     }
 
-    public static List<Class<?>> sortEntityClasses(Set<Class<?>> entityClasses) {
-        List<Class<?>> entityClassesSort = new LinkedList<>(entityClasses);
-        Collections.sort(entityClassesSort, new Comparator<Class<?>>() {
-            @Override
-            public int compare(Class<?> o1, Class<?> o2) {
-                String o1Value;
-                ClassInfo o1ClassInfo = o1.getAnnotation(ClassInfo.class);
-                if(o1ClassInfo != null) {
-                    o1Value = o1ClassInfo.name();
-                }else {
-                    o1Value = o1.getSimpleName();
-                }
-                String o2Value;
-                ClassInfo o2ClassInfo = o2.getAnnotation(ClassInfo.class);
-                if(o2ClassInfo != null) {
-                    o2Value = o2ClassInfo.name();
-                }else {
-                    o2Value = o2.getSimpleName();
-                }
-                return o1Value.compareTo(o2Value);
-            }
-        });
-        return entityClassesSort;
-    }
-
-    /**
-     * This method is called from within the constructor to initialize the form.
-     * WARNING: Do NOT modify this code. The content of this method is always
-     * regenerated by the Form Editor.
-     */
-    @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
-
-        entityCreationTabbedPane = new javax.swing.JTabbedPane();
-
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -290,9 +201,5 @@ public class DefaultEntityPanel extends EntityPanel {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(entityCreationTabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 347, Short.MAX_VALUE)
         );
-    }// </editor-fold>//GEN-END:initComponents
-
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JTabbedPane entityCreationTabbedPane;
-    // End of variables declaration//GEN-END:variables
+    }
 }
