@@ -17,9 +17,11 @@ package richtercloud.document.scanner.model;
 import java.util.Date;
 import java.util.List;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.Inheritance;
 import javax.persistence.OneToOne;
 import richtercloud.reflection.form.builder.ClassInfo;
+import richtercloud.reflection.form.builder.FieldInfo;
 
 /**
  * Wraps the relationship between {@link Employment} and {@link Document}.
@@ -30,7 +32,9 @@ import richtercloud.reflection.form.builder.ClassInfo;
 @ClassInfo(name="Withdrawal")
 public class Withdrawal extends Document {
     private static final long serialVersionUID = 1L;
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
+    @FieldInfo(name = "Employment", description = "The employment which has "
+            + "been ended through this withdrawal")
     private Employment employment;
 
     protected Withdrawal() {

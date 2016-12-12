@@ -65,7 +65,7 @@ public class TelephoneNumber extends Identifiable {
      */
     @Min(0)
     @Basic(fetch = FetchType.LAZY)
-    @FieldInfo(name = "prefix", description = "The prefix of the number (can "
+    @FieldInfo(name = "Prefix", description = "The prefix of the number (can "
             + "have different meaning for different countries)")
     private int thePrefix;
     /**
@@ -75,7 +75,7 @@ public class TelephoneNumber extends Identifiable {
      */
     @Min(0)
     @Basic(fetch = FetchType.LAZY)
-    @FieldInfo(name = "number", description = "The remaining part of the "
+    @FieldInfo(name = "Number", description = "The remaining part of the "
             + "number after the prefix (including room numbers or prefix and "
             + "suffix in USA)")
     private int number;
@@ -92,7 +92,8 @@ public class TelephoneNumber extends Identifiable {
      * One of {@link #TYPE_FAX}, {@link #TYPE_LANDLINE} or {@link #TYPE_VOIP} to
      * indicate communication facilities.
      */
-    @Basic
+    @Basic(fetch = FetchType.LAZY)
+    @FieldInfo(name = "Type", description =  "The type of the telephone number")
     private int type;
 
     protected TelephoneNumber() {

@@ -17,9 +17,11 @@ package richtercloud.document.scanner.model;
 import java.util.LinkedList;
 import java.util.List;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.Inheritance;
 import javax.persistence.OneToMany;
 import richtercloud.reflection.form.builder.ClassInfo;
+import richtercloud.reflection.form.builder.FieldInfo;
 
 /**
  *
@@ -30,7 +32,9 @@ import richtercloud.reflection.form.builder.ClassInfo;
 @ClassInfo(name="Workflow")
 public class Workflow extends Identifiable {
     private static final long serialVersionUID = 1L;
-    @OneToMany
+    @OneToMany(fetch = FetchType.LAZY)
+    @FieldInfo(name = "Items", description = "The items which make up this "
+            + "workflow")
     private List<WorkflowItem> items = new LinkedList<>();
 
     protected Workflow() {

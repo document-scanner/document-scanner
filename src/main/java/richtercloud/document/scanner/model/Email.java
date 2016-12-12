@@ -18,10 +18,12 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.Inheritance;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import richtercloud.reflection.form.builder.ClassInfo;
+import richtercloud.reflection.form.builder.FieldInfo;
 
 /**
  *
@@ -32,11 +34,14 @@ import richtercloud.reflection.form.builder.ClassInfo;
 @ClassInfo(name="Email")
 public class Email extends WorkflowItem {
     private static final long serialVersionUID = 1L;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @FieldInfo(name = "Sender address", description = "The email address of the sender")
     private EmailAddress senderAddress;
-    @OneToMany
+    @OneToMany(fetch = FetchType.LAZY)
+    @FieldInfo(name = "CC recipients", description = "The email addresses of CC recipients")
     private List<EmailAddress> ccRecipientAddresses = new LinkedList<>();
-    @OneToMany
+    @OneToMany(fetch = FetchType.LAZY)
+    @FieldInfo(name = "BCC recipients", description = "The email addresses of BCC recipients")
     private List<EmailAddress> bccRecipientAddresses = new LinkedList<>();
 
     protected Email() {
