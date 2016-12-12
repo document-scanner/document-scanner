@@ -1253,7 +1253,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         try {
             return worker.get();
         } catch (InterruptedException | ExecutionException ex) {
-            throw new RuntimeException(ex);
+            messageHandler.handle(new Message(ex.getCause(), JOptionPane.ERROR_MESSAGE));
+            return null;
         }
     }
 
@@ -1265,7 +1266,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             }
             List<ImageWrapper> scannedImages = retrieveImages();
             if(scannedImages == null) {
-                //canceled
+                //canceled or exception which has been handled inside retrieveImages
                 return;
             }
             if(!scannedImages.isEmpty()) {
