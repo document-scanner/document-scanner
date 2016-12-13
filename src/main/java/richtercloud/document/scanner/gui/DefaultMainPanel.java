@@ -134,23 +134,15 @@ long as no problem occurs
 - zooming: There's been a method adjustZoomLevels in 24bb703 which calculated
 the number of zoom steps in order to approach a specific width as close as
 possible. It has been removed because calculating the width is easier to manage.
+- The ReflectionFormPanel generation can't be handled on a separate thread
+(SwingWorker or else) because it involves adding GUI components and thus needs
+be done on the EDT. If cancelation ever becomes an absolute must-have, non-GUI
+and GUI actions have to be strictly separated (eventually in
+reflection-form-builder as well) and be run in workers and on EDT.
 */
 public class DefaultMainPanel extends MainPanel {
     private static final long serialVersionUID = 1L;
     private final static Logger LOGGER = LoggerFactory.getLogger(DefaultMainPanel.class);
-    /**
-     * indicates that {@link #addDocument(java.util.List, java.io.File) } ought
-     * to be handled in another thread while a {@link ProgressMonitor} dialog
-     * is displayed. If {@code ADD_DOCUMENT_ASYNC} is {@code false}
-     * {@link #addDocument(java.util.List, java.io.File) } isn't cancelable and
-     * will block the GUI.
-     */
-    /*
-    internal implementation notes:
-    - whilst this is used for debugging purposes mostly, it's useful to keep and
-    almost costs nothing
-    */
-    private static final boolean ADD_DOCUMENT_ASYNC = true;
     /**
      * Holds information which are necessary to adjust docked windows when
      * switching the document in the document tab dock. Store whole components
@@ -464,60 +456,13 @@ public class DefaultMainPanel extends MainPanel {
     public void addDocument (final List<ImageWrapper> images,
             final File documentFile,
             final Object entityToEdit) throws DocumentAddException, IOException {
-        if(ADD_DOCUMENT_ASYNC) {
-            final ProgressMonitor progressMonitor = new ProgressMonitor(this, //parent
-                    "Generating new document tab", //message
-                    null, //note
-                    0, //min
-                    100 //max
-            );
-            progressMonitor.setMillisToPopup(0);
-            progressMonitor.setMillisToDecideToPopup(0);
-            final SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
-                private Pair<OCRSelectComponent, EntityPanel> createdOCRSelectComponentPair;
-
-                @Override
-                protected Void doInBackground() throws Exception {
-                    this.createdOCRSelectComponentPair = addDocumentRoutine(images,
-                            documentFile,
-                            entityToEdit,
-                            progressMonitor);
-                    return null;
-                }
-
-                @Override
-                protected void done() {
-                    if(!progressMonitor.isCanceled()) {
-                        try {
-                            addDocumentDone(this.createdOCRSelectComponentPair.getKey(),
-                                    this.createdOCRSelectComponentPair.getValue());
-                            //since SwingWorker.done is executed on the EVT
-                            //(according to Javadoc), it should be fine to call
-                            //addDocumentDone here
-                        } catch (IOException ex) {
-                            throw new RuntimeException(ex);
-                        }
-                    }
-                    progressMonitor.close(); //- need to close explicitly
-                        //because progress isn't set
-                        //- only close after document has actually has been
-                        //added (pressing the cancel button then has no effect,
-                        //but that should be fine)
-                }
-            };
-            worker.execute();
-            progressMonitor.setProgress(1); //ProgressMonitor dialog doesn't
-                //block the thread, but the GUI until SwingWorker.done is
-                //invoked (automatically)
-        }else {
-            Pair<OCRSelectComponent, EntityPanel> oCRSelectComponentPair = addDocumentRoutine(images,
-                    documentFile,
-                    entityToEdit,
-                    null //progressMonitor
-            );
-            addDocumentDone(oCRSelectComponentPair.getKey(),
-                    oCRSelectComponentPair.getValue());
-        }
+        Pair<OCRSelectComponent, EntityPanel> oCRSelectComponentPair = addDocumentRoutine(images,
+                documentFile,
+                entityToEdit,
+                null //progressMonitor
+        );
+        addDocumentDone(oCRSelectComponentPair.getKey(),
+                oCRSelectComponentPair.getValue());
     }
 
     /**

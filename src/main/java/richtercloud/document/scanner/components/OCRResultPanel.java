@@ -14,18 +14,12 @@
  */
 package richtercloud.document.scanner.components;
 
-import java.awt.Window;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.ProgressMonitor;
-import javax.swing.SwingWorker;
-import org.apache.commons.lang.exception.ExceptionUtils;
+import javax.swing.SwingUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
 
 /**
@@ -38,24 +32,21 @@ public class OCRResultPanel extends JPanel {
     private OCRResultPanelFetcher oCRResultPanelFetcher;
     private final Set<OCRResultPanelUpdateListener> updateListeners = new HashSet<>();
     /**
-     * Whether the OCR recognition process can be canceled with a dialog control
-     * (modal dialog is displayed while the process is in progress)
+     * Whether the OCR recognition process can be canceled with a GUI control
+     * (currently component is simply disabled while fetching OCR data in
+     * background thread).
      */
     private boolean cancelable = true;
     private final MessageHandler messageHandler;
     private final String initialValue;
-    private ProgressMonitor progressMonitor;
-    private final Window oCRProgressMonitorParent;
 
     public OCRResultPanel(OCRResultPanelFetcher retriever,
             String initialValue,
-            MessageHandler messageHandler,
-            Window oCRProgressMonitorParent) {
+            MessageHandler messageHandler) {
         this(retriever,
                 initialValue,
                 true,
-                messageHandler,
-                oCRProgressMonitorParent);
+                messageHandler);
     }
 
     /**
@@ -77,15 +68,13 @@ public class OCRResultPanel extends JPanel {
     public OCRResultPanel(OCRResultPanelFetcher retriever,
             String initialValue,
             boolean cancelable,
-            MessageHandler messageHandler,
-            Window oCRProgressMonitorParent) {
+            MessageHandler messageHandler) {
         this.initComponents();
         this.oCRResultPanelFetcher = retriever;
         this.oCRResultTextArea.setText(initialValue);
         this.cancelable = cancelable;
         this.initialValue = initialValue;
         this.messageHandler = messageHandler;
-        this.oCRProgressMonitorParent = oCRProgressMonitorParent;
         reset0();
         setValue(initialValue);
     }
@@ -174,22 +163,6 @@ public class OCRResultPanel extends JPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     /**
-     *
-     * @return the returning dialog @TODO: document need for it
-     */
-    private void showProgressMonitor() {
-        assert oCRProgressMonitorParent != null;
-        progressMonitor = new ProgressMonitor(oCRProgressMonitorParent, //parent
-                "OCR recognition in progress", //message
-                null, //note
-                0, //min
-                100 //max
-        );
-        progressMonitor.setMillisToPopup(0);
-        progressMonitor.setMillisToDecideToPopup(0);
-    }
-
-    /**
      * Starts the OCR routine and sets the value on the field and the component.
      */
     /*
@@ -199,73 +172,28 @@ public class OCRResultPanel extends JPanel {
     dialog, but a check for null has to be added.
     */
     public void startOCR() {
-        String oCRResult = null;
         if(!cancelable) {
-            oCRResult = this.oCRResultPanelFetcher.fetch();
-        }else {
-            showProgressMonitor();
-            final SwingWorker<String,String> oCRThread = new SwingWorker<String,String>() {
-                private final OCRResultPanelFetcherProgressListener progressListener = new OCRResultPanelFetcherProgressListener() {
-                    @Override
-                    public void onProgressUpdate(OCRResultPanelFetcherProgressEvent progressEvent) {
-                        int progress = (int) (progressEvent.getProgress()*100);
-                        if(progressMonitor != null) {
-                            //might be null if the panel isn't displayed yet
-                            progressMonitor.setProgress(progress);
-                        }
-                    }
-                };
-                @Override
-                public String doInBackground() {
-                    oCRResultPanelFetcher.addProgressListener(progressListener);
-                    try {
-                        Thread oCRResultPanelFetchThread = new Thread("ocr-result-panel-fetcher-thread") {
-                            @Override
-                            public void run() {
-                                while(!isDone()) {
-                                    if(progressMonitor != null
-                                            && progressMonitor.isCanceled()) {
-                                        oCRResultPanelFetcher.cancelFetch();
-                                        break;
-                                    }
-                                    try {
-                                        Thread.sleep(100);
-                                    } catch (InterruptedException ex) {
-                                        throw new RuntimeException(ex);
-                                    }
-                                }
-                            }
-                        };
-                        oCRResultPanelFetchThread.start();
-                        String retValue = oCRResultPanelFetcher.fetch();
-                        return retValue;
-                    }catch(Exception ex) {
-                        progressMonitor.setProgress(101);
-                        LOGGER.error("An unexpected exception during fetching OCR result occured", ex);
-                        messageHandler.handle(new Message(String.format("An exception during fetching OCR result occured: %s", ExceptionUtils.getRootCauseMessage(ex)),
-                                JOptionPane.ERROR_MESSAGE,
-                                "Exception occured"));
-                    }
-                    return null;
-                }
-
-                @Override
-                protected void done() {
-                    oCRResultPanelFetcher.removeProgressListener(progressListener);
-                    progressMonitor.setProgress(101);
-                }
-            };
-            oCRThread.execute();
-            try {
-                oCRResult = oCRThread.get();
-            } catch (InterruptedException | ExecutionException ex) {
-                throw new RuntimeException(ex);
+            String oCRResult = this.oCRResultPanelFetcher.fetch();
+            if(oCRResult != null) {
+                //might be null if fetch has been canceled (this check is
+                //unnecessary for non-cancelable processing, but don't care
+                setValue(oCRResult);
             }
-        }
-        if(oCRResult != null) {
-            //might be null if fetch has been canceled (this check is
-            //unnecessary for non-cancelable processing, but don't care
-            setValue(oCRResult);
+        }else {
+            Thread oCRThread = new Thread(() -> {
+                String oCRResult = oCRResultPanelFetcher.fetch();
+                SwingUtilities.invokeLater(() -> {
+                    if(oCRResult != null) {
+                        //might be null if fetch has been canceled (this check is
+                        //unnecessary for non-cancelable processing, but don't care
+                        setValue(oCRResult);
+                    }
+                    OCRResultPanel.this.setEnabled(true);
+                });
+            },
+                    "ocr-fetch-thread");
+            setEnabled(false);
+            oCRThread.start();
         }
     }
 

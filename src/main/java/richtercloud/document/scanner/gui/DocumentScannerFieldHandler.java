@@ -269,8 +269,7 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
             String fieldValue = (String) field.get(instance);
             OCRResultPanel retValue = new OCRResultPanel(oCRResultPanelFetcher,
                     fieldValue,
-                    getMessageHandler(),
-                    oCRProgressMonitorParent);
+                    getMessageHandler());
             retValue.addUpdateListener(new OCRResultPanelUpdateListener() {
                 @Override
                 public void onUpdate(OCRResultPanelUpdateEvent event) {

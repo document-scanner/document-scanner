@@ -128,7 +128,7 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
-                        OCRSelectComponent.this.entityPanel.autoOCRValueDetection(new OCRSelectPanelPanelFetcher(OCRSelectComponent.this.getoCRSelectPanelPanel(),
+                        OCRSelectComponent.this.entityPanel.autoOCRValueDetectionNonGUI(new OCRSelectPanelPanelFetcher(OCRSelectComponent.this.getoCRSelectPanelPanel(),
                                 OCRSelectComponent.this.oCREngineFactory,
                                 OCRSelectComponent.this.oCREngineConf),
                                 false //forceRenewal
@@ -143,7 +143,7 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
-                        OCRSelectComponent.this.entityPanel.autoOCRValueDetection(new OCRSelectPanelPanelFetcher(OCRSelectComponent.this.getoCRSelectPanelPanel(),
+                        OCRSelectComponent.this.entityPanel.autoOCRValueDetectionNonGUI(new OCRSelectPanelPanelFetcher(OCRSelectComponent.this.getoCRSelectPanelPanel(),
                                 OCRSelectComponent.this.oCREngineFactory,
                                 OCRSelectComponent.this.oCREngineConf),
                                 true //forceRenewal

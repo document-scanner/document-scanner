@@ -19,12 +19,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComponent;
-import javax.swing.JOptionPane;
 import javax.swing.JTabbedPane;
-import javax.swing.SwingWorker;
+import javax.swing.SwingUtilities;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,16 +34,12 @@ import richtercloud.document.scanner.ifaces.EntityPanel;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcher;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.document.scanner.valuedetectionservice.AutoOCRValueDetectionResult;
-import richtercloud.document.scanner.valuedetectionservice.AutoOCRValueDetectionServiceUpdateEvent;
-import richtercloud.document.scanner.valuedetectionservice.AutoOCRValueDetectionServiceUpdateListener;
 import richtercloud.document.scanner.valuedetectionservice.DelegatingAutoOCRValueDetectionService;
 import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyUsageStatisticsStorage;
 import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
-import richtercloud.swing.worker.get.wait.dialog.SwingWorkerCompletionWaiter;
-import richtercloud.swing.worker.get.wait.dialog.SwingWorkerGetWaitDialog;
 
 /**
  *
@@ -123,7 +117,7 @@ public class DefaultEntityPanel extends EntityPanel {
 
     /**
      * Store for the last results of
-     * {@link #autoOCRValueDetection(richtercloud.document.scanner.gui.OCRSelectPanelPanelFetcher, boolean) }
+     * {@link #autoOCRValueDetectionNonGUI(richtercloud.document.scanner.gui.OCRSelectPanelPanelFetcher, boolean) }
      * which one might display without retrieving them again from the OCR
      * result.
      */
@@ -132,48 +126,25 @@ public class DefaultEntityPanel extends EntityPanel {
     @Override
     public void autoOCRValueDetection(OCRSelectPanelPanelFetcher oCRSelectPanelPanelFetcher,
             boolean forceRenewal) {
+        Thread autoOCRValueDetectionThread = new Thread(() -> {
+            autoOCRValueDetectionNonGUI(oCRSelectPanelPanelFetcher, forceRenewal);
+            SwingUtilities.invokeLater(() -> {
+                autoOCRValueDetectionGUI();
+            });
+        },
+                "auto-ocr-value-detection-thread");
+        autoOCRValueDetectionThread.start();
+    }
+
+    private void autoOCRValueDetectionNonGUI(OCRSelectPanelPanelFetcher oCRSelectPanelPanelFetcher,
+            boolean forceRenewal) {
         if(detectionResults == null || forceRenewal == true) {
             final String oCRResult = oCRSelectPanelPanelFetcher.fetch();
-            final SwingWorkerGetWaitDialog dialog = new SwingWorkerGetWaitDialog(JOptionPane.getFrameForComponent(this),
-                    DocumentScanner.generateApplicationWindowTitle("Auto OCR value detection",
-                            DocumentScanner.APP_NAME,
-                            DocumentScanner.APP_VERSION),
-                    "Auto OCR detection value",
-                    "Searching values in input");
-            SwingWorkerCompletionWaiter swingWorkerCompletionWaiter = new SwingWorkerCompletionWaiter(dialog);
-            SwingWorker<List<AutoOCRValueDetectionResult<?>>, Void> worker = new SwingWorker<List<AutoOCRValueDetectionResult<?>>, Void>() {
-                @Override
-                protected List<AutoOCRValueDetectionResult<?>> doInBackground() throws Exception {
-                    List<AutoOCRValueDetectionResult<?>> retValue = DefaultEntityPanel.this.autoOCRValueDetectionService.fetchResults(oCRResult);
-                    return retValue;
-                }
-
-                @Override
-                protected void done() {
-                    dialog.setVisible(false);
-                }
-            };
-            this.autoOCRValueDetectionService.addUpdateListener(new AutoOCRValueDetectionServiceUpdateListener() {
-                @Override
-                public void onUpdate(AutoOCRValueDetectionServiceUpdateEvent event) {
-                    LOGGER.debug(String.format("Received update event with values %d/%d", event.getWordNumber(), event.getWordCount()));
-                    dialog.getProgressBar().getModel().setValue((int)((double)event.getWordNumber()/event.getWordCount()*100.0));
-                }
-            });
-            worker.addPropertyChangeListener(swingWorkerCompletionWaiter);
-            worker.execute();
-            //the dialog will be visible until the SwingWorker is done
-            dialog.setVisible(true);
-            if(dialog.isCanceled()) {
-                DefaultEntityPanel.this.autoOCRValueDetectionService.cancelFetch();
-                return;
-            }
-            try {
-                detectionResults = worker.get();
-            } catch (InterruptedException | ExecutionException ex) {
-                throw new RuntimeException(ex);
-            }
+            detectionResults = autoOCRValueDetectionService.fetchResults(oCRResult);
         }
+    }
+
+    private void autoOCRValueDetectionGUI() {
         if(!detectionResults.isEmpty()) {
             for(Pair<Class, Field> pair : this.reflectionFormBuilder.getComboBoxModelMap().keySet()) {
                 DefaultComboBoxModel<AutoOCRValueDetectionResult<?>> comboBoxModel = this.reflectionFormBuilder.getComboBoxModelMap().get(pair);
