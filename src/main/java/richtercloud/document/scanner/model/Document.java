@@ -55,6 +55,13 @@ public class Document extends AbstractDocument {
             //because this might quickly create performance impacts
     @Lob
     @FieldInfo(name = "Scan data", description = "The binary data of the scan")
+    /*
+    internal implementation notes:
+    - using a java.sql.Blob doesn't seem to make sense because there's no
+    portable implementation, i.e. EntityManager.unwrap has to be used to
+    retrieve a JPA-implementation specific helper to created instances of Blob
+    (might not even be supported by all JPA providers)
+    */
     private byte[] scanData;
     @OCRResult
     @Basic(fetch = FetchType.LAZY)//fetch lazy as long as no issue occur
