@@ -12,15 +12,27 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.gui.conf;
+package richtercloud.document.scanner.ocr;
 
-import richtercloud.document.scanner.ocr.OCREngine;
+import richtercloud.document.scanner.ifaces.OCREngineConf;
 
 /**
- * Both a data container and factory for instance of {@code E}.
+ *
  * @author richter
- * @param <E> the type of the OCR engine managed by this configuration
  */
-public interface OCREngineConf<E extends OCREngine> {
-    E getOCREngine();
+public class ProcessOCREngineConf implements OCREngineConf {
+    private static final long serialVersionUID = 1L;
+    private String binary;
+
+    public ProcessOCREngineConf(String binary) {
+        this.binary = binary;
+    }
+
+    public String getBinary() {
+        return binary;
+    }
+
+    public void setBinary(String binary) {
+        this.binary = binary;
+    }
 }

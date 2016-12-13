@@ -12,10 +12,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.gui.engineconf;
+package richtercloud.document.scanner.ocr;
 
+import richtercloud.document.scanner.ifaces.OCREngineConf;
 import javax.swing.JPanel;
-import richtercloud.document.scanner.gui.conf.OCREngineConf;
 
 /**
  * allows management of (eventually completely) different configuration
@@ -35,7 +35,7 @@ JComponent hierarchy)
 cancel methods because buttons can not be included in the panel itself in order
 to provide sane GUI elements
 */
-public abstract class OCREngineConfPanel<C extends OCREngineConf<?>> extends JPanel {
+public abstract class OCREngineConfPanel<C extends OCREngineConf> extends JPanel {
     private static final long serialVersionUID = 1L;
 
     /**

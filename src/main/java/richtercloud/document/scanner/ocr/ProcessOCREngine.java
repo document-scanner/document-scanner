@@ -16,6 +16,8 @@ package richtercloud.document.scanner.ocr;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +25,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author richter
  */
-public abstract class ProcessOCREngine extends CachedOCREngine {
+public abstract class ProcessOCREngine<C extends ProcessOCREngineConf> extends CachedOCREngine<C> {
     private final static Logger LOGGER = LoggerFactory.getLogger(ProcessOCREngine.class);
 
     /**
@@ -63,23 +65,18 @@ public abstract class ProcessOCREngine extends CachedOCREngine {
         }
     }
 
-    private final String binary;
-    private Process binaryProcess;
+    private Set<Process> binaryProcesses = new HashSet<>();
 
-    public ProcessOCREngine(String binary) {
-        this.binary = binary;
+    public ProcessOCREngine(C oCREngineConf) {
+        super(oCREngineConf);
     }
 
-    public String getBinary() {
-        return binary;
+    public Set<Process> getBinaryProcesses() {
+        return binaryProcesses;
     }
 
-    public Process getBinaryProcess() {
-        return binaryProcess;
-    }
-
-    public void setBinaryProcess(Process binaryProcess) {
-        this.binaryProcess = binaryProcess;
+    public void setBinaryProcesses(Set<Process> binaryProcesses) {
+        this.binaryProcesses = binaryProcesses;
     }
 
     @Override
@@ -88,20 +85,20 @@ public abstract class ProcessOCREngine extends CachedOCREngine {
             throw new IllegalArgumentException("image mustn't be null");
         }
         try {
-            checkBinaryAvailableExceptions(this.binary);
+            checkBinaryAvailableExceptions(this.getoCREngineConf().getBinary());
         }catch(BinaryNotFoundException ex) {
             throw new RuntimeException("tesseract not available (see nested exception for details)", ex);
         }
-        LOGGER.debug("tesseract binary '{}' found and executable", this.binary);
+        LOGGER.debug("tesseract binary '{}' found and executable", this.getoCREngineConf().getBinary());
         return recognizeImage1(image);
     }
 
     protected abstract String recognizeImage1(BufferedImage image) throws IllegalStateException;
 
     @Override
-    public void cancelRecognizeImage() {
-        if(this.binaryProcess != null) {
-            this.binaryProcess.destroy(); // there's no way of cleanly shutting
+    public void cancelRecognizeImages() {
+        for(Process binaryProcess : this.binaryProcesses) {
+            binaryProcess.destroy(); // there's no way of cleanly shutting
                 //down a process in Java process API<ref>http://stackoverflow.com/questions/6339861/how-to-pass-sigint-to-a-process-created-in-java</ref>
                 //(something less severe than SIGTERM). It shouldn't matter
                 //because tesseract propably won't do more than opening some

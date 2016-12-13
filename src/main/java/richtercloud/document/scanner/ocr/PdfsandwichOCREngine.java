@@ -25,13 +25,11 @@ import org.slf4j.LoggerFactory;
  *
  * @author richter
  */
-public class PdfsandwichOCREngine extends ProcessOCREngine {
-    private final static String PDFSANDWICH_DEFAULT = "pdfsandwich";
+public class PdfsandwichOCREngine extends ProcessOCREngine<PdfsandwichOCREngineConf> {
     private final static Logger LOGGER = LoggerFactory.getLogger(PdfsandwichOCREngine.class);
-    private final static String INPUT_TEMP_FILE_PREFIX = "pdfsandwich-ocr-engine-input";
 
-    public PdfsandwichOCREngine() {
-        super(PDFSANDWICH_DEFAULT);
+    public PdfsandwichOCREngine(PdfsandwichOCREngineConf oCREngineConf) {
+        super(oCREngineConf);
     }
 
     /**
@@ -45,18 +43,18 @@ public class PdfsandwichOCREngine extends ProcessOCREngine {
     @Override
     protected String recognizeImage1(BufferedImage image) {
         try {
-            LOGGER.debug(String.format("using prefix '%s' for pdfsandwich input temp file name", INPUT_TEMP_FILE_PREFIX));
-            File inputFile = File.createTempFile(INPUT_TEMP_FILE_PREFIX,
+            LOGGER.debug(String.format("using prefix '%s' for pdfsandwich input temp file name", this.getoCREngineConf().getInputTempFilePrefix()));
+            File inputFile = File.createTempFile(getoCREngineConf().getInputTempFilePrefix(),
                     null);
             ImageIO.write(image, "png", inputFile);
-            ProcessBuilder pdfsandwichProcessBuilder = new ProcessBuilder(this.getBinary(),
+            ProcessBuilder pdfsandwichProcessBuilder = new ProcessBuilder(this.getoCREngineConf().getBinary(),
                     "-noimage",
                     inputFile.getAbsolutePath()
             ).redirectOutput(ProcessBuilder.Redirect.PIPE);
                 //does not expect an output file, but create an output named
                 //after a scheme
             Process pdfsandwichProcess = pdfsandwichProcessBuilder.start();
-            setBinaryProcess(pdfsandwichProcess);
+            getBinaryProcesses().add(pdfsandwichProcess);
             int pdfsandwichProcessExitValue = pdfsandwichProcess.waitFor();
             if(pdfsandwichProcessExitValue != 0) {
                 //tesseractProcess.destroy might cause IOException, but

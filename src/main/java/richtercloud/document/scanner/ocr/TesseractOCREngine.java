@@ -17,11 +17,7 @@ package richtercloud.document.scanner.ocr;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import javax.imageio.ImageIO;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -37,38 +33,22 @@ import org.slf4j.LoggerFactory;
  *
  * @author richter
  */
-public class TesseractOCREngine extends ProcessOCREngine {
-    /**
-     * the default name of the tesseract binary
-     */
-    public final static String TESSERACT_DEFAULT = "tesseract";
+public class TesseractOCREngine extends ProcessOCREngine<TesseractOCREngineConf> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TesseractOCREngine.class);
+    private final TesseractOCREngineConf oCREngineConf;
 
-    private final transient Lock lock = new ReentrantLock();
-    private List<String> languages;
-
-    public TesseractOCREngine(List<String> languages) {
-        this(TESSERACT_DEFAULT, languages);
-    }
-
-    public TesseractOCREngine(String tesseractCmd, List<String> languages) {
-        super(tesseractCmd);
-        if(languages == null || languages.isEmpty()) {
+    public TesseractOCREngine(TesseractOCREngineConf oCREngineConf) {
+        super(oCREngineConf);
+        if(oCREngineConf == null) {
+            throw new IllegalArgumentException("oCREngineConf mustn't be empty");
+        }
+        this.oCREngineConf = oCREngineConf;
+        if(oCREngineConf.getSelectedLanguages() == null || oCREngineConf.getSelectedLanguages().isEmpty()) {
             throw new IllegalArgumentException("languages mustn't be null or empty");
         }
-        this.languages = languages;
-    }
-
-    public void setLanguages(List<String> languages) {
-        this.languages = languages;
-    }
-
-    public List<String> getLanguages() {
-        return Collections.unmodifiableList(this.languages);
     }
 
     /**
-     * Don't invoke {@code recognizeImage} from multiple threads.
      *
      * @param image
      * @throws IllegalArgumentException if {@code image} is {@code null}
@@ -76,20 +56,17 @@ public class TesseractOCREngine extends ProcessOCREngine {
      * @return {@code null} if the recognition has been canceled using {@link #cancelRecognizeImage() } or the recognition process crashed or the recognition result otherwise
      */
     @Override
-    public String recognizeImage1(BufferedImage image) throws IllegalStateException {
-        if(!lock.tryLock()) {
-            throw new IllegalStateException("This tesseract OCR engine is already used from another thread.");
-        }
+    protected String recognizeImage1(BufferedImage image) throws IllegalStateException {
         try {
-            Iterator<String> languagesItr = this.languages.iterator();
+            Iterator<String> languagesItr = this.oCREngineConf.getSelectedLanguages().iterator();
             String lanuguageString = languagesItr.next();
             while(languagesItr.hasNext()) {
                 lanuguageString += "+"+languagesItr.next();
             }
-            ProcessBuilder tesseractProcessBuilder = new ProcessBuilder(this.getBinary(), "-l", lanuguageString, "stdin", "stdout")
+            ProcessBuilder tesseractProcessBuilder = new ProcessBuilder(this.getoCREngineConf().getBinary(), "-l", lanuguageString, "stdin", "stdout")
                     .redirectOutput(ProcessBuilder.Redirect.PIPE);
             Process tesseractProcess = tesseractProcessBuilder.start();
-            setBinaryProcess(tesseractProcess);
+            getBinaryProcesses().add(tesseractProcess);
             ImageIO.write(image, "png", tesseractProcess.getOutputStream());
             tesseractProcess.getOutputStream().flush();
             tesseractProcess.getOutputStream().close(); //sending EOF not an option because it's not documented what is expected (sending -1 once or twice doesn't have any effect, also with flush)
@@ -102,7 +79,7 @@ public class TesseractOCREngine extends ProcessOCREngine {
                 String tesseractProcessStderr = tesseractStderrWriter.toString();
                 LOGGER.debug(String.format("tesseract process '%s' failed with "
                         + "returncode %d and output '%s'",
-                        this.getBinary(),
+                        this.getoCREngineConf().getBinary(),
                         tesseractProcessExitValue,
                         tesseractProcessStderr));
                 return null;
@@ -121,8 +98,6 @@ public class TesseractOCREngine extends ProcessOCREngine {
                 return null; //result of Process.destroy
             }
             throw new RuntimeException(ex);
-        }finally {
-            lock.unlock();
         }
     }
 }

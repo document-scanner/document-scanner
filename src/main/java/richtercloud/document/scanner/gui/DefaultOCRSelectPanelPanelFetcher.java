@@ -14,33 +14,23 @@
  */
 package richtercloud.document.scanner.gui;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.FutureTask;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.math4.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
-import richtercloud.document.scanner.gui.conf.OCREngineConf;
+import richtercloud.document.scanner.ifaces.OCREngine;
+import richtercloud.document.scanner.ifaces.OCREngineProgressEvent;
+import richtercloud.document.scanner.ifaces.OCREngineProgressListener;
 import richtercloud.document.scanner.ifaces.OCRSelectPanel;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanel;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcher;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcherProgressEvent;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcherProgressListener;
-import richtercloud.document.scanner.ocr.OCREngine;
-import richtercloud.document.scanner.ocr.OCREngineFactory;
 
 /**
  * This could be in {@link OCRSelectPanelPanel} as well, but has been once moved
@@ -50,39 +40,16 @@ import richtercloud.document.scanner.ocr.OCREngineFactory;
  */
 public class DefaultOCRSelectPanelPanelFetcher implements OCRSelectPanelPanelFetcher {
     private final static Logger LOGGER = LoggerFactory.getLogger(DefaultOCRSelectPanelPanelFetcher.class);
-    private final List<Double> stringBufferLengths = new ArrayList<>();
     private final OCRSelectPanelPanel oCRSelectPanelPanel;
     private final Set<OCRSelectPanelPanelFetcherProgressListener> progressListeners = new HashSet<>();
-    private boolean cancelRequested = false;
-    /**
-     * Since {@link OCRSelectPanel} has an immutable {@code image} property
-     * it can be used well as cache map key.
-     */
-    private final Map<OCRSelectPanel, String> fetchCache = new HashMap<>();
-    /**
-     * Record all used {@link OCREngine}s in order to be able to cancel if
-     * {@link #cancelFetch() } is invoked.
-     */
-    /*
-    internal implementation notes:
-    - is a Queue in order to be able to cancel as fast as possible
-    */
-    private Queue<OCREngine> usedEngines = new LinkedList<>();
-    /**
-     * The factory to create one or multiple {@link OCREngine}s for linear
-     * or parallel fetching.
-     */
-    private final OCREngineFactory oCREngineFactory;
-    private final OCREngineConf oCREngineConf;
     private final DocumentScannerConf documentScannerConf;
+    private final OCREngine oCREngine;
 
     public DefaultOCRSelectPanelPanelFetcher(OCRSelectPanelPanel oCRSelectPanelPanel,
-            OCREngineFactory oCREngineFactory,
-            OCREngineConf oCREngineConf,
+            OCREngine oCREngine,
             DocumentScannerConf documentScannerConf) {
         this.oCRSelectPanelPanel = oCRSelectPanelPanel;
-        this.oCREngineFactory = oCREngineFactory;
-        this.oCREngineConf = oCREngineConf;
+        this.oCREngine = oCREngine;
         this.documentScannerConf = documentScannerConf;
     }
 
@@ -98,88 +65,37 @@ public class DefaultOCRSelectPanelPanelFetcher implements OCRSelectPanelPanelFet
 
     @Override
     public String fetch() {
-        //estimate the initial StringBuilder size based on the median
-        //of all prior OCR results (string length) (and 1000 initially)
-        int stringBufferLengh;
-        cancelRequested = false;
-        if (this.stringBufferLengths.isEmpty()) {
-            stringBufferLengh = 1_000;
-        } else {
-            DescriptiveStatistics descriptiveStatistics = new DescriptiveStatistics(this.stringBufferLengths.toArray(new Double[this.stringBufferLengths.size()]));
-            stringBufferLengh = ((int) descriptiveStatistics.getPercentile(.5)) + 1;
-        }
-        this.stringBufferLengths.add((double) stringBufferLengh);
-        StringBuilder retValueBuilder = new StringBuilder(stringBufferLengh);
         int i=0;
         List<OCRSelectPanel> imagePanels = oCRSelectPanelPanel.getoCRSelectPanels();
-        Queue<Pair<OCRSelectPanel, FutureTask<String>>> threadQueue = new LinkedList<>();
-        Executor executor = Executors.newCachedThreadPool();
-        //check in loop whether cache can be used, otherwise enqueue started
-        //SwingWorkers; after loop wait for SwingWorkers until queue is
-        //empty and append to retValueBuilder (if cache has been used
-        //(partially) queue will be empty)
+        List<BufferedImage> images = new LinkedList<>();
         for (final OCRSelectPanel imagePanel : imagePanels) {
-            if(cancelRequested) {
-                //no need to notify progress listener
-                break;
-            }
-            String oCRResult = fetchCache.get(imagePanel);
-            if(oCRResult != null) {
-                LOGGER.info(String.format("using cached OCR result for image %d of current OCR select component", i));
-                retValueBuilder.append(oCRResult);
-                for(OCRSelectPanelPanelFetcherProgressListener progressListener: progressListeners) {
-                    progressListener.onProgressUpdate(new OCRSelectPanelPanelFetcherProgressEvent(oCRResult, i/imagePanels.size()));
-                }
-                i += 1;
-            }else {
-                FutureTask<String> worker = new FutureTask<>(new Callable<String>() {
-                    @Override
-                    public String call() throws Exception {
-                        OCREngine oCREngine = oCREngineFactory.create(oCREngineConf);
-                        usedEngines.add(oCREngine);
-                        String oCRResult = oCREngine.recognizeImage(imagePanel.getImage().getImagePreview(imagePanel.getImage().getInitialWidth()) //need to pay attention to rotation
-                        );
-                            //need to operate on original image in order to get
-                            //acceptable OCR results
-                        if(oCRResult == null) {
-                            //indicates that the OCREngine.recognizeImage has been aborted
-                            if(cancelRequested) {
-                                //no need to notify progress listener
-                                return null;
-                            }
-                        }
-                        return oCRResult;
-                    }
-                });
-                executor.execute(worker);
-                threadQueue.add(new ImmutablePair<>(imagePanel, worker));
-            }
-        }
-        while(!threadQueue.isEmpty()) {
-            Pair<OCRSelectPanel, FutureTask<String>> threadQueueHead = threadQueue.poll();
-            String oCRResult;
             try {
-                oCRResult = threadQueueHead.getValue().get();
-            } catch (InterruptedException | ExecutionException ex) {
+                BufferedImage image = imagePanel.getImage().getImagePreview(imagePanel.getImage().getInitialWidth()); //need to pay attention to rotation
+                images.add(image);
+            } catch (IOException ex) {
                 throw new RuntimeException(ex);
             }
-            retValueBuilder.append(oCRResult);
-            fetchCache.put(threadQueueHead.getKey(), oCRResult);
-            for(OCRSelectPanelPanelFetcherProgressListener progressListener: progressListeners) {
-                progressListener.onProgressUpdate(new OCRSelectPanelPanelFetcherProgressEvent(oCRResult, i/imagePanels.size()));
-            }
-            i += 1;
         }
-        String retValue = retValueBuilder.toString();
-        return retValue;
+        oCREngine.addProgressListener(new OCREngineProgressListener() {
+            @Override
+            public void onProgressUpdate(OCREngineProgressEvent progressEvent) {
+                for(OCRSelectPanelPanelFetcherProgressListener progressListener : progressListeners) {
+                    progressListener.onProgressUpdate(new OCRSelectPanelPanelFetcherProgressEvent(progressEvent.getNewValue(), progressEvent.getProgress()));
+                }
+            }
+        });
+        String oCRResult = oCREngine.recognizeImages(images);
+            //need to operate on original image in order to get
+            //acceptable OCR results
+        if(oCRResult == null) {
+            //indicates that the OCREngine.recognizeImage has been aborted
+            return null;
+        }
+        return oCRResult;
     }
 
     @Override
     public void cancelFetch() {
-        this.cancelRequested = true;
-        while(!usedEngines.isEmpty()) {
-            OCREngine usedEngine = usedEngines.poll();
-            usedEngine.cancelRecognizeImage();
-        }
+        this.oCREngine.cancelRecognizeImages();
     }
 }

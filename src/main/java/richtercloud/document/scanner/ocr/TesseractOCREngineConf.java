@@ -12,48 +12,38 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.gui.conf;
+package richtercloud.document.scanner.ocr;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
-import richtercloud.document.scanner.ocr.BinaryNotFoundException;
-import richtercloud.document.scanner.ocr.OCREngineConfInfo;
-import richtercloud.document.scanner.ocr.ProcessOCREngine;
-import richtercloud.document.scanner.ocr.TesseractOCREngine;
 
 /**
  *
  * @author richter
  */
 @OCREngineConfInfo(name = "Tesseract OCR")
-public class TesseractOCREngineConf implements Serializable, OCREngineConf<TesseractOCREngine> {
+public class TesseractOCREngineConf extends ProcessOCREngineConf {
     private static final long serialVersionUID = 1L;
     private final static List<String> SELECTED_LANGUAGES_DEFAULT = Collections.unmodifiableList(new LinkedList<>(Arrays.asList("deu")));
     /**
-     * The {@link OCREngine} which this configuration manages (initialized
-     * lazily).
+     * the default name of the tesseract binary
      */
-    private TesseractOCREngine oCREngine;
+    public final static String TESSERACT_DEFAULT = "tesseract";
     private List<String> selectedLanguages = new LinkedList<>(SELECTED_LANGUAGES_DEFAULT);
-    /**
-     * the {@code tesseract} binary
-     */
-    private String tesseract = TesseractOCREngine.TESSERACT_DEFAULT;
 
     public TesseractOCREngineConf() {
+        this(TESSERACT_DEFAULT,
+                SELECTED_LANGUAGES_DEFAULT);
     }
 
-    protected TesseractOCREngineConf(String tesseract,
-            List<String> selectedLanguages,
-            TesseractOCREngine oCREngine) {
-        this.tesseract = tesseract;
+    protected TesseractOCREngineConf(String binary,
+            List<String> selectedLanguages) {
+        super(binary);
         this.selectedLanguages = selectedLanguages;
-        this.oCREngine = oCREngine;
     }
 
     /**
@@ -61,9 +51,8 @@ public class TesseractOCREngineConf implements Serializable, OCREngineConf<Tesse
      * @param conf the {@link TesseractOCREngineConf} to clone
      */
     public TesseractOCREngineConf(TesseractOCREngineConf conf) {
-        this(conf.getTesseract(),
-                conf.getSelectedLanguages(),
-                conf.getOCREngine());
+        this(conf.getBinary(),
+                conf.getSelectedLanguages());
     }
 
     /**
@@ -80,26 +69,6 @@ public class TesseractOCREngineConf implements Serializable, OCREngineConf<Tesse
         this.selectedLanguages = selectedLanguages;
     }
 
-    @Override
-    public TesseractOCREngine getOCREngine() {
-        if(oCREngine == null) {
-            oCREngine = new TesseractOCREngine(new LinkedList<>(SELECTED_LANGUAGES_DEFAULT));
-        }
-        return oCREngine;
-    }
-
-    /**
-     * The {@code tesseract} binary which is used in this configuration.
-     * @return
-     */
-    public String getTesseract() {
-        return this.tesseract;
-    }
-
-    public void setTesseract(String tesseract) {
-        this.tesseract = tesseract;
-    }
-
     /**
      *
      * @return
@@ -107,13 +76,13 @@ public class TesseractOCREngineConf implements Serializable, OCREngineConf<Tesse
      * {@code --list-langs} returns a code {@code != 0}
      */
     public List<String> getAvailableLanguages() throws IllegalStateException, IOException, InterruptedException {
-        ProcessBuilder tesseractProcessBuilder = new ProcessBuilder(this.getTesseract(), "--list-langs");
+        ProcessBuilder tesseractProcessBuilder = new ProcessBuilder(this.getBinary(), "--list-langs");
         Process tesseractProcess = tesseractProcessBuilder.redirectOutput(ProcessBuilder.Redirect.PIPE).start();
         int tesseractProcessReturnCode = tesseractProcess.waitFor();
         String tesseractProcessStdout = IOUtils.toString(tesseractProcess.getInputStream());
         String tesseractProcessStderr = IOUtils.toString(tesseractProcess.getErrorStream());
         if(tesseractProcessReturnCode != 0) {
-            throw new IllegalStateException(String.format("The tesseract process '%s' unexpectedly returned with non-zero return code %d and output '%s' (stdout) and '%s' (stderr).", this.getTesseract(), tesseractProcessReturnCode, tesseractProcessStdout, tesseractProcessStderr));
+            throw new IllegalStateException(String.format("The tesseract process '%s' unexpectedly returned with non-zero return code %d and output '%s' (stdout) and '%s' (stderr).", this.getBinary(), tesseractProcessReturnCode, tesseractProcessStdout, tesseractProcessStderr));
         }
         //tesseract --list-langs prints to stderr, reported as https://bugs.launchpad.net/ubuntu/+source/tesseract/+bug/1481015
         List<String> langs = new LinkedList<>();
@@ -127,7 +96,7 @@ public class TesseractOCREngineConf implements Serializable, OCREngineConf<Tesse
     }
 
     public void validate() throws BinaryNotFoundException, IllegalStateException {
-        ProcessOCREngine.checkBinaryAvailableExceptions(this.getTesseract());
+        ProcessOCREngine.checkBinaryAvailableExceptions(this.getBinary());
         try {
             getAvailableLanguages();
         } catch (IOException | InterruptedException ex) {

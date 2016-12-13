@@ -15,10 +15,14 @@
 package richtercloud.document.scanner.ocr;
 
 import java.awt.image.BufferedImage;
+import java.util.List;
 import net.sourceforge.javaocr.ocrPlugins.mseOCR.OCRScanner;
 import net.sourceforge.javaocr.scanner.PixelImage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.ifaces.OCREngine;
+import richtercloud.document.scanner.ifaces.OCREngineConf;
+import richtercloud.document.scanner.ifaces.OCREngineProgressListener;
 
 /**
  * A {@link OCREngine} implementation which uses javaocr - which needs a lot of
@@ -26,23 +30,43 @@ import org.slf4j.LoggerFactory;
  * consequently does currently.
  * @author richter
  */
-public class JavaocrOCREngine implements OCREngine {
+public class JavaocrOCREngine implements OCREngine<OCREngineConf> {
     private static final Logger LOGGER = LoggerFactory.getLogger(JavaocrOCREngine.class);
     private final OCRScanner scanner = new OCRScanner();
 
     @Override
-    public String recognizeImage(BufferedImage image) {
-        PixelImage pixelImage = new PixelImage(image);
-        pixelImage.toGrayScale(true);
-        pixelImage.filter();
-        String text = this.scanner.scan(image, 0, 0, 0, 0, null);
-        LOGGER.debug("OCR result: {}", text);
-        return text;
+    public String recognizeImages(List<BufferedImage> images) {
+        StringBuilder retValueBuilder = new StringBuilder(1000);
+        for(BufferedImage image : images) {
+            PixelImage pixelImage = new PixelImage(image);
+            pixelImage.toGrayScale(true);
+            pixelImage.filter();
+            String text = this.scanner.scan(image, 0, 0, 0, 0, null);
+            retValueBuilder.append(text);
+        }
+        String retValue = retValueBuilder.toString();
+        LOGGER.debug("OCR result: {}", retValue);
+        return retValue;
     }
 
     @Override
-    public void cancelRecognizeImage() {
+    public void cancelRecognizeImages() {
         throw new UnsupportedOperationException("Not supported yet. Figure out how to recognize in parts (e.g. rows or x*y pixel areas) to allow cancelation");
+    }
+
+    @Override
+    public void addProgressListener(OCREngineProgressListener progressListener) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void removeProgressListener(OCREngineProgressListener progressListener) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public OCREngineConf getoCREngineConf() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
 }

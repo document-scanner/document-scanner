@@ -20,7 +20,6 @@ import java.awt.event.ItemListener;
 import java.util.Map;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.MutableComboBoxModel;
-import richtercloud.document.scanner.gui.storageconf.StorageConfPanel;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyEmbeddedPersistenceStorageConf;
 import richtercloud.reflection.form.builder.storage.StorageConf;
 import richtercloud.reflection.form.builder.storage.StorageConfInitializationException;

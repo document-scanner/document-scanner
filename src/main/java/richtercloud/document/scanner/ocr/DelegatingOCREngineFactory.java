@@ -14,14 +14,14 @@
  */
 package richtercloud.document.scanner.ocr;
 
-import richtercloud.document.scanner.gui.conf.OCREngineConf;
-import richtercloud.document.scanner.gui.conf.TesseractOCREngineConf;
+import richtercloud.document.scanner.ifaces.OCREngineConf;
+import richtercloud.document.scanner.ifaces.OCREngine;
 
 /**
  *
  * @author richter
  */
-public class DelegatingOCREngineFactory implements OCREngineFactory<OCREngine, OCREngineConf<?>> {
+public class DelegatingOCREngineFactory implements OCREngineFactory<OCREngine, OCREngineConf> {
     private final static TesseractOCREngineFactory TESSERACT_OCRENGINE_FACTORY = new TesseractOCREngineFactory();
 
     /**
@@ -31,7 +31,7 @@ public class DelegatingOCREngineFactory implements OCREngineFactory<OCREngine, O
      * @return the created OCR engine
      */
     @Override
-    public OCREngine create(OCREngineConf<?> oCREngineConf) {
+    public OCREngine create(OCREngineConf oCREngineConf) {
         if(oCREngineConf instanceof TesseractOCREngineConf) {
             return TESSERACT_OCRENGINE_FACTORY.create((TesseractOCREngineConf) oCREngineConf);
         }

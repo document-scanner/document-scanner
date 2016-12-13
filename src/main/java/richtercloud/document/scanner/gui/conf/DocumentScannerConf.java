@@ -14,6 +14,8 @@
  */
 package richtercloud.document.scanner.gui.conf;
 
+import richtercloud.document.scanner.ocr.TesseractOCREngineConf;
+import richtercloud.document.scanner.ifaces.OCREngineConf;
 import com.beust.jcommander.Parameter;
 import java.io.File;
 import java.io.IOException;
@@ -49,7 +51,7 @@ import richtercloud.reflection.form.builder.storage.XMLStorageConf;
 public class DocumentScannerConf implements Serializable {
     private static final long serialVersionUID = 1L;
     public final static String SCANNER_SANE_ADDRESS_DEFAULT = "localhost";
-    private final static OCREngineConf<?> OCR_ENGINE_CONF_DEFAULT = new TesseractOCREngineConf();
+    private final static OCREngineConf OCR_ENGINE_CONF_DEFAULT = new TesseractOCREngineConf();
     private static final Locale LOCALE_DEFAULT = Locale.getDefault();
     private static final Currency CURRENCY_DEFAULT = new Currency(java.util.Currency.getInstance(LOCALE_DEFAULT).getCurrencyCode());
     private final static boolean AUTO_GENERATE_IDS_DEFAULT = true;
@@ -116,7 +118,8 @@ public class DocumentScannerConf implements Serializable {
      * @see #storageConf
      */
     private Set<StorageConf> availableStorageConfs = new HashSet<>();
-    private OCREngineConf<?> oCREngineConf = OCR_ENGINE_CONF_DEFAULT;
+    private OCREngineConf oCREngineConf;
+    private Set<OCREngineConf> availableOCREngineConfs = new HashSet<>();
     /**
      * The currency initially displayed in data entry components (e.g. for
      * {@link Bill}). Can be different from the currency of the locale.
@@ -207,6 +210,8 @@ public class DocumentScannerConf implements Serializable {
                 MYSQL_DATABASE_DIR_DEFAULT,
                 SCHEME_CHECKSUM_FILE_DEFAULT
         ));
+        this.oCREngineConf = OCR_ENGINE_CONF_DEFAULT;
+        this.availableOCREngineConfs.add(oCREngineConf);
     }
 
     public DocumentScannerConf(Set<Class<?>> entityClasses,
@@ -357,14 +362,14 @@ public class DocumentScannerConf implements Serializable {
     /**
      * @return the oCREngineConf
      */
-    public OCREngineConf<?> getoCREngineConf() {
+    public OCREngineConf getoCREngineConf() {
         return this.oCREngineConf;
     }
 
     /**
      * @param oCREngineConf the oCREngineConf to set
      */
-    public void setoCREngineConf(OCREngineConf<?> oCREngineConf) {
+    public void setoCREngineConf(OCREngineConf oCREngineConf) {
         this.oCREngineConf = oCREngineConf;
     }
 
@@ -398,6 +403,10 @@ public class DocumentScannerConf implements Serializable {
 
     public Set<StorageConf> getAvailableStorageConfs() {
         return availableStorageConfs;
+    }
+
+    public Set<OCREngineConf> getAvailableOCREngineConfs() {
+        return availableOCREngineConfs;
     }
 
     public void setAutoGenerateIDs(boolean autoGenerateIDs) {

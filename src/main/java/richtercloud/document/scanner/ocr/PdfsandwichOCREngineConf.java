@@ -14,29 +14,25 @@
  */
 package richtercloud.document.scanner.ocr;
 
-import java.awt.image.BufferedImage;
-
 /**
  *
  * @author richter
  */
-public interface OCREngine {
+public class PdfsandwichOCREngineConf extends ProcessOCREngineConf {
+    private static final long serialVersionUID = 1L;
+    private final static String PDFSANDWICH_DEFAULT = "pdfsandwich";
+    private final static String INPUT_TEMP_FILE_PREFIX = "pdfsandwich-ocr-engine-input";
+    private String inputTempFilePrefix = INPUT_TEMP_FILE_PREFIX;
 
-    /**
-     * recognizes the characters of {@code image}
-     * @param image
-     * @return the recognized characters
-     */
-    String recognizeImage(BufferedImage image);
+    public PdfsandwichOCREngineConf() {
+        super(PDFSANDWICH_DEFAULT);
+    }
 
-    /**
-     * Allows cancelation of a (potentially time taking) {@link #recognizeImage(java.awt.image.BufferedImage) } from
-     * another thread.
-     */
-    /*
-    internal implementation notes:
-    - canceling from the same thread doesn't make sense because recognizeImage must
-    return first and it return when it's completed only
-    */
-    void cancelRecognizeImage();
+    public String getInputTempFilePrefix() {
+        return inputTempFilePrefix;
+    }
+
+    public void setInputTempFilePrefix(String inputTempFilePrefix) {
+        this.inputTempFilePrefix = inputTempFilePrefix;
+    }
 }

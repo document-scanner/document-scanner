@@ -15,16 +15,20 @@
 package richtercloud.document.scanner.ocr;
 
 import java.awt.image.BufferedImage;
+import java.util.List;
+import richtercloud.document.scanner.ifaces.OCREngine;
+import richtercloud.document.scanner.ifaces.OCREngineConf;
+import richtercloud.document.scanner.ifaces.OCREngineProgressListener;
 
 
 /**
  *
  * @author richter
  */
-public class Tess4JOCREngine implements OCREngine {
+public class Tess4JOCREngine implements OCREngine<OCREngineConf> {
 
     @Override
-    public String recognizeImage(BufferedImage image) {
+    public String recognizeImages(List<BufferedImage> image) {
         throw new UnsupportedOperationException("Not supported yet. Figure out maven dependencies");
 
 //        Tesseract instance = Tesseract.getInstance();  // JNA Interface Mapping
@@ -39,8 +43,22 @@ public class Tess4JOCREngine implements OCREngine {
     }
 
     @Override
-    public void cancelRecognizeImage() {
+    public void cancelRecognizeImages() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
+    public void addProgressListener(OCREngineProgressListener progressListener) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void removeProgressListener(OCREngineProgressListener progressListener) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public OCREngineConf getoCREngineConf() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }

@@ -14,8 +14,6 @@
  */
 package richtercloud.document.scanner.ocr;
 
-import richtercloud.document.scanner.gui.conf.TesseractOCREngineConf;
-
 /**
  *
  * @author richter
@@ -24,7 +22,7 @@ public class TesseractOCREngineFactory implements OCREngineFactory<TesseractOCRE
 
     @Override
     public TesseractOCREngine create(TesseractOCREngineConf oCREngineConf) {
-        TesseractOCREngine retValue = new TesseractOCREngine(oCREngineConf.getTesseract(), oCREngineConf.getSelectedLanguages());
+        TesseractOCREngine retValue = new TesseractOCREngine(oCREngineConf);
         return retValue;
     }
 }

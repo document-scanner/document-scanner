@@ -12,7 +12,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.gui;
+package richtercloud.document.scanner.ocr;
 
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
@@ -21,9 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.swing.DefaultListModel;
 import javax.swing.JOptionPane;
-import richtercloud.document.scanner.gui.conf.TesseractOCREngineConf;
-import richtercloud.document.scanner.gui.engineconf.OCREngineConfPanel;
-import richtercloud.document.scanner.ocr.BinaryNotFoundException;
 import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
 
@@ -79,13 +76,13 @@ public class TesseractOCREngineConfPanel extends OCREngineConfPanel<TesseractOCR
                 }
             }
         });
-        this.binaryTextField.setText(conf.getTesseract());
+        this.binaryTextField.setText(conf.getBinary());
         onBinaryChanged();
     }
 
     private void onBinaryChanged() throws IOException, InterruptedException {
         TesseractOCREngineConf confToValidate = new TesseractOCREngineConf(this.conf);
-        confToValidate.setTesseract(binaryTextField.getText());
+        confToValidate.setBinary(binaryTextField.getText());
         try {
             confToValidate.validate();
         } catch (BinaryNotFoundException | IllegalStateException ex) {
@@ -181,7 +178,7 @@ public class TesseractOCREngineConfPanel extends OCREngineConfPanel<TesseractOCR
     @Override
     public void save() {
         this.conf.setSelectedLanguages(this.languageList.getSelectedValuesList());
-        this.conf.setTesseract(this.binaryTextField.getText());
+        this.conf.setBinary(this.binaryTextField.getText());
     }
 
     @Override

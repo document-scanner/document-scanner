@@ -12,15 +12,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.gui.storageconf;
+package richtercloud.document.scanner.ocr;
 
-import richtercloud.reflection.form.builder.storage.StorageConf;
+import richtercloud.document.scanner.ifaces.OCREngineConf;
 
 /**
  *
  * @author richter
  */
-public interface StorageConfPanelFactory {
+public interface OCREngineConfPanelFactory<C extends OCREngineConf> {
 
-    StorageConfPanel create(StorageConf storageConf);
+    OCREngineConfPanel<C> create(C engineConf);
 }

@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import richtercloud.document.scanner.ifaces.OCREngineConf;
 
 /**
  * An {@link OCREngine} which checks a non-persistent cache to fetch OCR
@@ -33,12 +34,20 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @author richter
  */
-public abstract class CachedOCREngine implements OCREngine {
+/*
+internal implementation notes:
+- implements both parallelization and caching since they're hard to separate
+*/
+public abstract class CachedOCREngine<C extends OCREngineConf> extends ParallelOCREngine<C> {
     private final transient Map<BufferedImage, String> cache = new HashMap<>();
     private final transient Map<BufferedImage, Lock> lockMap = new HashMap<>();
 
+    public CachedOCREngine(C oCREngineConf) {
+        super(oCREngineConf);
+    }
+
     @Override
-    public String recognizeImage(BufferedImage image) {
+    protected String recognizeImage(BufferedImage image) {
         String retValue = cache.get(image);
         if(retValue == null) {
             Lock imageLock = lockMap.get(image);
@@ -46,22 +55,20 @@ public abstract class CachedOCREngine implements OCREngine {
                 imageLock = new ReentrantLock();
                 lockMap.put(image, imageLock);
             }
-            synchronized(this) {
-                if(imageLock.tryLock()) {
+            if(imageLock.tryLock()) {
+                imageLock.lock();
+                try {
+                    retValue = recognizeImage0(image);
+                    cache.put(image, retValue);
+                }finally {
+                    imageLock.unlock();
+                }
+            }else {
+                try {
                     imageLock.lock();
-                    try {
-                        retValue = recognizeImage0(image);
-                        cache.put(image, retValue);
-                    }finally {
-                        imageLock.unlock();
-                    }
-                }else {
-                    try {
-                        imageLock.lock();
-                        return recognizeImage(image);
-                    }finally {
-                        imageLock.unlock();
-                    }
+                    return recognizeImage(image);
+                }finally {
+                    imageLock.unlock();
                 }
             }
         }

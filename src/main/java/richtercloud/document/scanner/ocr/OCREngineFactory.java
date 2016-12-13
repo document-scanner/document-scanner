@@ -14,7 +14,8 @@
  */
 package richtercloud.document.scanner.ocr;
 
-import richtercloud.document.scanner.gui.conf.OCREngineConf;
+import richtercloud.document.scanner.ifaces.OCREngineConf;
+import richtercloud.document.scanner.ifaces.OCREngine;
 
 /**
  *
@@ -22,7 +23,7 @@ import richtercloud.document.scanner.gui.conf.OCREngineConf;
  * @param <E> the type of {@link OCREngine} to create
  * @param <C> the type of {@link OCREngineConf} to use for creation
  */
-public interface OCREngineFactory<E extends OCREngine, C extends OCREngineConf<?>> {
+public interface OCREngineFactory<E extends OCREngine, C extends OCREngineConf> {
 
     /**
      * Creates a new {@link OCREngine}.

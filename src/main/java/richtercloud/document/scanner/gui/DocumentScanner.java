@@ -28,9 +28,6 @@ import com.thoughtworks.xstream.converters.MarshallingContext;
 import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
-import java.awt.Component;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
@@ -53,17 +50,11 @@ import java.util.concurrent.locks.ReentrantLock;
 import javafx.application.Platform;
 import javax.cache.Caching;
 import javax.persistence.EntityManager;
-import javax.swing.BoxLayout;
-import javax.swing.DefaultComboBoxModel;
-import javax.swing.DefaultListCellRenderer;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
-import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
-import javax.swing.ListCellRenderer;
-import javax.swing.MutableComboBoxModel;
 import javax.swing.SwingWorker;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import org.apache.commons.io.FileUtils;
@@ -74,13 +65,12 @@ import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.components.tag.FileTagStorage;
 import richtercloud.document.scanner.components.tag.TagStorage;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
-import richtercloud.document.scanner.gui.conf.OCREngineConf;
-import richtercloud.document.scanner.gui.conf.TesseractOCREngineConf;
-import richtercloud.document.scanner.gui.engineconf.OCREngineConfPanel;
 import richtercloud.document.scanner.gui.storageconf.StorageSelectionDialog;
 import richtercloud.document.scanner.ifaces.DocumentAddException;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.ifaces.MainPanel;
+import richtercloud.document.scanner.ifaces.OCREngine;
+import richtercloud.document.scanner.ifaces.OCREngineConf;
 import richtercloud.document.scanner.model.APackage;
 import richtercloud.document.scanner.model.Bill;
 import richtercloud.document.scanner.model.Company;
@@ -102,10 +92,9 @@ import richtercloud.document.scanner.model.Withdrawal;
 import richtercloud.document.scanner.model.Workflow;
 import richtercloud.document.scanner.model.warninghandler.CompanyWarningHandler;
 import richtercloud.document.scanner.ocr.BinaryNotFoundException;
-import richtercloud.document.scanner.ocr.OCREngine;
-import richtercloud.document.scanner.ocr.OCREngineConfInfo;
+import richtercloud.document.scanner.ocr.DelegatingOCREngineFactory;
 import richtercloud.document.scanner.ocr.OCREngineFactory;
-import richtercloud.document.scanner.ocr.TesseractOCREngineFactory;
+import richtercloud.document.scanner.ocr.OCREngineSelectDialog;
 import richtercloud.document.scanner.setter.AmountMoneyPanelSetter;
 import richtercloud.document.scanner.setter.EmbeddableListPanelSetter;
 import richtercloud.document.scanner.setter.LongIdPanelSetter;
@@ -193,11 +182,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     public static final String APP_VERSION = "1.0";
     public static final String BUG_URL = "https://github.com/krichter722/document-scanner";
     private SaneDevice scannerDevice;
-    private final MutableComboBoxModel<Class<? extends OCREngineConf<?>>> oCREngineComboBoxModel = new DefaultComboBoxModel<>();
-    private OCREngineConfPanel<?> currentOCREngineConfPanel;
-    //@TODO: implement class path discovery of associated conf panel with annotations
-    private final TesseractOCREngineConfPanel tesseractOCREngineConfPanel;
-    private final Map<Class<? extends OCREngineConf<?>>, OCREngineConfPanel<?>> oCREngineConfPanelMap = new HashMap<>();
     /**
      * The default value for resolution in DPI. The closest value to it might be
      * chosen if the exact resolution isn't available.
@@ -254,23 +238,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private MessageHandler messageHandler = new DialogMessageHandler(this);
     private ConfirmMessageHandler confirmMessageHandler = new DialogConfirmMessageHandler(this);
     private final Map<Class<?>, WarningHandler<?>> warningHandlers = new HashMap<>();
-    private ListCellRenderer<Object> oCRDialogEngineComboBoxRenderer = new DefaultListCellRenderer() {
-        private static final long serialVersionUID = 1L;
-
-        @Override
-        public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-            Class<?> valueCast = (Class<?>) value;
-            OCREngineConfInfo oCREngineInfo = valueCast.getAnnotation(OCREngineConfInfo.class);
-            String value0;
-            if (oCREngineInfo != null) {
-                value0 = oCREngineInfo.name();
-            } else {
-                value0 = valueCast.getSimpleName();
-            }
-            return super.getListCellRendererComponent(list, value0, index, isSelected, cellHasFocus);
-        }
-
-    };
     public final static int INITIAL_QUERY_LIMIT_DEFAULT = 20;
     public final static String BIDIRECTIONAL_HELP_DIALOG_TITLE = generateApplicationWindowTitle("Bidirectional relations help", APP_NAME, APP_VERSION);
     private final static DocumentScannerConfConverter DOCUMENT_SCANNER_CONF_CONVERTER = new DocumentScannerConfConverter();
@@ -285,7 +252,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     initialized entityManager
     */
     private MainPanel mainPanel;
-    private final OCREngineFactory oCREngineFactory = new TesseractOCREngineFactory();
+    private final OCREngineFactory oCREngineFactory = new DelegatingOCREngineFactory();
+    private OCREngine oCREngine;
     /**
      * Since {@link SaneSession#getDevice(java.lang.String) } overwrites
      * configuration settings, keep a reference to once retrieved
@@ -539,19 +507,14 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         assert storageConf instanceof AbstractPersistenceStorageConf;
         this.storage = (PersistenceStorage) delegatingStorageFactory.create(storageConf);
 
+        OCREngineConf oCREngineConf = documentScannerConf.getoCREngineConf();
+        this.oCREngine = oCREngineFactory.create(oCREngineConf);
+
         this.initComponents();
 
         validateProperties();
             //after initComponents because of afterScannerSelection involving
             //GUI components
-
-        try {
-            this.tesseractOCREngineConfPanel = new TesseractOCREngineConfPanel((TesseractOCREngineConf) this.documentScannerConf.getoCREngineConf(),
-                    this.messageHandler);
-                //validates the configured binary
-        } catch (IOException | InterruptedException ex) {
-            throw new RuntimeException(ex);
-        }
 
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
@@ -560,27 +523,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 DocumentScanner.this.shutdownHook();
             }
         });
-        this.oCREngineConfPanelMap.put(TesseractOCREngineConf.class, this.tesseractOCREngineConfPanel);
-        this.oCREngineComboBoxModel.addElement(TesseractOCREngineConf.class);
-        this.oCRDialogEngineComboBox.addItemListener(new ItemListener() {
-            @Override
-            public void itemStateChanged(ItemEvent e) {
-                Class<? extends OCREngineConf<?>> clazz = (Class<? extends OCREngineConf<?>>) e.getItem();
-                OCREngineConfPanel<?> cREngineConfPanel = DocumentScanner.this.oCREngineConfPanelMap.get(clazz);
-                DocumentScanner.this.oCRDialogPanel.removeAll();
-                DocumentScanner.this.oCRDialogPanel.add(cREngineConfPanel);
-                DocumentScanner.this.oCRDialogPanel.revalidate();
-                DocumentScanner.this.pack();
-                DocumentScanner.this.oCRDialogPanel.repaint();
-            }
-        });
-        this.oCRDialogPanel.setLayout(new BoxLayout(this.oCRDialogPanel, BoxLayout.X_AXIS));
-        //set initial panel state
-        this.oCRDialogPanel.removeAll();
-        this.oCRDialogPanel.add(this.tesseractOCREngineConfPanel);
-        this.oCRDialogPanel.revalidate();
-        this.pack();
-        this.oCRDialogPanel.repaint();
 
         try {
             this.amountMoneyUsageStatisticsStorage = new FileAmountMoneyUsageStatisticsStorage(documentScannerConf.getAmountMoneyUsageStatisticsStorageFile());
@@ -633,8 +575,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 messageHandler,
                 confirmMessageHandler,
                 this,
-                oCREngineFactory,
-                documentScannerConf.getoCREngineConf(),
+                oCREngine,
                 typeHandlerMapping,
                 documentScannerConf,
                 this, //oCRProgressMonitorParent
@@ -688,13 +629,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        oCRDialog = new javax.swing.JDialog();
-        oCRDialogEngineComboBox = new javax.swing.JComboBox<>();
-        oCRDialogEngineLabel = new javax.swing.JLabel();
-        oCRDialogSeparator = new javax.swing.JSeparator();
-        oCRDialogPanel = new javax.swing.JPanel();
-        oCRDialogCancelButton = new javax.swing.JButton();
-        oCRDialogSaveButton = new javax.swing.JButton();
         mainPanelPanel = new javax.swing.JPanel();
         mainMenuBar = new javax.swing.JMenuBar();
         fileMenu = new javax.swing.JMenu();
@@ -720,77 +654,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         aboutMenuItem = new javax.swing.JMenuItem();
         toolsMenu = new javax.swing.JMenu();
         optionsMenuItem = new javax.swing.JMenuItem();
-
-        oCRDialog.setTitle(DocumentScanner.generateApplicationWindowTitle("OCR setup", APP_NAME, APP_VERSION));
-        oCRDialog.setModal(true);
-
-        oCRDialogEngineComboBox.setModel(oCREngineComboBoxModel);
-        oCRDialogEngineComboBox.setRenderer(oCRDialogEngineComboBoxRenderer);
-
-        oCRDialogEngineLabel.setText("OCR engine");
-
-        javax.swing.GroupLayout oCRDialogPanelLayout = new javax.swing.GroupLayout(oCRDialogPanel);
-        oCRDialogPanel.setLayout(oCRDialogPanelLayout);
-        oCRDialogPanelLayout.setHorizontalGroup(
-            oCRDialogPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
-        );
-        oCRDialogPanelLayout.setVerticalGroup(
-            oCRDialogPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 178, Short.MAX_VALUE)
-        );
-
-        oCRDialogCancelButton.setText("Cancel");
-        oCRDialogCancelButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                oCRDialogCancelButtonActionPerformed(evt);
-            }
-        });
-
-        oCRDialogSaveButton.setText("Save");
-        oCRDialogSaveButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                oCRDialogSaveButtonActionPerformed(evt);
-            }
-        });
-
-        javax.swing.GroupLayout oCRDialogLayout = new javax.swing.GroupLayout(oCRDialog.getContentPane());
-        oCRDialog.getContentPane().setLayout(oCRDialogLayout);
-        oCRDialogLayout.setHorizontalGroup(
-            oCRDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(oCRDialogLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(oCRDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(oCRDialogPanel, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(oCRDialogSeparator)
-                    .addGroup(oCRDialogLayout.createSequentialGroup()
-                        .addComponent(oCRDialogEngineLabel)
-                        .addGap(18, 18, 18)
-                        .addComponent(oCRDialogEngineComboBox, 0, 277, Short.MAX_VALUE))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, oCRDialogLayout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
-                        .addComponent(oCRDialogSaveButton)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(oCRDialogCancelButton)))
-                .addContainerGap())
-        );
-        oCRDialogLayout.setVerticalGroup(
-            oCRDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(oCRDialogLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(oCRDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(oCRDialogEngineComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(oCRDialogEngineLabel))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(oCRDialogSeparator, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(oCRDialogPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGap(18, 18, 18)
-                .addGroup(oCRDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(oCRDialogCancelButton)
-                    .addComponent(oCRDialogSaveButton))
-                .addContainerGap())
-        );
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle(String.format("%s %s", APP_NAME, APP_VERSION) //generateApplicationWindowTitle not applicable
@@ -999,21 +862,20 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     }//GEN-LAST:event_storageSelectionMenuItemActionPerformed
 
     private void oCRMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_oCRMenuItemActionPerformed
-        this.oCRDialog.pack();
-        this.oCRDialog.setLocationRelativeTo(this);
-        this.oCRDialog.setVisible(true);
+        OCREngineSelectDialog oCREngineSelectDialog = new OCREngineSelectDialog(this,
+                this.documentScannerConf,
+                this.messageHandler);
+        oCREngineSelectDialog.setLocationRelativeTo(this);
+        oCREngineSelectDialog.setVisible(true);
+        OCREngineConf selectedOCREngineConf = oCREngineSelectDialog.getSelectedOCREngineConf();
+        if(selectedOCREngineConf == null) {
+            //dialog canceled
+            return;
+        }
+        this.documentScannerConf.setoCREngineConf(selectedOCREngineConf);
+        this.oCREngine = oCREngineFactory.create(selectedOCREngineConf);
+        mainPanel.setoCREngine(oCREngine);
     }//GEN-LAST:event_oCRMenuItemActionPerformed
-
-    private void oCRDialogCancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_oCRDialogCancelButtonActionPerformed
-        this.oCRDialog.setVisible(false);
-    }//GEN-LAST:event_oCRDialogCancelButtonActionPerformed
-
-    private void oCRDialogSaveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_oCRDialogSaveButtonActionPerformed
-        Class<? extends OCREngineConf<?>> oCREngineClass = this.oCRDialogEngineComboBox.getItemAt(this.oCRDialogEngineComboBox.getSelectedIndex());
-        this.currentOCREngineConfPanel = this.oCREngineConfPanelMap.get(oCREngineClass);
-        assert this.currentOCREngineConfPanel != null;
-        this.oCRDialog.setVisible(false);
-    }//GEN-LAST:event_oCRDialogSaveButtonActionPerformed
 
     private void openMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openMenuItemActionPerformed
         JFileChooser chooser = new JFileChooser();
@@ -1023,11 +885,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         int returnVal = chooser.showOpenDialog(this);
         final File selectedFile = chooser.getSelectedFile();
         if (returnVal != JFileChooser.APPROVE_OPTION) {
-            return;
-        }
-        OCREngine oCREngine = DocumentScanner.this.retrieveOCREngine();
-        if (oCREngine == null) {
-            //a warning in form of a dialog has been given
             return;
         }
         try {
@@ -1086,11 +943,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         int returnVal = chooser.showOpenDialog(this);
         final File selectedFile = chooser.getSelectedFile();
         if (returnVal != JFileChooser.APPROVE_OPTION) {
-            return;
-        }
-        OCREngine oCREngine = DocumentScanner.this.retrieveOCREngine();
-        if (oCREngine == null) {
-            //a warning in form of a dialog has been given
             return;
         }
         try {
@@ -1303,17 +1155,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 "Exception occured"));
     }
 
-    private OCREngine retrieveOCREngine() {
-        if (this.documentScannerConf.getoCREngineConf() == null) {
-            JOptionPane.showMessageDialog(this, //parent
-                    "OCREngine isn't set up",
-                    DocumentScanner.generateApplicationWindowTitle("Warning", APP_NAME, APP_VERSION),
-                    JOptionPane.ERROR_MESSAGE);
-            return null;
-        }
-        return this.documentScannerConf.getoCREngineConf().getOCREngine();
-    }
-
     /**
      * @param args the command line arguments
      */
@@ -1429,13 +1270,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private javax.swing.JPopupMenu.Separator knownStoragesMenuItemSeparartor;
     private javax.swing.JMenuBar mainMenuBar;
     private javax.swing.JPanel mainPanelPanel;
-    private javax.swing.JDialog oCRDialog;
-    private javax.swing.JButton oCRDialogCancelButton;
-    private javax.swing.JComboBox<Class<? extends OCREngineConf<?>>> oCRDialogEngineComboBox;
-    private javax.swing.JLabel oCRDialogEngineLabel;
-    private javax.swing.JPanel oCRDialogPanel;
-    private javax.swing.JButton oCRDialogSaveButton;
-    private javax.swing.JSeparator oCRDialogSeparator;
     private javax.swing.JMenuItem oCRMenuItem;
     private javax.swing.JPopupMenu.Separator oCRMenuSeparator;
     private javax.swing.JMenuItem openMenuItem;

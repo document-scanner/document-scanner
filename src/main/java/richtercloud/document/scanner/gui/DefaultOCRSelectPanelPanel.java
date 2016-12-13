@@ -30,11 +30,10 @@ import javax.swing.SwingConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
-import richtercloud.document.scanner.gui.conf.OCREngineConf;
+import richtercloud.document.scanner.ifaces.OCREngine;
 import richtercloud.document.scanner.ifaces.OCRSelectPanel;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanel;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelSelectionListener;
-import richtercloud.document.scanner.ocr.OCREngineFactory;
 
 /**
  * Arranges multiple (or one) images in different selection panel and handles
@@ -83,20 +82,17 @@ public class DefaultOCRSelectPanelPanel extends OCRSelectPanelPanel implements S
 
     public DefaultOCRSelectPanelPanel(OCRSelectPanel panel,
             File documentFile,
-            OCREngineFactory oCREngineFactory,
-            OCREngineConf oCREngineConf,
+            OCREngine oCREngine,
             DocumentScannerConf documentScannerConf) {
         this(new LinkedList<>(Arrays.asList(panel)),
                 documentFile,
-                oCREngineFactory,
-                oCREngineConf,
+                oCREngine,
                 documentScannerConf);
     }
 
     public DefaultOCRSelectPanelPanel(List<OCRSelectPanel> panels,
             File documentFile,
-            OCREngineFactory oCREngineFactory,
-            OCREngineConf oCREngineConf,
+            OCREngine oCREngine,
             DocumentScannerConf documentScannerConf) {
         this.documentFile = documentFile;
         this.documentScannerConf = documentScannerConf;

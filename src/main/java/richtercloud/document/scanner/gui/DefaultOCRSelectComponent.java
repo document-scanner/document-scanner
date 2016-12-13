@@ -28,11 +28,10 @@ import javax.swing.JToolBar;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
-import richtercloud.document.scanner.gui.conf.OCREngineConf;
 import richtercloud.document.scanner.ifaces.EntityPanel;
+import richtercloud.document.scanner.ifaces.OCREngine;
 import richtercloud.document.scanner.ifaces.OCRSelectComponent;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanel;
-import richtercloud.document.scanner.ocr.OCREngineFactory;
 
 /**
  * A container for a {@link OCRSelectPanelPanel} and a toolbar for navigation in
@@ -60,8 +59,7 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
     private final JCheckBox autoOCRValueDetectionCheckBox = new JCheckBox("Show auto detection components on form");
     private float zoomLevel = 1;
     private final EntityPanel entityPanel;
-    private final OCREngineFactory oCREngineFactory;
-    private final OCREngineConf oCREngineConf;
+    private final OCREngine oCREngine;
     private final DocumentScannerConf documentScannerConf;
     private File file;
 
@@ -72,15 +70,13 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
      */
     public DefaultOCRSelectComponent(OCRSelectPanelPanel oCRSelectPanelPanel,
             EntityPanel entityPanel,
-            OCREngineFactory oCREngineFactory,
-            OCREngineConf oCREngineConf,
+            OCREngine oCREngine,
             DocumentScannerConf documentScannerConf,
             final Set<JPanel> autoOCRValueDetectionPanels,
             File file) {
         this.oCRSelectPanelPanel = oCRSelectPanelPanel;
         this.entityPanel = entityPanel;
-        this.oCREngineFactory = oCREngineFactory;
-        this.oCREngineConf = oCREngineConf;
+        this.oCREngine = oCREngine;
         this.documentScannerConf = documentScannerConf;
         this.file = file;
 
@@ -242,8 +238,7 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
             @Override
             public void actionPerformed(ActionEvent e) {
                 DefaultOCRSelectComponent.this.entityPanel.autoOCRValueDetection(new DefaultOCRSelectPanelPanelFetcher(DefaultOCRSelectComponent.this.getoCRSelectPanelPanel(),
-                        DefaultOCRSelectComponent.this.oCREngineFactory,
-                        DefaultOCRSelectComponent.this.oCREngineConf,
+                        DefaultOCRSelectComponent.this.oCREngine,
                         documentScannerConf),
                         false //forceRenewal
                 );
@@ -253,8 +248,7 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
             @Override
             public void actionPerformed(ActionEvent e) {
                 DefaultOCRSelectComponent.this.entityPanel.autoOCRValueDetection(new DefaultOCRSelectPanelPanelFetcher(DefaultOCRSelectComponent.this.getoCRSelectPanelPanel(),
-                        DefaultOCRSelectComponent.this.oCREngineFactory,
-                        DefaultOCRSelectComponent.this.oCREngineConf,
+                        DefaultOCRSelectComponent.this.oCREngine,
                         documentScannerConf),
                         true //forceRenewal
                 );
