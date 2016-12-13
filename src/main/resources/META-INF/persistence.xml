@@ -35,6 +35,9 @@
       <!--<property name="hibernate.cache.provider_class" value="org.hibernate.cache.NoCacheProvider"/>-->
       <!--<property name="hibernate.hbm2ddl.auto" value="update"/>-->
       <property name="eclipselink.ddl-generation" value="create-or-extend-tables"/>
+            <!--setting eclipse.weaving to false<ref>http://www.eclipse.org/eclipselink/documentation/2.5/concepts/app_dev007.htm</ref>
+            doesn't reduce memory usage with MySQL (and probably others
+            neither)-->
     </properties>
   </persistence-unit>
 </persistence>
