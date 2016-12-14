@@ -10,6 +10,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
+        <richtercloud.document.scanner.openjpa.version>2.2.0</richtercloud.document.scanner.openjpa.version>
+        <richtercloud.document.scanner.hibernate.version>5.0.11.Final</richtercloud.document.scanner.hibernate.version>
     </properties>
     <dependencies>
         <dependency>
@@ -70,23 +72,34 @@
         <ref>http://hibernate.org/orm/downloads/</ref>-->
 
         <!--JPA provider-->
-        <!--explanations and reasons for JPA provider are documented in comments
-        in persistence.xml-->
-<!--        <dependency>
+        <!--explanations and reasons for JPA provider and caching are documented
+                in comments in persistence.xml-->
+        <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-entitymanager</artifactId>
-            <version>5.1.0.Final</version>
+            <version>${richtercloud.document.scanner.hibernate.version}</version>
         </dependency>
         <dependency>
             <groupId>org.hibernate.javax.persistence</groupId>
             <artifactId>hibernate-jpa-2.1-api</artifactId>
             <version>1.0.0.Final</version>
-        </dependency>-->
-        <dependency>
+        </dependency>
+            <!--Hibernate needs one run with hibernate.hbm2ddl.auto set to
+                    validate in order to provide any half-useful feedback at all
+                    and to avoid failing with incomprehensive runtime exceptions
+                    -->
+        <!--<dependency>
             <groupId>org.eclipse.persistence</groupId>
             <artifactId>eclipselink</artifactId>
-            <version>2.6.2</version>
-        </dependency>
+            <version>2.6.4</version>
+                <!class specified in property eclipselink.session.customizer
+                        isn't invoked in 2.6.2, but in 2.6.4>
+        </dependency>-->
+        <!--<dependency>
+            <groupId>org.apache.openjpa</groupId>
+            <artifactId>openjpa</artifactId>
+            <version>${richtercloud.document.scanner.openjpa.version}</version>
+        </dependency>-->
 
         <dependency>
             <groupId>richtercloud</groupId>
@@ -246,6 +259,59 @@
                 <configuration>
                     <debug>true</debug>
                 </configuration>
+            </plugin>
+            <!--<plugin>
+                <groupId>org.apache.openjpa</groupId>
+                <artifactId>openjpa-maven-plugin</artifactId>
+                <version>${richtercloud.document.scanner.openjpa.version}</version>
+                <configuration>
+                    <includes>**/model/*.class</includes>
+                    <addDefaultConstructor>true</addDefaultConstructor>
+                    <enforcePropertyRestrictions>true</enforcePropertyRestrictions>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>enhancer</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>enhance</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.openjpa</groupId>
+                        <artifactId>openjpa</artifactId>
+                        <version>${richtercloud.document.scanner.openjpa.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>-->
+            <plugin>
+                <groupId>org.hibernate.orm.tooling</groupId>
+                <artifactId>hibernate-enhance-maven-plugin</artifactId>
+                <version>${richtercloud.document.scanner.hibernate.version}</version>
+                <executions>
+                    <execution>
+                        <id>enhancer</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>enhance</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <!--includes and excludes can't be specified because
+                            specifying dir causes enhancement to fail-->
+                    <failOnError>true</failOnError>
+                    <enableLazyInitialization>true</enableLazyInitialization>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.hibernate</groupId>
+                        <artifactId>hibernate-core</artifactId>
+                        <version>${richtercloud.document.scanner.hibernate.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>

@@ -83,8 +83,7 @@ public class TelephoneNumber extends Identifiable {
      * A contact representing a telephone service provider. Might be
      * {@code null} if the provider is unknown.
      */
-    @Basic(fetch = FetchType.LAZY)
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @FieldInfo(name = "Provider", description = "The provider which services "
             + "this telephone number")
     private Company provider;

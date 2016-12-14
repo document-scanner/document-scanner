@@ -51,6 +51,7 @@ import richtercloud.reflection.form.builder.ReflectionFormBuilder;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
 import richtercloud.reflection.form.builder.jpa.panels.QueryListPanel;
+import richtercloud.reflection.form.builder.jpa.storage.FieldInitializer;
 import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 import richtercloud.reflection.form.builder.panels.ListPanelItemEvent;
 import richtercloud.reflection.form.builder.panels.ListPanelItemEventVetoException;
@@ -99,6 +100,7 @@ public class WorkflowItemTreePanel extends JPanel {
     private final MainPanel mainPanel;
     private final IdApplier idApplier;
     private final Map<Class<?>, WarningHandler<?>> warningHandlers;
+    private final FieldInitializer fieldInitializer;
 
     /**
      *
@@ -122,7 +124,8 @@ public class WorkflowItemTreePanel extends JPanel {
             Class<?> primaryClassSelection,
             MainPanel mainPanel,
             IdApplier idApplier,
-            Map<Class<?>, WarningHandler<?>> warningHandlers) throws IllegalArgumentException, IllegalAccessException {
+            Map<Class<?>, WarningHandler<?>> warningHandlers,
+            FieldInitializer fieldInitializer) throws IllegalArgumentException, IllegalAccessException {
         this.entityClasses = entityClasses;
         this.primaryClassSelection = primaryClassSelection;
         this.storage = storage;
@@ -134,6 +137,7 @@ public class WorkflowItemTreePanel extends JPanel {
         }
         this.idApplier = idApplier;
         this.warningHandlers = warningHandlers;
+        this.fieldInitializer = fieldInitializer;
         this.queryListPanel = new QueryListPanel<>(storage,
                 reflectionFormBuilder,
                 WorkflowItem.class,
@@ -141,7 +145,8 @@ public class WorkflowItemTreePanel extends JPanel {
                 initialValue,
                 DocumentScanner.generateApplicationWindowTitle("Bidirectional relation help",
                         DocumentScanner.APP_NAME,
-                        DocumentScanner.APP_VERSION));
+                        DocumentScanner.APP_VERSION),
+                fieldInitializer);
         communicationTree.setModel(communicationTreeModel);
 
         initTreeModel(initialValue);
@@ -159,7 +164,9 @@ public class WorkflowItemTreePanel extends JPanel {
                                     WorkflowItemTreePanel.this.messageHandler,
                                     WorkflowItemTreePanel.this.confirmMessageHandler,
                                     WorkflowItemTreePanel.this.idApplier,
-                                    WorkflowItemTreePanel.this.warningHandlers);
+                                    WorkflowItemTreePanel.this.warningHandlers,
+                                    WorkflowItemTreePanel.this.fieldInitializer
+                            );
                             entityEditingDialog.setVisible(true);
                             List<Object> selectedEntities = entityEditingDialog.getSelectedEntities();
                             for(Object selectedEntity : selectedEntities) {

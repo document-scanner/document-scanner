@@ -45,8 +45,7 @@ public class TelephoneCall extends WorkflowItem {
     @FieldInfo(name = "Transcription", description = "The transcription of the call")
     private String transcription;
     @NotNull
-    @Basic
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @FieldInfo(name = "Telephone number", description = "The telephone number used for the call")
     private TelephoneNumber telephoneNumber;
 

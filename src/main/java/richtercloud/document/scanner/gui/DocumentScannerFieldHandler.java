@@ -65,6 +65,7 @@ import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.fieldhandler.JPAMappingFieldHandler;
 import richtercloud.reflection.form.builder.jpa.fieldhandler.factory.JPAAmountMoneyMappingFieldHandlerFactory;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
+import richtercloud.reflection.form.builder.jpa.storage.FieldInitializer;
 import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 import richtercloud.reflection.form.builder.jpa.typehandler.ElementCollectionTypeHandler;
 import richtercloud.reflection.form.builder.jpa.typehandler.ToManyTypeHandler;
@@ -111,6 +112,7 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
     private final TagStorage tagStorage;
     private final ConfirmMessageHandler confirmMessageHandler;
     private final Map<Class<?>, WarningHandler<?>> warningHandlers;
+    private final FieldInitializer fieldInitializer;
 
     /**
      * A factory method which avoid creation of some type handlers by callers.
@@ -158,7 +160,8 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
             IdApplier idApplier,
             Map<Class<?>, WarningHandler<?>> warningHandlers,
             int initialQueryLimit,
-            String bidirectionalHelpDialogTitle) {
+            String bidirectionalHelpDialogTitle,
+            FieldInitializer fieldInitializer) {
         AmountMoneyMappingFieldHandlerFactory embeddableFieldHandlerFactory = new AmountMoneyMappingFieldHandlerFactory(amountMoneyUsageStatisticsStorage,
                 amountMoneyCurrencyStorage,
                 amountMoneyExchangeRateRetriever,
@@ -180,10 +183,12 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
                 messageHandler,
                 typeHandlerMapping,
                 typeHandlerMapping,
-                bidirectionalHelpDialogTitle);
+                bidirectionalHelpDialogTitle,
+                fieldInitializer);
         ToOneTypeHandler toOneTypeHandler = new ToOneTypeHandler(storage,
                 messageHandler,
-                bidirectionalHelpDialogTitle);
+                bidirectionalHelpDialogTitle,
+                fieldInitializer);
         DocumentScannerFieldHandler retValue = new DocumentScannerFieldHandler(jPAAmountMoneyMappingFieldHandlerFactory.generateClassMapping(),
                 embeddableFieldHandlerFactory.generateClassMapping(),
                 embeddableFieldHandlerFactory.generatePrimitiveMapping(),
@@ -203,7 +208,8 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
                 mainPanel,
                 tagStorage,
                 idApplier,
-                warningHandlers);
+                warningHandlers,
+                fieldInitializer);
         return retValue;
     }
 
@@ -226,7 +232,8 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
             MainPanel mainPanel,
             TagStorage tagStorage,
             IdApplier idApplier,
-            Map<Class<?>, WarningHandler<?>> warningHandlers) {
+            Map<Class<?>, WarningHandler<?>> warningHandlers,
+            FieldInitializer fieldInitializer) {
         super(classMapping,
                 embeddableMapping,
                 primitiveMapping,
@@ -250,6 +257,7 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
         this.tagStorage = tagStorage;
         this.confirmMessageHandler = confirmMessageHandler;
         this.warningHandlers = warningHandlers;
+        this.fieldInitializer = fieldInitializer;
     }
 
     @Override
@@ -316,7 +324,9 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
                     primaryClassSelection,
                     mainPanel,
                     getIdApplier(),
-                    warningHandlers);
+                    warningHandlers,
+                    fieldInitializer
+            );
             retValue.addUpdateListener(new WorkflowItemTreePanelUpdateListener() {
                 @Override
                 public void onUpdate(WorkflowItemTreePanelUpdateEvent event) {

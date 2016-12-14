@@ -89,6 +89,7 @@ import richtercloud.reflection.form.builder.jpa.JPACachedFieldRetriever;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.fieldhandler.factory.JPAAmountMoneyMappingFieldHandlerFactory;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
+import richtercloud.reflection.form.builder.jpa.storage.FieldInitializer;
 import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 import richtercloud.reflection.form.builder.jpa.typehandler.ElementCollectionTypeHandler;
 import richtercloud.reflection.form.builder.jpa.typehandler.ToManyTypeHandler;
@@ -181,6 +182,7 @@ public class DefaultMainPanel extends MainPanel {
     private final GroupLayout layout;
     private int documentCount = 0;
     private OCREngine oCREngine;
+    private final FieldInitializer fieldInitializer;
 
     public DefaultMainPanel(Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
@@ -197,7 +199,8 @@ public class DefaultMainPanel extends MainPanel {
             Window oCRProgressMonitorParent,
             TagStorage tagStorage,
             IdApplier idApplier,
-            Map<Class<?>, WarningHandler<?>> warningHandlers) {
+            Map<Class<?>, WarningHandler<?>> warningHandlers,
+            FieldInitializer fieldInitializer) {
         this(entityClasses,
                 primaryClassSelection,
                 DocumentScanner.VALUE_SETTER_MAPPING_DEFAULT,
@@ -214,7 +217,8 @@ public class DefaultMainPanel extends MainPanel {
                 oCRProgressMonitorParent,
                 tagStorage,
                 idApplier,
-                warningHandlers);
+                warningHandlers,
+                fieldInitializer);
     }
 
     public DefaultMainPanel(Set<Class<?>> entityClasses,
@@ -233,7 +237,8 @@ public class DefaultMainPanel extends MainPanel {
             Window oCRProgressMonitorParent,
             TagStorage tagStorage,
             IdApplier idApplier,
-            Map<Class<?>, WarningHandler<?>> warningHandlers) {
+            Map<Class<?>, WarningHandler<?>> warningHandlers,
+            FieldInitializer fieldInitializer) {
         if(messageHandler == null) {
             throw new IllegalArgumentException("messageHandler mustn't be null");
         }
@@ -256,6 +261,7 @@ public class DefaultMainPanel extends MainPanel {
         this.amountMoneyCurrencyStorage = amountMoneyCurrencyStorage;
         this.amountMoneyExchangeRateRetriever = amountMoneyExchangeRateRetriever;
         this.typeHandlerMapping = typeHandlerMapping;
+        this.fieldInitializer = fieldInitializer;
         this.reflectionFormBuilder = new AutoOCRValueDetectionReflectionFormBuilder(storage,
                 DocumentScanner.generateApplicationWindowTitle("Field description",
                         DocumentScanner.APP_NAME,
@@ -565,10 +571,12 @@ public class DefaultMainPanel extends MainPanel {
                     messageHandler,
                     typeHandlerMapping,
                     typeHandlerMapping,
-                    BIDIRECTIONAL_HELP_DIALOG_TITLE);
+                    BIDIRECTIONAL_HELP_DIALOG_TITLE,
+                    fieldInitializer);
             ToOneTypeHandler toOneTypeHandler = new ToOneTypeHandler(storage,
                     messageHandler,
-                    BIDIRECTIONAL_HELP_DIALOG_TITLE);
+                    BIDIRECTIONAL_HELP_DIALOG_TITLE,
+                    fieldInitializer);
             FieldHandler fieldHandler = new DocumentScannerFieldHandler(jPAAmountMoneyMappingFieldHandlerFactory.generateClassMapping(),
                     embeddableFieldHandlerFactory.generateClassMapping(),
                     embeddableFieldHandlerFactory.generatePrimitiveMapping(),
@@ -588,7 +596,8 @@ public class DefaultMainPanel extends MainPanel {
                     this,
                     tagStorage,
                     idApplier,
-                    warningHandlers
+                    warningHandlers,
+                    fieldInitializer
             );
 
             ReflectionFormPanelTabbedPane reflectionFormPanelTabbedPane =

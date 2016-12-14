@@ -128,6 +128,7 @@ import richtercloud.reflection.form.builder.jpa.panels.LongIdPanel;
 import richtercloud.reflection.form.builder.jpa.panels.StringAutoCompletePanel;
 import richtercloud.reflection.form.builder.jpa.storage.AbstractPersistenceStorageConf;
 import richtercloud.reflection.form.builder.jpa.storage.DelegatingPersistenceStorageFactory;
+import richtercloud.reflection.form.builder.jpa.storage.FieldInitializer;
 import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 import richtercloud.reflection.form.builder.jpa.typehandler.JPAEntityListTypeHandler;
 import richtercloud.reflection.form.builder.jpa.typehandler.factory.JPAAmountMoneyMappingTypeHandlerFactory;
@@ -290,6 +291,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private PersistenceStorage storage;
     private final DelegatingPersistenceStorageFactory delegatingStorageFactory = new DelegatingPersistenceStorageFactory("richtercloud_document-scanner_jar_1.0-SNAPSHOTPU",
             messageHandler);
+    private final FieldInitializer fieldInitializer;
 
     public static SaneDevice getScannerDevice(String scannerName,
             Map<String, ScannerConf> scannerConfMap,
@@ -537,11 +539,14 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 BIDIRECTIONAL_HELP_DIALOG_TITLE);
         this.typeHandlerMapping = fieldHandlerFactory.generateTypeHandlerMapping();
 
+        this.fieldInitializer = new DocumentScannerFieldInitializer(fieldRetriever);
+
         //after entity manager creation
         this.typeHandlerMapping.put(new TypeToken<List<AnyType>>() {
             }.getType(), new JPAEntityListTypeHandler(storage,
                     messageHandler,
-                    BIDIRECTIONAL_HELP_DIALOG_TITLE));
+                    BIDIRECTIONAL_HELP_DIALOG_TITLE,
+                    fieldInitializer));
         //listen to window close button (x)
         this.addWindowListener(new WindowAdapter() {
             @Override
@@ -581,7 +586,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 this, //oCRProgressMonitorParent
                 tagStorage,
                 idApplier,
-                warningHandlers
+                warningHandlers,
+                fieldInitializer
         );
         mainPanelPanel.add(this.mainPanel);
     }
@@ -913,7 +919,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 messageHandler,
                 confirmMessageHandler,
                 idApplier,
-                warningHandlers);
+                warningHandlers,
+                fieldInitializer);
         entityEditingDialog.setVisible(true); //blocks
         List<Object> selectedEntities = entityEditingDialog.getSelectedEntities();
         if(selectedEntities.size() > SELECTED_ENTITIES_EDIT_WARNING) {

@@ -39,6 +39,7 @@ import richtercloud.reflection.form.builder.jpa.JPAReflectionFormBuilder;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
 import richtercloud.reflection.form.builder.jpa.panels.QueryPanel;
+import richtercloud.reflection.form.builder.jpa.storage.FieldInitializer;
 import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 import richtercloud.reflection.form.builder.storage.StorageException;
 
@@ -93,6 +94,7 @@ public class EntityEditingDialog extends javax.swing.JDialog {
     */
     private final Map<Class<?>, QueryPanel<Object>> entityEditingQueryPanelCache = new HashMap<>();
     private final MessageHandler messageHandler;
+    private final FieldInitializer fieldInitializer;
 
     public EntityEditingDialog(Window parent,
             Set<Class<?>> entityClasses,
@@ -101,11 +103,13 @@ public class EntityEditingDialog extends javax.swing.JDialog {
             MessageHandler messageHandler,
             ConfirmMessageHandler confirmMessageHandler,
             IdApplier<?> idApplier,
-            Map<Class<?>, WarningHandler<?>> warningHandlers) {
+            Map<Class<?>, WarningHandler<?>> warningHandlers,
+            FieldInitializer fieldInitializer) {
         super(parent,
                 ModalityType.APPLICATION_MODAL);
         this.messageHandler = messageHandler;
         this.storage = storage;
+        this.fieldInitializer = fieldInitializer;
         init(entityClasses, primaryClassSelection, storage);
         reflectionFormBuilder = new JPAReflectionFormBuilder(storage,
                 DocumentScanner.generateApplicationWindowTitle("Field description", DocumentScanner.APP_NAME, DocumentScanner.APP_VERSION),
@@ -133,12 +137,14 @@ public class EntityEditingDialog extends javax.swing.JDialog {
             MessageHandler messageHandler,
             ConfirmMessageHandler confirmMessageHandler,
             IdApplier<?> idApplier,
-            Map<Class<?>, WarningHandler<?>> warningHandlers) {
+            Map<Class<?>, WarningHandler<?>> warningHandlers,
+            FieldInitializer fieldInitializer) {
         super(parent,
                 true //modal
         );
         this.messageHandler = messageHandler;
         this.storage = storage;
+        this.fieldInitializer = fieldInitializer;
         init(entityClasses, primaryClassSelection, storage);
         reflectionFormBuilder = new JPAReflectionFormBuilder(storage,
                 DocumentScanner.generateApplicationWindowTitle("Field description", DocumentScanner.APP_NAME, DocumentScanner.APP_VERSION),
@@ -201,7 +207,8 @@ public class EntityEditingDialog extends javax.swing.JDialog {
                         reflectionFormBuilder,
                         null, //initialValue
                         null, //bidirectionalControlPanel (doesn't make sense)
-                        ListSelectionModel.MULTIPLE_INTERVAL_SELECTION
+                        ListSelectionModel.MULTIPLE_INTERVAL_SELECTION,
+                        fieldInitializer
                 );
             } catch (IllegalArgumentException | IllegalAccessException ex) {
                 throw new RuntimeException(ex);

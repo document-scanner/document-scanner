@@ -17,6 +17,7 @@ package richtercloud.document.scanner.model;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
+import javax.persistence.ElementCollection;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Inheritance;
@@ -73,6 +74,14 @@ public abstract class Identifiable implements Serializable {
     private Long id;
     @Tags
     @FieldInfo(name="Tags", description = "A list of tags which can be freely associated with the entity")
+    @ElementCollection
+    /*
+    internal implementation notes:
+    - List<String> fails in OpenJPA due to `org.apache.openjpa.util.InternalException: Unexpected attribute type "String" for persistence-capable class "richtercloud.document.scanner.model.FinanceAccount" is detected.`
+    -> this is an inacceptable error in OpenJPA (in case OpenJPA is the only
+    remaining JPA provider which can be used while keeping basic sanity try to
+    introduce a Tag embeddable)
+    */
     private Set<String> tags = new HashSet<>();
 
     protected Identifiable() {

@@ -11,8 +11,8 @@
     <logger name="richtercloud" level="DEBUG"/>
     <logger name="richtercloud.document.scanner.gui.DateFormatAutoOCRValueDetectionService" level="INFO"/><!--too much output-->
     <logger name="richtercloud.document.scanner.gui.FormatUtils" level="INFO"/>
-    <!--<logger name="richtercloud.reflection.form.builder.jpa.storage.AbstractPersistenceStorage" level="TRACE"/>
-    <logger name="richtercloud.reflection.form.builder.jpa.storage.PrioritizableReentrantLock" level="TRACE"/>-->
+    <logger name="richtercloud.reflection.form.builder.jpa.storage.AbstractPersistenceStorage" level="TRACE"/>
+    <logger name="richtercloud.reflection.form.builder.jpa.storage.PrioritizableReentrantLock" level="TRACE"/>
         <!--for debugging locks-->
     <logger name="richtercloud.reflection.form.builder.jpa.panels.StringAutoCompletePanel" level="TRACE"/>
     <root level="INFO">
