@@ -148,7 +148,7 @@ public class ScannerEditDialog extends javax.swing.JDialog {
             public void itemStateChanged(ItemEvent e) {
                 int resolution;
                 try {
-                    resolution = Integer.valueOf((String)ScannerEditDialog.this.resolutionComboBox.getSelectedItem());
+                    resolution = (Integer) ScannerEditDialog.this.resolutionComboBox.getSelectedItem();
                     ScannerEditDialog.this.device.getOption("resolution").setIntegerValue(resolution);
                     scannerConf.setResolution(resolution);
                 } catch (IOException | SaneException ex) {
