@@ -60,7 +60,8 @@ public class SUTimeAutoOCRValueDetectionService extends AbstractAutoOCRValueDete
             Date value;
             Temporal temporal = coreMap.get(TimeExpression.Annotation.class).getTemporal();
             if(temporal.getRange() == null || temporal.getRange().begin() == null) {
-                LOGGER.debug("skipping temporal %s with null range or with range with null begin");
+                LOGGER.debug(String.format("skipping temporal %s with null range or with range with null begin",
+                        temporal));
                     //@TODO: investigate further and prevent causes for this if
                     //it makes sense
                 continue;
