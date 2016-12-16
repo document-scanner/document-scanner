@@ -70,8 +70,8 @@ public class SUTimeAutoOCRValueDetectionService extends AbstractAutoOCRValueDete
             } catch (ParseException ex) {
                 //Something like `Caused by: java.text.ParseException: Unparseable date: "716-XX-XX"`
                 //can happen @TODO: figure out
-                LOGGER.error("an unexpected exception occured during",
-                        ex);
+                LOGGER.error(String.format("an unexpected exception occured during: %s", ex.getMessage()));
+                    //don't log stacktrace because it's confusing in output
                 continue;
             }
             AutoOCRValueDetectionResult<Date> result = new AutoOCRValueDetectionResult<>(oCRSource,
