@@ -187,6 +187,10 @@ public class OCRResultPanel extends JPanel {
                         //might be null if fetch has been canceled (this check is
                         //unnecessary for non-cancelable processing, but don't care
                         setValue(oCRResult);
+                        OCRResultPanel.this.oCRResultTextArea.setCaretPosition(0);
+                            //scroll to top after setting value
+                            //from http://stackoverflow.com/questions/291115/java-swing-using-jscrollpane-and-having-it-scroll-back-to-top
+                            //JTextArea.scrollRectToVisible doesn't work
                     }
                     OCRResultPanel.this.setEnabled(true);
                 });
