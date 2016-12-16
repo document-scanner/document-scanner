@@ -1131,7 +1131,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             if(!scannedImages.isEmpty()) {
                 LOGGER.debug(String.format("scanned %d pages", scannedImages.size()));
                 final List<List<ImageWrapper>> scannerResults = new LinkedList<>();
-                ScannerResultDialog scannerResultDialog = scannerResultDialog = new ScannerResultDialog(this,
+                ScannerResultDialog scannerResultDialog = new ScannerResultDialog(this,
                         scannedImages,
                             this.documentScannerConf);
                 scannerResultDialog.setLocationRelativeTo(this);
