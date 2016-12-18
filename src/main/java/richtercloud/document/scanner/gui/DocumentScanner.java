@@ -860,10 +860,13 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         storageSelectionDialog.setLocationRelativeTo(this);
         storageSelectionDialog.setVisible(true);
         StorageConf selectedStorageConf = storageSelectionDialog.getSelectedStorageConf();
-        if(!this.documentScannerConf.getStorageConf().getClass().equals(selectedStorageConf.getClass())) {
+        if(!this.documentScannerConf.getStorageConf().equals(selectedStorageConf)) {
             //type of StorageConf changed
             this.documentScannerConf.setStorageConf(selectedStorageConf);
             try {
+                LOGGER.debug("storage configuration changes, shutting down current storage");
+                this.storage.shutdown();
+                LOGGER.debug("creating new storage based on changed configuration");
                 this.storage = delegatingStorageFactory.create(selectedStorageConf);
             } catch (StorageCreationException ex) {
                 throw new RuntimeException(ex);
