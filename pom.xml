@@ -12,6 +12,7 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <richtercloud.document.scanner.openjpa.version>2.2.0</richtercloud.document.scanner.openjpa.version>
         <richtercloud.document.scanner.hibernate.version>5.0.11.Final</richtercloud.document.scanner.hibernate.version>
+        <richtercloud.document.scanner.eclipselink.version>2.6.4</richtercloud.document.scanner.eclipselink.version>
     </properties>
     <dependencies>
         <dependency>
@@ -67,14 +68,11 @@
             <version>10.13.1.1</version>
             <type>jar</type>
         </dependency>
-        <!--use org.hibernate:hibernate-entitymanager instead of
-        org.hibernate:hibernate-core
-        <ref>http://hibernate.org/orm/downloads/</ref>-->
 
         <!--JPA provider-->
         <!--explanations and reasons for JPA provider and caching are documented
                 in comments in persistence.xml-->
-        <dependency>
+<!--        <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-entitymanager</artifactId>
             <version>${richtercloud.document.scanner.hibernate.version}</version>
@@ -83,18 +81,21 @@
             <groupId>org.hibernate.javax.persistence</groupId>
             <artifactId>hibernate-jpa-2.1-api</artifactId>
             <version>1.0.0.Final</version>
-        </dependency>
+        </dependency>-->
+            <!--use org.hibernate:hibernate-entitymanager instead of
+                org.hibernate:hibernate-core
+                <ref>http://hibernate.org/orm/downloads/</ref>-->
             <!--Hibernate needs one run with hibernate.hbm2ddl.auto set to
                     validate in order to provide any half-useful feedback at all
                     and to avoid failing with incomprehensive runtime exceptions
                     -->
-        <!--<dependency>
+        <dependency>
             <groupId>org.eclipse.persistence</groupId>
             <artifactId>eclipselink</artifactId>
-            <version>2.6.4</version>
-                <!class specified in property eclipselink.session.customizer
-                        isn't invoked in 2.6.2, but in 2.6.4>
-        </dependency>-->
+            <version>${richtercloud.document.scanner.eclipselink.version}</version>
+                <!--class specified in property eclipselink.session.customizer
+                        isn't invoked in 2.6.2, but in 2.6.4-->
+        </dependency>
         <!--<dependency>
             <groupId>org.apache.openjpa</groupId>
             <artifactId>openjpa</artifactId>
@@ -286,7 +287,7 @@
                     </dependency>
                 </dependencies>
             </plugin>-->
-            <plugin>
+<!--            <plugin>
                 <groupId>org.hibernate.orm.tooling</groupId>
                 <artifactId>hibernate-enhance-maven-plugin</artifactId>
                 <version>${richtercloud.document.scanner.hibernate.version}</version>
@@ -300,8 +301,8 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <!--includes and excludes can't be specified because
-                            specifying dir causes enhancement to fail-->
+                    includes and excludes can't be specified because
+                            specifying dir causes enhancement to fail
                     <failOnError>true</failOnError>
                     <enableLazyInitialization>true</enableLazyInitialization>
                 </configuration>
@@ -310,6 +311,30 @@
                         <groupId>org.hibernate</groupId>
                         <artifactId>hibernate-core</artifactId>
                         <version>${richtercloud.document.scanner.hibernate.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>-->
+            <plugin>
+                <groupId>de.empulse.eclipselink</groupId>
+                <artifactId>staticweave-maven-plugin</artifactId>
+                <version>1.0.0</version>
+                <executions>
+                    <execution>
+                       <phase>process-classes</phase>
+                        <goals>
+                            <goal>weave</goal>
+                        </goals>
+                        <configuration>
+                            <persistenceXMLLocation>META-INF/persistence.xml</persistenceXMLLocation>
+                            <logLevel>FINE</logLevel>
+                        </configuration>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.eclipse.persistence</groupId>
+                        <artifactId>org.eclipse.persistence.jpa</artifactId>
+                        <version>${richtercloud.document.scanner.eclipselink.version}</version>
                     </dependency>
                 </dependencies>
             </plugin>

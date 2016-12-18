@@ -49,7 +49,7 @@ sender and recipient properties.
 public class Payment extends Identifiable {
     private static final long serialVersionUID = 1L;
     @NotNull
-    @Basic(fetch = FetchType.LAZY)
+    @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Amount", description = "The amount and currency of the payment")
     @Column(length = 8191) //avoid truncation error
     private Amount<Money> amount;
@@ -74,7 +74,7 @@ public class Payment extends Identifiable {
     - it doesn't make sense to describe payments between Companys because they
     can have multiple FinanceAccounts
     */
-    @OneToOne
+    @OneToOne(fetch = FetchType.EAGER)
     @NotNull(groups = {Default.class, IdGenerationValidation.class})
     @FieldInfo(name = "Sender", description = "The account from which the payment has been sent")
     private FinanceAccount sender;
@@ -86,14 +86,14 @@ public class Payment extends Identifiable {
     - it doesn't make sense to describe payments between Companys because they
     can have multiple FinanceAccounts
     */
-    @OneToOne
+    @OneToOne(fetch = FetchType.EAGER)
     @NotNull(groups = {Default.class, IdGenerationValidation.class})
     @FieldInfo(name = "Recipient", description = "The account to which the payment has been sent")
     private FinanceAccount recipient;
     /**
      * where the payment is associated in
      */
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     @FieldInfo(name = "Documents", description = "A list of associated documents")
     private List<Document> documents;
 

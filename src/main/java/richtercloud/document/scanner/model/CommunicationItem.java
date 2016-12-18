@@ -33,11 +33,11 @@ import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
 @MappedSuperclass
 public abstract class CommunicationItem extends Identifiable  {
     private static final long serialVersionUID = 1L;
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @NotNull(groups = {Default.class, IdGenerationValidation.class})
     @FieldInfo(name = "Sender", description = "A reference to the sender")
     private Company sender;
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @NotNull(groups = {Default.class, IdGenerationValidation.class})
     @FieldInfo(name = "Recipient", description = "A reference to the recipient")
     private Company recipient;
@@ -46,7 +46,7 @@ public abstract class CommunicationItem extends Identifiable  {
      * unknown.
      */
     @Temporal(TemporalType.TIMESTAMP)
-    @Basic(fetch = FetchType.LAZY)
+    @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Date", description = "The date indicated on the document")
     private Date theDate;
 

@@ -16,6 +16,7 @@ package richtercloud.document.scanner.ocr;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.Iterator;
 import javax.imageio.ImageIO;
@@ -68,6 +69,52 @@ public class TesseractOCREngine extends ProcessOCREngine<TesseractOCREngineConf>
             Process tesseractProcess = tesseractProcessBuilder.start();
             getBinaryProcesses().add(tesseractProcess);
             ImageIO.write(image, "png", tesseractProcess.getOutputStream());
+            tesseractProcess.getOutputStream().flush();
+            tesseractProcess.getOutputStream().close(); //sending EOF not an option because it's not documented what is expected (sending -1 once or twice doesn't have any effect, also with flush)
+            int tesseractProcessExitValue = tesseractProcess.waitFor();
+            if(tesseractProcessExitValue != 0) {
+                //tesseractProcess.destroy might cause IOException, but
+                //termination with exit value != 0 might occur as well
+                StringWriter tesseractStderrWriter = new StringWriter();
+                IOUtils.copy(tesseractProcess.getErrorStream(), tesseractStderrWriter);
+                String tesseractProcessStderr = tesseractStderrWriter.toString();
+                LOGGER.debug(String.format("tesseract process '%s' failed with "
+                        + "returncode %d and output '%s'",
+                        this.getoCREngineConf().getBinary(),
+                        tesseractProcessExitValue,
+                        tesseractProcessStderr));
+                return null;
+            }
+            StringWriter tesseractResultWriter = new StringWriter();
+            IOUtils.copy(tesseractProcess.getInputStream(), tesseractResultWriter);
+            String tesseractResult = tesseractResultWriter.toString();
+            LOGGER.debug("OCR result: {}", tesseractResult);
+            return tesseractResult;
+        } catch(InterruptedException ex) {
+            //InterruptedException is an IOException
+            return null; //might at one point be thrown due to Process.destroy
+                    //cancelation
+        } catch (IOException ex) {
+            if(ex.getMessage().equals("Stream closed")) {
+                return null; //result of Process.destroy
+            }
+            throw new RuntimeException(ex);
+        }
+    }
+
+    @Override
+    protected String recognizeImageStream0(InputStream imageStream) {
+        try {
+            Iterator<String> languagesItr = this.oCREngineConf.getSelectedLanguages().iterator();
+            String lanuguageString = languagesItr.next();
+            while(languagesItr.hasNext()) {
+                lanuguageString += "+"+languagesItr.next();
+            }
+            ProcessBuilder tesseractProcessBuilder = new ProcessBuilder(this.getoCREngineConf().getBinary(), "-l", lanuguageString, "stdin", "stdout")
+                    .redirectOutput(ProcessBuilder.Redirect.PIPE);
+            Process tesseractProcess = tesseractProcessBuilder.start();
+            getBinaryProcesses().add(tesseractProcess);
+            IOUtils.copy(imageStream, tesseractProcess.getOutputStream());
             tesseractProcess.getOutputStream().flush();
             tesseractProcess.getOutputStream().close(); //sending EOF not an option because it's not documented what is expected (sending -1 once or twice doesn't have any effect, also with flush)
             int tesseractProcessExitValue = tesseractProcess.waitFor();

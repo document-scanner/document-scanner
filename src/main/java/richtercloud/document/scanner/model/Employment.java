@@ -35,18 +35,18 @@ import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
 @Inheritance
 public class Employment extends Identifiable {
     private static final long serialVersionUID = 1L;
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @NotNull(groups = {Default.class, IdGenerationValidation.class})
     @FieldInfo(name = "Company", description = "The company where the employment took place")
     private Company company;
     @Temporal(TemporalType.TIMESTAMP)
     @NotNull(groups = {Default.class, IdGenerationValidation.class})
-    @Basic(fetch = FetchType.LAZY)
+    @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Begin", description = "The date of the beginning of the employment")
     private Date theBegin;
     @Temporal(TemporalType.TIMESTAMP)
     @NotNull(groups = {Default.class, IdGenerationValidation.class})
-    @Basic(fetch = FetchType.LAZY)
+    @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "End", description = "The date of the end of the employment")
     private Date theEnd;
 

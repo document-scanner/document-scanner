@@ -32,7 +32,7 @@ import richtercloud.reflection.form.builder.FieldInfo;
 @ClassInfo(name="Withdrawal")
 public class Withdrawal extends Document {
     private static final long serialVersionUID = 1L;
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.EAGER)
     @FieldInfo(name = "Employment", description = "The employment which has "
             + "been ended through this withdrawal")
     private Employment employment;

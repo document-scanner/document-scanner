@@ -44,22 +44,22 @@ public class Company extends Identifiable {
             + "warning if a company with the same name already exists.")
     @NotNull(groups = {Default.class, IdGenerationValidation.class})
     @Size(min = 1)
-    @Basic(fetch = FetchType.LAZY)
+    @Basic(fetch = FetchType.EAGER)
     private String name;
     @FieldInfo(name = "Complete name list", description = "A list of all names "
             + "associated with this contact")
-    @ElementCollection(fetch = FetchType.LAZY)
+    @ElementCollection(fetch = FetchType.EAGER)
     @NoEmptyEntriesList
     private List<String> allNames;
     @FieldInfo(name = "Addresses", description = "Multiple contacts can have "
             + "the same address (shared office) and a contact can have multiple "
             + "addresses.")
-    @ElementCollection(fetch = FetchType.LAZY)
+    @ElementCollection(fetch = FetchType.EAGER)
     @NoEmptyEntriesList
     private List<Address> addresses;
     @FieldInfo(name = "Email addresses", description = "One company can have "
             + "multiple email addresses.")
-    @OneToMany(fetch = FetchType.LAZY)
+    @OneToMany(fetch = FetchType.EAGER)
     /*
     internal implementation notes:
     - It's very unlikely that two contacts share the same email address.
@@ -68,12 +68,12 @@ public class Company extends Identifiable {
     private List<EmailAddress> emails;
     @FieldInfo(name = "Finance accounts", description = "A list of finance "
             + "accounts owned by the contact or somehow associated with it.")
-    @OneToMany(fetch = FetchType.LAZY)
+    @OneToMany(fetch = FetchType.EAGER)
     @NoEmptyEntriesList
     private List<FinanceAccount> accounts;
     @FieldInfo(name = "Telephone numbers", description = "A list of telephone "
             + "numbers owned by the contact or somehow associated with it.")
-    @OneToMany(fetch = FetchType.LAZY)
+    @OneToMany(fetch = FetchType.EAGER)
     @NoEmptyEntriesList
     private List<TelephoneNumber> telephoneNumbers;
 

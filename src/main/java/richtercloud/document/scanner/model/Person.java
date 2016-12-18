@@ -36,11 +36,11 @@ import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
 @ValidPerson(groups = {Default.class, IdGenerationValidation.class})
 public class Person extends Company {
     private static final long serialVersionUID = 1L;
-    @ElementCollection(fetch = FetchType.LAZY)
+    @ElementCollection(fetch = FetchType.EAGER)
     @FieldInfo(name = "Firstnames", description = "All firstnames of the contact")
     @NoEmptyEntriesList
     private List<String> firstnames = new LinkedList<>();
-    @ElementCollection(fetch = FetchType.LAZY)
+    @ElementCollection(fetch = FetchType.EAGER)
     @FieldInfo(name = "Lastnames", description = "All lastnames of the contact")
     @NoEmptyEntriesList
     private List<String> lastnames = new LinkedList<>();

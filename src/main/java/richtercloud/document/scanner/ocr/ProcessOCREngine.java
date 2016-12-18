@@ -80,7 +80,7 @@ public abstract class ProcessOCREngine<C extends ProcessOCREngineConf> extends C
     }
 
     @Override
-    public String recognizeImage0(BufferedImage image) throws IllegalStateException {
+    protected String recognizeImage0(BufferedImage image) throws IllegalStateException {
         if(image == null) {
             throw new IllegalArgumentException("image mustn't be null");
         }

@@ -13,6 +13,7 @@
     <logger name="richtercloud.document.scanner.gui.FormatUtils" level="INFO"/>
     <logger name="richtercloud.reflection.form.builder.jpa.storage.AbstractPersistenceStorage" level="TRACE"/>
     <logger name="richtercloud.reflection.form.builder.jpa.storage.PrioritizableReentrantLock" level="TRACE"/>
+    <logger name="richtercloud.document.scanner.ocr.CachedOCREngine" level="TRACE"/>
         <!--for debugging locks-->
     <logger name="richtercloud.reflection.form.builder.jpa.panels.StringAutoCompletePanel" level="TRACE"/>
     <root level="INFO">

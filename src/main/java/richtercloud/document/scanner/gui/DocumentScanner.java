@@ -129,6 +129,7 @@ import richtercloud.reflection.form.builder.jpa.panels.StringAutoCompletePanel;
 import richtercloud.reflection.form.builder.jpa.storage.AbstractPersistenceStorageConf;
 import richtercloud.reflection.form.builder.jpa.storage.DelegatingPersistenceStorageFactory;
 import richtercloud.reflection.form.builder.jpa.storage.FieldInitializer;
+import richtercloud.reflection.form.builder.jpa.storage.NoOpFieldInitializer;
 import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 import richtercloud.reflection.form.builder.jpa.typehandler.JPAEntityListTypeHandler;
 import richtercloud.reflection.form.builder.jpa.typehandler.factory.JPAAmountMoneyMappingTypeHandlerFactory;
@@ -290,6 +291,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     */
     private PersistenceStorage storage;
     private final DelegatingPersistenceStorageFactory delegatingStorageFactory = new DelegatingPersistenceStorageFactory("richtercloud_document-scanner_jar_1.0-SNAPSHOTPU",
+            2, //parallelQueryCount (2 causes `OutOfMemoryError: Java heap space`
             messageHandler);
     private final FieldInitializer fieldInitializer;
 
@@ -539,7 +541,10 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 BIDIRECTIONAL_HELP_DIALOG_TITLE);
         this.typeHandlerMapping = fieldHandlerFactory.generateTypeHandlerMapping();
 
-        this.fieldInitializer = new DocumentScannerFieldInitializer(fieldRetriever);
+        this.fieldInitializer = new NoOpFieldInitializer();
+            //Don't use DocumentScannerFieldInitializer here because it will
+            //fetch all scanData of Document on all n query results resulting in
+            //n*size of documents byte[]s memory consumption
 
         //after entity manager creation
         this.typeHandlerMapping.put(new TypeToken<List<AnyType>>() {

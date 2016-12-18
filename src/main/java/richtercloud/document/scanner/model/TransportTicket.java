@@ -54,14 +54,14 @@ public class TransportTicket extends Bill {
             //otherwise creation of TransportTicket doesn't make sense; used for
             //id generation
 //    @NoEmptyEntriesList(groups = {Default.class, IdGenerationValidation.class})
-    @ElementCollection(fetch = FetchType.LAZY)
+    @ElementCollection(fetch = FetchType.EAGER)
     @FieldInfo(name = "Waypoints", description = "A list of waypoints of the ticket (stations, cities, coordinates")
     private List<String> waypoints;
     /**
      * The date of the journey.
      */
     @Temporal(TemporalType.DATE)
-    @Basic(fetch = FetchType.LAZY)
+    @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Journey date", description="The date of journey (if different from the date of buying the ticket)")
     /*
     internal implementation notes:

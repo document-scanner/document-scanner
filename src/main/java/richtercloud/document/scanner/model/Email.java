@@ -34,13 +34,13 @@ import richtercloud.reflection.form.builder.FieldInfo;
 @ClassInfo(name="Email")
 public class Email extends WorkflowItem {
     private static final long serialVersionUID = 1L;
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @FieldInfo(name = "Sender address", description = "The email address of the sender")
     private EmailAddress senderAddress;
-    @OneToMany(fetch = FetchType.LAZY)
+    @OneToMany(fetch = FetchType.EAGER)
     @FieldInfo(name = "CC recipients", description = "The email addresses of CC recipients")
     private List<EmailAddress> ccRecipientAddresses = new LinkedList<>();
-    @OneToMany(fetch = FetchType.LAZY)
+    @OneToMany(fetch = FetchType.EAGER)
     @FieldInfo(name = "BCC recipients", description = "The email addresses of BCC recipients")
     private List<EmailAddress> bccRecipientAddresses = new LinkedList<>();
 

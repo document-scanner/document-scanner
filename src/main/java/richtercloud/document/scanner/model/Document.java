@@ -40,14 +40,14 @@ import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
 @Inheritance
 public class Document extends AbstractDocument {
     private static final long serialVersionUID = 1L;
-    @Basic(fetch = FetchType.LAZY)
+    @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Comment", description = "An optional comment about the document or its reception")
     private String comment;
     /**
      * a name for the document or a few words describing the context
      */
     @NotNull(groups = {Default.class, IdGenerationValidation.class})
-    @Basic(fetch = FetchType.LAZY)
+    @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Identifier", description = "A name for the document or a few words describing it (choosen by the user)")
     private String identifier;
     @ScanResult
@@ -55,6 +55,9 @@ public class Document extends AbstractDocument {
             //because this might quickly create performance impacts
     @Lob
     @FieldInfo(name = "Scan data", description = "The binary data of the scan")
+    @Column //Hibernate 5.0.11.Final might need `length = 1073741824`
+    //(= 2^30 ~= 1GB) (avoids `PSQLException: ERROR: column "scandata" is of type bytea but expression is of type bigint
+    //Hinweis: You will need to rewrite or cast the expression.` in Hibernate 5.0.11.Final with PostgreSQL 9.5
     /*
     internal implementation notes:
     - using a java.sql.Blob doesn't seem to make sense because there's no
@@ -72,7 +75,7 @@ public class Document extends AbstractDocument {
     //length 255 which is the default
     @FieldInfo(name= "Scan OCR text", description = "The text which has been retrieved by OCR")
     private String scanOCRText;
-    @ManyToMany(mappedBy = "documents", fetch = FetchType.LAZY)
+    @ManyToMany(mappedBy = "documents", fetch = FetchType.EAGER)
     @FieldInfo(name = "Payments", description = "A list of payments associated with this document")
     private List<Payment> payments;
 

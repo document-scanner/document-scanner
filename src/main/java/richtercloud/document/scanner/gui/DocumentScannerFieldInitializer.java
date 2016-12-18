@@ -14,29 +14,29 @@
  */
 package richtercloud.document.scanner.gui;
 
-import java.lang.reflect.Field;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-import richtercloud.reflection.form.builder.FieldRetriever;
-import richtercloud.reflection.form.builder.jpa.storage.ReflectionFieldInitializer;
+import richtercloud.document.scanner.model.Document;
+import richtercloud.reflection.form.builder.jpa.storage.FieldInitializer;
+import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 
 /**
  *
  * @author richter
  */
-public class DocumentScannerFieldInitializer extends ReflectionFieldInitializer {
-    private final Set<Class<?>> initializeSkipTypes = new HashSet<>(Arrays.asList(byte[].class));
+public class DocumentScannerFieldInitializer implements FieldInitializer {
+    private PersistenceStorage storage;
 
-    public DocumentScannerFieldInitializer(FieldRetriever fieldRetriever) {
-        super(fieldRetriever);
+    public DocumentScannerFieldInitializer(PersistenceStorage storage) {
+        this.storage = storage;
     }
 
     @Override
-    protected boolean initializeField(Field field) {
-        if(field.getType().equals(byte.class)) {
-            return false;
+    public void initialize(Object entity) throws IllegalArgumentException, IllegalAccessException {
+        //org.eclipse.persistence.sessions.Session.readObject(Object) and
+        //refreshObject(Object) don't initialize lazy fields -> there seems
+        //to be no way in EclipseLink
+        if(entity instanceof Document) {
+            Document entityCast = (Document) entity;
+            entityCast.getScanData();
         }
-        return super.initializeField(field);
     }
 }

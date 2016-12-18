@@ -419,6 +419,10 @@ public class DefaultMainPanel extends MainPanel {
                         byte[].class));
             }
             try {
+                //Querying the data of entityToEditScanResultField with a JPQL
+                //statement doesn't set the data on entityToEdit
+                DocumentScannerFieldInitializer scanDataFieldInitializer = new DocumentScannerFieldInitializer(storage);
+                scanDataFieldInitializer.initialize(entityToEdit);
                 byte[] scanData = (byte[]) entityToEditScanResultField.get(entityToEdit);
                 if(scanData == null) {
                     LOGGER.debug(String.format("scanData of instance of %s "

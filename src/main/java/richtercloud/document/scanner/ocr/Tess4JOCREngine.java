@@ -15,7 +15,10 @@
 package richtercloud.document.scanner.ocr;
 
 import java.awt.image.BufferedImage;
+import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
+import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.ifaces.OCREngine;
 import richtercloud.document.scanner.ifaces.OCREngineConf;
 import richtercloud.document.scanner.ifaces.OCREngineProgressListener;
@@ -59,6 +62,11 @@ public class Tess4JOCREngine implements OCREngine<OCREngineConf> {
 
     @Override
     public OCREngineConf getoCREngineConf() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public String recognizeImageStreams(Map<ImageWrapper, InputStream> imageStreams) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

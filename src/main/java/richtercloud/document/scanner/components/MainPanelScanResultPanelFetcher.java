@@ -63,7 +63,8 @@ public class MainPanelScanResultPanelFetcher implements ScanResultPanelFetcher {
             }
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(retValueStream);
             objectOutputStream.writeObject(imageIcons);
-            return retValueStream.toByteArray();
+            byte[] retValue = retValueStream.toByteArray();
+            return retValue;
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }

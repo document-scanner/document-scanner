@@ -33,7 +33,7 @@ import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
 @Inheritance
 public class Transport extends Identifiable {
     private static final long serialVersionUID = 1L;
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.EAGER)
     @Size(min = 1, groups = {Default.class, IdGenerationValidation.class}) //otherwise creating a Transport doesn't make sense; used for id generation
     @FieldInfo(name = "Tickets", description = "A list of tickets which make up this transport")
     private List<TransportTicket> tickets;

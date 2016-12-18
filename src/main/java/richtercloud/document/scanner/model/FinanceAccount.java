@@ -41,7 +41,7 @@ import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
 @ClassInfo(name="Finance account")
 public class FinanceAccount extends Identifiable {
     private static final long serialVersionUID = 1L;
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @NotNull
     @FieldInfo(name = "Owner", description = "The owner of the account")
     private Company owner;
@@ -49,20 +49,20 @@ public class FinanceAccount extends Identifiable {
      * Can be {@code null} if the BIC isn't necessary for the transfer for the
      * user.
      */
-    @Basic(fetch = FetchType.LAZY)
+    @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "BIC", description = "The Business Identifier Code (BIC) of the business where the account is managed")
     private String bic;
     @NotNull
-    @Basic(fetch = FetchType.LAZY)
+    @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "IBAN", description = "The International Bank Account Number (IBAN) of the account")
     private String iban;
-    @Basic(fetch = FetchType.LAZY)
+    @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "BLZ", description = "The german Bankleitzahl (in case BIC is omitted)")
     private String blz;
-    @Basic(fetch = FetchType.LAZY)
+    @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Number", description = "The account number (in case IBAN is omitted)")
     private String number;
-    @OneToMany(fetch = FetchType.LAZY)
+    @OneToMany(fetch = FetchType.EAGER)
     @FieldInfo(name = "Payments", description = "A list of payments sent and received with this account")
     private List<Payment> payments;
 

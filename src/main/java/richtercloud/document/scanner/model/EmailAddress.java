@@ -39,10 +39,10 @@ public class EmailAddress extends Identifiable {
     private static final long serialVersionUID = 1L;
     @NotNull(groups = {Default.class, IdGenerationValidation.class})
     @ValidEmailAddress
-    @Basic(fetch = FetchType.LAZY)
+    @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Address", description = "The email address")
     private String address;
-    @ElementCollection(fetch = FetchType.LAZY)
+    @ElementCollection(fetch = FetchType.EAGER)
     @FieldInfo(name = "PGP key IDs", description = "A list of PGP key IDs")
     private List<String> pgpKeyIds;
 

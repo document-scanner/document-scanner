@@ -14,15 +14,17 @@
  */
 package richtercloud.document.scanner.gui;
 
-import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
+import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.ifaces.OCREngine;
 import richtercloud.document.scanner.ifaces.OCREngineProgressEvent;
 import richtercloud.document.scanner.ifaces.OCREngineProgressListener;
@@ -67,11 +69,12 @@ public class DefaultOCRSelectPanelPanelFetcher implements OCRSelectPanelPanelFet
     public String fetch() {
         int i=0;
         List<OCRSelectPanel> imagePanels = oCRSelectPanelPanel.getoCRSelectPanels();
-        List<BufferedImage> images = new LinkedList<>();
+        Map<ImageWrapper, InputStream> imageStreams = new HashMap<>();
         for (final OCRSelectPanel imagePanel : imagePanels) {
             try {
-                BufferedImage image = imagePanel.getImage().getImagePreview(imagePanel.getImage().getInitialWidth()); //need to pay attention to rotation
-                images.add(image);
+                InputStream imageStream = imagePanel.getImage().getOriginalImageStream();
+                imageStreams.put(imagePanel.getImage(),
+                        imageStream);
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
             }
@@ -84,7 +87,7 @@ public class DefaultOCRSelectPanelPanelFetcher implements OCRSelectPanelPanelFet
                 }
             }
         });
-        String oCRResult = oCREngine.recognizeImages(images);
+        String oCRResult = oCREngine.recognizeImageStreams(imageStreams);
             //need to operate on original image in order to get
             //acceptable OCR results
         if(oCRResult == null) {

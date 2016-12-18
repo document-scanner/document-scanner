@@ -15,6 +15,9 @@
 package richtercloud.document.scanner.gui;
 
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Since jFreeSane doesn't have persistable {@link SaneDevice} and
@@ -22,18 +25,27 @@ import java.io.Serializable;
  * options in a separate class.
  *
  * There's no need to persist type and model because they can be retrieved from
- * {@link SaneSession}.
+ * {@link SaneSession} based on {@code scannerName}.
+ *
+ * Only relevant SANE options are exposed. Handling {@code top-x},
+ * {@code top-y}, {@code bottom-x} and {@code bottom-y} occurs in
+ * {@link ScannerConfPaperFormat} without offset.
  *
  * @author richter
  */
 public class ScannerConf implements Serializable {
-
     private static final long serialVersionUID = 1L;
+    public final static ScannerConfPaperFormat PAPER_FORMAT_DEFAULT = new ScannerConfPaperFormat(210, 297, "DIN A4");
     private String scannerName;
     private String scannerAddress;
     private Integer resolution;
     private String mode;
     private String source;
+    private ScannerConfPaperFormat paperFormat = PAPER_FORMAT_DEFAULT;
+    private Set<ScannerConfPaperFormat> availablePaperFormats = new HashSet<>(Arrays.asList(PAPER_FORMAT_DEFAULT));
+
+    public ScannerConf() {
+    }
 
     /**
      * Creates an empty {@code ScannerConf} (in case the application has been
@@ -43,7 +55,10 @@ public class ScannerConf implements Serializable {
         this.scannerName = scannerName;
     }
 
-    public ScannerConf(String scannerName, String scannerAddress, Integer resolution, String mode, String source) {
+    public ScannerConf(String scannerName,
+            String scannerAddress,
+            Integer resolution,
+            String mode, String source) {
         this(scannerName);
         this.scannerAddress = scannerAddress;
         this.resolution = resolution;
@@ -89,5 +104,21 @@ public class ScannerConf implements Serializable {
 
     public String getSource() {
         return source;
+    }
+
+    public ScannerConfPaperFormat getPaperFormat() {
+        return paperFormat;
+    }
+
+    public void setPaperFormat(ScannerConfPaperFormat paperFormat) {
+        this.paperFormat = paperFormat;
+    }
+
+    public Set<ScannerConfPaperFormat> getAvailablePaperFormats() {
+        return availablePaperFormats;
+    }
+
+    public void setAvailablePaperFormats(Set<ScannerConfPaperFormat> availablePaperFormats) {
+        this.availablePaperFormats = availablePaperFormats;
     }
 }

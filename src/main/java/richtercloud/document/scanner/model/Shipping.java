@@ -38,7 +38,7 @@ public class Shipping extends WorkflowItem {
     private static final long serialVersionUID = 1L;
     @Size(min = 1) //otherwise creating a shipping doesn't make sense
     @FieldInfo(name = "Packages", description = "A list of packages which make this shipping")
-    @OneToMany(mappedBy = "shipping", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "shipping", fetch = FetchType.EAGER)
     private List<APackage> packages;
     /**
      * The date and time (timestamp) of the deliveryDate (by the delivery
@@ -46,7 +46,7 @@ public class Shipping extends WorkflowItem {
      */
     @Temporal(TemporalType.TIMESTAMP)
     @NotNull
-    @Basic(fetch = FetchType.LAZY)
+    @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Delivery", description = "The date of the delivery as specified by the delivery service")
     private Date deliveryDate;
 

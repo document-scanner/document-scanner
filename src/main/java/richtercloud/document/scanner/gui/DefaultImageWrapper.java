@@ -16,10 +16,12 @@ package richtercloud.document.scanner.gui;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.embed.swing.SwingFXUtils;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javax.imageio.ImageIO;
@@ -96,6 +98,32 @@ public class DefaultImageWrapper implements ImageWrapper {
     @Override
     public void setRotationDegrees(double rotationDegrees) {
         this.rotationDegrees = rotationDegrees;
+    }
+
+    /**
+     * Gets an {@link InputStream} which allows passing data to an application
+     * without loading it into memory.
+     * @return an {@link FileInputStream} which allows reading image data
+     */
+    /*
+    internal implementation notes:
+    - The only source for the stream which makes sense is a file.
+    - Rotation has to occur in memory.
+    - Since an update of the UI is usually requested right after the rotation
+    because all rotation is requested by GUI components there's no sense in
+    rotating asynchronously.
+    */
+    @Override
+    public FileInputStream getOriginalImageStream() throws IOException {
+        ImageView imageView = new ImageView(this.storageFile.toURI().toURL().toString());
+        imageView.setRotate(rotationDegrees);
+        File tmpFile = File.createTempFile("image-wrapper", null);
+        Image rotatedImage = imageView.getImage();
+        //There's no way to write a JavaFX image into a file without converting
+        //it into a Swing/AWT image
+        ImageIO.write(SwingFXUtils.fromFXImage(rotatedImage, null), "png", tmpFile);
+        FileInputStream retValue = new FileInputStream(tmpFile);
+        return retValue;
     }
 
     /**

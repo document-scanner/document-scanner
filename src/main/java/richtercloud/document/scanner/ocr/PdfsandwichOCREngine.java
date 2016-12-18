@@ -17,6 +17,7 @@ package richtercloud.document.scanner.ocr;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import javax.imageio.ImageIO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,5 +73,10 @@ public class PdfsandwichOCREngine extends ProcessOCREngine<PdfsandwichOCREngineC
             }
             throw new RuntimeException(ex);
         }
+    }
+
+    @Override
+    protected String recognizeImageStream0(InputStream inputStream) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

@@ -35,14 +35,14 @@ public abstract class AbstractDocument extends WorkflowItem {
      * indicates that this date is unknown.
      */
     @Temporal(TemporalType.TIMESTAMP)
-    @Basic(fetch = FetchType.LAZY)
+    @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Received", description = "The date of the reception")
     private Date receptionDate;
     /**
      * Where the document can be found. {@code null} indicates that the location
      * of the original is unknown (default).
      */
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @FieldInfo(name = "Original location", description = "A pointer to the location of the original document")
     private Location originalLocation = null;
     /**
@@ -51,13 +51,13 @@ public abstract class AbstractDocument extends WorkflowItem {
      * {@code originalLocation} is {@code null} and {@code originalLost} is
      * {@code false}.
      */
-    @Basic(fetch = FetchType.LAZY)
+    @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Original lost", description = "A flag indicating that the original is lost")
     private boolean originalLost = false;
     /**
      * Whether this is a digital document only.
      */
-    @Basic(fetch = FetchType.LAZY)
+    @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Digital only", description = "A flag indicating that "
             + "the document initially exists in digital form only")
     private boolean digitalOnly = false;

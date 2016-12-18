@@ -32,7 +32,7 @@ import richtercloud.reflection.form.builder.FieldInfo;
 @ClassInfo(name="Workflow")
 public class Workflow extends Identifiable {
     private static final long serialVersionUID = 1L;
-    @OneToMany(fetch = FetchType.LAZY)
+    @OneToMany(fetch = FetchType.EAGER)
     @FieldInfo(name = "Items", description = "The items which make up this "
             + "workflow")
     private List<WorkflowItem> items = new LinkedList<>();

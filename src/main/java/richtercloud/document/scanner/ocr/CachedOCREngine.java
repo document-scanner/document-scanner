@@ -15,10 +15,14 @@
 package richtercloud.document.scanner.ocr;
 
 import java.awt.image.BufferedImage;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.ifaces.OCREngineConf;
 
 /**
@@ -39,8 +43,11 @@ internal implementation notes:
 - implements both parallelization and caching since they're hard to separate
 */
 public abstract class CachedOCREngine<C extends OCREngineConf> extends ParallelOCREngine<C> {
+    private final static Logger LOGGER = LoggerFactory.getLogger(CachedOCREngine.class);
     private final transient Map<BufferedImage, String> cache = new HashMap<>();
+    private final transient Map<ImageWrapper, String> imageWrapperCache = new HashMap<>();
     private final transient Map<BufferedImage, Lock> lockMap = new HashMap<>();
+    private final transient Map<ImageWrapper, Lock> imageWrapperLockMap = new HashMap<>();
 
     public CachedOCREngine(C oCREngineConf) {
         super(oCREngineConf);
@@ -53,27 +60,56 @@ public abstract class CachedOCREngine<C extends OCREngineConf> extends ParallelO
             Lock imageLock = lockMap.get(image);
             if(imageLock == null) {
                 imageLock = new ReentrantLock();
-                lockMap.put(image, imageLock);
+                lockMap.put(image,
+                        imageLock);
             }
-            if(imageLock.tryLock()) {
-                imageLock.lock();
-                try {
-                    retValue = recognizeImage0(image);
-                    cache.put(image, retValue);
-                }finally {
-                    imageLock.unlock();
-                }
-            }else {
-                try {
-                    imageLock.lock();
-                    return recognizeImage(image);
-                }finally {
-                    imageLock.unlock();
-                }
+            imageLock.lock();
+            try {
+                retValue = recognizeImage0(image);
+                cache.put(image, retValue);
+            }finally {
+                imageLock.unlock();
             }
         }
         return retValue;
     }
 
+    @Override
+    protected String recognizeImageStream(ImageWrapper image, InputStream inputStream) {
+        //The lock for the image need to be acquired before the
+        //imageWrapperCache is checked, otherwise recognizeImageStream0 is
+        //invoked for every parallel execution
+        Lock imageLock;
+        synchronized(this) {
+            imageLock = imageWrapperLockMap.get(image);
+            if(imageLock == null) {
+                imageLock = new ReentrantLock();
+                imageWrapperLockMap.put(image,
+                        imageLock);
+                LOGGER.trace(String.format("created lock for image %s", image));
+            }
+        }
+        LOGGER.trace(String.format("acquiring lock for image %s", image));
+        imageLock.lock();
+        String retValue;
+        try {
+            retValue = imageWrapperCache.get(image);
+            if(retValue == null) {
+                LOGGER.trace(String.format("starting OCR for image %s", image));
+                retValue = recognizeImageStream0(inputStream);
+                imageWrapperCache.put(image,
+                            retValue);
+            }else {
+                LOGGER.trace(String.format("using cached OCR result for image %s", image));
+            }
+        }finally{
+            LOGGER.trace(String.format("unlocking image lock for image %s", image));
+            imageLock.unlock();
+        }
+        return retValue;
+    }
+
     protected abstract String recognizeImage0(BufferedImage image);
+
+    protected abstract String recognizeImageStream0(InputStream inputStream);
 }

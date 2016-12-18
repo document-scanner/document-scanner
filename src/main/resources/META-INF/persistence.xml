@@ -16,11 +16,20 @@
         in 5.2.4.Final and 5.1.3.Final -> 5.0.11 works
         - 5.0.11 and probably in general: lazy fetching of byte[] only works if
         classes are compile-time enhanced
+        - 5.0.11.Final: `MultipleBagFetchException: cannot simultaneously fetch multiple bags:`
+        -> issue in early Hibernate versions<ref>http://stackoverflow.com/questions/4334970/hibernate-cannot-simultaneously-fetch-multiple-bags</ref>
+        specify non-portable `@LazyCollection(LazyCollectionOption.FALSE)` or
+        make [One/Many]To[One/Many] relations lazy (can be initialized with
+        `Collection.size`
+        - 5.0.11.Final: inexplainable runtime exceptions like `java.lang.ArrayIndexOutOfBoundsException: 8`
+        even after one successful run with `hibernate.hbm2ddl.auto=validate`
+        -> Hibernate unusable due to other issues
       Eclipselink: can't be kept from fetching a (to be lazily fetch) byte[]
       data (not even by specifying `Session.getLogin().setUsesStreamsForBinding(true)`
       in a SessionCustomizer (check that it's executed with debugger))
       -->
-    <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+    <!--<provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>-->
+    <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
     <class>richtercloud.document.scanner.model.APackage</class>
     <class>richtercloud.document.scanner.model.Bill</class>
     <class>richtercloud.document.scanner.model.Company</class>
@@ -43,15 +52,16 @@
     <class>richtercloud.document.scanner.model.WorkflowItem</class>
     <properties>
       <!--URL and driver is set programmtically-->
-      <property name="hibernate.cache.provider_class" value="org.hibernate.cache.NoCacheProvider"/>
+      <!--<property name="hibernate.cache.provider_class" value="org.hibernate.cache.NoCacheProvider"/>-->
       <!--<property name="hibernate.cache.provider_class" value="org.hibernate.cache.EhCacheProvider"/>-->
         <!-- Ehcache provider isn't compatible with JCache 1.0.1 used in
               CachingImageWrapper-->
-      <property name="hibernate.hbm2ddl.auto" value="update"/>
-      <!--<property name="eclipselink.ddl-generation" value="create-or-extend-tables"/>-->
+      <!--<property name="hibernate.hbm2ddl.auto" value="update"/>-->
+      <property name="eclipselink.ddl-generation" value="create-or-extend-tables"/>
       <!--setting eclipse.weaving to false<ref>http://www.eclipse.org/eclipselink/documentation/2.5/concepts/app_dev007.htm</ref>
             doesn't reduce memory usage with MySQL (and probably others
             neither)-->
+      <property name="eclipselink.session.customizer" value="richtercloud.document.scanner.model.DocumentScannerSessionCustomizer"/>
     </properties>
   </persistence-unit>
 </persistence>

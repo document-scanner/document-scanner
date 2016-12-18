@@ -18,6 +18,7 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 import javax.persistence.ElementCollection;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Inheritance;
@@ -74,7 +75,7 @@ public abstract class Identifiable implements Serializable {
     private Long id;
     @Tags
     @FieldInfo(name="Tags", description = "A list of tags which can be freely associated with the entity")
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     /*
     internal implementation notes:
     - List<String> fails in OpenJPA due to `org.apache.openjpa.util.InternalException: Unexpected attribute type "String" for persistence-capable class "richtercloud.document.scanner.model.FinanceAccount" is detected.`
