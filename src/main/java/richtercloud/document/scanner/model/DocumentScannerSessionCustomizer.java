@@ -26,7 +26,7 @@ public class DocumentScannerSessionCustomizer implements SessionCustomizer {
     public void customize(Session session) {
         session.getLogin().setUsesStreamsForBinding(false);
             //true slows down access to large byte[] in Document with setter
-            //false doesn't avoid when running quries on multiple EntityManagers
-            //in parallel
+            //false doesn't avoid high memory consumption when running queries
+            //on multiple EntityManagers in parallel
     }
 }

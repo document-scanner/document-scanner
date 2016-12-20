@@ -12,7 +12,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.gui;
+package richtercloud.document.scanner.gui.scanresult;
 
 import java.awt.Dimension;
 import java.awt.Window;
@@ -37,7 +37,6 @@ import javafx.scene.layout.BorderStroke;
 import javafx.scene.layout.BorderStrokeStyle;
 import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
-import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -46,12 +45,19 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.gui.DocumentScanner;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
 
 /**
  * Allows associating scan results, i.e. images, with documents which group
  * scan results. Callers can open a document tag for each document.
+ *
+ * Documents are organized in a {@link DocumentPane}.
+ *
+ * Zoom function controls both document and scan result zoom since there's no
+ * imaginable use case where zoom ought to be applied to only one of them.
+ *
  * @author richter
  */
 public class ScannerResultDialog extends JDialog {
@@ -71,8 +77,8 @@ public class ScannerResultDialog extends JDialog {
      * @param documentImagePane the currently selected document in
      * {@code documentPane}
      */
-    private static void handleScanResultSelection(List<ImageViewPane> selectedPanes,
-            List<ImageViewPane> toChecks) {
+    private static void handleScanResultSelection(List<? extends ImageViewPane> selectedPanes,
+            List<? extends ImageViewPane> toChecks) {
         for(Node toCheck : toChecks) {
             Pane toCheckPane = (Pane) toCheck;
             if(selectedPanes.contains(toCheckPane)) {
@@ -99,7 +105,7 @@ public class ScannerResultDialog extends JDialog {
      * The default value is one calculated based on {@code panelWidth} and the
      * relation of DIN A4/ISO 216 paper with 210 mm × 297 mm.
      */
-    private final int panelHeight;
+    private int panelHeight;
     private int centralPanelPadding = 15;
     private final JFXPanel mainPanel = new JFXPanel();
     private final JButton openButton = new JButton("Open documents");
@@ -150,6 +156,7 @@ public class ScannerResultDialog extends JDialog {
             Button addImagesButton = new Button("Add to document");
             ScrollPane documentPaneScrollPane = new ScrollPane(documentPane);
             leftPane.setCenter(documentPaneScrollPane);
+            GridPane buttonPaneTop = new GridPane();
             GridPane buttonPaneLeft = new GridPane();
             buttonPaneLeft.setHgap(5);
             buttonPaneLeft.setPadding(new Insets(5));
@@ -157,24 +164,18 @@ public class ScannerResultDialog extends JDialog {
             buttonPaneLeft.add(removeDocumentButton, 1, 0);
             buttonPaneLeft.add(addImagesButton, 2, 0);
             leftPane.setBottom(buttonPaneLeft);
-            ReturnValue<ImageViewPane> selectedDocument = new ReturnValue<>();
-                //Shouldn't be a ReturnValue<ScanResult> because that requires
-                //searching in ScanResults of ImageViewPanes
-            List<ImageViewPane> selectedScanResults = new LinkedList<>();
             addDocumentButton.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
                 @Override
                 public void handle(MouseEvent event) {
-                    ImageViewPane addedDocument = addNewDocument(scanResultPane,
-                            documentPane,
+                    DocumentViewPane addedDocument = addNewDocument(documentPane,
                             panelWidth,
-                            panelHeight,
-                            selectedDocument);
+                            panelHeight);
                     //always select the newly added document because chances are
                     //high that the user wants to proceed with the newly added
                     //document
                     handleScanResultSelection(new LinkedList<>(Arrays.asList(addedDocument)),
                             documentPane.getDocumentNodes());
-                    selectedDocument.setValue(addedDocument);
+                    documentPane.setSelectedDocument(addedDocument);
                 }
             });
             removeDocumentButton.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
@@ -182,9 +183,11 @@ public class ScannerResultDialog extends JDialog {
                 public void handle(MouseEvent event) {
                     //enqueue the scan results which were grouped in the document
                     //back into the scan result pane...
-                    for(ImageWrapper selectedDocumentScanResult : selectedDocument.getValue().getScanResults()) {
+                    for(ImageWrapper selectedDocumentScanResult : documentPane.getSelectedDocument().getImageWrappers()) {
                         try {
-                            addScanResult(selectedDocumentScanResult, scanResultPane, selectedScanResults);
+                            addScanResult(selectedDocumentScanResult,
+                                    scanResultPane,
+                                    scanResultPane.getSelectedScanResults());
                         } catch (IOException ex) {
                             throw new RuntimeException(ex);
                         }
@@ -195,37 +198,33 @@ public class ScannerResultDialog extends JDialog {
             });
             addImagesButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent event) -> {
                 if(documentPane.getChildrenUnmodifiable().isEmpty()) {
-                    ImageViewPane addedDocument = addNewDocument(scanResultPane,
-                            documentPane,
+                    DocumentViewPane addedDocument = addNewDocument(documentPane,
                             panelWidth,
-                            panelHeight,
-                            selectedDocument);
-                    selectedDocument.setValue(addedDocument);
+                            panelHeight);
+                    documentPane.setSelectedDocument(addedDocument);
                 }
-                assert selectedDocument.getValue() != null;
-                assert documentPane.containsDocumentNode(selectedDocument.getValue());
-                for(ImageViewPane selectedScanResult : selectedScanResults) {
-                    assert selectedDocument.getValue() != null;
+                assert documentPane.getSelectedDocument() != null;
+                assert documentPane.containsDocumentNode(documentPane.getSelectedDocument());
+                for(ScanResultViewPane selectedScanResult : scanResultPane.getSelectedScanResults()) {
                     //...and add to selected document in document pane
-                    assert selectedScanResult.getScanResults().size() == 1;
                     try {
                         //ImageViewPanes in the scan result pane only have one
                         //ScanResult
-                        selectedDocument.getValue().addScanResult(selectedScanResult.getScanResults().get(0),
+                        documentPane.getSelectedDocument().addScanResult(selectedScanResult.getImageWrapper(),
                                 panelWidth);
                     } catch (IOException ex) {
                         throw new RuntimeException(ex);
                     }
                 }
-                scanResultPane.removeScanResultPanes(selectedScanResults);
-                selectedScanResults.clear();
+                scanResultPane.removeScanResultPanes(scanResultPane.getSelectedScanResults());
+                scanResultPane.getSelectedScanResults().clear();
             });
 
             for(ImageWrapper scanResultImage : scanResultImages) {
                 try {
                     addScanResult(scanResultImage,
                             scanResultPane,
-                            selectedScanResults);
+                            scanResultPane.getSelectedScanResults());
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 }
@@ -242,11 +241,13 @@ public class ScannerResultDialog extends JDialog {
             Button selectAllButton = new Button("Select all");
             Button turnRightButton = new Button("Turn right");
             Button turnLeftButton = new Button("Turn left");
-            buttonPaneRight.add(zoomInButton,
+            buttonPaneTop.setHgap(5);
+            buttonPaneTop.setPadding(new Insets(5));
+            buttonPaneTop.add(zoomInButton,
                     0, //columnIndex
                     0 //rowIndex
             );
-            buttonPaneRight.add(zoomOutButton,
+            buttonPaneTop.add(zoomOutButton,
                     1, //columnIndex
                     0 //rowIndex
             );
@@ -289,7 +290,7 @@ public class ScannerResultDialog extends JDialog {
             deletePageButton.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
                 @Override
                 public void handle(MouseEvent event) {
-                    scanResultPane.removeScanResultPanes(selectedScanResults);
+                    scanResultPane.removeScanResultPanes(scanResultPane.getSelectedScanResults());
                 }
             });
             selectAllButton.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
@@ -297,24 +298,27 @@ public class ScannerResultDialog extends JDialog {
                 public void handle(MouseEvent event) {
                     handleScanResultSelection(scanResultPane.getScanResultPanes(),
                             scanResultPane.getScanResultPanes());
-                    selectedScanResults.clear();
-                    selectedScanResults.addAll(scanResultPane.getScanResultPanes());
+                    scanResultPane.getSelectedScanResults().clear();
+                    scanResultPane.getSelectedScanResults().addAll(scanResultPane.getScanResultPanes());
                 }
             });
             turnRightButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent event) -> {
-                for(ImageViewPane selectedScanResult : selectedScanResults) {
+                for(ImageViewPane selectedScanResult : scanResultPane.getSelectedScanResults()) {
                     selectedScanResult.turnRight(panelWidth);
                 }
             });
             turnLeftButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent event) -> {
-                for(ImageViewPane selectedScanResult : selectedScanResults) {
+                for(ImageViewPane selectedScanResult : scanResultPane.getSelectedScanResults()) {
                     selectedScanResult.turnLeft(panelWidth);
                 }
             });
             rightPane.setBottom(buttonPaneRight);
             splitPane.getItems().addAll(leftPane,
                     rightPane);
-            Scene  scene  =  new  Scene(splitPane, Color.ALICEBLUE);
+            BorderPane mainPane = new BorderPane();
+            mainPane.setTop(buttonPaneTop);
+            mainPane.setCenter(splitPane);
+            Scene  scene  =  new  Scene(mainPane, Color.ALICEBLUE);
             //putting splitPane inside a Group causes JFXPanel to be not resized
             //<ref>http://stackoverflow.com/questions/41034366/how-to-provide-javafx-components-in-a-dialog-in-a-swing-application/41047426#41047426</ref>
             mainPanel.setScene(scene);
@@ -345,7 +349,7 @@ public class ScannerResultDialog extends JDialog {
         this.cancelButton.addActionListener((event) -> this.setVisible(false));
         this.openButton.addActionListener((event) -> {
             this.sortedDocuments = new LinkedList<>();
-            this.documentPane.getDocumentNodes().forEach((ImageViewPane imageViewPane) -> this.sortedDocuments.add(imageViewPane.getScanResults()));
+            this.documentPane.getDocumentNodes().forEach((DocumentViewPane imageViewPane) -> this.sortedDocuments.add(imageViewPane.getImageWrappers()));
             this.setVisible(false);
         });
     }
@@ -354,23 +358,27 @@ public class ScannerResultDialog extends JDialog {
         return sortedDocuments;
     }
 
-    private void handleZoomChange(List<ImageViewPane> imageViewPanes,
+    private void handleZoomChange(List<? extends ImageViewPane> imageViewPanes,
             float oldZoomLevel,
             float newZoomLevel) {
         int newWidth = (int) (panelWidth/oldZoomLevel*newZoomLevel);
+        LOGGER.debug(String.format("resizing from fit width %d to %d after zoom change",
+                panelWidth,
+                newWidth));
         for(ImageViewPane imageViewPane : imageViewPanes) {
-            LOGGER.debug(String.format("resizing from fit width %d to %d after zoom change",
-                    panelWidth,
-                    newWidth));
             imageViewPane.changeZoom(newWidth);
         }
+        for(ImageViewPane documentNode : documentPane.getDocumentNodes()) {
+            documentNode.changeZoom(newWidth);
+        }
         panelWidth = newWidth;
+        panelHeight = (int)(panelHeight/oldZoomLevel*newZoomLevel);
     }
 
     private void addScanResult(ImageWrapper scanResult,
             ScanResultPane scanResultPane,
-            List<ImageViewPane> selectedScanResults) throws IOException {
-        ImageViewPane scanResultImageViewPane = new ImageViewPane(scanResult,
+            List<ScanResultViewPane> selectedScanResults) throws IOException {
+        ScanResultViewPane scanResultImageViewPane = new ScanResultViewPane(scanResult,
                 panelWidth);
         scanResultPane.addScanResultPane(scanResultImageViewPane);
         scanResultImageViewPane.getImageView().addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
@@ -396,47 +404,21 @@ public class ScannerResultDialog extends JDialog {
      * @param selectedDocument
      * @return the added document image pane
      */
-    private ImageViewPane addNewDocument(Pane centralPane,
-            DocumentPane documentPane,
+    private DocumentViewPane addNewDocument(DocumentPane documentPane,
             int panelWidth,
-            int panelHeight,
-            ReturnValue<ImageViewPane> selectedDocument) {
-        ImageViewPane retValue = new ImageViewPane(panelWidth,
+            int panelHeight) {
+        DocumentViewPane retValue = new DocumentViewPane(panelWidth,
                 panelHeight
         );
         retValue.addEventHandler(MouseEvent.MOUSE_CLICKED,
             (MouseEvent event) -> {
                 handleScanResultSelection(new LinkedList<>(Arrays.asList(retValue)),
                         documentPane.getDocumentNodes());
-                selectedDocument.setValue(retValue);
+                documentPane.setSelectedDocument(retValue);
             });
             //if ImageViewPane is created with empty WritableImage, the listener
             //has to be added to the containing pane rather than the ImageView
         documentPane.addDocumentNode(retValue);
         return retValue;
-    }
-
-    private class ScanResultPane extends FlowPane {
-        private final List<ImageViewPane> scanResultPanes = new LinkedList<>();
-
-        ScanResultPane(Orientation orientation,
-                double hgap,
-                double vgap) {
-            super(orientation, hgap, vgap);
-        }
-
-        public void addScanResultPane(ImageViewPane scanResultPane) {
-            getChildren().add(scanResultPane);
-            scanResultPanes.add(scanResultPane);
-        }
-
-        public void removeScanResultPanes(List<ImageViewPane> scanResultPanes) {
-            getChildren().removeAll(scanResultPanes);
-            this.scanResultPanes.removeAll(scanResultPanes);
-        }
-
-        public List<ImageViewPane> getScanResultPanes() {
-            return scanResultPanes;
-        }
     }
 }

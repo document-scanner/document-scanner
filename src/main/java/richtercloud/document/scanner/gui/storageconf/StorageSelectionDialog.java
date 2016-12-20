@@ -30,7 +30,7 @@ import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.storage.StorageConf;
-import richtercloud.reflection.form.builder.storage.StorageConfInitializationException;
+import richtercloud.reflection.form.builder.storage.StorageConfValidationException;
 
 /**
  * Allows selection of storage implementation. Caller is responsible for
@@ -73,7 +73,7 @@ public class StorageSelectionDialog extends javax.swing.JDialog {
      */
     public StorageSelectionDialog(Window parent,
             DocumentScannerConf documentScannerConf,
-            MessageHandler messageHandler) throws IOException, StorageConfInitializationException {
+            MessageHandler messageHandler) throws IOException, StorageConfValidationException {
         super(parent,
                 ModalityType.APPLICATION_MODAL //modalityType
         );
@@ -225,7 +225,7 @@ public class StorageSelectionDialog extends javax.swing.JDialog {
                 //some configurations, e.g. DerbyNetworkPersistenceStorageConf
                 //can't be created in a valid state because they require values
                 //to be set (e.g. a password)
-        } catch (StorageConfInitializationException ex) {
+        } catch (StorageConfValidationException ex) {
             messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
             return;
         }

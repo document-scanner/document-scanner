@@ -14,6 +14,7 @@
  */
 package richtercloud.document.scanner.gui;
 
+import richtercloud.document.scanner.gui.scanresult.ScannerResultDialog;
 import au.com.southsky.jfreesane.SaneDevice;
 import au.com.southsky.jfreesane.SaneException;
 import au.com.southsky.jfreesane.SaneSession;
@@ -129,12 +130,12 @@ import richtercloud.reflection.form.builder.jpa.panels.StringAutoCompletePanel;
 import richtercloud.reflection.form.builder.jpa.storage.AbstractPersistenceStorageConf;
 import richtercloud.reflection.form.builder.jpa.storage.DelegatingPersistenceStorageFactory;
 import richtercloud.reflection.form.builder.jpa.storage.FieldInitializer;
-import richtercloud.reflection.form.builder.jpa.storage.NoOpFieldInitializer;
 import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
+import richtercloud.reflection.form.builder.jpa.storage.ReflectionFieldInitializer;
 import richtercloud.reflection.form.builder.jpa.typehandler.JPAEntityListTypeHandler;
 import richtercloud.reflection.form.builder.jpa.typehandler.factory.JPAAmountMoneyMappingTypeHandlerFactory;
 import richtercloud.reflection.form.builder.storage.StorageConf;
-import richtercloud.reflection.form.builder.storage.StorageConfInitializationException;
+import richtercloud.reflection.form.builder.storage.StorageConfValidationException;
 import richtercloud.reflection.form.builder.storage.StorageCreationException;
 import richtercloud.reflection.form.builder.typehandler.TypeHandler;
 import richtercloud.swing.worker.get.wait.dialog.SwingWorkerCompletionWaiter;
@@ -291,7 +292,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     */
     private PersistenceStorage storage;
     private final DelegatingPersistenceStorageFactory delegatingStorageFactory = new DelegatingPersistenceStorageFactory("richtercloud_document-scanner_jar_1.0-SNAPSHOTPU",
-            2, //parallelQueryCount (2 causes `OutOfMemoryError: Java heap space`
+            24, //@TODo: low limit no longer necessary after ImageWrapper is
+                //used for binary data storage in document
             messageHandler);
     private final FieldInitializer fieldInitializer;
 
@@ -541,7 +543,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 BIDIRECTIONAL_HELP_DIALOG_TITLE);
         this.typeHandlerMapping = fieldHandlerFactory.generateTypeHandlerMapping();
 
-        this.fieldInitializer = new NoOpFieldInitializer();
+        this.fieldInitializer = new ReflectionFieldInitializer(fieldRetriever);
             //Don't use DocumentScannerFieldInitializer here because it will
             //fetch all scanData of Document on all n query results resulting in
             //n*size of documents byte[]s memory consumption
@@ -569,7 +571,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
      * way to close opened resources).
      */
     @Override
-    public void init() throws StorageConfInitializationException, IOException, StorageConfInitializationException {
+    public void init() throws StorageConfValidationException, IOException, StorageConfValidationException {
         warningHandlers.put(Company.class,
                 new CompanyWarningHandler(storage,
                         messageHandler,
@@ -854,7 +856,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             storageSelectionDialog = new StorageSelectionDialog(this,
                     documentScannerConf,
                     messageHandler);
-        } catch (IOException | StorageConfInitializationException ex) {
+        } catch (IOException | StorageConfValidationException ex) {
             throw new RuntimeException(ex);
         }
         storageSelectionDialog.setLocationRelativeTo(this);
@@ -1244,7 +1246,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         documentScanner.shutdownHook();
                         documentScanner.dispose();
                     }
-                } catch(StorageConfInitializationException | StorageCreationException ex) {
+                } catch(StorageConfValidationException | StorageCreationException ex) {
                     LOGGER.error("An unexpected exception during initialization of storage occured, see nested exception for details", ex);
                     messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
                     if(documentScanner != null) {

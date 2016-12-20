@@ -41,6 +41,7 @@ import javax.cache.expiry.Duration;
  * @author richter
  */
 public class CachingImageWrapper extends DefaultImageWrapper {
+    private static final long serialVersionUID = 1L;
     private final static CacheManager MANAGER =
                  Caching.getCachingProvider().getCacheManager();
     private final static Cache<Long, Map<Integer, BufferedImage>> CACHE;

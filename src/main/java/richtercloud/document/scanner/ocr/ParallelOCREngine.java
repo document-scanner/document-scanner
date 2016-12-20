@@ -27,6 +27,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
+import org.apache.commons.collections4.OrderedMap;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.ifaces.OCREngine;
 import richtercloud.document.scanner.ifaces.OCREngineConf;
@@ -58,7 +59,7 @@ public abstract class ParallelOCREngine<C extends OCREngineConf> implements OCRE
     }
 
     @Override
-    public String recognizeImageStreams(Map<ImageWrapper, InputStream> imageStreams) {
+    public String recognizeImageStreams(OrderedMap<ImageWrapper, InputStream> imageStreams) {
         StringBuilder retValueBuilder = new StringBuilder(1000);
         //check in loop whether cache can be used, otherwise enqueue started
         //SwingWorkers; after loop wait for SwingWorkers until queue is

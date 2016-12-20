@@ -20,6 +20,7 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Inheritance;
 import javax.persistence.OneToOne;
+import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.reflection.form.builder.FieldInfo;
 
@@ -43,7 +44,7 @@ public class Withdrawal extends Document {
     public Withdrawal(Employment employment,
             String comment,
             String identifier,
-            byte[] scanData,
+            List<ImageWrapper> scanData,
             String scanOCRText,
             List<Payment> payments,
             Date date,

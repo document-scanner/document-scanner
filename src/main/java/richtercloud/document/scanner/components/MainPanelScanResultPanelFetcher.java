@@ -14,12 +14,9 @@
  */
 package richtercloud.document.scanner.components;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.util.LinkedList;
 import java.util.List;
-import javax.swing.ImageIcon;
+import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.ifaces.OCRSelectPanel;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanel;
 
@@ -54,19 +51,11 @@ public class MainPanelScanResultPanelFetcher implements ScanResultPanelFetcher {
      * @return the fetched binary data
      */
     @Override
-    public byte[] fetch() {
-        ByteArrayOutputStream retValueStream = new ByteArrayOutputStream();
-        List<ImageIcon> imageIcons = new LinkedList<>();
-        try {
-            for (OCRSelectPanel imagePanel : this.oCRSelectComponent.getoCRSelectPanels()) {
-                imageIcons.add(new ImageIcon(imagePanel.getImage().getImagePreview(imagePanel.getImage().getInitialWidth())));
-            }
-            ObjectOutputStream objectOutputStream = new ObjectOutputStream(retValueStream);
-            objectOutputStream.writeObject(imageIcons);
-            byte[] retValue = retValueStream.toByteArray();
-            return retValue;
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
+    public List<ImageWrapper> fetch() {
+        List<ImageWrapper> retValue = new LinkedList<>();
+        for (OCRSelectPanel imagePanel : this.oCRSelectComponent.getoCRSelectPanels()) {
+            retValue.add(imagePanel.getImage());
         }
+        return retValue;
     }
 }

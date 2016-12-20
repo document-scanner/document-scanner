@@ -14,6 +14,7 @@
  */
 package richtercloud.document.scanner.gui;
 
+import java.awt.Component;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.HashMap;
@@ -59,10 +60,24 @@ public class ReflectionFormPanelTabbedPane extends JTabbedPane {
     private final JPAReflectionFormBuilder reflectionFormBuilder;
     private final FieldHandler fieldHandler;
 
+    /**
+     * Creates a {@code ReflectionFormPanelTabbedPane} with lazy loading tabs
+     * for all classes in {@code entityClasses}.
+     * @param entityClasses
+     * @param primaryClassSelection determines which tab for which entity class
+     * is selected after creation if {@code entityToEdit} is unspecified.
+     * @param entityToEdit the entity to retrieve initial values for the tab of
+     * the class of {@code entityToEdit}. If another instance of the class of
+     * {@code entityToEdit} is supposed to be saved, the
+     * {@code ReflectionFormPanel} can be reset.
+     * @param reflectionFormBuilder
+     * @param fieldHandler
+     */
     public ReflectionFormPanelTabbedPane(Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
+            Object entityToEdit,
             JPAReflectionFormBuilder reflectionFormBuilder,
-            FieldHandler fieldHandler) {
+            FieldHandler fieldHandler) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, FieldHandlingException {
         this.entityClasses = entityClasses;
         this.primaryClassSelection = primaryClassSelection;
         this.reflectionFormBuilder = reflectionFormBuilder;
@@ -83,10 +98,20 @@ public class ReflectionFormPanelTabbedPane extends JTabbedPane {
                     newTabIcon = new ImageIcon(newTabIconURL);
                 }
             }
+            Component tabComponent;
+            if(entityToEdit == null || !entityToEdit.getClass().equals(entityClass)) {
+                tabComponent = new JPanel(); //placeholder until tab is selected
+            }else {
+                ReflectionFormPanel reflectionFormPanel = reflectionFormBuilder.transformEntityClass(entityToEdit.getClass(),
+                        entityToEdit,
+                        true, //editingMode
+                        fieldHandler
+                );
+                tabComponent = createReflectionFormPanelScrollPane(reflectionFormPanel);
+            }
             this.insertTab(createClassTabTitle(entityClass),
                     newTabIcon,
-                    new JPanel(), //component (placeholder until tab is
-                        //selected)
+                    tabComponent,
                     newTabTip,
                     this.getTabCount()
             );
@@ -98,15 +123,20 @@ public class ReflectionFormPanelTabbedPane extends JTabbedPane {
             assert entityClass != null;
             ReflectionFormPanel selectedTabPanel = classPanelMap.get(entityClass);
             selectedTabPanel = getReflectionFormPanel(entityClass);
-            JScrollPane reflectionFormPanelScrollPane = new JScrollPane(selectedTabPanel);
-            reflectionFormPanelScrollPane.getVerticalScrollBar().setUnitIncrement(Constants.DEFAULT_SCROLL_INTERVAL);
-            reflectionFormPanelScrollPane.getHorizontalScrollBar().setUnitIncrement(Constants.DEFAULT_SCROLL_INTERVAL);
+            JScrollPane reflectionFormPanelScrollPane = createReflectionFormPanelScrollPane(selectedTabPanel);
             this.setComponentAt(selectedIndex,
                     reflectionFormPanelScrollPane);
                 //@TODO: recreation of JScrollPane at every tab switch not
                 //necessary
         });
         this.setSelectedIndex(this.indexOfTab(createClassTabTitle(primaryClassSelection)));
+    }
+
+    private JScrollPane createReflectionFormPanelScrollPane(ReflectionFormPanel reflectionFormPanel) {
+        JScrollPane reflectionFormPanelScrollPane = new JScrollPane(reflectionFormPanel);
+        reflectionFormPanelScrollPane.getVerticalScrollBar().setUnitIncrement(Constants.DEFAULT_SCROLL_INTERVAL);
+        reflectionFormPanelScrollPane.getHorizontalScrollBar().setUnitIncrement(Constants.DEFAULT_SCROLL_INTERVAL);
+        return reflectionFormPanelScrollPane;
     }
 
     private String createClassTabTitle(Class<?> entityClass) {

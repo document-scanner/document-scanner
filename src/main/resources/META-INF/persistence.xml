@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <persistence version="2.1" xmlns="http://xmlns.jcp.org/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd">
   <persistence-unit name="richtercloud_document-scanner_jar_1.0-SNAPSHOTPU" transaction-type="RESOURCE_LOCAL">
-    <!--Choice of JPA provider:
+    <!--Choice of JPA provider and database backends:
       Hibernate: - As long as https://hibernate.atlassian.net/browse/HHH-10653
         which causes
         mapped superclasses to make queries using TYPE operator fail with
@@ -24,9 +24,16 @@
         - 5.0.11.Final: inexplainable runtime exceptions like `java.lang.ArrayIndexOutOfBoundsException: 8`
         even after one successful run with `hibernate.hbm2ddl.auto=validate`
         -> Hibernate unusable due to other issues
-      Eclipselink: can't be kept from fetching a (to be lazily fetch) byte[]
+        - 5.0.11.Final: EntityManager.unwrap(java.sql.Connection) fails due to
+        `Exception in thread "main" javax.persistence.PersistenceException: Hibernate cannot unwrap interface java.sql.Connection`
+      Eclipselink: - can't be kept from fetching a (to be lazily fetch) byte[]
       data (not even by specifying `Session.getLogin().setUsesStreamsForBinding(true)`
       in a SessionCustomizer (check that it's executed with debugger))
+      PostgreSQL: - 9.4.1212: EntityManager.unwrap(java.sql.Connection).createBlob fails
+        due to `java.sql.SQLFeatureNotSupportedException: Die Methode org.postgresql.jdbc.PgConnection.createBlob() ist noch nicht implementiert.`
+        -> can't be used for BLOBs (Apache Derby 10.13.1.1 in embedded mode works)
+      Apache Derby: - 10.13.1.1: storing binary data in java.sql.Blob takes
+        about 60 s to 180 s for 200 MB which is inacceptable
       -->
     <!--<provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>-->
     <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
@@ -62,6 +69,8 @@
             doesn't reduce memory usage with MySQL (and probably others
             neither)-->
       <property name="eclipselink.session.customizer" value="richtercloud.document.scanner.model.DocumentScannerSessionCustomizer"/>
+      <property name="eclipselink.query-results-cache" value="True"/>
+        <!--upper case for some reason<ref>http://www.eclipse.org/eclipselink/documentation/2.5/jpa/extensions/q_query-results-cache.htm</ref>-->
     </properties>
   </persistence-unit>
 </persistence>

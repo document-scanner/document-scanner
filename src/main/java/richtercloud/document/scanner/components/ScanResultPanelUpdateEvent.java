@@ -14,18 +14,21 @@
  */
 package richtercloud.document.scanner.components;
 
+import java.util.List;
+import richtercloud.document.scanner.ifaces.ImageWrapper;
+
 /**
  *
  * @author richter
  */
 public class ScanResultPanelUpdateEvent {
-    private byte[] newValue;
+    private List<ImageWrapper> newValue;
 
-    public ScanResultPanelUpdateEvent(byte[] newValue) {
+    public ScanResultPanelUpdateEvent(List<ImageWrapper> newValue) {
         this.newValue = newValue;
     }
 
-    public byte[] getNewValue() {
+    public List<ImageWrapper> getNewValue() {
         return newValue;
     }
 }

@@ -38,14 +38,15 @@ import richtercloud.document.scanner.components.WorkflowItemTreePanelUpdateListe
 import richtercloud.document.scanner.components.annotations.CommunicationTree;
 import richtercloud.document.scanner.components.annotations.OCRResult;
 import richtercloud.document.scanner.components.annotations.ScanResult;
-import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
-import richtercloud.document.scanner.model.WorkflowItem;
+import richtercloud.document.scanner.components.annotations.Tags;
 import richtercloud.document.scanner.components.tag.TagComponent;
 import richtercloud.document.scanner.components.tag.TagComponentUpdateEvent;
 import richtercloud.document.scanner.components.tag.TagComponentUpdateListener;
 import richtercloud.document.scanner.components.tag.TagStorage;
-import richtercloud.document.scanner.components.annotations.Tags;
+import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
+import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.ifaces.MainPanel;
+import richtercloud.document.scanner.model.WorkflowItem;
 import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.ComponentHandler;
@@ -65,12 +66,12 @@ import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.fieldhandler.JPAMappingFieldHandler;
 import richtercloud.reflection.form.builder.jpa.fieldhandler.factory.JPAAmountMoneyMappingFieldHandlerFactory;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
+import richtercloud.reflection.form.builder.jpa.storage.FieldInitializer;
 import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 import richtercloud.reflection.form.builder.jpa.typehandler.ElementCollectionTypeHandler;
 import richtercloud.reflection.form.builder.jpa.typehandler.ToManyTypeHandler;
 import richtercloud.reflection.form.builder.jpa.typehandler.ToOneTypeHandler;
 import richtercloud.reflection.form.builder.typehandler.TypeHandler;
-import richtercloud.reflection.form.builder.jpa.storage.FieldInitializer;
 
 /**
  *
@@ -113,6 +114,7 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
     private final ConfirmMessageHandler confirmMessageHandler;
     private final Map<Class<?>, WarningHandler<?>> warningHandlers;
     private final FieldInitializer fieldInitializer;
+    private final MessageHandler messageHandler;
 
     /**
      * A factory method which avoid creation of some type handlers by callers.
@@ -258,6 +260,7 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
         this.confirmMessageHandler = confirmMessageHandler;
         this.warningHandlers = warningHandlers;
         this.fieldInitializer = fieldInitializer;
+        this.messageHandler = messageHandler;
     }
 
     @Override
@@ -295,9 +298,11 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
                     OCR_RESULT_PANEL_COMPONENT_RESETTABLE);
         }
         if(field.getAnnotation(ScanResult.class) != null) {
-            byte[] fieldValue = (byte[]) field.get(instance);
+            List<ImageWrapper> fieldValue = (List<ImageWrapper>) field.get(instance);
             ScanResultPanel retValue = new ScanResultPanel(scanResultPanelFetcher,
-                    fieldValue);
+                    fieldValue,
+                    messageHandler,
+                    storage);
             retValue.addUpdateListerner(new ScanResultPanelUpdateListener() {
                 @Override
                 public void onUpdate(ScanResultPanelUpdateEvent event) {
@@ -305,8 +310,9 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
                 }
             });
             if(documentScannerConf.isAutoSaveImageData()
-                    && fieldValue == null) {
-                //if fieldValue != null there's no need to save the image data
+                    && (fieldValue == null || fieldValue.isEmpty())) {
+                //if fieldValue != null and !fieldValue.isEmpty then there's no
+                //need to save the image data
                 retValue.save(true //async
                 );
             }

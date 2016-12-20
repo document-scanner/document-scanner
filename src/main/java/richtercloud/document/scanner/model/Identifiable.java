@@ -16,6 +16,7 @@ package richtercloud.document.scanner.model;
 
 import java.io.Serializable;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import javax.persistence.ElementCollection;
 import javax.persistence.FetchType;
@@ -106,5 +107,44 @@ public abstract class Identifiable implements Serializable {
 
     protected void setTags(Set<String> tags) {
         this.tags = tags;
+    }
+
+    /**
+     * {@link Object#hashCode() } based on the {@code id}.
+     * @return the hash code
+     */
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 67 * hash + Objects.hashCode(this.id);
+        return hash;
+    }
+
+    /**
+     * {@link Object#equals(java.lang.Object) () } based on the {@code id}.
+     * @return {@code true} if {@code obj} has the same {@code id} as this
+     * instance
+     */
+    /*
+    internal implementation notes:
+    - equals needs to be implemented in order to make lazily loaded entities
+    work
+    */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Identifiable other = (Identifiable) obj;
+        if (!Objects.equals(this.id, other.id)) {
+            return false;
+        }
+        return true;
     }
 }

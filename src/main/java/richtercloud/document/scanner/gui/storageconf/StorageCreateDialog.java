@@ -22,7 +22,7 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.MutableComboBoxModel;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyEmbeddedPersistenceStorageConf;
 import richtercloud.reflection.form.builder.storage.StorageConf;
-import richtercloud.reflection.form.builder.storage.StorageConfInitializationException;
+import richtercloud.reflection.form.builder.storage.StorageConfValidationException;
 
 /**
  *
@@ -186,7 +186,7 @@ public class StorageCreateDialog extends javax.swing.JDialog {
         responsibleStorageConfPanel.save();
         try {
             responsibleStorageConfPanel.getStorageConf().validate();
-        }catch(StorageConfInitializationException ex) {
+        }catch(StorageConfValidationException ex) {
             //keep create dialog displayed until a valid StorageConf is created
             //or the creation has been canceled
             return;

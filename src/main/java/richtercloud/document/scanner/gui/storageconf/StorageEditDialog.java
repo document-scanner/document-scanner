@@ -21,7 +21,7 @@ import javax.swing.JDialog;
 import javax.swing.JOptionPane;
 import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
-import richtercloud.reflection.form.builder.storage.StorageConfInitializationException;
+import richtercloud.reflection.form.builder.storage.StorageConfValidationException;
 
 /**
  * Wraps a {@link StorageConfPanel} and a close button. A possibility to reset
@@ -72,7 +72,7 @@ public class StorageEditDialog extends JDialog {
             storageConfPanel.save();
             try {
                 storageConfPanel.getStorageConf().validate();
-            }catch(StorageConfInitializationException ex) {
+            }catch(StorageConfValidationException ex) {
                 //keep create dialog displayed until a valid StorageConf is created
                 //or the creation has been canceled
                 messageHandler.handle(new Message(ex,

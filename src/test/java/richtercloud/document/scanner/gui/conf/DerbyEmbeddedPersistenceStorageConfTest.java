@@ -29,7 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.conf.model.TestClass;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyEmbeddedPersistenceStorageConf;
-import richtercloud.reflection.form.builder.storage.StorageConfInitializationException;
+import richtercloud.reflection.form.builder.storage.StorageConfValidationException;
 
 /**
  *
@@ -72,12 +72,12 @@ public class DerbyEmbeddedPersistenceStorageConfTest {
         );
         try {
             instance.validate(); //stores the metamodel into file
-        } catch(StorageConfInitializationException ex) {
+        } catch(StorageConfValidationException ex) {
             fail();
         }
         try {
             instance.validate(); //compares with stored metamodel
-        } catch(StorageConfInitializationException ex) {
+        } catch(StorageConfValidationException ex) {
             fail();
         }
         //@TODO: change class to trigger recognition of metamodel change (asked

@@ -17,7 +17,9 @@ package richtercloud.document.scanner.gui;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.embed.swing.SwingFXUtils;
@@ -25,6 +27,8 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javax.imageio.ImageIO;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
@@ -51,6 +55,7 @@ passed to data consumers.
 public class DefaultImageWrapper implements ImageWrapper {
     private final static Logger LOGGER = LoggerFactory.getLogger(DefaultImageWrapper.class);
     private static int storageFileNameCounter = 0;
+    private static final long serialVersionUID = 1L;
     static {
         new JFXPanel();
             //initialize JavaFX once
@@ -71,6 +76,10 @@ public class DefaultImageWrapper implements ImageWrapper {
             LOGGER.error("creation of ImageIO cache directory failed, skipping setting of cache");
         }
     }
+    /**
+     * The parent directory of {@code storageFile} (stored for persisting).
+     */
+    private final File storageDir;
     private final File storageFile;
     private final int initialWidth;
     private final int initialHeight;
@@ -80,14 +89,23 @@ public class DefaultImageWrapper implements ImageWrapper {
             BufferedImage image) throws IOException {
         assert storageDir.exists();
         assert storageDir.isDirectory();
-        synchronized(this) {
-            this.storageFile = new File(storageDir, String.valueOf(storageFileNameCounter));
-            storageFileNameCounter += 1;
-        }
+        this.storageDir = storageDir;
+        this.storageFile = createStorageFile(storageDir);
         assert !storageFile.exists();
+        FileUtils.touch(storageFile);
+            //ImageIO.write randomly fails or doesn't if storage file exists
         ImageIO.write(image, "png", this.storageFile);
         this.initialWidth = image.getWidth();
         this.initialHeight = image.getHeight();
+    }
+
+    private File createStorageFile(File storageDir) {
+        File retValue;
+        synchronized(this) {
+            retValue = new File(storageDir, String.valueOf(storageFileNameCounter));
+            storageFileNameCounter += 1;
+        }
+        return retValue;
     }
 
     @Override
@@ -275,5 +293,44 @@ public class DefaultImageWrapper implements ImageWrapper {
     @Override
     public int getInitialHeight() {
         return initialHeight;
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out)
+            throws IOException {
+        out.defaultWriteObject();
+        //initialWidth and initialHeight can be reconstructed from original
+        //image
+        out.writeDouble(this.rotationDegrees);
+        out.writeUTF(this.storageDir.getAbsolutePath());
+        IOUtils.copyLarge(getOriginalImageStream(), out,
+                new byte[1024*1024*32] //buffer
+        );
+    }
+
+    private void readObject(java.io.ObjectInputStream in)
+            throws IOException, ClassNotFoundException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
+        in.defaultReadObject();
+        this.rotationDegrees = in.readDouble();
+        String storageDirPath = in.readUTF();
+        File storageDir = new File(storageDirPath);
+        File storageFile = createStorageFile(storageDir);
+        Field storageFileField = DefaultImageWrapper.class.getDeclaredField("storageFile");
+        storageFileField.setAccessible(true);
+        storageFileField.set(this,
+                storageFile); //set on final field through reflection
+        FileOutputStream storageFileOutputStream = new FileOutputStream(storageFile);
+        IOUtils.copyLarge(in, storageFileOutputStream,
+                new byte[1024*1024*32] //buffer
+        );
+    }
+
+    @Override
+    public File getStorageFile() {
+        return storageFile;
+    }
+
+    @Override
+    public long getSize() {
+        return storageFile.length();
     }
 }

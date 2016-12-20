@@ -29,6 +29,7 @@ import javax.validation.constraints.NotNull;
 import javax.validation.groups.Default;
 import richtercloud.document.scanner.components.annotations.OCRResult;
 import richtercloud.document.scanner.components.annotations.ScanResult;
+import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.reflection.form.builder.FieldInfo;
 import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
 
@@ -53,11 +54,7 @@ public class Document extends AbstractDocument {
     @ScanResult
     @Basic(fetch = FetchType.LAZY) //fetch lazy as long as no issue occur
             //because this might quickly create performance impacts
-    @Lob
     @FieldInfo(name = "Scan data", description = "The binary data of the scan")
-    @Column //Hibernate 5.0.11.Final might need `length = 1073741824`
-    //(= 2^30 ~= 1GB) (avoids `PSQLException: ERROR: column "scandata" is of type bytea but expression is of type bigint
-    //Hinweis: You will need to rewrite or cast the expression.` in Hibernate 5.0.11.Final with PostgreSQL 9.5
     /*
     internal implementation notes:
     - using a java.sql.Blob doesn't seem to make sense because there's no
@@ -65,7 +62,7 @@ public class Document extends AbstractDocument {
     retrieve a JPA-implementation specific helper to created instances of Blob
     (might not even be supported by all JPA providers)
     */
-    private byte[] scanData;
+    private List<ImageWrapper> scanData = new LinkedList<>();
     @OCRResult
     @Basic(fetch = FetchType.LAZY)//fetch lazy as long as no issue occur
             //because this might quickly create performance impacts
@@ -107,7 +104,7 @@ public class Document extends AbstractDocument {
 
     public Document(String comment,
             String identifier,
-            byte[] scanData,
+            List<ImageWrapper> scanData,
             String scanOCRText,
             List<Payment> payments,
             Date date,
@@ -162,14 +159,14 @@ public class Document extends AbstractDocument {
     /**
      * @return the scanData
      */
-    public byte[] getScanData() {
+    public List<ImageWrapper> getScanData() {
         return this.scanData;
     }
 
     /**
      * @param scanData the scanData to set
      */
-    public void setScanData(byte[] scanData) {
+    public void setScanData(List<ImageWrapper> scanData) {
         this.scanData = scanData;
     }
 

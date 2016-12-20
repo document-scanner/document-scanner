@@ -16,11 +16,11 @@ package richtercloud.document.scanner.gui;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import org.apache.commons.collections4.OrderedMap;
+import org.apache.commons.collections4.map.LinkedMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
@@ -69,7 +69,7 @@ public class DefaultOCRSelectPanelPanelFetcher implements OCRSelectPanelPanelFet
     public String fetch() {
         int i=0;
         List<OCRSelectPanel> imagePanels = oCRSelectPanelPanel.getoCRSelectPanels();
-        Map<ImageWrapper, InputStream> imageStreams = new HashMap<>();
+        OrderedMap<ImageWrapper, InputStream> imageStreams = new LinkedMap<>();
         for (final OCRSelectPanel imagePanel : imagePanels) {
             try {
                 InputStream imageStream = imagePanel.getImage().getOriginalImageStream();

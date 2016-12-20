@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -48,7 +50,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.components.AutoOCRValueDetectionReflectionFormBuilder;
 import richtercloud.document.scanner.components.MainPanelScanResultPanelFetcher;
-import richtercloud.document.scanner.components.MainPanelScanResultPanelRecreator;
 import richtercloud.document.scanner.components.OCRResultPanelFetcher;
 import richtercloud.document.scanner.components.OCRResultPanelFetcherProgressEvent;
 import richtercloud.document.scanner.components.OCRResultPanelFetcherProgressListener;
@@ -78,7 +79,6 @@ import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.FieldRetriever;
-import richtercloud.reflection.form.builder.ReflectionFormPanel;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyUsageStatisticsStorage;
@@ -390,8 +390,6 @@ public class DefaultMainPanel extends MainPanel {
      */
     @Override
     public void addDocument(Object entityToEdit) throws DocumentAddException, IOException {
-        MainPanelScanResultPanelRecreator mainPanelScanResultPanelRecreator =
-                new MainPanelScanResultPanelRecreator(this.documentScannerConf.getImageWrapperStorageDir());
         List<Field> entityClassFields = reflectionFormBuilder.getFieldRetriever().retrieveRelevantFields(entityToEdit.getClass());
         Field entityToEditScanResultField = null;
         for(Field entityClassField : entityClassFields) {
@@ -409,28 +407,55 @@ public class DefaultMainPanel extends MainPanel {
         }
         List<ImageWrapper> images = null;
         if(entityToEditScanResultField != null) {
-            if(!entityToEditScanResultField.getType().equals(byte[].class)) {
+            //restore OCR select component content from persisted data
+            Type entityToEditScanResultFieldType = entityToEditScanResultField.getGenericType();
+            if(!(entityToEditScanResultFieldType instanceof ParameterizedType)) {
                 throw new IllegalArgumentException(String.format("field %s "
-                        + "of class %s annotated with %s, but not of type "
-                        + "%s",
+                        + "of class %s annotated with %s, but has no generic "
+                        + "type",
+                        entityToEditScanResultField.getName(),
+                        entityToEdit.getClass(),
+                        ScanResult.class));
+            }
+            ParameterizedType entityToEditScanResultFieldParameterizedType = (ParameterizedType) entityToEditScanResultFieldType;
+            if(!(entityToEditScanResultFieldParameterizedType.getRawType() instanceof Class)) {
+                throw new IllegalArgumentException(String.format("field %s of "
+                        + "class %s annotated with %s has no class as raw "
+                        + "type",
+                        entityToEditScanResultField.getName(),
+                        entityToEdit.getClass(),
+                        ScanResult.class));
+            }
+            if(entityToEditScanResultFieldParameterizedType.getActualTypeArguments().length != 1) {
+                throw new IllegalArgumentException(String.format("field %s of "
+                        + "class %s annotated with %s has more than one "
+                        + "generic type",
+                        entityToEditScanResultField.getName(),
+                        entityToEdit.getClass(),
+                        ScanResult.class));
+            }
+            if(!ImageWrapper.class.isAssignableFrom((Class<?>) entityToEditScanResultFieldParameterizedType.getActualTypeArguments()[0])) {
+                throw new IllegalArgumentException(String.format("field %s of "
+                        + "class %s annotated with %s has generic type which "
+                        + "is not a superclass of/assignable from %s",
                         entityToEditScanResultField.getName(),
                         entityToEdit.getClass(),
                         ScanResult.class,
-                        byte[].class));
+                        ImageWrapper.class));
             }
             try {
                 //Querying the data of entityToEditScanResultField with a JPQL
                 //statement doesn't set the data on entityToEdit
                 DocumentScannerFieldInitializer scanDataFieldInitializer = new DocumentScannerFieldInitializer(storage);
                 scanDataFieldInitializer.initialize(entityToEdit);
-                byte[] scanData = (byte[]) entityToEditScanResultField.get(entityToEdit);
-                if(scanData == null) {
+                    //custom (de-)serialization in DefaultImageWrapper doesn't
+                    //guarantee that scanData is available if field is lazy
+                images = (List<ImageWrapper>) entityToEditScanResultField.get(entityToEdit);
+                if(images == null) {
                     LOGGER.debug(String.format("scanData of instance of %s "
                             + "is null, assuming that no data has been "
                             + "persisted",
                             entityToEdit.getClass()));
-                }else {
-                    images = mainPanelScanResultPanelRecreator.recreate(scanData);
                 }
             } catch (IllegalArgumentException | IllegalAccessException ex) {
                 throw new DocumentAddException(ex);
@@ -604,25 +629,20 @@ public class DefaultMainPanel extends MainPanel {
                     fieldInitializer
             );
 
-            ReflectionFormPanelTabbedPane reflectionFormPanelTabbedPane =
-                    new ReflectionFormPanelTabbedPane(entityClasses,
-                            primaryClassSelection,
-                            reflectionFormBuilder,
-                            fieldHandler);
             Set<Class<?>> entityClasses0;
             Class<?> primaryClassSelection0;
             if(entityToEdit == null) {
                 entityClasses0 = entityClasses;
                 primaryClassSelection0 = this.primaryClassSelection;
             }else {
-                ReflectionFormPanel reflectionFormPanel = reflectionFormBuilder.transformEntityClass(entityToEdit.getClass(),
-                        entityToEdit,
-                        true, //editingMode
-                        fieldHandler
-                );
                 entityClasses0 = new HashSet<>(Arrays.asList(entityToEdit.getClass()));
                 primaryClassSelection0 = entityToEdit.getClass();
             }
+            ReflectionFormPanelTabbedPane reflectionFormPanelTabbedPane = reflectionFormPanelTabbedPane = new ReflectionFormPanelTabbedPane(entityClasses0,
+                    primaryClassSelection0,
+                    entityToEdit,
+                    reflectionFormBuilder,
+                    fieldHandler);
 
             OCRPanel oCRPanel = new DefaultOCRPanel(entityClasses0,
                     reflectionFormPanelTabbedPane,

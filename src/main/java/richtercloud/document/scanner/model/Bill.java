@@ -22,6 +22,7 @@ import javax.persistence.FetchType;
 import javax.persistence.Inheritance;
 import org.jscience.economics.money.Money;
 import org.jscience.physics.amount.Amount;
+import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.reflection.form.builder.FieldInfo;
 
 /**
@@ -69,7 +70,7 @@ public class Bill extends Document {
     public Bill(Amount<Money> amount,
             String comment,
             String identifier,
-            byte[] scanData,
+            List<ImageWrapper> scanData,
             String scanOCRText,
             List<Payment> payments,
             Date date,

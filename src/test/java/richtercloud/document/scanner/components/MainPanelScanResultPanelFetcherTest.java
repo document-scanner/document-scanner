@@ -17,6 +17,8 @@ package richtercloud.document.scanner.components;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.sql.Blob;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -39,7 +41,7 @@ public class MainPanelScanResultPanelFetcherTest {
      * Test of fetch method, of class MainPanelScanResultPanelFetcher.
      */
     @Test
-    public void testFetch() throws IOException {
+    public void testFetch() throws IOException, SQLException {
         OCRSelectPanelPanel oCRSelectPanelPanel = mock(OCRSelectPanelPanel.class);
         OCRSelectPanel oCRSelectPanel1 = mock(OCRSelectPanel.class);
         OCRSelectPanel oCRSelectPanel2 = mock(OCRSelectPanel.class);
@@ -58,10 +60,11 @@ public class MainPanelScanResultPanelFetcherTest {
                 "png",
                 imageBytesOutputStream);
         imageBytes = imageBytesOutputStream.toByteArray();
-        byte[] expResult = new byte[2*imageBytes.length];
+        Blob expResult = mock(Blob.class);
         System.arraycopy(imageBytes, 0, expResult, 0, imageBytes.length);
         System.arraycopy(imageBytes, 0, expResult, imageBytes.length, imageBytes.length);
-        byte[] result = instance.fetch();
-        assertArrayEquals(expResult, result);
+        instance.fetch();
+        assertEquals(expResult.length(),
+                imageBytes.length);
     }
 }

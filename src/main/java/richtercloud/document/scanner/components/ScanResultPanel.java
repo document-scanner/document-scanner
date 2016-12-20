@@ -15,9 +15,16 @@
 package richtercloud.document.scanner.components;
 
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.ifaces.ImageWrapper;
+import richtercloud.message.handler.MessageHandler;
+import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 
 /**
  *
@@ -35,11 +42,14 @@ maps in MainPanel and pass reference to MainPanel to components contained in it
 */
 public class ScanResultPanel extends JPanel {
     private static final long serialVersionUID = 1L;
+    private final static Logger LOGGER = LoggerFactory.getLogger(ScanResultPanel.class);
     private ScanResultPanelFetcher retriever;
-    private byte[] scanData;
+    private List<ImageWrapper> scanData;
     private final static String LABEL_DEFAULT_TEXT = "No data scanned";
     private Set<ScanResultPanelUpdateListener> updateListener = new HashSet<>();
-    private final byte[] initialValue;
+    private final List<ImageWrapper> initialValue;
+    private final MessageHandler messageHandler;
+    private final PersistenceStorage storage;
 
     /**
      * Creates a new {@code ScanResultPanel}.
@@ -54,10 +64,14 @@ public class ScanResultPanel extends JPanel {
     callers
     */
     public ScanResultPanel(ScanResultPanelFetcher retriever,
-            byte[] initialValue) {
+            List<ImageWrapper> initialValue,
+            MessageHandler messageHandler,
+            PersistenceStorage storage) {
         this.initComponents();
         this.retriever = retriever;
         this.initialValue = initialValue;
+        this.messageHandler = messageHandler;
+        this.storage = storage;
         reset0();
         setValue(initialValue);
     }
@@ -71,8 +85,12 @@ public class ScanResultPanel extends JPanel {
     }
 
     private void handleScanDataUpdate() {
-        if(this.scanData != null) {
-            this.label.setText(String.format("%d bytes of data scanned", this.scanData.length));
+        if(this.scanData != null && !this.scanData.isEmpty()) {
+            long length = 0;
+            for(ImageWrapper imageWrapper : scanData) {
+                length += imageWrapper.getSize();
+            }
+            this.label.setText(String.format("%.2f MB of data scanned", length/1024/(double)1024));
         }else {
             this.label.setText(LABEL_DEFAULT_TEXT);
         }
@@ -82,7 +100,7 @@ public class ScanResultPanel extends JPanel {
         if(this.initialValue != null) {
             this.scanData = initialValue;
         }else {
-            this.scanData = new byte[0];
+            this.scanData = new LinkedList<>();
         }
         handleScanDataUpdate();
     }
@@ -91,7 +109,7 @@ public class ScanResultPanel extends JPanel {
         reset0();
     }
 
-    public void setValue(byte[] value) {
+    public void setValue(List<ImageWrapper> value) {
         this.scanData = value;
         for(ScanResultPanelUpdateListener updateListener : this.updateListener) {
             updateListener.onUpdate(new ScanResultPanelUpdateEvent(scanData));

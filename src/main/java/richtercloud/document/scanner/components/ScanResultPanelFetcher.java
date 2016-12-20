@@ -14,6 +14,9 @@
  */
 package richtercloud.document.scanner.components;
 
+import java.util.List;
+import richtercloud.document.scanner.ifaces.ImageWrapper;
+
 /**
  *
  * @author richter
@@ -34,7 +37,6 @@ public interface ScanResultPanelFetcher {
     /**
      * Fetches binary data from a {@link ScanResultPanel} which is retrieved
      * from internal references (e.g. to {@link OCRSelectPanelPanel}).
-     * @return the fetched binary data
      */
-    byte[] fetch();
+    List<ImageWrapper> fetch();
 }
