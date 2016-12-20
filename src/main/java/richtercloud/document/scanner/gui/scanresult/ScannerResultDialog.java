@@ -116,6 +116,7 @@ public class ScannerResultDialog extends JDialog {
      */
     private List<List<ImageWrapper>> sortedDocuments = null;
     private final DocumentPane documentPane;
+    private final ScrollPane documentPaneScrollPane;
     private final SplitPane splitPane;
 
     public ScannerResultDialog(Window owner,
@@ -133,20 +134,22 @@ public class ScannerResultDialog extends JDialog {
                 DocumentScanner.APP_VERSION));
 
         this.documentPane = new DocumentPane();
+        this.documentPaneScrollPane = new ScrollPane();
         this.splitPane = new SplitPane();
         Platform.runLater(() -> {
             // Create the username and password labels and fields.
             documentPane.setHgap(10);
             documentPane.setVgap(10);
-            documentPane.setPadding(new Insets(10, 10, 10, 10));
-            documentPane.setPrefHeight(Short.MAX_VALUE);
 
             splitPane.setOrientation(Orientation.HORIZONTAL);
             ScanResultPane scanResultPane = new ScanResultPane(Orientation.VERTICAL,
                     centralPanelPadding,
                     centralPanelPadding);
             ScrollPane scanResultPaneScrollPane = new ScrollPane(scanResultPane);
-            scanResultPaneScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+                //scanResultPaneScrollPane.setFitToWidth(true) and
+                //scanResultPaneScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER)
+                //don't allow laying out in a row with line breaks which doesn't
+                //make sense and leaves no other option
             scanResultPane.setPadding(new Insets(10));
             BorderPane leftPane = new BorderPane();
                 //GridPane doesn't allow sufficient control over resizing
@@ -154,7 +157,7 @@ public class ScannerResultDialog extends JDialog {
             Button addDocumentButton = new Button("New document");
             Button removeDocumentButton = new Button("Remove document");
             Button addImagesButton = new Button("Add to document");
-            ScrollPane documentPaneScrollPane = new ScrollPane(documentPane);
+            documentPaneScrollPane.setContent(documentPane);
             leftPane.setCenter(documentPaneScrollPane);
             GridPane buttonPaneTop = new GridPane();
             GridPane buttonPaneLeft = new GridPane();
@@ -216,8 +219,23 @@ public class ScannerResultDialog extends JDialog {
                         throw new RuntimeException(ex);
                     }
                 }
+                int selectedScanResultOffsetX = scanResultPane.getSelectedScanResults().stream().mapToInt((value) -> (int)value.getLayoutX()).min().getAsInt();
+                int selectedScanResultOffsetY = scanResultPane.getSelectedScanResults().stream().mapToInt((value) -> (int)value.getLayoutY()).min().getAsInt();
                 scanResultPane.removeScanResultPanes(scanResultPane.getSelectedScanResults());
                 scanResultPane.getSelectedScanResults().clear();
+                scanResultPaneScrollPane.layout();
+                //the following assertions make the life easier and there's no
+                //assumption that they will change
+                assert scanResultPaneScrollPane.getHmax() == 1.0;
+                assert scanResultPaneScrollPane.getHmin() == 0.0;
+                assert scanResultPaneScrollPane.getVmax() == 1.0;
+                assert scanResultPaneScrollPane.getVmin() == 0.0;
+                double scanResultPaneScrollPaneHValue = selectedScanResultOffsetX/scanResultPane.getWidth();
+                double scanResultPaneScrollPaneVValue = selectedScanResultOffsetY/scanResultPane.getHeight();
+                scanResultPaneScrollPane.setHvalue(scanResultPaneScrollPaneHValue);
+                scanResultPaneScrollPane.setVvalue(scanResultPaneScrollPaneVValue);
+                    //scroll to the beginning of the first added document
+                scanResultPaneScrollPane.layout();
             });
 
             for(ImageWrapper scanResultImage : scanResultImages) {
@@ -419,6 +437,20 @@ public class ScannerResultDialog extends JDialog {
             //if ImageViewPane is created with empty WritableImage, the listener
             //has to be added to the containing pane rather than the ImageView
         documentPane.addDocumentNode(retValue);
+        //scroll
+        //the following assertions make the life easier and there's no
+        //assumption that they will change
+        assert documentPaneScrollPane.getHmax() == 1.0;
+        assert documentPaneScrollPane.getHmin() == 0.0;
+        assert documentPaneScrollPane.getVmax() == 1.0;
+        assert documentPaneScrollPane.getVmin() == 0.0;
+        documentPaneScrollPane.layout();
+            //documentPane.layout causes documentPaneScrollPane.setVvalue to
+            //have no effect
+        //there's supposed to be no horizontal scrolling in documentPane
+        documentPaneScrollPane.setVvalue(1.0);
+            //KISS: the panel is always added at the end of documentPane, so
+            //always scroll
         return retValue;
     }
 }

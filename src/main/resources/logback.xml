@@ -16,6 +16,7 @@
     <logger name="richtercloud.document.scanner.ocr.CachedOCREngine" level="TRACE"/>
         <!--for debugging locks-->
     <logger name="richtercloud.reflection.form.builder.jpa.panels.StringAutoCompletePanel" level="TRACE"/>
+    <logger name="richtercloud.document.scanner.gui.scanresult.ScannerResultDialog" level="TRACE"/>
     <root level="INFO">
         <appender-ref ref="STDOUT" />
     </root>
