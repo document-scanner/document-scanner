@@ -46,7 +46,6 @@ import javax.swing.JDialog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.DocumentScanner;
-import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
 
 /**
@@ -121,10 +120,10 @@ public class ScannerResultDialog extends JDialog {
 
     public ScannerResultDialog(Window owner,
             List<ImageWrapper> scanResultImages,
-            DocumentScannerConf documentScannerConf) throws IOException {
+            int preferredScanResultPanelWidth) throws IOException {
         super(owner,
                 ModalityType.APPLICATION_MODAL);
-        this.panelWidth = documentScannerConf.getPreferredWidth();
+        this.panelWidth = preferredScanResultPanelWidth;
         this.panelHeight = panelWidth * 297 / 210;
 
         mainPanel.setPreferredSize(new Dimension(initialWidth, initialHeight));
@@ -370,6 +369,16 @@ public class ScannerResultDialog extends JDialog {
             this.documentPane.getDocumentNodes().forEach((DocumentViewPane imageViewPane) -> this.sortedDocuments.add(imageViewPane.getImageWrappers()));
             this.setVisible(false);
         });
+    }
+
+    /**
+     * The panel width resulting after zoom. Can be used after closing the
+     * dialog to store for restauration after application restart.
+     *
+     * @return the current panel width
+     */
+    public int getPanelWidth() {
+        return panelWidth;
     }
 
     public List<List<ImageWrapper>> getSortedDocuments() {

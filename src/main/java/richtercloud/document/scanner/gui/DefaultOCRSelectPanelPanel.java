@@ -162,7 +162,7 @@ public class DefaultOCRSelectPanelPanel extends OCRSelectPanelPanel implements S
                     LOGGER.debug(String.format("skipping selection with height %d <= 0", height));
                     continue;
                 }
-                BufferedImage imageSelection = panel.getImage().getImagePreview(this.documentScannerConf.getPreferredWidth()).getSubimage((int)(panel.dragSelectionX()/this.zoomLevel), //x
+                BufferedImage imageSelection = panel.getImage().getImagePreview(this.documentScannerConf.getPreferredScanResultPanelWidth()).getSubimage((int)(panel.dragSelectionX()/this.zoomLevel), //x
                         (int)(panel.dragSelectionY()/this.zoomLevel), //y
                         (int)(width/this.zoomLevel), //width
                         (int)(height/this.zoomLevel) //height
@@ -170,7 +170,7 @@ public class DefaultOCRSelectPanelPanel extends OCRSelectPanelPanel implements S
                 //The scaled image causes horrible OCR results, but apparently
                 //scaling the image back up is sufficient for good OCR quality
                 //(same result as when working without ImageWrapper)
-                double scale = documentScannerConf.getPreferredWidth()*zoomLevel/panel.getImage().getInitialWidth();
+                double scale = documentScannerConf.getPreferredScanResultPanelWidth()*zoomLevel/panel.getImage().getInitialWidth();
                 int width0 = (int) (width/scale);
                 int height0 = (int) (height/scale);
                 BufferedImage imageSelectionScaled = new BufferedImage(width0,

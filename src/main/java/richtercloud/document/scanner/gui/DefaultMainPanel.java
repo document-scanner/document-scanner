@@ -554,7 +554,7 @@ public class DefaultMainPanel extends MainPanel {
                 for (ImageWrapper image : images) {
                     @SuppressWarnings("serial")
                     OCRSelectPanel panel = new DefaultOCRSelectPanel(image,
-                            documentScannerConf.getPreferredWidth()) {
+                            documentScannerConf.getPreferredScanResultPanelWidth()) {
                         @Override
                         public void mouseReleased(MouseEvent evt) {
                             super.mouseReleased(evt);

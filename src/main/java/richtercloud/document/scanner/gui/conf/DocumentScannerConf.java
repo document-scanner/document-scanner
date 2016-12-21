@@ -153,13 +153,14 @@ public class DocumentScannerConf implements Serializable {
      * {@code 1.0}.
      */
     private float zoomLevelMultiplier = ZOOM_LEVEL_MULTIPLIER_DEFAULT;
-    public final static int PREFERRED_WIDTH_DEFAULT = 600;
+    public final static int PREFERRED_SCAN_RESULT_PANEL_WIDTH_DEFAULT = 600;
         //300 is pretty small for an average screen
     /**
      * The width of preview images which should be matched as closely as
      * possible with default zoom levels.
      */
-    private int preferredWidth = PREFERRED_WIDTH_DEFAULT;
+    private int preferredScanResultPanelWidth = PREFERRED_SCAN_RESULT_PANEL_WIDTH_DEFAULT;
+    private boolean rememberScanResultPanelWidth = true;
     private final static String XML_STORAGE_FILE_NAME_DEFAULT = "xml-storage.xml";
     private final static File XML_STORAGE_FILE_DEFAULT = new File(CONFIG_DIR_DEFAULT, XML_STORAGE_FILE_NAME_DEFAULT);
     private File xMLStorageFile = XML_STORAGE_FILE_DEFAULT;
@@ -228,7 +229,7 @@ public class DocumentScannerConf implements Serializable {
                 AUTO_SAVE_OCR_DATA_DEFAULT,
                 new HashMap<String, ScannerConf>(),
                 ZOOM_LEVEL_MULTIPLIER_DEFAULT,
-                PREFERRED_WIDTH_DEFAULT);
+                PREFERRED_SCAN_RESULT_PANEL_WIDTH_DEFAULT);
     }
 
     public DocumentScannerConf(StorageConf storageConf,
@@ -264,7 +265,7 @@ public class DocumentScannerConf implements Serializable {
                     + "10 will cause severe displaying issues and will thus "
                     + "not be supported");
         }
-        this.preferredWidth = preferredWidth;
+        this.preferredScanResultPanelWidth = preferredWidth;
     }
 
     public DocumentScannerConf(DocumentScannerConf documentScannerConf) {
@@ -275,7 +276,7 @@ public class DocumentScannerConf implements Serializable {
                 documentScannerConf.isAutoSaveOCRData(),
                 documentScannerConf.getScannerConfMap(),
                 documentScannerConf.getZoomLevelMultiplier(),
-                documentScannerConf.getPreferredWidth()
+                documentScannerConf.getPreferredScanResultPanelWidth()
         );
     }
 
@@ -307,12 +308,20 @@ public class DocumentScannerConf implements Serializable {
         return imageWrapperStorageDir;
     }
 
-    public int getPreferredWidth() {
-        return preferredWidth;
+    public int getPreferredScanResultPanelWidth() {
+        return preferredScanResultPanelWidth;
     }
 
-    public void setPreferredWidth(int preferredWidth) {
-        this.preferredWidth = preferredWidth;
+    public void setPreferredScanResultPanelWidth(int preferredScanResultPanelWidth) {
+        this.preferredScanResultPanelWidth = preferredScanResultPanelWidth;
+    }
+
+    public boolean isRememberScanResultPanelWidth() {
+        return rememberScanResultPanelWidth;
+    }
+
+    public void setRememberScanResultPanelWidth(boolean rememberScanResultPanelWidth) {
+        this.rememberScanResultPanelWidth = rememberScanResultPanelWidth;
     }
 
     public float getZoomLevelMultiplier() {
