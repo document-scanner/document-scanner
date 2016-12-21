@@ -134,7 +134,8 @@ public class ScannerResultDialog extends JDialog {
                 DocumentScanner.APP_VERSION));
 
         this.documentPane = new DocumentPane();
-        this.documentPaneScrollPane = new ScrollPane();
+        this.documentPaneScrollPane = new ScrollPane(documentPane);
+        documentPaneScrollPane.setFitToWidth(true);
         this.splitPane = new SplitPane();
         Platform.runLater(() -> {
             // Create the username and password labels and fields.
@@ -142,14 +143,14 @@ public class ScannerResultDialog extends JDialog {
             documentPane.setVgap(10);
 
             splitPane.setOrientation(Orientation.HORIZONTAL);
-            ScanResultPane scanResultPane = new ScanResultPane(Orientation.VERTICAL,
+            ScanResultPane scanResultPane = new ScanResultPane(Orientation.HORIZONTAL,
+                        //orientation needs to be horizontal for
+                        //scanResultPaneScrollPane.setFitToWidth(true) to have
+                        //any effect
                     centralPanelPadding,
                     centralPanelPadding);
             ScrollPane scanResultPaneScrollPane = new ScrollPane(scanResultPane);
-                //scanResultPaneScrollPane.setFitToWidth(true) and
-                //scanResultPaneScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER)
-                //don't allow laying out in a row with line breaks which doesn't
-                //make sense and leaves no other option
+            scanResultPaneScrollPane.setFitToWidth(true);
             scanResultPane.setPadding(new Insets(10));
             BorderPane leftPane = new BorderPane();
                 //GridPane doesn't allow sufficient control over resizing
@@ -157,7 +158,6 @@ public class ScannerResultDialog extends JDialog {
             Button addDocumentButton = new Button("New document");
             Button removeDocumentButton = new Button("Remove document");
             Button addImagesButton = new Button("Add to document");
-            documentPaneScrollPane.setContent(documentPane);
             leftPane.setCenter(documentPaneScrollPane);
             GridPane buttonPaneTop = new GridPane();
             GridPane buttonPaneLeft = new GridPane();
