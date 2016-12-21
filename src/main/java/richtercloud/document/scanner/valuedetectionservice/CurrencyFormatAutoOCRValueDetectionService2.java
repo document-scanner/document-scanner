@@ -16,7 +16,6 @@ package richtercloud.document.scanner.valuedetectionservice;
 
 import java.text.NumberFormat;
 import java.text.ParseException;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -73,7 +72,7 @@ public class CurrencyFormatAutoOCRValueDetectionService2 extends AbstractAutoOCR
             String token = tokenizer.nextToken();
             tokens.add(token);
         }
-        for(final Map.Entry<NumberFormat, Set<Locale>> currencyFormat : new HashSet<Map.Entry<NumberFormat, Set<Locale>>>(FormatUtils.getDisjointCurrencyFormats().entrySet())) {
+        for(final Map.Entry<NumberFormat, Set<Locale>> currencyFormat : FormatUtils.getDisjointCurrencyFormatsEntySet()) {
             //completely unclear why ConcurrentModificationException occurs when
             //reading unmodifiable
             //FormatUtils.getDisjointCurrencyFormats.entrySet -> copy as a

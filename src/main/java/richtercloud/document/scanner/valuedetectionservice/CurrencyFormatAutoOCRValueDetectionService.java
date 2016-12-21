@@ -93,7 +93,7 @@ public class CurrencyFormatAutoOCRValueDetectionService extends AbstractFormatAu
     @Override
     protected List<AutoOCRValueDetectionResult<Amount<Money>>> checkResult(String inputSub, List<String> inputSplits, int i) {
         List<AutoOCRValueDetectionResult<Amount<Money>>> retValue = new LinkedList<>();
-        for(Map.Entry<NumberFormat, Set<Locale>> currencyFormat : FormatUtils.getDisjointCurrencyFormats().entrySet()) {
+        for(Map.Entry<NumberFormat, Set<Locale>> currencyFormat : FormatUtils.getDisjointCurrencyFormatsEntySet()) {
             try {
                 Number currencyValue = currencyFormat.getKey().parse(inputSub);
                 Currency currency = this.amountMoneyCurrencyStorage.translate(currencyFormat.getKey().getCurrency());

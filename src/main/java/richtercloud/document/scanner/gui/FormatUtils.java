@@ -26,7 +26,10 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -39,12 +42,17 @@ import org.slf4j.LoggerFactory;
  * Note that since Java doesn't have a useful way to manage currencies and
  * JScience is used instead (which has a quite limited set of currencies),
  * available currencies ought to be retrieved from a
- * {@link AmountMoneyCurrencyStorage}. Since JScience's currencies don't work
- * with
- * {@link Locale}s  with
+ * {@link AmountMoneyCurrencyStorage}.
  *
  * @author richter
  */
+/*
+internal implementation notes:
+- originally methods have been implemented to initialize return values lazily
+which slows down the application during operations instead of slowing it down at
+start -> keep implementation, but invoke all methods in static block in order to
+trigger cache filling
+*/
 public class FormatUtils {
     private final static Logger LOGGER = LoggerFactory.getLogger(FormatUtils.class);
     public final static double NUMBER_FORMAT_VALUE = -12345.987;
@@ -60,6 +68,20 @@ public class FormatUtils {
     private static Map<DateFormat, Set<Locale>> disjointDateRelatedFormats = null;
     private static Set<NumberFormat> allCurrencyFormats = null;
     private static Map<NumberFormat, Set<Locale>> disjointCurrencyFormats = null;
+    private final static Lock DISJOINT_CURRENCY_FORMAT_LOCK = new ReentrantLock();
+    static {
+        getAllDateTimeFormats();
+        getAllDateFormats();
+        getAllTimeFormats();
+        getAllDateTimeFormats();
+        getAllDateRelatedFormats();
+        getDisjointDateFormats();
+        getDisjointTimeFormats();
+        getDisjointDateTimeFormats();
+        getDisjointDateRelatedFormats();
+        getAllCurrencyFormats();
+        getDisjointCurrencyFormats();
+    }
 
     public static Set<DateFormat> getAllDateRelatedFormats() {
         if(allDateRelatedFormats == null) {
@@ -258,6 +280,13 @@ public class FormatUtils {
         return Collections.unmodifiableSet(allCurrencyFormats);
     }
 
+    /**
+     * Since this method uses a cached value it's necessary to the the enty set
+     * of the returned map with {@link #getDisjointCurrencyFormatsEntySet() }
+     * which uses a lock in order to prevent a
+     * {@link ConcurrentModificationException}.
+     * @return
+     */
     public static Map<NumberFormat, Set<Locale>> getDisjointCurrencyFormats() {
         if(disjointCurrencyFormats == null) {
             Map<String, Pair<NumberFormat, Set<Locale>>> currencyFormats = new HashMap<>();
@@ -295,6 +324,17 @@ public class FormatUtils {
             }
         }
         return Collections.unmodifiableMap(disjointCurrencyFormats);
+    }
+
+    public static Set<Entry<NumberFormat, Set<Locale>>> getDisjointCurrencyFormatsEntySet() {
+        Set<Entry<NumberFormat, Set<Locale>>> retValue;
+        DISJOINT_CURRENCY_FORMAT_LOCK.lock();
+        try {
+            retValue = getDisjointCurrencyFormats().entrySet();
+        }finally {
+            DISJOINT_CURRENCY_FORMAT_LOCK.unlock();
+        }
+        return retValue;
     }
 
     private FormatUtils() {
