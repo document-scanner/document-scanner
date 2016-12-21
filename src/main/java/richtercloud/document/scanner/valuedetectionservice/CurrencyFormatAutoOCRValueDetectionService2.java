@@ -92,8 +92,11 @@ public class CurrencyFormatAutoOCRValueDetectionService2 extends AbstractAutoOCR
                     //n=CurrencyFormatAutoOCRValueDetectionService.MAX_FORMAT_WORDS)
                     //and shift it to the left. This also ensures that longest
                     //matches are detected first
-                    List<String> subList = tokens.subList(index-CurrencyFormatAutoOCRValueDetectionService.MAX_FORMAT_WORDS-1,
-                            index+CurrencyFormatAutoOCRValueDetectionService.MAX_FORMAT_WORDS+1);
+                    int subListFromIndex = index-CurrencyFormatAutoOCRValueDetectionService.MAX_FORMAT_WORDS-1;
+                    int subListToIndex = index+CurrencyFormatAutoOCRValueDetectionService.MAX_FORMAT_WORDS+1;
+                    assert subListFromIndex >= 0;
+                    List<String> subList = tokens.subList(subListFromIndex,
+                            subListToIndex);
                         //add 1 since it's possible that the value and the
                         //currency symbol are separated with a space
                     InputSplitHandler inputSplitHandler = new InputSplitHandler() {
