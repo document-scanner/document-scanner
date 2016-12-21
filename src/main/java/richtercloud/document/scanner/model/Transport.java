@@ -15,6 +15,7 @@
 package richtercloud.document.scanner.model;
 
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -36,7 +37,7 @@ public class Transport extends Identifiable {
     @ManyToMany(fetch = FetchType.EAGER)
     @Size(min = 1, groups = {Default.class, IdGenerationValidation.class}) //otherwise creating a Transport doesn't make sense; used for id generation
     @FieldInfo(name = "Tickets", description = "A list of tickets which make up this transport")
-    private List<TransportTicket> tickets;
+    private List<TransportTicket> tickets = new LinkedList<>();
 
     protected Transport() {
     }

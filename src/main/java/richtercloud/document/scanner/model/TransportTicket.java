@@ -15,6 +15,7 @@
 package richtercloud.document.scanner.model;
 
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import javax.persistence.Basic;
 import javax.persistence.ElementCollection;
@@ -56,7 +57,7 @@ public class TransportTicket extends Bill {
 //    @NoEmptyEntriesList(groups = {Default.class, IdGenerationValidation.class})
     @ElementCollection(fetch = FetchType.EAGER)
     @FieldInfo(name = "Waypoints", description = "A list of waypoints of the ticket (stations, cities, coordinates")
-    private List<String> waypoints;
+    private List<String> waypoints = new LinkedList<>();
     /**
      * The date of the journey.
      */

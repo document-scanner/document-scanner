@@ -16,6 +16,7 @@ package richtercloud.document.scanner.model;
 
 import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import javax.persistence.Basic;
 import javax.persistence.Entity;
@@ -39,7 +40,7 @@ public class Shipping extends WorkflowItem {
     @Size(min = 1) //otherwise creating a shipping doesn't make sense
     @FieldInfo(name = "Packages", description = "A list of packages which make this shipping")
     @OneToMany(mappedBy = "shipping", fetch = FetchType.EAGER)
-    private List<APackage> packages;
+    private List<APackage> packages = new LinkedList<>();
     /**
      * The date and time (timestamp) of the deliveryDate (by the delivery
      * service) (time is optional, but will be persisted when specified).

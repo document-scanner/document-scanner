@@ -78,7 +78,7 @@ public class Document extends AbstractDocument {
     private String scanOCRText;
     @ManyToMany(mappedBy = "documents", fetch = FetchType.EAGER)
     @FieldInfo(name = "Payments", description = "A list of payments associated with this document")
-    private List<Payment> payments;
+    private List<Payment> payments = new LinkedList<>();
 
     protected Document() {
     }

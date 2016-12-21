@@ -16,6 +16,7 @@ package richtercloud.document.scanner.model;
 
 import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import javax.persistence.Basic;
 import javax.persistence.Column;
@@ -95,7 +96,7 @@ public class Payment extends Identifiable {
      */
     @ManyToMany(fetch = FetchType.EAGER)
     @FieldInfo(name = "Documents", description = "A list of associated documents")
-    private List<Document> documents;
+    private List<Document> documents = new LinkedList<>();
 
     protected Payment() {
     }

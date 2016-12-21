@@ -15,6 +15,7 @@
 package richtercloud.document.scanner.model;
 
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import javax.persistence.Basic;
 import javax.persistence.Entity;
@@ -64,7 +65,7 @@ public class FinanceAccount extends Identifiable {
     private String number;
     @OneToMany(fetch = FetchType.EAGER)
     @FieldInfo(name = "Payments", description = "A list of payments sent and received with this account")
-    private List<Payment> payments;
+    private List<Payment> payments = new LinkedList<>();
 
     protected FinanceAccount() {
     }

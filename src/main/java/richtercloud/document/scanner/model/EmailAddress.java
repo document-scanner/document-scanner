@@ -15,6 +15,7 @@
 package richtercloud.document.scanner.model;
 
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import javax.persistence.Basic;
 import javax.persistence.ElementCollection;
@@ -44,7 +45,7 @@ public class EmailAddress extends Identifiable {
     private String address;
     @ElementCollection(fetch = FetchType.EAGER)
     @FieldInfo(name = "PGP key IDs", description = "A list of PGP key IDs")
-    private List<String> pgpKeyIds;
+    private List<String> pgpKeyIds = new LinkedList<>();
 
     protected EmailAddress() {
     }

@@ -15,6 +15,7 @@
 package richtercloud.document.scanner.model;
 
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import javax.persistence.Basic;
 import javax.persistence.ElementCollection;
@@ -50,13 +51,13 @@ public class Company extends Identifiable {
             + "associated with this contact")
     @ElementCollection(fetch = FetchType.EAGER)
     @NoEmptyEntriesList
-    private List<String> allNames;
+    private List<String> allNames = new LinkedList<>();
     @FieldInfo(name = "Addresses", description = "Multiple contacts can have "
             + "the same address (shared office) and a contact can have multiple "
             + "addresses.")
     @ElementCollection(fetch = FetchType.EAGER)
     @NoEmptyEntriesList
-    private List<Address> addresses;
+    private List<Address> addresses = new LinkedList<>();
     @FieldInfo(name = "Email addresses", description = "One company can have "
             + "multiple email addresses.")
     @OneToMany(fetch = FetchType.EAGER)
@@ -65,17 +66,17 @@ public class Company extends Identifiable {
     - It's very unlikely that two contacts share the same email address.
     */
     @NoEmptyEntriesList
-    private List<EmailAddress> emails;
+    private List<EmailAddress> emails = new LinkedList<>();
     @FieldInfo(name = "Finance accounts", description = "A list of finance "
             + "accounts owned by the contact or somehow associated with it.")
     @OneToMany(fetch = FetchType.EAGER)
     @NoEmptyEntriesList
-    private List<FinanceAccount> accounts;
+    private List<FinanceAccount> accounts = new LinkedList<>();
     @FieldInfo(name = "Telephone numbers", description = "A list of telephone "
             + "numbers owned by the contact or somehow associated with it.")
     @OneToMany(fetch = FetchType.EAGER)
     @NoEmptyEntriesList
-    private List<TelephoneNumber> telephoneNumbers;
+    private List<TelephoneNumber> telephoneNumbers = new LinkedList<>();
 
     protected Company() {
     }
