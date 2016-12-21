@@ -14,6 +14,7 @@
  */
 package richtercloud.document.scanner.gui;
 
+import richtercloud.document.scanner.gui.imagewrapper.DefaultImageWrapper;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -45,7 +46,7 @@ public class DefaultImageWrapperTest {
         System.out.println("getOriginalImageStream");
         DefaultImageWrapper instance = null;
         FileInputStream expResult = null;
-        FileInputStream result = instance.getOriginalImageStream();
+        InputStream result = instance.getOriginalImageStream();
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
         fail("The test case is a prototype.");

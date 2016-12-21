@@ -12,14 +12,21 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.gui;
+package richtercloud.document.scanner.gui.imagewrapper;
 
 import java.awt.image.BufferedImage;
+import java.awt.image.RenderedImage;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Field;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.embed.swing.SwingFXUtils;
@@ -40,7 +47,10 @@ import richtercloud.document.scanner.ifaces.ImageWrapper;
  * Stores files inside directory {@code storageDir} naming them with an
  * increased counter. Storage fails if {@code storageDir} contains a file with
  * a name equals to the counter. That means that the directory should be emptied
- * at application shutdown.
+ * at application shutdown. It should also be checked that the directory is
+ * empty at application start in order to not miss emptying the directory after
+ * a crash of the application. Emptying the storage directory isn't handled here
+ * because it's more of an application task.
  *
  * @author richter
  */
@@ -51,6 +61,8 @@ that only prevents waste of a small amount of disk space until shutdown of the
 application in case more than one ImageWrapper is created for the same
 BufferedImage. Currently instances are only created when needed and references
 passed to data consumers.
+- It'd be nice to delegate storage to a separate class, but that highly
+complicates implementation of (de-)serialization and references in entities.
 */
 public class DefaultImageWrapper implements ImageWrapper {
     private final static Logger LOGGER = LoggerFactory.getLogger(DefaultImageWrapper.class);
@@ -132,15 +144,27 @@ public class DefaultImageWrapper implements ImageWrapper {
     rotating asynchronously.
     */
     @Override
-    public FileInputStream getOriginalImageStream() throws IOException {
-        ImageView imageView = new ImageView(this.storageFile.toURI().toURL().toString());
-        imageView.setRotate(rotationDegrees);
+    public InputStream getOriginalImageStream() throws IOException {
         File tmpFile = File.createTempFile("image-wrapper", null);
-        Image rotatedImage = imageView.getImage();
+        FutureTask<Image> javaFXTask = new FutureTask<>(() -> {
+            ImageView imageView = new ImageView(this.storageFile.toURI().toURL().toString());
+            imageView.setRotate(rotationDegrees);
+            Image rotatedImage = imageView.getImage();
+            return rotatedImage;
+        });
+        Platform.runLater(javaFXTask);
+        Image rotatedImage;
+        try {
+            rotatedImage = javaFXTask.get();
+        } catch (InterruptedException | ExecutionException ex) {
+            throw new RuntimeException(ex);
+        }
+        assert rotatedImage != null;
         //There's no way to write a JavaFX image into a file without converting
         //it into a Swing/AWT image
-        ImageIO.write(SwingFXUtils.fromFXImage(rotatedImage, null), "png", tmpFile);
-        FileInputStream retValue = new FileInputStream(tmpFile);
+        RenderedImage renderedImage = SwingFXUtils.fromFXImage(rotatedImage, null);
+        ImageIO.write(renderedImage, "png", tmpFile);
+        InputStream retValue = new BufferedInputStream(new FileInputStream(tmpFile));
         return retValue;
     }
 
@@ -302,9 +326,8 @@ public class DefaultImageWrapper implements ImageWrapper {
         //image
         out.writeDouble(this.rotationDegrees);
         out.writeUTF(this.storageDir.getAbsolutePath());
-        IOUtils.copyLarge(getOriginalImageStream(), out,
-                new byte[1024*1024*32] //buffer
-        );
+        IOUtils.copyLarge(getOriginalImageStream(), out);
+            //see readObject for comment on buffer specification
     }
 
     private void readObject(java.io.ObjectInputStream in)
@@ -318,10 +341,15 @@ public class DefaultImageWrapper implements ImageWrapper {
         storageFileField.setAccessible(true);
         storageFileField.set(this,
                 storageFile); //set on final field through reflection
-        FileOutputStream storageFileOutputStream = new FileOutputStream(storageFile);
-        IOUtils.copyLarge(in, storageFileOutputStream,
-                new byte[1024*1024*32] //buffer
-        );
+        OutputStream storageFileOutputStream = new BufferedOutputStream(new FileOutputStream(storageFile));
+        IOUtils.copyLarge(in, storageFileOutputStream);
+            //Buffer specification unnecessary if buffered streams are used.
+            //Large buffers don't speed up I/O by more than a few percent
+            //<ref>http://www.oracle.com/technetwork/articles/javase/perftuning-137844.html</ref>
+        storageFileOutputStream.flush();
+        storageFileOutputStream.close();
+            //flush and close necessary in order to avoid half written image
+            //files
     }
 
     @Override

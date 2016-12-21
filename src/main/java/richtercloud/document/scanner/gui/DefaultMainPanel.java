@@ -14,6 +14,7 @@
  */
 package richtercloud.document.scanner.gui;
 
+import richtercloud.document.scanner.gui.imagewrapper.CachingImageWrapper;
 import java.awt.HeadlessException;
 import java.awt.Window;
 import java.awt.event.MouseEvent;
@@ -182,7 +183,7 @@ public class DefaultMainPanel extends MainPanel {
     private final GroupLayout layout;
     private int documentCount = 0;
     private OCREngine oCREngine;
-    private final FieldInitializer fieldInitializer;
+    private final FieldInitializer queryComponentFieldInitializer;
 
     public DefaultMainPanel(Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
@@ -200,7 +201,7 @@ public class DefaultMainPanel extends MainPanel {
             TagStorage tagStorage,
             IdApplier idApplier,
             Map<Class<?>, WarningHandler<?>> warningHandlers,
-            FieldInitializer fieldInitializer) {
+            FieldInitializer queryComponentFieldInitializer) {
         this(entityClasses,
                 primaryClassSelection,
                 DocumentScanner.VALUE_SETTER_MAPPING_DEFAULT,
@@ -218,7 +219,7 @@ public class DefaultMainPanel extends MainPanel {
                 tagStorage,
                 idApplier,
                 warningHandlers,
-                fieldInitializer);
+                queryComponentFieldInitializer);
     }
 
     public DefaultMainPanel(Set<Class<?>> entityClasses,
@@ -238,7 +239,7 @@ public class DefaultMainPanel extends MainPanel {
             TagStorage tagStorage,
             IdApplier idApplier,
             Map<Class<?>, WarningHandler<?>> warningHandlers,
-            FieldInitializer fieldInitializer) {
+            FieldInitializer queryComponentFieldInitializer) {
         if(messageHandler == null) {
             throw new IllegalArgumentException("messageHandler mustn't be null");
         }
@@ -261,7 +262,7 @@ public class DefaultMainPanel extends MainPanel {
         this.amountMoneyCurrencyStorage = amountMoneyCurrencyStorage;
         this.amountMoneyExchangeRateRetriever = amountMoneyExchangeRateRetriever;
         this.typeHandlerMapping = typeHandlerMapping;
-        this.fieldInitializer = fieldInitializer;
+        this.queryComponentFieldInitializer = queryComponentFieldInitializer;
         this.reflectionFormBuilder = new AutoOCRValueDetectionReflectionFormBuilder(storage,
                 DocumentScanner.generateApplicationWindowTitle("Field description",
                         DocumentScanner.APP_NAME,
@@ -601,11 +602,11 @@ public class DefaultMainPanel extends MainPanel {
                     typeHandlerMapping,
                     typeHandlerMapping,
                     BIDIRECTIONAL_HELP_DIALOG_TITLE,
-                    fieldInitializer);
+                    queryComponentFieldInitializer);
             ToOneTypeHandler toOneTypeHandler = new ToOneTypeHandler(storage,
                     messageHandler,
                     BIDIRECTIONAL_HELP_DIALOG_TITLE,
-                    fieldInitializer);
+                    queryComponentFieldInitializer);
             FieldHandler fieldHandler = new DocumentScannerFieldHandler(jPAAmountMoneyMappingFieldHandlerFactory.generateClassMapping(),
                     embeddableFieldHandlerFactory.generateClassMapping(),
                     embeddableFieldHandlerFactory.generatePrimitiveMapping(),
@@ -626,7 +627,7 @@ public class DefaultMainPanel extends MainPanel {
                     tagStorage,
                     idApplier,
                     warningHandlers,
-                    fieldInitializer
+                    queryComponentFieldInitializer
             );
 
             Set<Class<?>> entityClasses0;

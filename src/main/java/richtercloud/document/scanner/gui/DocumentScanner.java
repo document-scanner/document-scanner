@@ -14,7 +14,8 @@
  */
 package richtercloud.document.scanner.gui;
 
-import richtercloud.document.scanner.gui.scanresult.ScannerResultDialog;
+import richtercloud.document.scanner.gui.imagewrapper.ImageWrapperStorageDirExistsException;
+import richtercloud.document.scanner.gui.imagewrapper.CachingImageWrapper;
 import au.com.southsky.jfreesane.SaneDevice;
 import au.com.southsky.jfreesane.SaneException;
 import au.com.southsky.jfreesane.SaneSession;
@@ -37,6 +38,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.Collections;
@@ -66,6 +68,7 @@ import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.components.tag.FileTagStorage;
 import richtercloud.document.scanner.components.tag.TagStorage;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
+import richtercloud.document.scanner.gui.scanresult.ScannerResultDialog;
 import richtercloud.document.scanner.gui.storageconf.StorageSelectionDialog;
 import richtercloud.document.scanner.ifaces.DocumentAddException;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
@@ -295,7 +298,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             24, //@TODo: low limit no longer necessary after ImageWrapper is
                 //used for binary data storage in document
             messageHandler);
-    private final FieldInitializer fieldInitializer;
+    private final FieldInitializer queryComponentFieldInitializer;
 
     public static SaneDevice getScannerDevice(String scannerName,
             Map<String, ScannerConf> scannerConfMap,
@@ -498,12 +501,36 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     internal implementation notes:
     - resources are opened in init methods only (see https://richtercloud.de:446/doku.php?id=programming:java#resource_handling for details)
     */
-    public DocumentScanner(DocumentScannerConf documentScannerConf) throws BinaryNotFoundException, IOException, StorageCreationException {
+    public DocumentScanner(DocumentScannerConf documentScannerConf) throws BinaryNotFoundException, IOException, StorageCreationException, ImageWrapperStorageDirExistsException {
         this.documentScannerConf = documentScannerConf;
         if (this.documentScannerConf.isDebug()) {
             LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
             ch.qos.logback.classic.Logger rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
             rootLogger.setLevel(Level.DEBUG);
+        }
+
+        //Check that emptying image storage directory wasn't skipped at shutdown
+        //due to application crash
+        if(documentScannerConf.getImageWrapperStorageDir().list().length > 0) {
+            int answer = confirmMessageHandler.confirm(new Message(String.format("The image "
+                    + "wrapper storage directory '%s' isn't empty which can "
+                    + "happen after an application crash. It needs to be "
+                    + "emptied in order to make the application work "
+                    + "correctly. In case there's any chance someone put file "
+                    + "into that directory abort now and investigate the "
+                    + "directory, otherwise confirm to delete all files in "
+                    + "'%s'.",
+                            documentScannerConf.getImageWrapperStorageDir().getAbsolutePath(),
+                            documentScannerConf.getImageWrapperStorageDir().getAbsolutePath()),
+                    JOptionPane.WARNING_MESSAGE, "Confirm emptying directory"));
+            assert answer == JOptionPane.YES_OPTION || answer == JOptionPane.NO_OPTION;
+            if(answer == JOptionPane.NO_OPTION) {
+                throw new ImageWrapperStorageDirExistsException();
+            }else {
+                LOGGER.warn(String.format("cleaning image storage directory "
+                        + "'%s'", documentScannerConf.getImageWrapperStorageDir().getAbsolutePath()));
+                FileUtils.cleanDirectory(documentScannerConf.getImageWrapperStorageDir());
+            }
         }
 
         this.amountMoneyExchangeRetrieverInitThread.start();
@@ -543,7 +570,19 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 BIDIRECTIONAL_HELP_DIALOG_TITLE);
         this.typeHandlerMapping = fieldHandlerFactory.generateTypeHandlerMapping();
 
-        this.fieldInitializer = new ReflectionFieldInitializer(fieldRetriever);
+        this.queryComponentFieldInitializer = new ReflectionFieldInitializer(fieldRetriever) {
+            @Override
+            protected boolean initializeField(Field field) {
+                boolean retValue;
+                try {
+                    retValue = !field.equals(Document.class.getDeclaredField("scanData"));
+                        //skip Document.scanData in query components
+                } catch (NoSuchFieldException | SecurityException ex) {
+                    throw new RuntimeException(ex);
+                }
+                return retValue;
+            }
+        };
             //Don't use DocumentScannerFieldInitializer here because it will
             //fetch all scanData of Document on all n query results resulting in
             //n*size of documents byte[]s memory consumption
@@ -553,7 +592,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             }.getType(), new JPAEntityListTypeHandler(storage,
                     messageHandler,
                     BIDIRECTIONAL_HELP_DIALOG_TITLE,
-                    fieldInitializer));
+                    queryComponentFieldInitializer));
         //listen to window close button (x)
         this.addWindowListener(new WindowAdapter() {
             @Override
@@ -594,7 +633,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 tagStorage,
                 idApplier,
                 warningHandlers,
-                fieldInitializer
+                queryComponentFieldInitializer
         );
         mainPanelPanel.add(this.mainPanel);
     }
@@ -930,7 +969,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 confirmMessageHandler,
                 idApplier,
                 warningHandlers,
-                fieldInitializer);
+                queryComponentFieldInitializer);
         entityEditingDialog.setVisible(true); //blocks
         List<Object> selectedEntities = entityEditingDialog.getSelectedEntities();
         if(selectedEntities.size() > SELECTED_ENTITIES_EDIT_WARNING) {
@@ -1233,6 +1272,16 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         //resource closing routines need to be handled in event
                         //handling and shutdown hooks since this doesn't block
                         //and there's no way of acchieving that without trouble
+                } catch(ImageWrapperStorageDirExistsException ex) {
+                    LOGGER.warn("aborting application start because user wants "
+                            + "to investigate existing files in image storage "
+                            + "directory");
+                    if(documentScanner != null) {
+                        documentScanner.setVisible(false);
+                        documentScanner.close();
+                        documentScanner.shutdownHook();
+                        documentScanner.dispose();
+                    }
                 } catch (BinaryNotFoundException ex) {
                     String message = "The tesseract binary isn't available. Install it on your system and make sure it's executable (in doubt check if tesseract runs on the console)";
                     LOGGER.error(message);
