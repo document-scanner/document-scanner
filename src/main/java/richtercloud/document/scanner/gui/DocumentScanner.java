@@ -1182,7 +1182,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 final List<List<ImageWrapper>> scannerResults = new LinkedList<>();
                 ScannerResultDialog scannerResultDialog = new ScannerResultDialog(this,
                         scannedImages,
-                            this.documentScannerConf);
+                        this.documentScannerConf);
                 scannerResultDialog.setLocationRelativeTo(this);
                 scannerResultDialog.setVisible(true);
                 List<List<ImageWrapper>> dialogResult = scannerResultDialog.getSortedDocuments();
