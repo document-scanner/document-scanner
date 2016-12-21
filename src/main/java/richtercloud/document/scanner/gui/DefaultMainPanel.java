@@ -14,7 +14,7 @@
  */
 package richtercloud.document.scanner.gui;
 
-import richtercloud.document.scanner.gui.imagewrapper.CachingImageWrapper;
+import richtercloud.document.scanner.model.imagewrapper.CachingImageWrapper;
 import java.awt.HeadlessException;
 import java.awt.Window;
 import java.awt.event.MouseEvent;

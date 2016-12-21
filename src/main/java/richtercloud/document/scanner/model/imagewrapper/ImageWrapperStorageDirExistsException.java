@@ -12,7 +12,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.gui.imagewrapper;
+package richtercloud.document.scanner.model.imagewrapper;
 
 /**
  * Used to indicate that the user wants to investigate remaining file in image

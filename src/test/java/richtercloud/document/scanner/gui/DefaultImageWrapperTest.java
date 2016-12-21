@@ -14,7 +14,7 @@
  */
 package richtercloud.document.scanner.gui;
 
-import richtercloud.document.scanner.gui.imagewrapper.DefaultImageWrapper;
+import richtercloud.document.scanner.model.imagewrapper.DefaultImageWrapper;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

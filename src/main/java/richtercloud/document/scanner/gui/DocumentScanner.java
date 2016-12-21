@@ -14,8 +14,8 @@
  */
 package richtercloud.document.scanner.gui;
 
-import richtercloud.document.scanner.gui.imagewrapper.ImageWrapperStorageDirExistsException;
-import richtercloud.document.scanner.gui.imagewrapper.CachingImageWrapper;
+import richtercloud.document.scanner.model.imagewrapper.ImageWrapperStorageDirExistsException;
+import richtercloud.document.scanner.model.imagewrapper.CachingImageWrapper;
 import au.com.southsky.jfreesane.SaneDevice;
 import au.com.southsky.jfreesane.SaneException;
 import au.com.southsky.jfreesane.SaneSession;
