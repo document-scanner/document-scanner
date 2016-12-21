@@ -20,6 +20,7 @@ import java.util.LinkedList;
 import java.util.List;
 import javax.persistence.Basic;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Inheritance;
@@ -52,8 +53,11 @@ public class Document extends AbstractDocument {
     @FieldInfo(name = "Identifier", description = "A name for the document or a few words describing it (choosen by the user)")
     private String identifier;
     @ScanResult
-    @Basic(fetch = FetchType.LAZY) //fetch lazy as long as no issue occur
-            //because this might quickly create performance impacts
+    @Lob //avoids `org.postgresql.util.PSQLException: ERROR: value too long for type character varying(255)` in PostgreSQL
+    @ElementCollection(fetch = FetchType.LAZY) //- fetch lazy as long as no issue occur
+        //because this might quickly create performance impacts
+        //- Using ElementCollection instead of Basic because it might bring
+        //advantages in speed of lazy fetching
     @FieldInfo(name = "Scan data", description = "The binary data of the scan")
     /*
     internal implementation notes:
