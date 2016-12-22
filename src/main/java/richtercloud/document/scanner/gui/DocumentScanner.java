@@ -902,7 +902,9 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         storageSelectionDialog.setLocationRelativeTo(this);
         storageSelectionDialog.setVisible(true);
         StorageConf selectedStorageConf = storageSelectionDialog.getSelectedStorageConf();
-        if(!this.documentScannerConf.getStorageConf().equals(selectedStorageConf)) {
+        if(this.documentScannerConf.getStorageConf().equals(selectedStorageConf)) {
+            LOGGER.info("no changes made to storage configuration");
+        }else{
             //type of StorageConf changed
             this.documentScannerConf.setStorageConf(selectedStorageConf);
             try {
