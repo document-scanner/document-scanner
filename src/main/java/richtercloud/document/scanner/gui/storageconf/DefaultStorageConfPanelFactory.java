@@ -14,6 +14,7 @@
  */
 package richtercloud.document.scanner.gui.storageconf;
 
+import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyEmbeddedPersistenceStorageConf;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyNetworkPersistenceStorageConf;
@@ -27,11 +28,14 @@ import richtercloud.reflection.form.builder.storage.StorageConf;
  */
 public class DefaultStorageConfPanelFactory implements StorageConfPanelFactory {
     private final MessageHandler messageHandler;
+    private final ConfirmMessageHandler confirmMessageHandler;
     private final boolean skipMD5SumCheck;
 
     public DefaultStorageConfPanelFactory(MessageHandler messageHandler,
+            ConfirmMessageHandler confirmMessageHandler,
             boolean skipMD5SumCheck) {
         this.messageHandler = messageHandler;
+        this.confirmMessageHandler = confirmMessageHandler;
         this.skipMD5SumCheck = skipMD5SumCheck;
     }
 
@@ -47,6 +51,7 @@ public class DefaultStorageConfPanelFactory implements StorageConfPanelFactory {
         }else if(storageConf instanceof MySQLAutoPersistenceStorageConf) {
             retValue = new MySQLAutoPersistenceStorageConfPanel((MySQLAutoPersistenceStorageConf) storageConf,
                     messageHandler,
+                    confirmMessageHandler,
                     skipMD5SumCheck);
         }else {
             throw new IllegalArgumentException(String.format("Storage configuration of type '%s' isn't supported", storageConf.getClass()));

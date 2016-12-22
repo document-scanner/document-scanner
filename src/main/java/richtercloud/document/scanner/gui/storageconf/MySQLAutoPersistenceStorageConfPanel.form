@@ -16,34 +16,51 @@
   <Layout>
     <DimensionLayout dim="0">
       <Group type="103" groupAlignment="0" attributes="0">
-          <Group type="102" alignment="1" attributes="0">
+          <Group type="102" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
-              <Group type="103" groupAlignment="1" attributes="0">
-                  <Component id="jSeparator1" max="32767" attributes="0"/>
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Component id="binariesLabel" pref="657" max="32767" attributes="0"/>
+                  <Group type="102" alignment="0" attributes="0">
+                      <Component id="baseDirTextFieldLabel" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace type="separate" max="-2" attributes="0"/>
+                      <Component id="baseDirTextField" max="32767" attributes="0"/>
+                  </Group>
                   <Group type="102" alignment="0" attributes="0">
                       <Group type="103" groupAlignment="0" attributes="0">
+                          <Component id="mysqladminTextFieldLabel" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="mysqldTextFieldLabel" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="mysqlTextFieldLabel" alignment="0" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                      <EmptySpace type="separate" max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Component id="mysqlTextField" max="32767" attributes="0"/>
+                          <Component id="mysqldTextField" max="32767" attributes="0"/>
+                          <Component id="mysqladminTextField" max="32767" attributes="0"/>
+                      </Group>
+                  </Group>
+                  <Component id="jSeparator1" alignment="0" max="32767" attributes="0"/>
+                  <Group type="102" alignment="1" attributes="0">
+                      <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
+                      <Component id="downloadButton" min="-2" max="-2" attributes="0"/>
+                  </Group>
+                  <Group type="102" alignment="0" attributes="0">
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Component id="databaseNameTextFieldLabel" alignment="0" min="-2" max="-2" attributes="0"/>
                           <Component id="databaseDirTextFieldLabel" alignment="0" min="-2" max="-2" attributes="0"/>
                           <Component id="hostnameTextFieldLabel" alignment="0" min="-2" max="-2" attributes="0"/>
                           <Component id="jLabel1" alignment="0" min="-2" max="-2" attributes="0"/>
                           <Component id="usernameLabel" alignment="0" min="-2" max="-2" attributes="0"/>
                           <Component id="passwordLabel" alignment="0" min="-2" max="-2" attributes="0"/>
-                          <Component id="baseDirTextFieldLabel" alignment="0" min="-2" max="-2" attributes="0"/>
-                          <Component id="databaseNameTextFieldLabel" alignment="0" min="-2" max="-2" attributes="0"/>
                       </Group>
-                      <EmptySpace type="separate" max="-2" attributes="0"/>
+                      <EmptySpace min="-2" pref="18" max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" attributes="0">
+                          <Component id="passwordPasswordField" max="32767" attributes="0"/>
+                          <Component id="usernameTextField" max="32767" attributes="0"/>
+                          <Component id="portSpinner" max="32767" attributes="0"/>
+                          <Component id="hostnameTextField" max="32767" attributes="0"/>
+                          <Component id="databaseDirTextField" max="32767" attributes="0"/>
                           <Component id="databaseNameTextField" max="32767" attributes="0"/>
-                          <Component id="baseDirTextField" max="32767" attributes="0"/>
-                          <Component id="passwordPasswordField" alignment="0" pref="500" max="32767" attributes="0"/>
-                          <Component id="usernameTextField" alignment="0" max="32767" attributes="0"/>
-                          <Component id="portSpinner" alignment="0" max="32767" attributes="0"/>
-                          <Component id="hostnameTextField" alignment="0" max="32767" attributes="0"/>
-                          <Component id="databaseDirTextField" alignment="0" max="32767" attributes="0"/>
                       </Group>
-                  </Group>
-                  <Group type="102" alignment="1" attributes="0">
-                      <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
-                      <Component id="downloadButton" min="-2" max="-2" attributes="0"/>
                   </Group>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
@@ -60,6 +77,23 @@
               </Group>
               <EmptySpace max="-2" attributes="0"/>
               <Component id="downloadButton" min="-2" max="-2" attributes="0"/>
+              <EmptySpace type="unrelated" max="-2" attributes="0"/>
+              <Component id="binariesLabel" min="-2" max="-2" attributes="0"/>
+              <EmptySpace max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="3" attributes="0">
+                  <Component id="mysqldTextField" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="mysqldTextFieldLabel" alignment="3" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="3" attributes="0">
+                  <Component id="mysqladminTextField" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="mysqladminTextFieldLabel" alignment="3" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="3" attributes="0">
+                  <Component id="mysqlTextField" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="mysqlTextFieldLabel" alignment="3" min="-2" max="-2" attributes="0"/>
+              </Group>
               <EmptySpace type="unrelated" max="-2" attributes="0"/>
               <Component id="jSeparator1" min="-2" pref="10" max="-2" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
@@ -82,7 +116,7 @@
                   <Component id="portSpinner" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="jLabel1" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
-              <EmptySpace max="-2" attributes="0"/>
+              <EmptySpace type="unrelated" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="usernameTextField" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="usernameLabel" alignment="3" min="-2" max="-2" attributes="0"/>
@@ -159,6 +193,32 @@
       </Events>
     </Component>
     <Component class="javax.swing.JSeparator" name="jSeparator1">
+    </Component>
+    <Component class="javax.swing.JTextField" name="mysqldTextField">
+    </Component>
+    <Component class="javax.swing.JTextField" name="mysqladminTextField">
+    </Component>
+    <Component class="javax.swing.JTextField" name="mysqlTextField">
+    </Component>
+    <Component class="javax.swing.JLabel" name="mysqldTextFieldLabel">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="mysqld path"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="mysqladminTextFieldLabel">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="mysqladmin path"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="mysqlTextFieldLabel">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="mysql path"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="binariesLabel">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="MySQL binaries (resolved relative to base directory if left empty):"/>
+      </Properties>
     </Component>
   </SubComponents>
 </Form>
