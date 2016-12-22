@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
 import javafx.embed.swing.JFXPanel;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
@@ -28,6 +29,9 @@ import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SplitPane;
 import javafx.scene.input.MouseEvent;
@@ -40,6 +44,7 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.util.Callback;
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -117,6 +122,21 @@ public class ScannerResultDialog extends JDialog {
     private final DocumentPane documentPane;
     private final ScrollPane documentPaneScrollPane;
     private final SplitPane splitPane;
+    /**
+     * Add scan results in the order of selection.
+     */
+    public final static int SCAN_RESULT_ADD_MODE_SELECTION_ORDER = 1;
+    /**
+     * Add scan results in the order of scanning. This makes it impossible to
+     * change the order of pages inside a document.
+     */
+    public final static int SCAN_RESULT_ADD_MODE_SCAN_ORDER = 2;
+    /**
+     * How selected scan result ought to be added.
+     * @see #SCAN_RESULT_ADD_MODE_SCAN_ORDER
+     * @see #SCAN_RESULT_ADD_MODE_SELECTION_ORDER
+     */
+    private int scanResultAddMode = SCAN_RESULT_ADD_MODE_SCAN_ORDER;
 
     public ScannerResultDialog(Window owner,
             List<ImageWrapper> scanResultImages,
@@ -207,7 +227,25 @@ public class ScannerResultDialog extends JDialog {
                 }
                 assert documentPane.getSelectedDocument() != null;
                 assert documentPane.containsDocumentNode(documentPane.getSelectedDocument());
-                for(ScanResultViewPane selectedScanResult : scanResultPane.getSelectedScanResults()) {
+                List<ScanResultViewPane> selectedScanResults;
+                assert scanResultAddMode == SCAN_RESULT_ADD_MODE_SCAN_ORDER
+                        || scanResultAddMode == SCAN_RESULT_ADD_MODE_SELECTION_ORDER;
+                if(scanResultAddMode == SCAN_RESULT_ADD_MODE_SELECTION_ORDER) {
+                    selectedScanResults = scanResultPane.getSelectedScanResults();
+                }else if(scanResultAddMode == SCAN_RESULT_ADD_MODE_SCAN_ORDER) {
+                    selectedScanResults = new LinkedList<>();
+                    for(Node scanResultPaneChild : scanResultPane.getChildrenUnmodifiable()) {
+                        if(scanResultPane.getSelectedScanResults().contains(scanResultPaneChild)) {
+                            selectedScanResults.add((ScanResultViewPane) scanResultPaneChild);
+                        }
+                    }
+                }else {
+                    throw new IllegalStateException(String.format(
+                            "scanResultAddMode has to be %d or %d",
+                            SCAN_RESULT_ADD_MODE_SCAN_ORDER,
+                            SCAN_RESULT_ADD_MODE_SELECTION_ORDER));
+                }
+                for(ScanResultViewPane selectedScanResult : selectedScanResults) {
                     //...and add to selected document in document pane
                     try {
                         //ImageViewPanes in the scan result pane only have one
@@ -258,6 +296,21 @@ public class ScannerResultDialog extends JDialog {
             Button selectAllButton = new Button("Select all");
             Button turnRightButton = new Button("Turn right");
             Button turnLeftButton = new Button("Turn left");
+            ComboBox scanResultAddModeComboBox = new ComboBox(FXCollections.observableArrayList(
+                SCAN_RESULT_ADD_MODE_SCAN_ORDER,
+                SCAN_RESULT_ADD_MODE_SELECTION_ORDER
+            ));
+            scanResultAddModeComboBox.setCellFactory(new Callback<ListView<Integer>, ListCell<Integer>>() {
+                @Override
+                public ListCell<Integer> call(ListView<Integer> param) {
+                    return new ScanResultAddModeComboBoxCell();
+                }
+            });
+            scanResultAddModeComboBox.setButtonCell(new ScanResultAddModeComboBoxCell());
+            scanResultAddModeComboBox.valueProperty().setValue(scanResultAddMode);
+            scanResultAddModeComboBox.valueProperty().addListener((event) -> {
+                scanResultAddMode = (int) scanResultAddModeComboBox.valueProperty().get();
+            });
             buttonPaneTop.setHgap(5);
             buttonPaneTop.setPadding(new Insets(5));
             buttonPaneTop.add(zoomInButton,
@@ -282,6 +335,10 @@ public class ScannerResultDialog extends JDialog {
             );
             buttonPaneRight.add(turnLeftButton,
                     5, //columnIndex
+                    0 //rowIndex
+            );
+            buttonPaneRight.add(scanResultAddModeComboBox,
+                    6, //columnIndex
                     0 //rowIndex
             );
             zoomInButton.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
@@ -461,5 +518,27 @@ public class ScannerResultDialog extends JDialog {
             //KISS: the panel is always added at the end of documentPane, so
             //always scroll
         return retValue;
+    }
+
+    /**
+     * Can't use the same instance in cell factory and for button cell.
+     */
+    private class ScanResultAddModeComboBoxCell extends ListCell<Integer> {
+        @Override
+        public void updateItem(Integer item,
+                boolean empty) {
+            super.updateItem(item, empty);
+            if (item != null) {
+                if(item == SCAN_RESULT_ADD_MODE_SCAN_ORDER) {
+                    setText("scan order (ignore order of selection)");
+                }else if(item == SCAN_RESULT_ADD_MODE_SELECTION_ORDER) {
+                    setText("selection order");
+                }else {
+                    throw new IllegalStateException();
+                }
+            } else {
+                setText(null);
+            }
+        }
     }
 }
