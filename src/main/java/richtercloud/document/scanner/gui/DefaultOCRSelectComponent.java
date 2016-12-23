@@ -217,7 +217,8 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
                     DefaultOCRSelectComponent.this.zoomLevel /= DefaultOCRSelectComponent.this.documentScannerConf.getZoomLevelMultiplier();
                     DefaultOCRSelectComponent.this.oCRSelectPanelPanel.setZoomLevels(DefaultOCRSelectComponent.this.zoomLevel);
                     if(documentScannerConf.isRememberPreferredOCRSelectPanelWidth()) {
-                        documentScannerConf.setPreferredOCRSelectPanelWidth(WHEN_IN_FOCUSED_WINDOW);
+                        int preferredOCRSelectPanelWidthNew = (int) (documentScannerConf.getPreferredOCRSelectPanelWidth()*zoomLevel/zoomLevelOld);
+                        documentScannerConf.setPreferredOCRSelectPanelWidth(preferredOCRSelectPanelWidthNew);
                     }
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
@@ -228,11 +229,16 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
+                    float zoomLevelOld = DefaultOCRSelectComponent.this.zoomLevel;
                     DefaultOCRSelectComponent.this.zoomLevel *= DefaultOCRSelectComponent.this.documentScannerConf.getZoomLevelMultiplier();
                     DefaultOCRSelectComponent.this.oCRSelectPanelPanel.setZoomLevels(DefaultOCRSelectComponent.this.zoomLevel);
                     //zooming out requires a scroll event to occur in order to
                     //paint other pages than the first only; revalidate doesn't
                     //help
+                    if(documentScannerConf.isRememberPreferredOCRSelectPanelWidth()) {
+                        int preferredOCRSelectPanelWidthNew = (int) (documentScannerConf.getPreferredOCRSelectPanelWidth()*zoomLevel/zoomLevelOld);
+                        documentScannerConf.setPreferredOCRSelectPanelWidth(preferredOCRSelectPanelWidthNew);
+                    }
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 }

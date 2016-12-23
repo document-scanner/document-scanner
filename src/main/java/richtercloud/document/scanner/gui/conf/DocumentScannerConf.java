@@ -156,11 +156,20 @@ public class DocumentScannerConf implements Serializable {
     public final static int PREFERRED_SCAN_RESULT_PANEL_WIDTH_DEFAULT = 600;
         //300 is pretty small for an average screen
     /**
-     * The width of preview images which should be matched as closely as
-     * possible with default zoom levels.
+     * The width of preview images in {@link ScanResultDialog}s.
+     * @see #rememberScanResultPanelWidth
      */
     private int preferredScanResultPanelWidth = PREFERRED_SCAN_RESULT_PANEL_WIDTH_DEFAULT;
     private boolean rememberPreferredScanResultPanelWidth = true;
+    public final static int PREFERRED_OCR_SELECT_PANEL_WIDTH = 600;
+    /**
+     * The width of preview images in {@link OCRSelectPanel}s. User preference
+     * is most likely different from {@link #preferredScanResultPanelWidth}
+     * since only one document is displayed and needs to be well readable in OCR
+     * selection components.
+     */
+    private int preferredOCRSelectPanelWidth = PREFERRED_OCR_SELECT_PANEL_WIDTH;
+    private boolean rememberPreferredOCRSelectPanelWidth = true;
     private final static String XML_STORAGE_FILE_NAME_DEFAULT = "xml-storage.xml";
     private final static File XML_STORAGE_FILE_DEFAULT = new File(CONFIG_DIR_DEFAULT, XML_STORAGE_FILE_NAME_DEFAULT);
     private File xMLStorageFile = XML_STORAGE_FILE_DEFAULT;
@@ -322,6 +331,22 @@ public class DocumentScannerConf implements Serializable {
 
     public void setRememberPreferredScanResultPanelWidth(boolean rememberPreferredScanResultPanelWidth) {
         this.rememberPreferredScanResultPanelWidth = rememberPreferredScanResultPanelWidth;
+    }
+
+    public int getPreferredOCRSelectPanelWidth() {
+        return preferredOCRSelectPanelWidth;
+    }
+
+    public void setPreferredOCRSelectPanelWidth(int preferredOCRSelectPanelWidth) {
+        this.preferredOCRSelectPanelWidth = preferredOCRSelectPanelWidth;
+    }
+
+    public boolean isRememberPreferredOCRSelectPanelWidth() {
+        return rememberPreferredOCRSelectPanelWidth;
+    }
+
+    public void setRememberPreferredOCRSelectPanelWidth(boolean rememberPreferredOCRSelectPanelWidth) {
+        this.rememberPreferredOCRSelectPanelWidth = rememberPreferredOCRSelectPanelWidth;
     }
 
     public float getZoomLevelMultiplier() {
