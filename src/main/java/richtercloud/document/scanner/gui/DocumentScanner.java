@@ -20,6 +20,10 @@ import au.com.southsky.jfreesane.SaneSession;
 import au.com.southsky.jfreesane.SaneStatus;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.rolling.FixedWindowRollingPolicy;
+import ch.qos.logback.core.rolling.RollingFileAppender;
 import com.beust.jcommander.JCommander;
 import com.google.common.reflect.TypeToken;
 import com.thoughtworks.xstream.XStream;
@@ -503,11 +507,25 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     */
     public DocumentScanner(DocumentScannerConf documentScannerConf) throws BinaryNotFoundException, IOException, StorageCreationException, ImageWrapperStorageDirExistsException {
         this.documentScannerConf = documentScannerConf;
+        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+        ch.qos.logback.classic.Logger rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
+        //configure debug level of root logger
         if (this.documentScannerConf.isDebug()) {
-            LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-            ch.qos.logback.classic.Logger rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
             rootLogger.setLevel(Level.DEBUG);
         }
+        //configure logging to file (from http://stackoverflow.com/questions/16910955/programmatically-configure-logback-appender)
+        PatternLayoutEncoder patternLayoutEncoder = new PatternLayoutEncoder();
+        patternLayoutEncoder.setPattern("%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n");
+        patternLayoutEncoder.setContext(loggerContext);
+        patternLayoutEncoder.start();
+        RollingFileAppender<ILoggingEvent> fileAppender = new RollingFileAppender<ILoggingEvent>();
+        fileAppender.setFile(documentScannerConf.getLogFilePath());
+        fileAppender.setEncoder(patternLayoutEncoder);
+        fileAppender.setContext(loggerContext);
+        fileAppender.setRollingPolicy(new FixedWindowRollingPolicy());
+        fileAppender.start();
+        rootLogger.addAppender(fileAppender);
+        LOGGER.info(String.format("logging to file '%s'", documentScannerConf.getLogFilePath()));
 
         //Check that emptying image storage directory wasn't skipped at shutdown
         //due to application crash

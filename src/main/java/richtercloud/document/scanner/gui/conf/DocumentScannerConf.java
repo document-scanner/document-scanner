@@ -199,6 +199,8 @@ public class DocumentScannerConf implements Serializable {
      * This should only be configurable by editing the configuration file.
      */
     private boolean skipMD5SumCheck = false;
+    public final static String LOG_FILE_PATH_DEFAULT = new File(CONFIG_DIR_DEFAULT, "document-scanner.log").getAbsolutePath();
+    private String logFilePath = LOG_FILE_PATH_DEFAULT;
 
     /**
      * Creates an configuration with default values.
@@ -347,6 +349,14 @@ public class DocumentScannerConf implements Serializable {
 
     public void setRememberPreferredOCRSelectPanelWidth(boolean rememberPreferredOCRSelectPanelWidth) {
         this.rememberPreferredOCRSelectPanelWidth = rememberPreferredOCRSelectPanelWidth;
+    }
+
+    public String getLogFilePath() {
+        return logFilePath;
+    }
+
+    public void setLogFilePath(String logFilePath) {
+        this.logFilePath = logFilePath;
     }
 
     public float getZoomLevelMultiplier() {

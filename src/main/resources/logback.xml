@@ -7,6 +7,7 @@
             <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
+    <!--configure log files programmatically based on configuration options-->
 
     <logger name="richtercloud" level="DEBUG"/>
     <logger name="richtercloud.document.scanner.gui.DateFormatAutoOCRValueDetectionService" level="INFO"/><!--too much output-->
