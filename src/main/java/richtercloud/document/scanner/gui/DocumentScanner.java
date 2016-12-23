@@ -1027,7 +1027,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         this.documentScannerConf.getPreferredScanResultPanelWidth());
                 scannerResultDialog.setLocationRelativeTo(this);
                 scannerResultDialog.setVisible(true);
-                if(this.documentScannerConf.isRememberScanResultPanelWidth()) {
+                if(this.documentScannerConf.isRememberPreferredScanResultPanelWidth()) {
                     this.documentScannerConf.setPreferredScanResultPanelWidth(scannerResultDialog.getPanelWidth());
                 }
                 List<List<ImageWrapper>> dialogResult = scannerResultDialog.getSortedDocuments();
@@ -1240,7 +1240,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         this.documentScannerConf.getPreferredScanResultPanelWidth());
                 scannerResultDialog.setLocationRelativeTo(this);
                 scannerResultDialog.setVisible(true);
-                if(this.documentScannerConf.isRememberScanResultPanelWidth()) {
+                if(this.documentScannerConf.isRememberPreferredScanResultPanelWidth()) {
                     this.documentScannerConf.setPreferredScanResultPanelWidth(scannerResultDialog.getPanelWidth());
                 }
                 List<List<ImageWrapper>> dialogResult = scannerResultDialog.getSortedDocuments();

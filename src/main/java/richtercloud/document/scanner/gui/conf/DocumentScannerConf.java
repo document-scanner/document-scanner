@@ -160,7 +160,7 @@ public class DocumentScannerConf implements Serializable {
      * possible with default zoom levels.
      */
     private int preferredScanResultPanelWidth = PREFERRED_SCAN_RESULT_PANEL_WIDTH_DEFAULT;
-    private boolean rememberScanResultPanelWidth = true;
+    private boolean rememberPreferredScanResultPanelWidth = true;
     private final static String XML_STORAGE_FILE_NAME_DEFAULT = "xml-storage.xml";
     private final static File XML_STORAGE_FILE_DEFAULT = new File(CONFIG_DIR_DEFAULT, XML_STORAGE_FILE_NAME_DEFAULT);
     private File xMLStorageFile = XML_STORAGE_FILE_DEFAULT;
@@ -316,12 +316,12 @@ public class DocumentScannerConf implements Serializable {
         this.preferredScanResultPanelWidth = preferredScanResultPanelWidth;
     }
 
-    public boolean isRememberScanResultPanelWidth() {
-        return rememberScanResultPanelWidth;
+    public boolean isRememberPreferredScanResultPanelWidth() {
+        return rememberPreferredScanResultPanelWidth;
     }
 
-    public void setRememberScanResultPanelWidth(boolean rememberScanResultPanelWidth) {
-        this.rememberScanResultPanelWidth = rememberScanResultPanelWidth;
+    public void setRememberPreferredScanResultPanelWidth(boolean rememberPreferredScanResultPanelWidth) {
+        this.rememberPreferredScanResultPanelWidth = rememberPreferredScanResultPanelWidth;
     }
 
     public float getZoomLevelMultiplier() {

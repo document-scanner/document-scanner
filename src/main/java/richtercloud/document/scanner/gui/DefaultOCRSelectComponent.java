@@ -213,8 +213,12 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
+                    float zoomLevelOld = DefaultOCRSelectComponent.this.zoomLevel;
                     DefaultOCRSelectComponent.this.zoomLevel /= DefaultOCRSelectComponent.this.documentScannerConf.getZoomLevelMultiplier();
                     DefaultOCRSelectComponent.this.oCRSelectPanelPanel.setZoomLevels(DefaultOCRSelectComponent.this.zoomLevel);
+                    if(documentScannerConf.isRememberPreferredOCRSelectPanelWidth()) {
+                        documentScannerConf.setPreferredOCRSelectPanelWidth(WHEN_IN_FOCUSED_WINDOW);
+                    }
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 }
