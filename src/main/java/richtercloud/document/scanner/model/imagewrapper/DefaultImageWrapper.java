@@ -144,7 +144,7 @@ public class DefaultImageWrapper implements ImageWrapper {
     rotating asynchronously.
     */
     @Override
-    public InputStream getOriginalImageStream() throws IOException {
+    public InputStream getOriginalImageStream(String formatName) throws IOException {
         File tmpFile = File.createTempFile("image-wrapper", null);
         FutureTask<Image> javaFXTask = new FutureTask<>(() -> {
             ImageView imageView = new ImageView(this.storageFile.toURI().toURL().toString());
@@ -163,9 +163,16 @@ public class DefaultImageWrapper implements ImageWrapper {
         //There's no way to write a JavaFX image into a file without converting
         //it into a Swing/AWT image
         RenderedImage renderedImage = SwingFXUtils.fromFXImage(rotatedImage, null);
-        ImageIO.write(renderedImage, "png", tmpFile);
+        ImageIO.write(renderedImage,
+                formatName,
+                tmpFile);
         InputStream retValue = new BufferedInputStream(new FileInputStream(tmpFile));
         return retValue;
+    }
+
+    @Override
+    public InputStream getOriginalImageStream() throws IOException {
+        return getOriginalImageStream(FORMAT_DEFAULT);
     }
 
     /**

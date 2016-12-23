@@ -14,7 +14,6 @@
  */
 package richtercloud.document.scanner.gui;
 
-import richtercloud.document.scanner.model.imagewrapper.CachingImageWrapper;
 import java.awt.HeadlessException;
 import java.awt.Window;
 import java.awt.event.MouseEvent;
@@ -23,6 +22,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import javax.imageio.ImageIO;
 import javax.swing.GroupLayout;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -47,6 +48,13 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
+import org.apache.pdfbox.rendering.ImageType;
+import org.apache.pdfbox.rendering.PDFRenderer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.components.AutoOCRValueDetectionReflectionFormBuilder;
@@ -76,6 +84,7 @@ import richtercloud.document.scanner.ifaces.OCRSelectPanelPanel;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcher;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcherProgressEvent;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcherProgressListener;
+import richtercloud.document.scanner.model.imagewrapper.CachingImageWrapper;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.MessageHandler;
@@ -317,6 +326,46 @@ public class DefaultMainPanel extends MainPanel {
         return documentCount;
     }
 
+    @Override
+    public void exportActiveDocument(OutputStream out,
+            int exportFormat) throws IOException {
+        if(exportFormat == EXPORT_FORMAT_PDF) {
+            //There seems to be no PNG support in Apache PDFBox, but
+            //transforming into JPEG isn't too much of an effort and allows to
+            //limit dependencies to Apache PDFBox
+            PDDocument document = new PDDocument();
+            PDRectangle documentRectangle = PDRectangle.A4;
+            for(OCRSelectPanel oCRSelectPanel : oCRSelectComponent.getoCRSelectPanelPanel().getoCRSelectPanels()) {
+                ImageWrapper imageWrapper = oCRSelectPanel.getImage();
+                PDPage page = new PDPage(documentRectangle);
+                document.addPage(page);
+                //@TODO: figure out how to create PDImageXObject from stream
+                //since this was possible in 1.8 and it's unlikely that there's
+                //such a severe regression
+                BufferedImage awtImage = ImageIO.read(imageWrapper.getOriginalImageStream());
+                PDImageXObject  pdImageXObject = LosslessFactory.createFromImage(document, awtImage);
+                PDPageContentStream contentStream = new PDPageContentStream(document, page);
+                contentStream.drawImage(pdImageXObject,
+                        0,
+                        0,
+                        documentRectangle.getWidth(),
+                        documentRectangle.getHeight()
+                );
+                    //in case width and height exceed the size of
+                    //documentRectangle, the page is empty (or the content might
+                    //be placed outside the page which has the same effect)
+                contentStream.setFont(PDType1Font.COURIER, 10);
+                contentStream.close();
+            }
+            document.save(out);
+            document.close();
+            out.flush();
+            out.close();
+        }else {
+            throw new IllegalArgumentException("export format %s isn't supported");
+        }
+    }
+
     /**
      * Uses a modal dialog in order to display the progress of the retrieval and
      * make the operation cancelable.
@@ -348,20 +397,19 @@ public class DefaultMainPanel extends MainPanel {
                 List<ImageWrapper> retValue = new LinkedList<>();
                 try {
                     InputStream pdfInputStream = new FileInputStream(documentFile);
-                    PDDocument document = PDDocument.load(pdfInputStream);
-                    @SuppressWarnings("unchecked")
-                    List<PDPage> pages = document.getDocumentCatalog().getAllPages();
-                    for (PDPage page : pages) {
-                        if(dialog.isCanceled()) {
-                            document.close();
-                            DefaultMainPanel.LOGGER.debug("tab generation aborted");
-                            return null;
+                    try (PDDocument document = PDDocument.load(pdfInputStream)) {
+                        PDFRenderer pdfRenderer = new PDFRenderer(document);
+                        for(int page=0; page<document.getNumberOfPages(); page++) {
+                            if(dialog.isCanceled()) {
+                                document.close();
+                                DefaultMainPanel.LOGGER.debug("tab generation aborted");
+                                return null;
+                            }
+                            BufferedImage image = pdfRenderer.renderImageWithDPI(page, 300, ImageType.RGB);
+                            ImageWrapper imageWrapper = new CachingImageWrapper(documentScannerConf.getImageWrapperStorageDir(), image);
+                            retValue.add(imageWrapper);
                         }
-                        BufferedImage image = page.convertToImage();
-                        ImageWrapper imageWrapper = new CachingImageWrapper(documentScannerConf.getImageWrapperStorageDir(), image);
-                        retValue.add(imageWrapper);
                     }
-                    document.close();
                 }catch(IOException ex) {
                     throw new DocumentAddException(ex);
                 }

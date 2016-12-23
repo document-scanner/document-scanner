@@ -14,8 +14,6 @@
  */
 package richtercloud.document.scanner.gui;
 
-import richtercloud.document.scanner.model.imagewrapper.ImageWrapperStorageDirExistsException;
-import richtercloud.document.scanner.model.imagewrapper.CachingImageWrapper;
 import au.com.southsky.jfreesane.SaneDevice;
 import au.com.southsky.jfreesane.SaneException;
 import au.com.southsky.jfreesane.SaneSession;
@@ -94,6 +92,8 @@ import richtercloud.document.scanner.model.Transport;
 import richtercloud.document.scanner.model.TransportTicket;
 import richtercloud.document.scanner.model.Withdrawal;
 import richtercloud.document.scanner.model.Workflow;
+import richtercloud.document.scanner.model.imagewrapper.CachingImageWrapper;
+import richtercloud.document.scanner.model.imagewrapper.ImageWrapperStorageDirExistsException;
 import richtercloud.document.scanner.model.warninghandler.CompanyWarningHandler;
 import richtercloud.document.scanner.ocr.BinaryNotFoundException;
 import richtercloud.document.scanner.ocr.DelegatingOCREngineFactory;
@@ -691,6 +691,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         openMenuItem = new javax.swing.JMenuItem();
         openSelectionMenuItem = new javax.swing.JMenuItem();
         closeMenuItem = new javax.swing.JMenuItem();
+        exportMenuItem = new javax.swing.JMenuItem();
         editEntryMenuItem = new javax.swing.JMenuItem();
         autoOCRValueDetectionMenuItem = new javax.swing.JMenuItem();
         oCRMenuSeparator = new javax.swing.JPopupMenu.Separator();
@@ -763,6 +764,15 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             }
         });
         fileMenu.add(closeMenuItem);
+
+        exportMenuItem.setText("Export...");
+        exportMenuItem.setEnabled(false);
+        exportMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                exportMenuItemActionPerformed(evt);
+            }
+        });
+        fileMenu.add(exportMenuItem);
 
         editEntryMenuItem.setText("Edit entry...");
         editEntryMenuItem.addActionListener(new java.awt.event.ActionListener() {
@@ -1042,8 +1052,45 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         this.mainPanel.removeActiveDocument();
         if(this.mainPanel.getDocumentCount() == 0) {
             this.closeMenuItem.setEnabled(false);
+            this.exportMenuItem.setEnabled(false);
         }
     }//GEN-LAST:event_closeMenuItemActionPerformed
+
+    private void exportMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exportMenuItemActionPerformed
+        JFileChooser chooser = new JFileChooser();
+        chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        FileNameExtensionFilter filter = new FileNameExtensionFilter(
+                "PDF files", "pdf");
+        chooser.setFileFilter(filter);
+        boolean success = false;
+        File selectedFile = null;
+        while(!success) {
+            int returnVal = chooser.showOpenDialog(this);
+            selectedFile = chooser.getSelectedFile();
+            if (returnVal != JFileChooser.APPROVE_OPTION) {
+                return;
+            }
+            if(selectedFile.exists()) {
+                int answer = JOptionPane.showConfirmDialog(this, //parentComponent
+                        String.format("selected file '%s' exists. Overwrite?",
+                                selectedFile.getName()),
+                        "File exists",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.WARNING_MESSAGE);
+                success = answer == JOptionPane.YES_OPTION;
+            }else {
+                success = true;
+            }
+        }
+        assert selectedFile != null; //if dialog is canceled, method returns
+        try {
+            this.mainPanel.exportActiveDocument(selectedFile,
+                    MainPanel.EXPORT_FORMAT_PDF);
+        } catch (IOException ex) {
+            messageHandler.handle(new Message(ex,
+                    JOptionPane.ERROR_MESSAGE));
+        }
+    }//GEN-LAST:event_exportMenuItemActionPerformed
 
     private void addDocument(List<ImageWrapper> images,
             File selectedFile) throws DocumentAddException, IOException {
@@ -1058,6 +1105,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         this.mainPanel.addDocument(images,
                 selectedFile);
         closeMenuItem.setEnabled(true);
+        exportMenuItem.setEnabled(true);
     }
 
     private void addDocument(Object entityToEdit) throws DocumentAddException, IOException {
@@ -1071,6 +1119,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
         this.mainPanel.addDocument(entityToEdit);
         closeMenuItem.setEnabled(true);
+        exportMenuItem.setEnabled(true);
     }
 
     /**
@@ -1339,6 +1388,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private javax.swing.JMenuItem editEntryMenuItem;
     private javax.swing.JMenuItem exitMenuItem;
     private javax.swing.JPopupMenu.Separator exitMenuItemSeparator;
+    private javax.swing.JMenuItem exportMenuItem;
     private javax.swing.JMenu fileMenu;
     private javax.swing.JMenu helpMenu;
     private javax.swing.JPopupMenu.Separator knownScannersMenuItemSeparator;
