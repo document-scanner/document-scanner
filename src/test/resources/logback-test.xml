@@ -8,6 +8,7 @@
     </encoder>
   </appender>
   <logger name="richtercloud.document.scanner.gui" level="DEBUG"/>
+  <logger name="richtercloud.document.scanner.valuedetectionservice.CurrencyFormatAutoOCRValueDetectionService2Text" level="TRACE"/>
 
   <root level="INFO">
     <appender-ref ref="STDOUT" />

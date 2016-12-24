@@ -109,6 +109,7 @@ public class CurrencyFormatAutoOCRValueDetectionService2 extends AbstractAutoOCR
                                 //and the value
                                 Number currencyValue;
                                 try {
+                                    LOGGER.trace(String.format("attempting to parse substring '%s'", subListString));
                                     currencyValue = currencyFormat.getKey().parse(subListString);
                                 }catch(ParseException ex) {
                                     try {
@@ -118,6 +119,7 @@ public class CurrencyFormatAutoOCRValueDetectionService2 extends AbstractAutoOCR
                                         }else {
                                             subListStringSpace = subListString.replace(currencyCode, " "+currencyCode+" ");
                                         }
+                                        LOGGER.trace(String.format("attempting to parse substring '%s'", subListString));
                                         currencyValue = currencyFormat.getKey().parse(subListStringSpace);
                                     }catch(ParseException ex1) {
                                         return;

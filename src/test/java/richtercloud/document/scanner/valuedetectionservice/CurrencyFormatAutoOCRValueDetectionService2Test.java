@@ -24,6 +24,8 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorageException;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
@@ -35,6 +37,7 @@ import richtercloud.reflection.form.builder.components.money.MemoryAmountMoneyCu
  * @author richter
  */
 public class CurrencyFormatAutoOCRValueDetectionService2Test {
+    private final static Logger LOGGER = LoggerFactory.getLogger(CurrencyFormatAutoOCRValueDetectionService2Test.class);
 
     /**
      * Test of fetchResults0 method, of class CurrencyFormatAutoOCRValueDetectionService2.
@@ -49,13 +52,16 @@ public class CurrencyFormatAutoOCRValueDetectionService2Test {
         when(amountMoneyExchangeRateRetriever.getSupportedCurrencies()).thenReturn(new HashSet<>(Arrays.asList(Currency.EUR)));
         CurrencyFormatAutoOCRValueDetectionService2 instance = new CurrencyFormatAutoOCRValueDetectionService2(amountMoneyCurrencyStorage,
                 amountMoneyExchangeRateRetriever);
+        LOGGER.debug(String.format("running with currency symbol without space with input '%s'", input));
         LinkedHashSet<AutoOCRValueDetectionResult<Amount<Money>>> result = instance.fetchResults0(input);
+        LOGGER.debug(String.format("result: %s", result));
         assertTrue(result.contains(new AutoOCRValueDetectionResult<>("5€",
                 Amount.valueOf(5.0d, Currency.EUR)
         )));
 
         //test with currency symbol (with space)
         input = "jfklds jklfd jklds jkldfs fjkdls jkdflss fdjskl f jklfds fkd 5 € jkfdls fkldfsjklf  fdjklf sjklfds f jkldslskd ";
+        LOGGER.debug(String.format("running with currency symbol with space with input '%s'", input));
         result = instance.fetchResults0(input);
         assertTrue(result.contains(new AutoOCRValueDetectionResult<>("5 €",
                 Amount.valueOf(5.0d, Currency.EUR)
@@ -63,12 +69,14 @@ public class CurrencyFormatAutoOCRValueDetectionService2Test {
 
         //test with currency name (without space)
         input = "jfklds jklfd jklds jkldfs fjkdls jkdflss fdjskl f jklfds fkd 5EUR jkfdls fkldfsjklf  fdjklf sjklfds f jkldslskd ";
+        LOGGER.debug(String.format("running with currency name without space with input '%s'", input));
         result = instance.fetchResults0(input);
         assertTrue(result.contains(new AutoOCRValueDetectionResult<>("5EUR",
                 Amount.valueOf(5.0d, Currency.EUR)
         )));
 
         input = "jfklds jklfd jklds jkldfs fjkdls jkdflss fdjskl f jklfds fkd 5 EUR jkfdls fkldfsjklf  fdjklf sjklfds f jkldslskd ";
+        LOGGER.debug(String.format("running with currency name with space with input '%s'", input));
         result = instance.fetchResults0(input);
         assertTrue(result.contains(new AutoOCRValueDetectionResult<>("5 EUR",
                 Amount.valueOf(5.0d, Currency.EUR)
@@ -76,12 +84,14 @@ public class CurrencyFormatAutoOCRValueDetectionService2Test {
 
         //test currency symbol before value (without space)
         input = "jfklds jklfd jklds jkldfs fjkdls jkdflss fdjskl f jklfds fkd EUR5 jkfdls fkldfsjklf  fdjklf sjklfds f jkldslskd ";
+        LOGGER.debug(String.format("running with currency name before value without space with input '%s'", input));
         result = instance.fetchResults0(input);
         assertTrue(result.contains(new AutoOCRValueDetectionResult<>("EUR5",
                 Amount.valueOf(5.0d, Currency.EUR)
         )));
 
         input = "jfklds jklfd jklds jkldfs fjkdls jkdflss fdjskl f jklfds fkd EUR 5 jkfdls fkldfsjklf  fdjklf sjklfds f jkldslskd ";
+        LOGGER.debug(String.format("running with currency name before value with space with input '%s'", input));
         result = instance.fetchResults0(input);
         assertTrue(result.contains(new AutoOCRValueDetectionResult<>("EUR 5",
                 Amount.valueOf(5.0d, Currency.EUR)
