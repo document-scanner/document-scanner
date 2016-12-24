@@ -72,12 +72,12 @@ public class TransportTest extends AbstractTest {
                         3,
                         null,
                         TelephoneNumber.TYPE_LANDLINE))));
-        List<String> waypoints = new LinkedList<>(Arrays.asList("1"));
-        Date journeyDate = new Date();
+        List<String> waypoints = new LinkedList<>(Arrays.asList(startWaypoint,
+                endWaypoint));
         Amount<Money> amount = Amount.valueOf(1, Currency.EUR);
         Location location = new Location("description");
         TransportTicket start = new TransportTicket(waypoints,
-                journeyDate,
+                startDate,
                 amount,
                 "comment",
                 "identifier",
@@ -89,7 +89,7 @@ public class TransportTest extends AbstractTest {
                 transportCompany,
                 recipient);
         TransportTicket end = new TransportTicket(waypoints,
-                journeyDate,
+                endDate,
                 amount,
                 "comment",
                 "identifier",

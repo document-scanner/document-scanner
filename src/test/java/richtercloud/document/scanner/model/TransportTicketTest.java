@@ -70,7 +70,8 @@ public class TransportTicketTest extends AbstractTest {
                         3,
                         null,
                         TelephoneNumber.TYPE_LANDLINE))));
-        List<String> waypoints = new LinkedList<>(Arrays.asList("1"));
+        List<String> waypoints = new LinkedList<>(Arrays.asList(waypointStart,
+                waypointEnd));
         Date journeyDate = new Date();
         Amount<Money> amount = Amount.valueOf(1, Currency.EUR);
         Location location = new Location("description");

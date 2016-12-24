@@ -14,22 +14,19 @@
  */
 package richtercloud.document.scanner.gui;
 
-import richtercloud.document.scanner.model.imagewrapper.DefaultImageWrapper;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import javafx.scene.image.WritableImage;
 import javax.imageio.ImageIO;
-import static org.junit.Assert.*;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.model.imagewrapper.DefaultImageWrapper;
 
 /**
  *
@@ -37,121 +34,6 @@ import org.slf4j.LoggerFactory;
  */
 public class DefaultImageWrapperTest {
     private final static Logger LOGGER = LoggerFactory.getLogger(DefaultImageWrapperTest.class);
-
-    /**
-     * Test of getOriginalImageStream method, of class DefaultImageWrapper.
-     */
-    @Test
-    public void testGetOriginalImageStream() throws Exception {
-        System.out.println("getOriginalImageStream");
-        DefaultImageWrapper instance = null;
-        FileInputStream expResult = null;
-        InputStream result = instance.getOriginalImageStream();
-        assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
-    }
-
-    /**
-     * Test of getOriginalImage method, of class DefaultImageWrapper.
-     */
-    @Test
-    public void testGetOriginalImage() throws Exception {
-        System.out.println("getOriginalImage");
-        DefaultImageWrapper instance = null;
-        BufferedImage expResult = null;
-        BufferedImage result = instance.getOriginalImage();
-        assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
-    }
-
-    /**
-     * Test of getImagePreview method, of class DefaultImageWrapper.
-     */
-    @Test
-    public void testGetImagePreview() throws Exception {
-        System.out.println("getImagePreview");
-        int width = 0;
-        DefaultImageWrapper instance = null;
-        BufferedImage expResult = null;
-        BufferedImage result = instance.getImagePreview(width);
-        assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
-    }
-
-    /**
-     * Test of getImagePreviewFX method, of class DefaultImageWrapper.
-     */
-    @Test
-    public void testGetImagePreviewFX() throws Exception {
-        System.out.println("getImagePreviewFX");
-        int width = 0;
-        DefaultImageWrapper instance = null;
-        WritableImage expResult = null;
-        WritableImage result = instance.getImagePreviewFX(width);
-        assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
-    }
-
-    /**
-     * Test of getImageHeightScaled method, of class DefaultImageWrapper.
-     */
-    @Test
-    public void testGetImageHeightScaled() {
-        System.out.println("getImageHeightScaled");
-        int width = 0;
-        DefaultImageWrapper instance = null;
-        int expResult = 0;
-        int result = instance.getImageHeightScaled(width);
-        assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
-    }
-
-    /**
-     * Test of getInitialWidth method, of class DefaultImageWrapper.
-     */
-    @Test
-    public void testGetInitialWidth() {
-        System.out.println("getInitialWidth");
-        DefaultImageWrapper instance = null;
-        int expResult = 0;
-        int result = instance.getInitialWidth();
-        assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
-    }
-
-    /**
-     * Test of getInitialHeight method, of class DefaultImageWrapper.
-     */
-    @Test
-    public void testGetInitialHeight() {
-        System.out.println("getInitialHeight");
-        DefaultImageWrapper instance = null;
-        int expResult = 0;
-        int result = instance.getInitialHeight();
-        assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
-    }
-
-    /**
-     * Test of getStorageFile method, of class DefaultImageWrapper.
-     */
-    @Test
-    public void testGetStorageFile() {
-        System.out.println("getStorageFile");
-        DefaultImageWrapper instance = null;
-        File expResult = null;
-        File result = instance.getStorageFile();
-        assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
-    }
 
     @Test
     public void testSerialize() throws IOException, ClassNotFoundException {

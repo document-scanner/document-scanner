@@ -66,8 +66,12 @@ public class Transport extends Identifiable {
             return "(empty)";
         }
         assert !this.getTickets().contains(null);
+        TransportTicket firstTicket = this.getTickets().get(0);
         TransportTicket lastTicket = this.getTickets().get(this.getTickets().size()-1);
-        return String.format("%s: %s -> %s", this.getTickets().get(0).getJourneyDate(), this.getTickets().get(0).getWaypoints().get(0), lastTicket.getWaypoints().get(lastTicket.getWaypoints().size()-1));
+        return String.format("%s: %s -> %s",
+                firstTicket.getJourneyDate(),
+                firstTicket.getWaypoints().get(0),
+                lastTicket.getWaypoints().get(lastTicket.getWaypoints().size()-1));
     }
 
 }

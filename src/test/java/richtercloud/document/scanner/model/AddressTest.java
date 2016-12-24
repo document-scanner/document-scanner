@@ -55,6 +55,7 @@ public class AddressTest {
                 country);
         expResult = street+" "+number+"/"+postOfficeBox+", "+zipcode+" "+city+" ("+region+"), "
                 +country;
+        result = instance.toString();
         assertEquals(expResult, result);
     }
 }

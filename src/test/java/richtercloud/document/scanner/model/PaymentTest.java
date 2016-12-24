@@ -95,7 +95,7 @@ public class PaymentTest extends AbstractTest {
         Amount<Money> amount = Amount.valueOf(10, Money.BASE_UNIT);
         Payment instance = new Payment(amount,
                 new Date(), sender, recipient);
-        String expResult = account+": "+sender+" -> "+recipient+": "+amount;
+        String expResult = sender+" -> "+recipient+": "+amount;
         String result = instance.toString();
         assertEquals(expResult, result);
     }
