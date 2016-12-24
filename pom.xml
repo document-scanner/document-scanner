@@ -217,9 +217,13 @@
             <artifactId>stanford-corenlp</artifactId>
             <version>3.6.0</version>
         </dependency>
-        <!--corenlp models have about 400 MB in the resulting .deb and .dmg
-        files-->
-        <!--<dependency>
+        <!-- corenlp models have about 400 MB in the resulting .deb and .dmg
+        files, but are necessary for SUTimeAutoOCRValueDetectionService to not
+        fail due to
+        `Caused by: edu.stanford.nlp.io.RuntimeIOException: Error while loading a tagger model (probably missing model file)`;
+        consider running `mvn clean install -DskipDeb since `dpkg-deb`
+        ridiculously enough only uses one thread of compression -->
+        <dependency>
             <groupId>edu.stanford.nlp</groupId>
             <artifactId>stanford-corenlp</artifactId>
             <version>3.6.0</version>
@@ -230,7 +234,7 @@
             <artifactId>stanford-corenlp</artifactId>
             <version>3.6.0</version>
             <classifier>models-chinese</classifier>
-        </dependency>-->
+        </dependency>
     </dependencies>
     <build>
         <plugins>
