@@ -13,6 +13,8 @@
         <richtercloud.document.scanner.openjpa.version>2.2.0</richtercloud.document.scanner.openjpa.version>
         <richtercloud.document.scanner.hibernate.version>5.0.11.Final</richtercloud.document.scanner.hibernate.version>
         <richtercloud.document.scanner.eclipselink.version>2.6.4</richtercloud.document.scanner.eclipselink.version>
+        <izpack.version>5.0.11-SNAPSHOT</izpack.version>
+        <izpack.staging>${project.build.directory}/staging</izpack.staging>
     </properties>
     <dependencies>
         <dependency>
@@ -212,7 +214,9 @@
             <artifactId>stanford-corenlp</artifactId>
             <version>3.6.0</version>
         </dependency>
-        <dependency>
+        <!--corenlp models have about 400 MB in the resulting .deb and .dmg
+        files-->
+        <!--<dependency>
             <groupId>edu.stanford.nlp</groupId>
             <artifactId>stanford-corenlp</artifactId>
             <version>3.6.0</version>
@@ -223,7 +227,7 @@
             <artifactId>stanford-corenlp</artifactId>
             <version>3.6.0</version>
             <classifier>models-chinese</classifier>
-        </dependency>
+        </dependency>-->
     </dependencies>
     <build>
         <plugins>
@@ -331,6 +335,227 @@
                         <version>${richtercloud.document.scanner.eclipselink.version}</version>
                     </dependency>
                 </dependencies>
+            </plugin>
+
+            <!--Packaging-->
+            <!--Since it's overly hard to get "getting started" configurations
+            works without binding executions to a phase, minimize dependencies
+            bloating up the .deb and .dmg files and run at every packaging
+            plugins `mvn clean install` which also reduces the danger of having
+            outdated packages-->
+            <plugin>
+                <groupId>net.trajano.mojo</groupId>
+                <artifactId>batik-maven-plugin</artifactId>
+                <version>1.1.1</version>
+                <executions>
+                    <execution>
+                        <id>convert-svg-to-ico</id>
+                        <goals>
+                            <goal>rasterizer</goal>
+                        </goals>
+                        <phase>process-resources</phase>
+                        <configuration>
+                            <destDir>${izpack.staging}</destDir>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <!--This plugin's configuration must come *before* the Debian
+                        Maven Plugin.-->
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>2.3</version>
+                <executions>
+                    <execution>
+                        <id>copy-deb-resources</id>
+                        <phase>process-resources</phase>
+                        <goals><goal>copy-resources</goal></goals>
+                        <configuration>
+                            <overwrite>true</overwrite>
+                            <outputDirectory>${basedir}/target/deb</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>src/main/deb/resources</directory>
+                                    <!-- Uncomment the following line to enable Velocity filtering. -->
+                                    <!--
+                                    <filtering>true</filtering>
+                                    -->
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-jar-for-izpack</id>
+                        <phase>package</phase>
+                        <goals><goal>copy-resources</goal></goals>
+                        <configuration>
+                            <overwrite>true</overwrite>
+                            <outputDirectory>${izpack.staging}</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${basedir}/target</directory>
+                                    <includes>
+                                        <include>*.jar</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>net.sf.debian-maven</groupId>
+                <artifactId>debian-maven-plugin</artifactId>
+                <version>1.0.6</version>
+                <configuration>
+                    <packageName>document-scanner</packageName>
+                    <packageVersion>1.0-beta</packageVersion>
+                    <packageDescription>A scaning assistant and document
+                    management system</packageDescription>
+                    <maintainerName>Karl-Philipp Richter</maintainerName>
+                    <maintainerEmail>krichter@posteo.de</maintainerEmail>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>package</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>sh.tak.appbundler</groupId>
+                <artifactId>appbundle-maven-plugin</artifactId>
+                <version>1.2.0</version>
+                <configuration>
+                    <mainClass>richtercloud.document.scanner.gui.DocumentScanner</mainClass>
+                    <generateDiskImageFile>true</generateDiskImageFile>
+                        <!--Create dmg file-->
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>bundle</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!--copy jar after creation (in maven-debian-plugin) (declaration
+                    of maven-resource-plugin above)...-->
+            <!--...and rename because version number of pom can't be used in
+                    izpack shortcut configuration file (and shouldn't be
+                    maintained at more than one location)-->
+            <plugin>
+                <groupId>com.coderplus.maven.plugins</groupId>
+                <artifactId>copy-rename-maven-plugin</artifactId>
+                <version>1.0.1</version>
+                <executions>
+                    <execution>
+                        <id>rename-file</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>rename</goal>
+                        </goals>
+                        <configuration>
+                            <sourceFile>${izpack.staging}/${project.build.finalName}.jar</sourceFile>
+                            <destinationFile>${izpack.staging}/${project.name}.jar</destinationFile>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.izpack</groupId>
+                <artifactId>izpack-maven-plugin</artifactId>
+                <version>${izpack.version}</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals><goal>izpack</goal></goals>
+                        <configuration>
+                            <!-- base for relative paths in izpack descriptor -->
+                            <baseDir>${izpack.staging}</baseDir>
+                            <validating>true</validating>
+                            <mkdirs>true</mkdirs>
+                            <installFile>${basedir}/src/main/izpack/install.xml</installFile>
+                            <outputDirectory>${project.build.directory}/izpack-installer/</outputDirectory>
+                            <finalName>${project.build.finalName}-${project.version}-installer</finalName>
+                                <!--.jar extension is added-->
+                        </configuration>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.codehaus.izpack</groupId>
+                        <artifactId>izpack-panel</artifactId>
+                        <version>${izpack.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>richtercloud</groupId>
+                        <artifactId>document-scanner</artifactId>
+                        <version>1.0-SNAPSHOT</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>create-staging-area</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                <copy todir="${izpack.staging}">
+                                    <fileset dir="${basedir}/src/main/izpack"/>
+                                </copy>
+                            </tasks>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <configuration>
+                    <excludeTransitive>false</excludeTransitive>
+                    <stripVersion>true</stripVersion>
+                    <overWriteReleases>true</overWriteReleases>
+                    <overWriteSnapshots>true</overWriteSnapshots>
+                    <overWriteIfNewer>true</overWriteIfNewer>
+                    <excludeScope>system</excludeScope>
+                </configuration>
+                <executions>
+                    <execution>
+                        <!-- copy product jars to izpack staging lib -->
+                        <id>copy-product-dependencies</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${izpack.staging}/lib</outputDirectory>
+                            <excludeScope>system</excludeScope>
+                            <!-- this excludes tools.jar, e.g. -->
+                            <excludeArtifactIds>mycustompanels</excludeArtifactIds>
+                            <excludeGroupIds>org.codehaus.izpack</excludeGroupIds>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!-- copy izpack custom (custom panels, etc.) jars to izpack staging custom -->
+                        <id>copy-izpack-dependencies</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${izpack.staging}/custom</outputDirectory>
+                            <includeArtifactIds>mycustompanels</includeArtifactIds>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

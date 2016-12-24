@@ -1,0 +1,3 @@
+#!/bin/sh
+
+java -cp "/usr/share/lib/document-scanner/*" richtercloud.document.scanner.gui.DocumentScanner $@

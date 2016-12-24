@@ -1,0 +1,58 @@
+<izpack:installation version="5.0"
+                     xmlns:izpack="http://izpack.org/schema/installation"
+                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                     xsi:schemaLocation="http://izpack.org/schema/installation http://izpack.org/schema/5.0/izpack-installation-5.0.xsd">
+    <info>
+        <appname>document-scanner</appname>
+        <appversion>1.0-beta</appversion>
+        <javaversion>1.8</javaversion>
+        <requiresjdk>no</requiresjdk>
+        <rebootaction>ignore</rebootaction>
+        <summarylogfilepath>installer.log</summarylogfilepath>
+        <url>https://github.com/document-scanner/document-scanner/</url>
+        <authors>
+            <author name="Karl-Philipp Richter" email="krichter@posteo.de"/>
+        </authors>
+    </info>
+
+    <locale>
+        <langpack iso3="eng"/>
+    </locale>
+
+    <guiprefs width="800" height="600" resizable="no">
+        <splash>images/peas_load.gif</splash>
+        <laf name="substance">
+            <os family="windows" />
+            <os family="unix" />
+            <param name="variant" value="mist-silver" />
+        </laf>
+        <laf name="substance">
+            <os family="mac" />
+            <param name="variant" value="mist-aqua" />
+        </laf>
+        <modifier key="useHeadingPanel" value="yes" />
+    </guiprefs>
+    <resources>
+        <res id="shortcutSpec.xml" src="shortcutSpec.xml"/>
+        <res id="Unix_shortcutSpec.xml" src="unixShortcutSpec.xml"/>
+    </resources>
+
+    <panels>
+        <panel classname="TargetPanel"/>
+        <panel classname="ShortcutPanel"/>
+        <panel classname="PacksPanel"/>
+        <panel classname="InstallPanel"/>
+        <panel classname="FinishPanel"/>
+    </panels>
+
+    <!--Required for Windows shortcuts-->
+    <!--<native type="izpack" name="ShellLink.dll"/>-->
+        <!-- causes failure due to `file:///mnt/data/home/document-scanner-aggregator/document-scanner/src/main/izpack/install.xml; Zeilennummer50; Spaltennummer47; cvc-complex-type.2.4.a: Invalid content was found starting with element 'native'. One of '{properties, info, variables, dynamicvariables, conditions, installerrequirements, dynamicinstallerrequirements, consoleprefs, guiprefs, locale, resources, packaging, jar, listeners, panels, packs, natives}' is expected.`-->
+
+    <packs>
+        <pack name="Document-scanner Core" required="yes">
+            <description>The core files needed for the application</description>
+            <fileset dir="" override="true"/>
+        </pack>
+    </packs>
+</izpack:installation>

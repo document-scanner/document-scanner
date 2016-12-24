@@ -1,0 +1,31 @@
+<izpack:shortcuts version="5.0"
+                  xmlns:izpack="http://izpack.org/schema/shortcuts"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://izpack.org/schema/shortcuts http://izpack.org/schema/5.0/izpack-shortcuts-5.0.xsd">
+    <skipIfNotSupported/>
+    <shortcut
+            name="document-scanner"
+            target="java -cp &quot;$INSTALL_PATH/document-scanner.jar:$INSTALL_PATH/lib/*&quot; richtercloud.document.scanner.gui.DocumentScanner"
+            description="Launch document-scanner"
+            workingDirectory="$INSTALL_PATH"
+            initialState="normal"
+            programGroup="yes"
+            desktop="yes"
+            applications="yes"
+            startMenu="yes"
+            startup="no"
+            terminal="false"
+            type="Application">
+            <!-- - Exec command in .desktop file is put in '', which makes it
+            impossible to use "/&quot; -> can be omitted because Exec is passed
+            to `sh -c`, but it's slight nonsense to add ''
+            - In case encoding is omitted it's created empty in the resulting
+            .desktop file which causes the .desktop file to be invalid. It's
+            deprecated according to `desktop-file-validate`, so this is slight
+            nonsense
+            - omitting terminal and type causes invalid .desktop file -->
+        <createForPack name="Document-scanner Core"/>
+    </shortcut>
+        <!--maven properties aren't supported here -> use name
+                `document-scanner.jar` in shortcut command and rename in pom-->
+</izpack:shortcuts>

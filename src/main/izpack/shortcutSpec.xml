@@ -1,0 +1,21 @@
+<izpack:shortcuts version="5.0"
+                  xmlns:izpack="http://izpack.org/schema/shortcuts"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://izpack.org/schema/shortcuts http://izpack.org/schema/5.0/izpack-shortcuts-5.0.xsd">
+    <skipIfNotSupported/>
+    <programGroup defaultName="document-scanner"
+            location="applications"/>
+    <shortcut
+            name="wekautils"
+            target="$INSTALL_PATH\document-scanner.jar"
+            description="Launch document-scanner"
+            workingDirectory="$INSTALL_PATH"
+            initialState="normal"
+            programGroup="yes"
+            desktop="yes"
+            applications="no"
+            startMenu="no"
+            startup="no">
+        <createForPack name="Document-scanner Core"/>
+    </shortcut>
+</izpack:shortcuts>
