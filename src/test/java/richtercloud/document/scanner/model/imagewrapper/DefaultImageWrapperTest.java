@@ -12,7 +12,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.gui;
+package richtercloud.document.scanner.model.imagewrapper;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -26,7 +26,6 @@ import javax.imageio.ImageIO;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import richtercloud.document.scanner.model.imagewrapper.DefaultImageWrapper;
 
 /**
  *
