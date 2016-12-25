@@ -53,6 +53,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReentrantLock;
 import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
 import javax.cache.Caching;
 import javax.persistence.EntityManager;
 import javax.swing.JComponent;
@@ -251,6 +252,9 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     public final static int INITIAL_QUERY_LIMIT_DEFAULT = 20;
     public final static String BIDIRECTIONAL_HELP_DIALOG_TITLE = generateApplicationWindowTitle("Bidirectional relations help", APP_NAME, APP_VERSION);
     private final static DocumentScannerConfConverter DOCUMENT_SCANNER_CONF_CONVERTER = new DocumentScannerConfConverter();
+    static {
+        new JFXPanel();
+    }
 
     public static String generateApplicationWindowTitle(String title, String applicationName, String applicationVersion) {
         return String.format("%s - %s %s", title, applicationName, applicationVersion);
@@ -286,17 +290,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
      * displayed if more documents than this value are about to be opened.
      */
     private final static int SELECTED_ENTITIES_EDIT_WARNING = 5;
-    /**
-     * Creation of a {@link JFXPanel} is necessary to instantiate the JavaFX
-     * platform which is used for some parts of the application. The reference
-     * isn't used by JavaFX, but stored here in order to indicate that a second
-     * {@code JFXPanel} doesn't need to be allocated.
-     */
-    /*
-    internal implementation notes:
-    - This could be handled by a flag as well, but all resources aquired by the
-    panel will remain in use and thus not be GCed anyway.
-    */
     private PersistenceStorage storage;
     private final DelegatingPersistenceStorageFactory delegatingStorageFactory = new DelegatingPersistenceStorageFactory("richtercloud_document-scanner_jar_1.0-SNAPSHOTPU",
             24, //@TODo: low limit no longer necessary after ImageWrapper is

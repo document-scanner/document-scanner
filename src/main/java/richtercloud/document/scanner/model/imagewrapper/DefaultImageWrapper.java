@@ -28,7 +28,6 @@ import java.lang.reflect.Field;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import javafx.application.Platform;
-import javafx.embed.swing.JFXPanel;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -52,6 +51,9 @@ import richtercloud.document.scanner.ifaces.ImageWrapper;
  * a crash of the application. Emptying the storage directory isn't handled here
  * because it's more of an application task.
  *
+ * Callers are responsible for initializing JavaFX (e.g. by calling
+ * {@code new JFXPanel()} once).
+ *
  * @author richter
  */
 /*
@@ -63,14 +65,16 @@ BufferedImage. Currently instances are only created when needed and references
 passed to data consumers.
 - It'd be nice to delegate storage to a separate class, but that highly
 complicates implementation of (de-)serialization and references in entities.
+- This class shouldn't initialize JavaFX because it makes it hard to test in a
+headless environment and is not the task of a data container.
 */
 public class DefaultImageWrapper implements ImageWrapper {
     private final static Logger LOGGER = LoggerFactory.getLogger(DefaultImageWrapper.class);
     private static int storageFileNameCounter = 0;
     private static final long serialVersionUID = 1L;
     static {
-        new JFXPanel();
-            //initialize JavaFX once
+        //don't initialize JavaFX here (see class internal implementation notes
+        //for further infos)
         ImageIO.setUseCache(true);
             //use ImageIO parallel to the cache implemented in
             //DefaultImageWrapper because it can't hurt
