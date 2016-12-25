@@ -4,7 +4,7 @@
     <parent>
         <groupId>richtercloud</groupId>
         <artifactId>document-scanner-aggregator</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>1.0-beta</version>
     </parent>
     <artifactId>document-scanner</artifactId>
     <packaging>jar</packaging>
@@ -20,18 +20,26 @@
         <izpack.staging>${project.build.directory}/staging</izpack.staging>
     </properties>
     <dependencies>
+        <!--document-scanner dependencies-->
         <dependency>
             <groupId>richtercloud</groupId>
             <artifactId>document-scanner-ifaces</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${richtercloud.document.scanner.version}</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>richtercloud</groupId>
             <artifactId>document-scanner-flexdock</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${richtercloud.document.scanner.version}</version>
             <type>jar</type>
         </dependency>
+        <dependency>
+            <groupId>richtercloud</groupId>
+            <artifactId>reflection-form-builder-jpa</artifactId>
+            <version>${richtercloud.document.scanner.version}</version>
+            <type>jar</type>
+        </dependency>
+        <!--Other dependencies-->
         <dependency>
             <groupId>com.googlecode.jfreesane</groupId>
             <artifactId>jfreesane</artifactId>
@@ -101,12 +109,6 @@
             <version>${richtercloud.document.scanner.openjpa.version}</version>
         </dependency>-->
 
-        <dependency>
-            <groupId>richtercloud</groupId>
-            <artifactId>reflection-form-builder-jpa</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <type>jar</type>
-        </dependency>
         <dependency>
             <groupId>org.apache.pdfbox</groupId>
             <artifactId>pdfbox</artifactId>
@@ -501,7 +503,7 @@
                     <dependency>
                         <groupId>richtercloud</groupId>
                         <artifactId>document-scanner</artifactId>
-                        <version>1.0-SNAPSHOT</version>
+                        <version>${richtercloud.document.scanner.version}</version>
                     </dependency>
                 </dependencies>
             </plugin>
