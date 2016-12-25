@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import javax.imageio.ImageIO;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +36,10 @@ public class DefaultImageWrapperTest {
     private final static Logger LOGGER = LoggerFactory.getLogger(DefaultImageWrapperTest.class);
 
     @Test
+    //@Category(JavaFXGUITests.class) //Doesn't work, but should (see pom.xml
+    //for details
+    @Ignore //needs initialized JavaFX which can't be initialize in a headless
+    //environment
     public void testSerialize() throws IOException, ClassNotFoundException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream);
