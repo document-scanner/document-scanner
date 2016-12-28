@@ -15,12 +15,14 @@
 package richtercloud.document.scanner.valuedetectionservice;
 
 /**
- * Note that there can be more results than words in the OCR value detection
- * input.
  *
  * @author richter
  */
-public interface AutoOCRValueDetectionServiceUpdateListener<T> {
+public class DateFormatValueDetectionServiceConfFactory implements ValueDetectionServiceConfFactory<DateFormatValueDetectionService, DateFormatValueDetectionServiceConf> {
 
-    void onUpdate(AutoOCRValueDetectionServiceUpdateEvent<T> event);
+    @Override
+    public DateFormatValueDetectionService createService(DateFormatValueDetectionServiceConf serviceConf) {
+        DateFormatValueDetectionService retValue = new DateFormatValueDetectionService();
+        return retValue;
+    }
 }

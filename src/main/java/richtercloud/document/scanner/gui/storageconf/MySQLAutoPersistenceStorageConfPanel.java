@@ -112,9 +112,17 @@ public class MySQLAutoPersistenceStorageConfPanel extends StorageConfPanel<MySQL
     public MySQLAutoPersistenceStorageConfPanel(MySQLAutoPersistenceStorageConf storageConf,
             MessageHandler messageHandler,
             ConfirmMessageHandler confirmMessageHandler,
-            boolean skipMD5SumCheck) {
+            boolean skipMD5SumCheck) throws IOException {
         initComponents();
-        this.storageConf = storageConf;
+        this.storageConf = new MySQLAutoPersistenceStorageConf(storageConf.getDatabaseDir(),
+                storageConf.getBaseDir(),
+                storageConf.getPort(),
+                storageConf.getDatabaseDriver(),
+                storageConf.getEntityClasses(),
+                storageConf.getUsername(),
+                storageConf.getPassword(),
+                storageConf.getDatabaseName(),
+                storageConf.getSchemeChecksumFile());
         this.messageHandler = messageHandler;
         this.confirmMessageHandler = confirmMessageHandler;
         this.skipMD5SumCheck = skipMD5SumCheck;
@@ -628,10 +636,14 @@ public class MySQLAutoPersistenceStorageConfPanel extends StorageConfPanel<MySQL
 
     @Override
     public void save() {
-        this.storageConf.setBaseDir(baseDirTextField.getText());
-        this.storageConf.setMysqld(mysqldTextField.getText());
-        this.storageConf.setMysqladmin(mysqladminTextField.getText());
-        this.storageConf.setMysql(mysqlTextField.getText());
+        String baseDir = baseDirTextField.getText();
+        this.storageConf.setBaseDir(baseDir);
+        String mysqld = mysqldTextField.getText();
+        this.storageConf.setMysqld(mysqld.isEmpty() ? null : mysqld);
+        String mysqladmin = mysqladminTextField.getText();
+        this.storageConf.setMysqladmin(mysqladmin.isEmpty() ? null : mysqladmin);
+        String mysql = mysqlTextField.getText();
+        this.storageConf.setMysql(mysql.isEmpty() ? null : mysql);
         this.storageConf.setDatabaseName(this.databaseNameTextField.getText());
         this.storageConf.setDatabaseDir(this.databaseDirTextField.getText());
         this.storageConf.setHostname(this.hostnameTextField.getText());

@@ -33,8 +33,8 @@ import richtercloud.document.scanner.gui.FormatUtils;
  *
  * @author richter
  */
-public class DateFormatAutoOCRValueDetectionService extends AbstractFormatAutoOCRValueDetectionService<Date> {
-    private final static Logger LOGGER = LoggerFactory.getLogger(DateFormatAutoOCRValueDetectionService.class);
+public class DateFormatValueDetectionService extends AbstractFormatValueDetectionService<Date> {
+    private final static Logger LOGGER = LoggerFactory.getLogger(DateFormatValueDetectionService.class);
 
     /**
      * The max. number of words a date can be made up from.
@@ -63,14 +63,14 @@ public class DateFormatAutoOCRValueDetectionService extends AbstractFormatAutoOC
     }
 
     @Override
-    protected List<AutoOCRValueDetectionResult<Date>> checkResult(String inputSub,
+    protected List<ValueDetectionResult<Date>> checkResult(String inputSub,
             List<String> inputSplits,
             int i) {
-        List<AutoOCRValueDetectionResult<Date>> retValue = null;
+        List<ValueDetectionResult<Date>> retValue = null;
         for(Entry<DateFormat, Set<Locale>> dateFormat : FormatUtils.getDisjointDateRelatedFormats().entrySet()) {
             try {
                 Date date = dateFormat.getKey().parse(inputSub);
-                AutoOCRValueDetectionResult<Date> autoOCRValueDetectionResult = new AutoOCRValueDetectionResult<>(inputSub,
+                ValueDetectionResult<Date> autoOCRValueDetectionResult = new ValueDetectionResult<>(inputSub,
                         date
                 );
                 //not sufficient to check whether result
@@ -81,8 +81,8 @@ public class DateFormatAutoOCRValueDetectionService extends AbstractFormatAutoOC
                     retValue = new LinkedList<>();
                 }
                 retValue.add(autoOCRValueDetectionResult);
-                for(AutoOCRValueDetectionServiceUpdateListener<Date> listener : getListeners()) {
-                    listener.onUpdate(new AutoOCRValueDetectionServiceUpdateEvent<>(new LinkedList<>(retValue),
+                for(ValueDetectionServiceUpdateListener<Date> listener : getListeners()) {
+                    listener.onUpdate(new ValueDetectionServiceUpdateEvent<>(new LinkedList<>(retValue),
                             inputSplits.size(),
                             i));
                 }

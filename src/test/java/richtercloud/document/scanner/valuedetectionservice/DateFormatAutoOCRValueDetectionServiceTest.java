@@ -67,7 +67,7 @@ public class DateFormatAutoOCRValueDetectionServiceTest {
     }
 
     /**
-     * Test of getResults method, of class DateFormatAutoOCRValueDetectionService.
+     * Test of getResults method, of class DateFormatValueDetectionService.
      */
     @Test
     public void testGetResults() {
@@ -94,11 +94,11 @@ public class DateFormatAutoOCRValueDetectionServiceTest {
         }
         String input = inputBuilder.toString();
         LOGGER.debug(String.format("Testing single date with input '%s'", input));
-        DateFormatAutoOCRValueDetectionService instance = new DateFormatAutoOCRValueDetectionService();
-        List<AutoOCRValueDetectionResult<Date>> results = instance.fetchResults(input);
+        DateFormatValueDetectionService instance = new DateFormatValueDetectionService();
+        List<ValueDetectionResult<Date>> results = instance.fetchResults(input);
         assertTrue(!results.isEmpty());
         boolean dateFound = false;
-        for(AutoOCRValueDetectionResult<?> result: results) {
+        for(ValueDetectionResult<?> result: results) {
             if(result.getValue().equals(date)) {
                 dateFound = true;
                 break;
@@ -133,11 +133,11 @@ public class DateFormatAutoOCRValueDetectionServiceTest {
         }
         input = inputBuilder.toString();
         LOGGER.debug(String.format("Test multiple dates (%d) with input '%s'", dateCount, input));
-        instance = new DateFormatAutoOCRValueDetectionService();
+        instance = new DateFormatValueDetectionService();
         results = instance.fetchResults(input);
         assertTrue(!results.isEmpty());
         dateFound = false;
-        for(AutoOCRValueDetectionResult<?> result: results) {
+        for(ValueDetectionResult<?> result: results) {
             if(result.getValue().equals(date)) {
                 dateFound = true;
                 break;
@@ -146,7 +146,7 @@ public class DateFormatAutoOCRValueDetectionServiceTest {
         assertTrue(dateFound);
 
         //Special test
-        instance = new DateFormatAutoOCRValueDetectionService();
+        instance = new DateFormatValueDetectionService();
         results = instance.fetchResults("27.10.2015 ");
         assertTrue(!results.isEmpty());
     }

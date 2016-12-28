@@ -14,6 +14,7 @@
  */
 package richtercloud.document.scanner.gui.storageconf;
 
+import java.io.IOException;
 import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyEmbeddedPersistenceStorageConf;
@@ -40,7 +41,7 @@ public class DefaultStorageConfPanelFactory implements StorageConfPanelFactory {
     }
 
     @Override
-    public StorageConfPanel create(StorageConf storageConf) {
+    public StorageConfPanel create(StorageConf storageConf) throws StorageConfPanelCreationException {
         StorageConfPanel retValue;
         if(storageConf instanceof DerbyEmbeddedPersistenceStorageConf) {
             retValue = new DerbyEmbeddedPersistenceStorageConfPanel((DerbyEmbeddedPersistenceStorageConf) storageConf);
@@ -49,10 +50,14 @@ public class DefaultStorageConfPanelFactory implements StorageConfPanelFactory {
         }else if(storageConf instanceof PostgresqlAutoPersistenceStorageConf) {
             retValue = new PostgresqlAutoPersistenceStorageConfPanel((PostgresqlAutoPersistenceStorageConf) storageConf);
         }else if(storageConf instanceof MySQLAutoPersistenceStorageConf) {
-            retValue = new MySQLAutoPersistenceStorageConfPanel((MySQLAutoPersistenceStorageConf) storageConf,
-                    messageHandler,
-                    confirmMessageHandler,
-                    skipMD5SumCheck);
+            try {
+                retValue = new MySQLAutoPersistenceStorageConfPanel((MySQLAutoPersistenceStorageConf) storageConf,
+                        messageHandler,
+                        confirmMessageHandler,
+                        skipMD5SumCheck);
+            } catch (IOException ex) {
+                throw new StorageConfPanelCreationException(ex);
+            }
         }else {
             throw new IllegalArgumentException(String.format("Storage configuration of type '%s' isn't supported", storageConf.getClass()));
         }

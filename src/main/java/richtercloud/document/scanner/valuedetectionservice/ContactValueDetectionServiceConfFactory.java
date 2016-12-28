@@ -12,15 +12,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.gui.storageconf;
-
-import richtercloud.reflection.form.builder.storage.StorageConf;
+package richtercloud.document.scanner.valuedetectionservice;
 
 /**
  *
  * @author richter
  */
-public interface StorageConfPanelFactory {
+public class ContactValueDetectionServiceConfFactory implements ValueDetectionServiceConfFactory<ContactValueDetectionService, ContactValueDetectionServiceConf> {
 
-    StorageConfPanel create(StorageConf storageConf) throws StorageConfPanelCreationException;
+    @Override
+    public ContactValueDetectionService createService(ContactValueDetectionServiceConf serviceConf) {
+        ContactValueDetectionService retValue = new ContactValueDetectionService();
+        return retValue;
+    }
 }

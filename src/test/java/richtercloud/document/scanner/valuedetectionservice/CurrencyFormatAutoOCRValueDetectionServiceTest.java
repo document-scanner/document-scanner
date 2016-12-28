@@ -38,14 +38,14 @@ import richtercloud.reflection.form.builder.components.money.MemoryAmountMoneyCu
 public class CurrencyFormatAutoOCRValueDetectionServiceTest {
 
     /**
-     * Test of getMaxWords method, of class CurrencyFormatAutoOCRValueDetectionService.
+     * Test of getMaxWords method, of class CurrencyFormatValueDetectionService.
      */
     @Test
     public void testGetMaxWords() {
         System.out.println("getMaxWords");
         AmountMoneyCurrencyStorage amountMoneyCurrencyStorage = mock(AmountMoneyCurrencyStorage.class);
         AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever = mock(AmountMoneyExchangeRateRetriever.class);
-        CurrencyFormatAutoOCRValueDetectionService instance = new CurrencyFormatAutoOCRValueDetectionService(amountMoneyCurrencyStorage,
+        CurrencyFormatValueDetectionService instance = new CurrencyFormatValueDetectionService(amountMoneyCurrencyStorage,
                 amountMoneyExchangeRateRetriever);
         int expResult = 2; //the only thing that makes sense with currency
             //formats
@@ -54,7 +54,7 @@ public class CurrencyFormatAutoOCRValueDetectionServiceTest {
     }
 
     /**
-     * Test of checkResult method, of class CurrencyFormatAutoOCRValueDetectionService.
+     * Test of checkResult method, of class CurrencyFormatValueDetectionService.
      */
     @Test
     public void testCheckResult() throws AmountMoneyCurrencyStorageException, AmountMoneyExchangeRateRetrieverException {
@@ -65,9 +65,9 @@ public class CurrencyFormatAutoOCRValueDetectionServiceTest {
         amountMoneyCurrencyStorage.saveCurrency(Currency.EUR);
         AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever = mock(AmountMoneyExchangeRateRetriever.class);
         when(amountMoneyExchangeRateRetriever.getSupportedCurrencies()).thenReturn(new HashSet<>(Arrays.asList(Currency.EUR)));
-        CurrencyFormatAutoOCRValueDetectionService instance = new CurrencyFormatAutoOCRValueDetectionService(amountMoneyCurrencyStorage,
+        CurrencyFormatValueDetectionService instance = new CurrencyFormatValueDetectionService(amountMoneyCurrencyStorage,
                 amountMoneyExchangeRateRetriever);
-        List<AutoOCRValueDetectionResult<Amount<Money>>> retValues = instance.checkResult(inputSub, inputSplits, i);
-        assertTrue(retValues.contains(new AutoOCRValueDetectionResult<>(inputSub, Amount.valueOf(1.2d, Currency.EUR))));
+        List<ValueDetectionResult<Amount<Money>>> retValues = instance.checkResult(inputSub, inputSplits, i);
+        assertTrue(retValues.contains(new ValueDetectionResult<>(inputSub, Amount.valueOf(1.2d, Currency.EUR))));
     }
 }

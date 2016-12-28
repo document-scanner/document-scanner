@@ -14,30 +14,15 @@
  */
 package richtercloud.document.scanner.valuedetectionservice;
 
-import java.util.List;
-
 /**
- * Abstraction for different implementations for auto-OCR-value-detection.
  *
  * @author richter
- * @param <T> the type of values to detect
  */
-public interface AutoOCRValueDetectionService<T> {
+public class CurrencyFormatValueDetectionService2Conf implements ValueDetectionServiceConf {
+    private static final long serialVersionUID = 1L;
 
-    /**
-     * Fetches results in the form of {@link AutoOCRValueDetectionResult}s from
-     * {@code input}.
-     * @param input
-     * @return the fetched results
-     */
-    List<AutoOCRValueDetectionResult<T>> fetchResults(String input);
-
-    /**
-     * Cancels a previously started {@link #fetchResults(java.lang.String) }.
-     */
-    void cancelFetch();
-
-    void addUpdateListener(AutoOCRValueDetectionServiceUpdateListener listener);
-
-    void removeUpdateListener(AutoOCRValueDetectionServiceUpdateListener listener);
+    @Override
+    public void validate() throws ValueDetectionServiceConfValidationException {
+        //nothing to validate
+    }
 }

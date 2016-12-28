@@ -12,15 +12,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.gui.storageconf;
-
-import richtercloud.reflection.form.builder.storage.StorageConf;
+package richtercloud.document.scanner.valuedetectionservice;
 
 /**
  *
  * @author richter
  */
-public interface StorageConfPanelFactory {
+public class ContactValueDetectionServiceConf implements ValueDetectionServiceConf {
+    private static final long serialVersionUID = 1L;
 
-    StorageConfPanel create(StorageConf storageConf) throws StorageConfPanelCreationException;
+    @Override
+    public void validate() throws ValueDetectionServiceConfValidationException {
+        //nothing to validate
+    }
 }

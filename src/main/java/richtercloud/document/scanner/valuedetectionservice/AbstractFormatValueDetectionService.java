@@ -44,18 +44,18 @@ import org.slf4j.LoggerFactory;
  *
  * @author richter
  */
-public abstract class AbstractFormatAutoOCRValueDetectionService<T> extends AbstractAutoOCRValueDetectionService<T> {
-    private final static Logger LOGGER = LoggerFactory.getLogger(AbstractFormatAutoOCRValueDetectionService.class);
+public abstract class AbstractFormatValueDetectionService<T> extends AbstractValueDetectionService<T> {
+    private final static Logger LOGGER = LoggerFactory.getLogger(AbstractFormatValueDetectionService.class);
 
     protected abstract int getMaxWords();
 
     /**
      * Check whether it's possible to create one or more
-     * {@link AutoOCRValueDetectionResult} from {@code inputSub}.
+     * {@link ValueDetectionResult} from {@code inputSub}.
      * @param inputSub
      * @param inputSplits
      * @param i
-     * @return a list of created {@link AutoOCRValueDetectionResult}s or
+     * @return a list of created {@link ValueDetectionResult}s or
      * {@code null} if no result could be created
      */
     /*
@@ -63,23 +63,23 @@ public abstract class AbstractFormatAutoOCRValueDetectionService<T> extends Abst
     - allowing return value of null avoids creation of a lot of empty lists
     which waste resources
     */
-    protected abstract List<AutoOCRValueDetectionResult<T>> checkResult(String inputSub,
+    protected abstract List<ValueDetectionResult<T>> checkResult(String inputSub,
             List<String> inputSplits,
             int i);
 
     /**
-     * Might return different {@link AutoOCRValueDetectionResult}s with
+     * Might return different {@link ValueDetectionResult}s with
      * different {@link Date} for the same substring of {@code input}.
      *
      * @param input
      * @return
      */
     @Override
-    public LinkedHashSet<AutoOCRValueDetectionResult<T>> fetchResults0(String input) {
+    public LinkedHashSet<ValueDetectionResult<T>> fetchResults0(String input) {
         final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() //2 threads per processor cause only 50 % CPU usage, 1 per CPU reaches 80-90 %
                 );
             //Executors.newCachedThreadPool() causes OutOfMemeoryException
-        final LinkedHashSet<AutoOCRValueDetectionResult<T>> retValues = new LinkedHashSet<>();
+        final LinkedHashSet<ValueDetectionResult<T>> retValues = new LinkedHashSet<>();
         final List<String> inputSplits = new ArrayList<>(Arrays.asList(input.split("[\\s]+")));
         InputSplitHandler inputSplitHandler = new InputSplitHandler() {
             @Override
@@ -98,7 +98,7 @@ public abstract class AbstractFormatAutoOCRValueDetectionService<T> extends Abst
                             return;
                         }
                         LOGGER.trace(String.format("working on input substring '%s'", inputSub));
-                        List<AutoOCRValueDetectionResult<T>> results = checkResult(inputSub, inputSplits, index);
+                        List<ValueDetectionResult<T>> results = checkResult(inputSub, inputSplits, index);
                         if(results != null) {
                             synchronized(retValues) {
                                 retValues.addAll(results);
@@ -111,7 +111,7 @@ public abstract class AbstractFormatAutoOCRValueDetectionService<T> extends Abst
 
             @Override
             protected int getMaxWords() {
-                return AbstractFormatAutoOCRValueDetectionService.this.getMaxWords();
+                return AbstractFormatValueDetectionService.this.getMaxWords();
             }
         };
         inputSplitHandler.handle(inputSplits);

@@ -35,7 +35,7 @@ import javax.swing.ListCellRenderer;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import richtercloud.document.scanner.setter.ValueSetter;
-import richtercloud.document.scanner.valuedetectionservice.AutoOCRValueDetectionResult;
+import richtercloud.document.scanner.valuedetectionservice.ValueDetectionResult;
 import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
@@ -63,7 +63,7 @@ public class AutoOCRValueDetectionReflectionFormBuilder extends JPAReflectionFor
      * and the {@link DefaultComboBoxModel} to represent detected values for
      * selection.
      */
-    private final Map<Pair<Class, Field>, DefaultComboBoxModel<AutoOCRValueDetectionResult<?>>> comboBoxModelMap = new HashMap<>();
+    private final Map<Pair<Class, Field>, DefaultComboBoxModel<ValueDetectionResult<?>>> comboBoxModelMap = new HashMap<>();
     private final Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping;
     private final Set<JPanel> autoOCRValueDetectionPanels = new HashSet<>();
 
@@ -85,7 +85,7 @@ public class AutoOCRValueDetectionReflectionFormBuilder extends JPAReflectionFor
         this.valueSetterMapping = valueSetterMapping;
     }
 
-    public Map<Pair<Class, Field>, DefaultComboBoxModel<AutoOCRValueDetectionResult<?>>> getComboBoxModelMap() {
+    public Map<Pair<Class, Field>, DefaultComboBoxModel<ValueDetectionResult<?>>> getComboBoxModelMap() {
         return Collections.unmodifiableMap(comboBoxModelMap);
     }
 
@@ -109,13 +109,13 @@ public class AutoOCRValueDetectionReflectionFormBuilder extends JPAReflectionFor
         autoOCRValueDetectionPanel.setLayout(autoOCRValueDetectionPanelLayout);
         autoOCRValueDetectionPanelLayout.setAutoCreateGaps(true);
         JLabel label = new JLabel("Auto OCR detection values:");
-        JComboBox<AutoOCRValueDetectionResult<?>> comboBox = new JComboBox<>();
-        final DefaultComboBoxModel<AutoOCRValueDetectionResult<?>> comboBoxModel = new DefaultComboBoxModel<>();
+        JComboBox<ValueDetectionResult<?>> comboBox = new JComboBox<>();
+        final DefaultComboBoxModel<ValueDetectionResult<?>> comboBoxModel = new DefaultComboBoxModel<>();
         comboBox.setModel(comboBoxModel);
-        comboBox.setRenderer(new ListCellRenderer<AutoOCRValueDetectionResult<?>>() {
+        comboBox.setRenderer(new ListCellRenderer<ValueDetectionResult<?>>() {
             @Override
-            public Component getListCellRendererComponent(JList<? extends AutoOCRValueDetectionResult<?>> list,
-                    AutoOCRValueDetectionResult<?> value,
+            public Component getListCellRendererComponent(JList<? extends ValueDetectionResult<?>> list,
+                    ValueDetectionResult<?> value,
                     int index,
                     boolean isSelected,
                     boolean cellHasFocus) {
@@ -152,7 +152,7 @@ public class AutoOCRValueDetectionReflectionFormBuilder extends JPAReflectionFor
             public void itemStateChanged(ItemEvent e) {
                 if(e.getStateChange() == ItemEvent.SELECTED) {
                     //other state changes aren't interesting
-                    AutoOCRValueDetectionResult<?> detectionResult = (AutoOCRValueDetectionResult<?>) e.getItem();
+                    ValueDetectionResult<?> detectionResult = (ValueDetectionResult<?>) e.getItem();
                     ValueSetter valueSetter = valueSetterMapping.get(classComponent.getClass());
                     if(valueSetter == null) {
                         throw new IllegalArgumentException(String.format("no %s mapped to component class %s", ValueSetter.class, classComponent.getClass()));

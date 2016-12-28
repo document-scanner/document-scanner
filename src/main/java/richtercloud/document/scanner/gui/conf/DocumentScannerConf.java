@@ -14,20 +14,27 @@
  */
 package richtercloud.document.scanner.gui.conf;
 
-import richtercloud.document.scanner.ocr.TesseractOCREngineConf;
-import richtercloud.document.scanner.ifaces.OCREngineConf;
 import com.beust.jcommander.Parameter;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import org.jscience.economics.money.Currency;
 import richtercloud.document.scanner.gui.DocumentScanner;
 import richtercloud.document.scanner.gui.ScannerConf;
+import richtercloud.document.scanner.ifaces.OCREngineConf;
+import richtercloud.document.scanner.ocr.TesseractOCREngineConf;
+import richtercloud.document.scanner.valuedetectionservice.ContactValueDetectionServiceConf;
+import richtercloud.document.scanner.valuedetectionservice.CurrencyFormatValueDetectionService2Conf;
+import richtercloud.document.scanner.valuedetectionservice.CurrencyFormatValueDetectionServiceConf;
+import richtercloud.document.scanner.valuedetectionservice.DateFormatValueDetectionServiceConf;
+import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceConf;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyEmbeddedPersistenceStorageConf;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyNetworkPersistenceStorageConf;
 import richtercloud.reflection.form.builder.jpa.storage.MySQLAutoPersistenceStorageConf;
@@ -68,6 +75,31 @@ public class DocumentScannerConf implements Serializable {
     public final static File CONFIG_DIR_DEFAULT = new File(HOME_DIR, CONFIG_DIR_NAME_DEFAULT);
     private final static String CONFIG_FILE_NAME_DEFAULT = "document-scanner-config.xml";
     private final static File CONFIG_FILE_DEFAULT = new File(CONFIG_DIR_DEFAULT, CONFIG_FILE_NAME_DEFAULT);
+    //keep some database configuration-related constants here since they ought
+    //to be managed agnostic of default values in reflection-form-builder
+    public final static String SCHEME_CHECKSUM_FILE_NAME_DEFAULT = "last-scheme.xml";
+    private final static File SCHEME_CHECKSUM_FILE_DEFAULT = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT,
+            SCHEME_CHECKSUM_FILE_NAME_DEFAULT);
+    public static final String DATABASE_DIR_NAME_DEFAULT = "databases";
+    public final static String DATABASE_NAME_DEFAULT = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT,
+            DATABASE_DIR_NAME_DEFAULT).getAbsolutePath();
+    public final static int PREFERRED_SCAN_RESULT_PANEL_WIDTH_DEFAULT = 600;
+        //300 is pretty small for an average screen
+    public final static int PREFERRED_OCR_SELECT_PANEL_WIDTH = 600;
+    private final static String XML_STORAGE_FILE_NAME_DEFAULT = "xml-storage.xml";
+    private final static File XML_STORAGE_FILE_DEFAULT = new File(CONFIG_DIR_DEFAULT, XML_STORAGE_FILE_NAME_DEFAULT);
+    private final static File DERBY_PERSISTENCE_STORAGE_SCHEME_CHECKSUM_FILE_DEFAULT = new File(CONFIG_DIR_DEFAULT,
+            SCHEME_CHECKSUM_FILE_NAME_DEFAULT);
+    private final static String AMOUNT_MONEY_USAGE_STATISTICS_STORAGE_FILE_NAME = "currency-usage-statistics.xml";
+    private final static String AMOUNT_MONEY_CURRENCY_STORAGE_FILE_NAME = "currencies.xml";
+    private final static String TAG_STORAGE_FILE_NAME = "tags";
+    private final static File TAG_STORAGE_FILE_DEFAULT = new File(CONFIG_DIR_DEFAULT, TAG_STORAGE_FILE_NAME);
+    private final static String IMAGE_WRAPPER_STORAGE_FILE_NAME_DEFAULT = "image-storage";
+    private final static File IMAGE_WRAPPER_STORAGE_DIR = new File(CONFIG_DIR_DEFAULT, IMAGE_WRAPPER_STORAGE_FILE_NAME_DEFAULT);
+    private final static String HOSTNAME_DEFAULT = "localhost";
+    private final static String POSTGRESQL_DATABASE_DIR_DEFAULT = new File(CONFIG_DIR_DEFAULT, "databases-postgresql").getAbsolutePath();
+    private final static String MYSQL_DATABASE_DIR_DEFAULT = new File(CONFIG_DIR_DEFAULT, "databases-mysql").getAbsolutePath();
+    public final static String LOG_FILE_PATH_DEFAULT = new File(CONFIG_DIR_DEFAULT, "document-scanner.log").getAbsolutePath();
     /**
      * The file the this configuration has been loaded from. Might be
      * {@code null} if no initial configuration file has been specified.
@@ -79,26 +111,6 @@ public class DocumentScannerConf implements Serializable {
     command line parsing
     */
     private File configFile = CONFIG_FILE_DEFAULT;
-
-    //keep some database configuration-related constants here since they ought
-    //to be managed agnostic of default values in reflection-form-builder
-    public final static String SCHEME_CHECKSUM_FILE_NAME_DEFAULT = "last-scheme.xml";
-    private final static File SCHEME_CHECKSUM_FILE_DEFAULT = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT,
-            SCHEME_CHECKSUM_FILE_NAME_DEFAULT);
-    public static final String DATABASE_DIR_NAME_DEFAULT = "databases";
-    public final static String DATABASE_NAME_DEFAULT = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT,
-            DATABASE_DIR_NAME_DEFAULT).getAbsolutePath();
-
-    private static Set<StorageConf> generateAvailableStorageConfsDefault(Set<Class<?>> entityClasses,
-            File xMLStorageFile) throws IOException {
-        Set<StorageConf> availableStorageConfs = new HashSet<>();
-        availableStorageConfs.add(new DerbyEmbeddedPersistenceStorageConf(entityClasses,
-                        DATABASE_NAME_DEFAULT,
-                        SCHEME_CHECKSUM_FILE_DEFAULT));
-        availableStorageConfs.add(new XMLStorageConf(xMLStorageFile));
-        return availableStorageConfs;
-    }
-
     private String scannerName;
     /**
      * The last (or initial) address where to search scanners for. The address
@@ -130,10 +142,10 @@ public class DocumentScannerConf implements Serializable {
      * button is pressed (without the id generation button of the id panel
      * being pressed)
      */
-    private boolean autoGenerateIDs = true;
+    private boolean autoGenerateIDs = AUTO_GENERATE_IDS_DEFAULT;
     private Locale locale = LOCALE_DEFAULT;
-    private boolean autoSaveImageData = true;
-    private boolean autoSaveOCRData = true;
+    private boolean autoSaveImageData = AUTO_SAVE_IMAGE_DATA_DEFAULT;
+    private boolean autoSaveOCRData = AUTO_SAVE_OCR_DATA_DEFAULT;
     /**
      * Whether to select automatic selection of format or locale format
      * intially.*/
@@ -153,15 +165,12 @@ public class DocumentScannerConf implements Serializable {
      * {@code 1.0}.
      */
     private float zoomLevelMultiplier = ZOOM_LEVEL_MULTIPLIER_DEFAULT;
-    public final static int PREFERRED_SCAN_RESULT_PANEL_WIDTH_DEFAULT = 600;
-        //300 is pretty small for an average screen
     /**
      * The width of preview images in {@link ScanResultDialog}s.
      * @see #rememberScanResultPanelWidth
      */
     private int preferredScanResultPanelWidth = PREFERRED_SCAN_RESULT_PANEL_WIDTH_DEFAULT;
     private boolean rememberPreferredScanResultPanelWidth = true;
-    public final static int PREFERRED_OCR_SELECT_PANEL_WIDTH = 600;
     /**
      * The width of preview images in {@link OCRSelectPanel}s. User preference
      * is most likely different from {@link #preferredScanResultPanelWidth}
@@ -170,28 +179,15 @@ public class DocumentScannerConf implements Serializable {
      */
     private int preferredOCRSelectPanelWidth = PREFERRED_OCR_SELECT_PANEL_WIDTH;
     private boolean rememberPreferredOCRSelectPanelWidth = true;
-    private final static String XML_STORAGE_FILE_NAME_DEFAULT = "xml-storage.xml";
-    private final static File XML_STORAGE_FILE_DEFAULT = new File(CONFIG_DIR_DEFAULT, XML_STORAGE_FILE_NAME_DEFAULT);
     private File xMLStorageFile = XML_STORAGE_FILE_DEFAULT;
-    private final static File DERBY_PERSISTENCE_STORAGE_SCHEME_CHECKSUM_FILE_DEFAULT = new File(CONFIG_DIR_DEFAULT,
-            SCHEME_CHECKSUM_FILE_NAME_DEFAULT);
     private File derbyPersistenceStorageSchemeChecksumFile = DERBY_PERSISTENCE_STORAGE_SCHEME_CHECKSUM_FILE_DEFAULT;
     private File amountMoneyUsageStatisticsStorageFile = new File(CONFIG_DIR_DEFAULT, AMOUNT_MONEY_USAGE_STATISTICS_STORAGE_FILE_NAME);
     private File amountMoneyCurrencyStorageFile = new File(CONFIG_DIR_DEFAULT, AMOUNT_MONEY_CURRENCY_STORAGE_FILE_NAME);
-    private final static String AMOUNT_MONEY_USAGE_STATISTICS_STORAGE_FILE_NAME = "currency-usage-statistics.xml";
-    private final static String AMOUNT_MONEY_CURRENCY_STORAGE_FILE_NAME = "currencies.xml";
-    private final static String TAG_STORAGE_FILE_NAME = "tags";
-    private final static File TAG_STORAGE_FILE_DEFAULT = new File(CONFIG_DIR_DEFAULT, TAG_STORAGE_FILE_NAME);
     private File tagStorageFile = TAG_STORAGE_FILE_DEFAULT;
-    private final static String IMAGE_WRAPPER_STORAGE_FILE_NAME_DEFAULT = "image-storage";
-    private final static File IMAGE_WRAPPER_STORAGE_DIR = new File(CONFIG_DIR_DEFAULT, IMAGE_WRAPPER_STORAGE_FILE_NAME_DEFAULT);
     private File imageWrapperStorageDir = IMAGE_WRAPPER_STORAGE_DIR;
 
     @Parameter(names= {"-d", "--debug"}, description= "Print extra debugging statements")
     private boolean debug = false;
-    private final static String HOSTNAME_DEFAULT = "localhost";
-    private final static String POSTGRESQL_DATABASE_DIR_DEFAULT = new File(CONFIG_DIR_DEFAULT, "databases-postgresql").getAbsolutePath();
-    private final static String MYSQL_DATABASE_DIR_DEFAULT = new File(CONFIG_DIR_DEFAULT, "databases-mysql").getAbsolutePath();
     /**
      * Skip validation of MD5 sums in download routine in
      * {@link MySQLAutoPersistenceStorageConfPanel} which is extremely slow
@@ -199,8 +195,20 @@ public class DocumentScannerConf implements Serializable {
      * This should only be configurable by editing the configuration file.
      */
     private boolean skipMD5SumCheck = false;
-    public final static String LOG_FILE_PATH_DEFAULT = new File(CONFIG_DIR_DEFAULT, "document-scanner.log").getAbsolutePath();
     private String logFilePath = LOG_FILE_PATH_DEFAULT;
+    private Set<String> valueDetectionServiceJARPaths = new HashSet<>();
+    private List<ValueDetectionServiceConf> availableValueDetectionServiceConfs = new LinkedList<>();
+    private List<ValueDetectionServiceConf> selectedValueDetectionServiceConfs = new LinkedList<>();
+
+    private static Set<StorageConf> generateAvailableStorageConfsDefault(Set<Class<?>> entityClasses,
+            File xMLStorageFile) throws IOException {
+        Set<StorageConf> availableStorageConfs = new HashSet<>();
+        availableStorageConfs.add(new DerbyEmbeddedPersistenceStorageConf(entityClasses,
+                        DATABASE_NAME_DEFAULT,
+                        SCHEME_CHECKSUM_FILE_DEFAULT));
+        availableStorageConfs.add(new XMLStorageConf(xMLStorageFile));
+        return availableStorageConfs;
+    }
 
     /**
      * Creates an configuration with default values.
@@ -224,39 +232,13 @@ public class DocumentScannerConf implements Serializable {
         ));
         this.oCREngineConf = OCR_ENGINE_CONF_DEFAULT;
         this.availableOCREngineConfs.add(oCREngineConf);
+        this.selectedValueDetectionServiceConfs.add(new ContactValueDetectionServiceConf());
+        this.selectedValueDetectionServiceConfs.add(new CurrencyFormatValueDetectionService2Conf());
+        this.selectedValueDetectionServiceConfs.add(new CurrencyFormatValueDetectionServiceConf());
+        this.selectedValueDetectionServiceConfs.add(new DateFormatValueDetectionServiceConf());
     }
 
-    public DocumentScannerConf(Set<Class<?>> entityClasses,
-            String databaseName,
-            File schemeChecksumFile,
-            File xMLStorageFile) throws IOException {
-        this(new DerbyEmbeddedPersistenceStorageConf(entityClasses,
-                        databaseName,
-                        schemeChecksumFile),
-                generateAvailableStorageConfsDefault(entityClasses,
-                        xMLStorageFile),
-                AUTO_GENERATE_IDS_DEFAULT,
-                AUTO_SAVE_IMAGE_DATA_DEFAULT,
-                AUTO_SAVE_OCR_DATA_DEFAULT,
-                new HashMap<String, ScannerConf>(),
-                ZOOM_LEVEL_MULTIPLIER_DEFAULT,
-                PREFERRED_SCAN_RESULT_PANEL_WIDTH_DEFAULT);
-    }
-
-    public DocumentScannerConf(StorageConf storageConf,
-            Set<StorageConf> availableStorageConfs,
-            boolean autoGenerateIDs,
-            boolean autoSaveImageData,
-            boolean autoSaveOCRData,
-            Map<String, ScannerConf> scannerConfMap,
-            float zoomLevelMultiplier,
-            int preferredWidth) {
-        this.storageConf = storageConf;
-        this.availableStorageConfs = availableStorageConfs;
-        this.autoGenerateIDs = autoGenerateIDs;
-        this.autoSaveImageData = autoSaveImageData;
-        this.autoSaveOCRData = autoSaveOCRData;
-        this.scannerConfMap = scannerConfMap;
+    public void validate() {
         if(zoomLevelMultiplier > 1.0) {
             throw new IllegalArgumentException(String.format("The zoom level "
                     + "multiplier mustn't be greater than 1.0 since the "
@@ -270,25 +252,157 @@ public class DocumentScannerConf implements Serializable {
                     ZOOM_LEVEL_MIN,
                     ZOOM_LEVEL_MIN));
         }
-        this.zoomLevelMultiplier = zoomLevelMultiplier;
-        if(preferredWidth < 10) {
+        if(preferredScanResultPanelWidth < 10) {
             throw new IllegalArgumentException("A preferred width of less than "
                     + "10 will cause severe displaying issues and will thus "
                     + "not be supported");
         }
-        this.preferredScanResultPanelWidth = preferredWidth;
     }
 
+    /**
+     * Copy constructor.
+     */
+    public DocumentScannerConf(File configFile,
+            String scannerName,
+            String scannerSaneAddress,
+            StorageConf storageConf,
+            Set<StorageConf> availableStorageConfs,
+            OCREngineConf oCREngineConf,
+            Set<OCREngineConf> availableOCREngineConfs,
+            Currency currency,
+            boolean autoGenerateIDs,
+            Locale locale,
+            boolean autoSaveImageData,
+            boolean autoSaveOCRData,
+            boolean automaticFormatInitiallySelected,
+            boolean autoOCRValueDetection,
+            Map<String, ScannerConf> scannerConfMap,
+            float zoomLevelMultiplier,
+            int preferredScanResultPanelWidth,
+            boolean rememberPreferredScanResultPanelWidth,
+            int preferredOCRSelectPanelWidth,
+            boolean rememberPreferredOCRSelectPanelWidth,
+            File xMLStorageFile,
+            File derbyPersistenceStorageSchemeChecksumFile,
+            File amountMoneyUsageStatisticsStorageFile,
+            File amountMoneyCurrencyStorageFile,
+            File tagStorageFile,
+            File imageWrapperStorageDir,
+            boolean debug,
+            boolean skipMD5SumCheck,
+            String logFilePath,
+            Set<String> valueDetectionServiceJARPaths,
+            List<ValueDetectionServiceConf> availableValueDetectionServiceConfs,
+            List<ValueDetectionServiceConf> selectedValueDetectionServiceConfs
+    ) {
+        this.configFile = configFile;
+        this.scannerName = scannerName;
+        this.scannerSaneAddress = scannerSaneAddress;
+        this.storageConf = storageConf;
+        this.availableStorageConfs = availableStorageConfs;
+        this.oCREngineConf = oCREngineConf;
+        this.availableOCREngineConfs = availableOCREngineConfs;
+        this.currency = currency;
+        this.autoGenerateIDs = autoGenerateIDs;
+        this.locale = locale;
+        this.autoSaveImageData = autoSaveImageData;
+        this.autoSaveOCRData = autoSaveOCRData;
+        this.automaticFormatInitiallySelected = automaticFormatInitiallySelected;
+        this.autoOCRValueDetection = autoOCRValueDetection;
+        this.scannerConfMap = scannerConfMap;
+        this.zoomLevelMultiplier = zoomLevelMultiplier;
+        this.preferredScanResultPanelWidth = preferredScanResultPanelWidth;
+        this.rememberPreferredScanResultPanelWidth = rememberPreferredScanResultPanelWidth;
+        this.preferredOCRSelectPanelWidth = preferredOCRSelectPanelWidth;
+        this.rememberPreferredOCRSelectPanelWidth = rememberPreferredOCRSelectPanelWidth;
+        this.xMLStorageFile = xMLStorageFile;
+        this.derbyPersistenceStorageSchemeChecksumFile = derbyPersistenceStorageSchemeChecksumFile;
+        this.amountMoneyUsageStatisticsStorageFile = amountMoneyUsageStatisticsStorageFile;
+        this.amountMoneyCurrencyStorageFile = amountMoneyCurrencyStorageFile;
+        this.tagStorageFile = tagStorageFile;
+        this.imageWrapperStorageDir = imageWrapperStorageDir;
+        this.debug = debug;
+        this.skipMD5SumCheck = skipMD5SumCheck;
+        this.logFilePath = logFilePath;
+        this.valueDetectionServiceJARPaths = valueDetectionServiceJARPaths;
+        this.availableValueDetectionServiceConfs = availableValueDetectionServiceConfs;
+        this.selectedValueDetectionServiceConfs = selectedValueDetectionServiceConfs;
+    }
+
+    /**
+     * Copy constructor.
+     * @param documentScannerConf the instance to copy
+     */
     public DocumentScannerConf(DocumentScannerConf documentScannerConf) {
-        this(documentScannerConf.getStorageConf(),
+        this(documentScannerConf.getConfigFile(),
+                documentScannerConf.getScannerName(),
+                documentScannerConf.getScannerSaneAddress(),
+                documentScannerConf.getStorageConf(),
                 documentScannerConf.getAvailableStorageConfs(),
+                documentScannerConf.getoCREngineConf(),
+                documentScannerConf.getAvailableOCREngineConfs(),
+                documentScannerConf.getCurrency(),
                 documentScannerConf.isAutoGenerateIDs(),
+                documentScannerConf.getLocale(),
                 documentScannerConf.isAutoSaveImageData(),
                 documentScannerConf.isAutoSaveOCRData(),
+                documentScannerConf.isAutomaticFormatInitiallySelected(),
+                documentScannerConf.isAutoOCRValueDetection(),
                 documentScannerConf.getScannerConfMap(),
                 documentScannerConf.getZoomLevelMultiplier(),
-                documentScannerConf.getPreferredScanResultPanelWidth()
+                documentScannerConf.getPreferredScanResultPanelWidth(),
+                documentScannerConf.isRememberPreferredScanResultPanelWidth(),
+                documentScannerConf.getPreferredOCRSelectPanelWidth(),
+                documentScannerConf.isRememberPreferredOCRSelectPanelWidth(),
+                documentScannerConf.getxMLStorageFile(),
+                documentScannerConf.getDerbyPersistenceStorageSchemeChecksumFile(),
+                documentScannerConf.getAmountMoneyUsageStatisticsStorageFile(),
+                documentScannerConf.getAmountMoneyCurrencyStorageFile(),
+                documentScannerConf.getTagStorageFile(),
+                documentScannerConf.getImageWrapperStorageDir(),
+                documentScannerConf.isDebug(),
+                documentScannerConf.isSkipMD5SumCheck(),
+                documentScannerConf.getLogFilePath(),
+                documentScannerConf.getValueDetectionServiceJARPaths(),
+                documentScannerConf.getAvailableValueDetectionServiceConfs(),
+                documentScannerConf.getSelectedValueDetectionServiceConfs()
         );
+    }
+
+    public Set<String> getValueDetectionServiceJARPaths() {
+        return valueDetectionServiceJARPaths;
+    }
+
+    public void setValueDetectionServiceJARPaths(Set<String> valueDetectionServiceJARPaths) {
+        this.valueDetectionServiceJARPaths = valueDetectionServiceJARPaths;
+    }
+
+    /**
+     * @return the availableValueDetectionServiceConfs
+     */
+    public List<ValueDetectionServiceConf> getAvailableValueDetectionServiceConfs() {
+        return availableValueDetectionServiceConfs;
+    }
+
+    /**
+     * @param availableValueDetectionServiceConfs the availableValueDetectionServiceConfs to set
+     */
+    public void setAvailableValueDetectionServiceConfs(List<ValueDetectionServiceConf> availableValueDetectionServiceConfs) {
+        this.availableValueDetectionServiceConfs = availableValueDetectionServiceConfs;
+    }
+
+    /**
+     * @return the selectedValueDetectionServiceConfs
+     */
+    public List<ValueDetectionServiceConf> getSelectedValueDetectionServiceConfs() {
+        return selectedValueDetectionServiceConfs;
+    }
+
+    /**
+     * @param selectedValueDetectionServiceConfs the selectedValueDetectionServiceConfs to set
+     */
+    public void setSelectedValueDetectionServiceConfs(List<ValueDetectionServiceConf> selectedValueDetectionServiceConfs) {
+        this.selectedValueDetectionServiceConfs = selectedValueDetectionServiceConfs;
     }
 
     public boolean isSkipMD5SumCheck() {

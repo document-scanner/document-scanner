@@ -17,7 +17,7 @@ package richtercloud.document.scanner.gui.storageconf;
 import java.awt.Window;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.util.Map;
+import java.lang.reflect.InvocationTargetException;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.MutableComboBoxModel;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyEmbeddedPersistenceStorageConf;
@@ -36,24 +36,37 @@ public class StorageCreateDialog extends javax.swing.JDialog {
      * creation has been canceled.
      */
     private StorageConf createdStorageConf = null;
-    private final Map<Class<? extends StorageConf>, StorageConfPanel<?>> storageConfPanelMap;
+    private final StorageConfPanelFactory storageConfPanelFactory;
+    private StorageConfPanel<?> selectedStorageConfPanel;
 
     /**
      * Creates new form StorageCreateDialog
      */
     public StorageCreateDialog(Window parent,
-            Map<Class<? extends StorageConf>, StorageConfPanel<?>> storageConfPanelMap) {
+            StorageConfPanelFactory storageConfPanelFactory) {
         super(parent,
                 ModalityType.APPLICATION_MODAL //modalityType
         );
-        this.storageConfPanelMap = storageConfPanelMap;
+        this.storageConfPanelFactory = storageConfPanelFactory;
         initComponents();
         this.storageCreateDialogTypeComboBoxModel.addElement(DerbyEmbeddedPersistenceStorageConf.class);
         this.storageCreateDialogTypeComboBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
                 Class<? extends StorageConf> clazz = (Class<? extends StorageConf>) e.getItem();
-                StorageConfPanel<?> storageConfPanel = StorageCreateDialog.this.storageConfPanelMap.get(clazz);
+                try {
+                    //@TODO: error handling
+                    StorageConf storageConf = clazz.getDeclaredConstructor().newInstance();
+                } catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+                    throw new RuntimeException(ex);
+                }
+                StorageConfPanel<?> storageConfPanel;
+                try {
+                    storageConfPanel = StorageCreateDialog.this.storageConfPanelFactory.create(createdStorageConf);
+                } catch (StorageConfPanelCreationException ex) {
+                    throw new RuntimeException(ex);
+                }
+                selectedStorageConfPanel = storageConfPanel;
                 StorageCreateDialog.this.storageCreateDialogPanel.removeAll();
                 StorageCreateDialog.this.storageCreateDialogPanel.add(storageConfPanel);
                 StorageCreateDialog.this.storageCreateDialogPanel.revalidate();
@@ -181,17 +194,15 @@ public class StorageCreateDialog extends javax.swing.JDialog {
     }//GEN-LAST:event_storageCreateDialogCancelDialogActionPerformed
 
     private void storageCreateDialogSaveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_storageCreateDialogSaveButtonActionPerformed
-        Class<? extends StorageConf> clazz = this.storageCreateDialogTypeComboBox.getItemAt(this.storageCreateDialogTypeComboBox.getSelectedIndex());
-        StorageConfPanel<?> responsibleStorageConfPanel = this.storageConfPanelMap.get(clazz);
-        responsibleStorageConfPanel.save();
+        selectedStorageConfPanel.save();
         try {
-            responsibleStorageConfPanel.getStorageConf().validate();
+            selectedStorageConfPanel.getStorageConf().validate();
         }catch(StorageConfValidationException ex) {
             //keep create dialog displayed until a valid StorageConf is created
             //or the creation has been canceled
             return;
         }
-        this.createdStorageConf = responsibleStorageConfPanel.getStorageConf();
+        this.createdStorageConf = selectedStorageConfPanel.getStorageConf();
         this.setVisible(false);
     }//GEN-LAST:event_storageCreateDialogSaveButtonActionPerformed
 

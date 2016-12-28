@@ -26,7 +26,7 @@ import richtercloud.reflection.form.builder.ReflectionFormPanel;
  *
  * @author richter
  */
-public class AutoOCRValueDetectionFieldActionListener extends AbstractFieldActionListener<Object> {
+public class ValueDetectionFieldActionListener extends AbstractFieldActionListener<Object> {
     private final Object value;
 
     /**
@@ -43,7 +43,7 @@ public class AutoOCRValueDetectionFieldActionListener extends AbstractFieldActio
     cyclic reference during creation of AutoOCRValueDetectionResult (which
     requests a list of CallbackActions) which can be dealt with, but is ugly
     */
-    public AutoOCRValueDetectionFieldActionListener(Object value,
+    public ValueDetectionFieldActionListener(Object value,
             Field field,
             ReflectionFormPanel reflectionFormPanel,
             Map<Class<? extends JComponent>, ValueSetter<?, ?>> valueSetterMapping,

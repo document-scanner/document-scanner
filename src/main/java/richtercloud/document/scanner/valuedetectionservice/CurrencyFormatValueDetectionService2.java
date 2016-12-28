@@ -40,13 +40,13 @@ import richtercloud.reflection.form.builder.components.money.AmountMoneyExchange
  * An {@link AutoOCRValueDetectionService} for currencies in form of a
  * {@link Amount} which splits input on whitespace, searches for currency
  * symbols, stores
- * {@link CurrencyFormatAutoOCRValueDetectionService#MAX_FORMAT_WORDS} tokens
+ * {@link CurrencyFormatValueDetectionService#MAX_FORMAT_WORDS} tokens
  * behind and after the occurance of a currency symbol and tries parsing with
  * all supported currency {@link NumberFormat}.
  * @author richter
  */
-public class CurrencyFormatAutoOCRValueDetectionService2 extends AbstractAutoOCRValueDetectionService<Amount<Money>> {
-    private final static Logger LOGGER = LoggerFactory.getLogger(CurrencyFormatAutoOCRValueDetectionService2.class);
+public class CurrencyFormatValueDetectionService2 extends AbstractValueDetectionService<Amount<Money>> {
+    private final static Logger LOGGER = LoggerFactory.getLogger(CurrencyFormatValueDetectionService2.class);
 
     private final AmountMoneyCurrencyStorage amountMoneyCurrencyStorage;
     /**
@@ -57,15 +57,15 @@ public class CurrencyFormatAutoOCRValueDetectionService2 extends AbstractAutoOCR
      */
     private final AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever;
 
-    public CurrencyFormatAutoOCRValueDetectionService2(AmountMoneyCurrencyStorage amountMoneyCurrencyStorage,
+    public CurrencyFormatValueDetectionService2(AmountMoneyCurrencyStorage amountMoneyCurrencyStorage,
             AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever) {
         this.amountMoneyCurrencyStorage = amountMoneyCurrencyStorage;
         this.amountMoneyExchangeRateRetriever = amountMoneyExchangeRateRetriever;
     }
 
     @Override
-    protected LinkedHashSet<AutoOCRValueDetectionResult<Amount<Money>>> fetchResults0(String input) {
-        final LinkedHashSet<AutoOCRValueDetectionResult<Amount<Money>>> retValue = new LinkedHashSet<>();
+    protected LinkedHashSet<ValueDetectionResult<Amount<Money>>> fetchResults0(String input) {
+        final LinkedHashSet<ValueDetectionResult<Amount<Money>>> retValue = new LinkedHashSet<>();
         final List<String> tokens = new LinkedList<>();
         StringTokenizer tokenizer = new StringTokenizer(input);
         while(tokenizer.hasMoreElements()) {
@@ -89,11 +89,11 @@ public class CurrencyFormatAutoOCRValueDetectionService2 extends AbstractAutoOCR
                 if(token.contains(currencySymbol) || token.contains(currencyCode)) {
                     //take a sublist of n positions before and n positions after
                     //the occurance (with
-                    //n=CurrencyFormatAutoOCRValueDetectionService.MAX_FORMAT_WORDS)
+                    //n=CurrencyFormatValueDetectionService.MAX_FORMAT_WORDS)
                     //and shift it to the left. This also ensures that longest
                     //matches are detected first
-                    int subListFromIndex = index-CurrencyFormatAutoOCRValueDetectionService.MAX_FORMAT_WORDS-1;
-                    int subListToIndex = index+CurrencyFormatAutoOCRValueDetectionService.MAX_FORMAT_WORDS+1;
+                    int subListFromIndex = index-CurrencyFormatValueDetectionService.MAX_FORMAT_WORDS-1;
+                    int subListToIndex = index+CurrencyFormatValueDetectionService.MAX_FORMAT_WORDS+1;
                     assert subListFromIndex >= 0;
                     List<String> subList = tokens.subList(subListFromIndex,
                             subListToIndex);
@@ -125,7 +125,7 @@ public class CurrencyFormatAutoOCRValueDetectionService2 extends AbstractAutoOCR
                                         return;
                                     }
                                 }
-                                Currency currency = CurrencyFormatAutoOCRValueDetectionService2.this.amountMoneyCurrencyStorage.translate(currencyFormat.getKey().getCurrency());
+                                Currency currency = CurrencyFormatValueDetectionService2.this.amountMoneyCurrencyStorage.translate(currencyFormat.getKey().getCurrency());
                                 if(currency == null) {
                                     //Currency is not supported by JScience and plainly
                                     //creating it with Currency code (passed to constructor)
@@ -142,10 +142,10 @@ public class CurrencyFormatAutoOCRValueDetectionService2 extends AbstractAutoOCR
                                 try {
                                     currency.getExchangeRate();
                                 }catch(ConversionException ex) {
-                                    CurrencyFormatAutoOCRValueDetectionService2.this.amountMoneyExchangeRateRetriever.retrieveExchangeRate(currency);
+                                    CurrencyFormatValueDetectionService2.this.amountMoneyExchangeRateRetriever.retrieveExchangeRate(currency);
                                 }
                                 Amount<Money> value = Amount.<Money>valueOf(currencyValue.doubleValue(), currency);
-                                AutoOCRValueDetectionResult<Amount<Money>> autoOCRValueDetectionResult = new AutoOCRValueDetectionResult<>(subListString,
+                                ValueDetectionResult<Amount<Money>> autoOCRValueDetectionResult = new ValueDetectionResult<>(subListString,
                                         value
                                 );
                                 //not sufficient to check whether result
@@ -153,8 +153,8 @@ public class CurrencyFormatAutoOCRValueDetectionService2 extends AbstractAutoOCR
                                 //might be retrieved from a longer and a
                                 //shorter substring of a substring
                                 retValue.add(autoOCRValueDetectionResult);
-                                for(AutoOCRValueDetectionServiceUpdateListener<Amount<Money>> listener : getListeners()) {
-                                    listener.onUpdate(new AutoOCRValueDetectionServiceUpdateEvent<>(new LinkedList<>(retValue),
+                                for(ValueDetectionServiceUpdateListener<Amount<Money>> listener : getListeners()) {
+                                    listener.onUpdate(new ValueDetectionServiceUpdateEvent<>(new LinkedList<>(retValue),
                                             tokens.size(),
                                             index //lastIndex is closest to current progress
                                     ));
@@ -166,7 +166,7 @@ public class CurrencyFormatAutoOCRValueDetectionService2 extends AbstractAutoOCR
 
                         @Override
                         protected int getMaxWords() {
-                            return CurrencyFormatAutoOCRValueDetectionService.MAX_FORMAT_WORDS;
+                            return CurrencyFormatValueDetectionService.MAX_FORMAT_WORDS;
                         }
                     };
                     inputSplitHandler.handle(subList);

@@ -77,10 +77,13 @@
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="editEntryMenuItemActionPerformed"/>
               </Events>
             </MenuItem>
-            <MenuItem class="javax.swing.JMenuItem" name="autoOCRValueDetectionMenuItem">
+            <MenuItem class="javax.swing.JMenuItem" name="valueDetectionMenuItem">
               <Properties>
                 <Property name="text" type="java.lang.String" value="Auto OCR value detection..."/>
               </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="valueDetectionMenuItemActionPerformed"/>
+              </Events>
             </MenuItem>
             <MenuItem class="javax.swing.JPopupMenu$Separator" name="oCRMenuSeparator">
             </MenuItem>

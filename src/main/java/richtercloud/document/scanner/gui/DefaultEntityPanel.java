@@ -16,6 +16,7 @@ package richtercloud.document.scanner.gui;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -33,8 +34,12 @@ import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.ifaces.EntityPanel;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcher;
 import richtercloud.document.scanner.setter.ValueSetter;
-import richtercloud.document.scanner.valuedetectionservice.AutoOCRValueDetectionResult;
-import richtercloud.document.scanner.valuedetectionservice.DelegatingAutoOCRValueDetectionService;
+import richtercloud.document.scanner.valuedetectionservice.ValueDetectionResult;
+import richtercloud.document.scanner.valuedetectionservice.DelegatingValueDetectionService;
+import richtercloud.document.scanner.valuedetectionservice.DelegatingValueDetectionServiceConfFactory;
+import richtercloud.document.scanner.valuedetectionservice.ValueDetectionService;
+import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceConf;
+import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceConfFactory;
 import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
@@ -48,13 +53,15 @@ import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
 public class DefaultEntityPanel extends EntityPanel {
     private static final long serialVersionUID = 1L;
     private final static Logger LOGGER = LoggerFactory.getLogger(DefaultEntityPanel.class);
-    private final DelegatingAutoOCRValueDetectionService autoOCRValueDetectionService;
+    private DelegatingValueDetectionService valueDetectionService;
     private final Set<Class<?>> entityClasses;
     private final AutoOCRValueDetectionReflectionFormBuilder reflectionFormBuilder;
     private final Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping;
     private final MessageHandler messageHandler;
     private final DocumentScannerConf documentScannerConf;
     private ReflectionFormPanelTabbedPane entityCreationTabbedPane;
+    private final AmountMoneyCurrencyStorage amountMoneyAdditionalCurrencyStorage;
+    private final AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever;
 
     /**
      * Creates new form EntityPanel
@@ -107,12 +114,25 @@ public class DefaultEntityPanel extends EntityPanel {
             throw new IllegalArgumentException("documentScannerConf mustn't be null");
         }
         this.documentScannerConf = documentScannerConf;
-        this.autoOCRValueDetectionService = new DelegatingAutoOCRValueDetectionService(amountMoneyAdditionalCurrencyStorage,
-                amountMoneyExchangeRateRetriever);
+        this.amountMoneyExchangeRateRetriever = amountMoneyExchangeRateRetriever;
+        this.amountMoneyAdditionalCurrencyStorage = amountMoneyAdditionalCurrencyStorage;
+        applyValueDetectionServiceSelection();
     }
 
     public JTabbedPane getEntityCreationTabbedPane() {
         return entityCreationTabbedPane;
+    }
+
+    @Override
+    public void applyValueDetectionServiceSelection() {
+        ValueDetectionServiceConfFactory valueDetectionServiceConfFactory = new DelegatingValueDetectionServiceConfFactory(amountMoneyAdditionalCurrencyStorage,
+                amountMoneyExchangeRateRetriever);
+        Set<ValueDetectionService<?>> valueDetectionServices = new HashSet<>();
+        for(ValueDetectionServiceConf serviceConf : documentScannerConf.getSelectedValueDetectionServiceConfs()) {
+            ValueDetectionService<?> valueDetectionService = valueDetectionServiceConfFactory.createService(serviceConf);
+            valueDetectionServices.add(valueDetectionService);
+        }
+        this.valueDetectionService = new DelegatingValueDetectionService(valueDetectionServices);
     }
 
     /**
@@ -121,7 +141,7 @@ public class DefaultEntityPanel extends EntityPanel {
      * which one might display without retrieving them again from the OCR
      * result.
      */
-    private List<AutoOCRValueDetectionResult<?>> detectionResults;
+    private List<ValueDetectionResult<?>> detectionResults;
 
     @Override
     public void autoOCRValueDetection(OCRSelectPanelPanelFetcher oCRSelectPanelPanelFetcher,
@@ -140,18 +160,18 @@ public class DefaultEntityPanel extends EntityPanel {
             boolean forceRenewal) {
         if(detectionResults == null || forceRenewal == true) {
             final String oCRResult = oCRSelectPanelPanelFetcher.fetch();
-            detectionResults = autoOCRValueDetectionService.fetchResults(oCRResult);
+            detectionResults = valueDetectionService.fetchResults(oCRResult);
         }
     }
 
     private void autoOCRValueDetectionGUI() {
         if(!detectionResults.isEmpty()) {
             for(Pair<Class, Field> pair : this.reflectionFormBuilder.getComboBoxModelMap().keySet()) {
-                DefaultComboBoxModel<AutoOCRValueDetectionResult<?>> comboBoxModel = this.reflectionFormBuilder.getComboBoxModelMap().get(pair);
+                DefaultComboBoxModel<ValueDetectionResult<?>> comboBoxModel = this.reflectionFormBuilder.getComboBoxModelMap().get(pair);
                 Field field = pair.getValue();
                 comboBoxModel.removeAllElements();
                 comboBoxModel.addElement(null);
-                for(AutoOCRValueDetectionResult<?> detectionResult : detectionResults) {
+                for(ValueDetectionResult<?> detectionResult : detectionResults) {
                     if(detectionResult.getValue().getClass().isAssignableFrom(field.getType())) {
                         comboBoxModel.addElement(detectionResult);
                     }

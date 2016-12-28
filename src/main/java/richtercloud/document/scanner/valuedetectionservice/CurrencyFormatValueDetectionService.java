@@ -41,8 +41,8 @@ import richtercloud.reflection.form.builder.components.money.AmountMoneyExchange
  * {@link AmountMoneyCurrencyStorage} and
  * @author richter
  */
-public class CurrencyFormatAutoOCRValueDetectionService extends AbstractFormatAutoOCRValueDetectionService<Amount<Money>> {
-    private final static Logger LOGGER = LoggerFactory.getLogger(CurrencyFormatAutoOCRValueDetectionService.class);
+public class CurrencyFormatValueDetectionService extends AbstractFormatValueDetectionService<Amount<Money>> {
+    private final static Logger LOGGER = LoggerFactory.getLogger(CurrencyFormatValueDetectionService.class);
 
     /**
      * The max. number of words a date can be made up from.
@@ -72,7 +72,7 @@ public class CurrencyFormatAutoOCRValueDetectionService extends AbstractFormatAu
      */
     private final AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever;
 
-    public CurrencyFormatAutoOCRValueDetectionService(AmountMoneyCurrencyStorage amountMoneyCurrencyStorage,
+    public CurrencyFormatValueDetectionService(AmountMoneyCurrencyStorage amountMoneyCurrencyStorage,
             AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever) {
         this.amountMoneyCurrencyStorage = amountMoneyCurrencyStorage;
         this.amountMoneyExchangeRateRetriever = amountMoneyExchangeRateRetriever;
@@ -91,8 +91,8 @@ public class CurrencyFormatAutoOCRValueDetectionService extends AbstractFormatAu
      * @param i
      */
     @Override
-    protected List<AutoOCRValueDetectionResult<Amount<Money>>> checkResult(String inputSub, List<String> inputSplits, int i) {
-        List<AutoOCRValueDetectionResult<Amount<Money>>> retValue = new LinkedList<>();
+    protected List<ValueDetectionResult<Amount<Money>>> checkResult(String inputSub, List<String> inputSplits, int i) {
+        List<ValueDetectionResult<Amount<Money>>> retValue = new LinkedList<>();
         for(Map.Entry<NumberFormat, Set<Locale>> currencyFormat : FormatUtils.getDisjointCurrencyFormatsEntySet()) {
             try {
                 Number currencyValue = currencyFormat.getKey().parse(inputSub);
@@ -115,7 +115,7 @@ public class CurrencyFormatAutoOCRValueDetectionService extends AbstractFormatAu
                 }catch(ConversionException ex) {
                     this.amountMoneyExchangeRateRetriever.retrieveExchangeRate(currency);
                 }
-                AutoOCRValueDetectionResult<Amount<Money>> autoOCRValueDetectionResult = new AutoOCRValueDetectionResult<>(inputSub,
+                ValueDetectionResult<Amount<Money>> autoOCRValueDetectionResult = new ValueDetectionResult<>(inputSub,
                         Amount.<Money>valueOf(currencyValue.doubleValue(), currency)
                 );
                 //not sufficient to check whether result
@@ -123,8 +123,8 @@ public class CurrencyFormatAutoOCRValueDetectionService extends AbstractFormatAu
                 //might be retrieved from a longer and a
                 //shorter substring of a substring
                 retValue.add(autoOCRValueDetectionResult);
-                for(AutoOCRValueDetectionServiceUpdateListener<Amount<Money>> listener : getListeners()) {
-                    listener.onUpdate(new AutoOCRValueDetectionServiceUpdateEvent<>(new LinkedList<>(retValue),
+                for(ValueDetectionServiceUpdateListener<Amount<Money>> listener : getListeners()) {
+                    listener.onUpdate(new ValueDetectionServiceUpdateEvent<>(new LinkedList<>(retValue),
                             inputSplits.size(),
                             i));
                 }

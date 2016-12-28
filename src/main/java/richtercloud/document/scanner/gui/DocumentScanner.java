@@ -27,11 +27,6 @@ import ch.qos.logback.core.rolling.RollingFileAppender;
 import com.beust.jcommander.JCommander;
 import com.google.common.reflect.TypeToken;
 import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.converters.Converter;
-import com.thoughtworks.xstream.converters.MarshallingContext;
-import com.thoughtworks.xstream.converters.UnmarshallingContext;
-import com.thoughtworks.xstream.io.HierarchicalStreamReader;
-import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
@@ -42,6 +37,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -51,11 +48,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.locks.ReentrantLock;
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javax.cache.Caching;
-import javax.persistence.EntityManager;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
@@ -72,6 +67,7 @@ import richtercloud.document.scanner.components.tag.FileTagStorage;
 import richtercloud.document.scanner.components.tag.TagStorage;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.gui.scanresult.ScannerResultDialog;
+import richtercloud.document.scanner.gui.storageconf.StorageConfPanelCreationException;
 import richtercloud.document.scanner.gui.storageconf.StorageSelectionDialog;
 import richtercloud.document.scanner.ifaces.DocumentAddException;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
@@ -112,6 +108,8 @@ import richtercloud.document.scanner.setter.StringAutoCompletePanelSetter;
 import richtercloud.document.scanner.setter.TextFieldSetter;
 import richtercloud.document.scanner.setter.UtilDatePickerSetter;
 import richtercloud.document.scanner.setter.ValueSetter;
+import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceConf;
+import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceConfDialog;
 import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.DialogConfirmMessageHandler;
 import richtercloud.message.handler.DialogMessageHandler;
@@ -140,11 +138,14 @@ import richtercloud.reflection.form.builder.jpa.storage.DelegatingPersistenceSto
 import richtercloud.reflection.form.builder.jpa.storage.FieldInitializer;
 import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 import richtercloud.reflection.form.builder.jpa.storage.ReflectionFieldInitializer;
+import richtercloud.reflection.form.builder.jpa.storage.copy.DelegatingStorageConfCopyFactory;
 import richtercloud.reflection.form.builder.jpa.typehandler.JPAEntityListTypeHandler;
 import richtercloud.reflection.form.builder.jpa.typehandler.factory.JPAAmountMoneyMappingTypeHandlerFactory;
 import richtercloud.reflection.form.builder.storage.StorageConf;
 import richtercloud.reflection.form.builder.storage.StorageConfValidationException;
 import richtercloud.reflection.form.builder.storage.StorageCreationException;
+import richtercloud.reflection.form.builder.storage.copy.StorageConfCopyException;
+import richtercloud.reflection.form.builder.storage.copy.StorageConfCopyFactory;
 import richtercloud.reflection.form.builder.typehandler.TypeHandler;
 import richtercloud.swing.worker.get.wait.dialog.SwingWorkerCompletionWaiter;
 import richtercloud.swing.worker.get.wait.dialog.SwingWorkerGetWaitDialog;
@@ -251,7 +252,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private final Map<Class<?>, WarningHandler<?>> warningHandlers = new HashMap<>();
     public final static int INITIAL_QUERY_LIMIT_DEFAULT = 20;
     public final static String BIDIRECTIONAL_HELP_DIALOG_TITLE = generateApplicationWindowTitle("Bidirectional relations help", APP_NAME, APP_VERSION);
-    private final static DocumentScannerConfConverter DOCUMENT_SCANNER_CONF_CONVERTER = new DocumentScannerConfConverter();
     static {
         new JFXPanel();
     }
@@ -296,6 +296,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 //used for binary data storage in document
             messageHandler);
     private final FieldInitializer queryComponentFieldInitializer;
+    private final StorageConfCopyFactory storageConfCopyFactory = new DelegatingStorageConfCopyFactory();
 
     public static SaneDevice getScannerDevice(String scannerName,
             Map<String, ScannerConf> scannerConfMap,
@@ -382,27 +383,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         this.scanMenuItem.getParent().revalidate();
     }
 
-    private static class DocumentScannerConfConverter implements Converter {
-
-        @Override
-        public void marshal(Object value, HierarchicalStreamWriter writer, MarshallingContext context) {
-        }
-
-        @Override
-        public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext context) {
-            return null;
-        }
-
-        @Override
-        public boolean canConvert(Class clazz) {
-            boolean retValue = EntityManager.class.isAssignableFrom(clazz)
-                    || java.awt.Component.class.isAssignableFrom(clazz)
-                    || Process.class.isAssignableFrom(clazz)
-                    || ReentrantLock.class.isAssignableFrom(clazz);
-            return retValue;
-        }
-    }
-
     /**
      * Handles all non-resource related cleanup tasks (like persistence of
      * configuration). Callers have to make sure that this is invoked only once.
@@ -413,7 +393,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         if (this.documentScannerConf != null) {
             try {
                 XStream xStream = new XStream();
-                xStream.registerConverter(DOCUMENT_SCANNER_CONF_CONVERTER);
                 xStream.toXML(this.documentScannerConf, new FileOutputStream(this.documentScannerConf.getConfigFile()));
             } catch (FileNotFoundException ex) {
                 LOGGER.warn("an unexpected exception occured during save of configurations into file '{}', changes most likely lost", this.documentScannerConf.getConfigFile().getAbsolutePath());
@@ -704,7 +683,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         closeMenuItem = new javax.swing.JMenuItem();
         exportMenuItem = new javax.swing.JMenuItem();
         editEntryMenuItem = new javax.swing.JMenuItem();
-        autoOCRValueDetectionMenuItem = new javax.swing.JMenuItem();
+        valueDetectionMenuItem = new javax.swing.JMenuItem();
         oCRMenuSeparator = new javax.swing.JPopupMenu.Separator();
         oCRMenuItem = new javax.swing.JMenuItem();
         databaseMenuSeparator = new javax.swing.JPopupMenu.Separator();
@@ -793,8 +772,13 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         });
         fileMenu.add(editEntryMenuItem);
 
-        autoOCRValueDetectionMenuItem.setText("Auto OCR value detection...");
-        fileMenu.add(autoOCRValueDetectionMenuItem);
+        valueDetectionMenuItem.setText("Auto OCR value detection...");
+        valueDetectionMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                valueDetectionMenuItemActionPerformed(evt);
+            }
+        });
+        fileMenu.add(valueDetectionMenuItem);
         fileMenu.add(oCRMenuSeparator);
 
         oCRMenuItem.setText("Configure OCR engines");
@@ -917,13 +901,24 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                     documentScannerConf,
                     messageHandler,
                     confirmMessageHandler);
-        } catch (IOException | StorageConfValidationException ex) {
+        } catch (IOException | StorageConfValidationException | StorageConfPanelCreationException ex) {
             throw new RuntimeException(ex);
+        }
+        StorageConf storageConfCopy;
+        try {
+            storageConfCopy = storageConfCopyFactory.copy(documentScannerConf.getStorageConf());
+        } catch (StorageConfCopyException ex) {
+            messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+            return;
         }
         storageSelectionDialog.setLocationRelativeTo(this);
         storageSelectionDialog.setVisible(true);
         StorageConf selectedStorageConf = storageSelectionDialog.getSelectedStorageConf();
-        if(this.documentScannerConf.getStorageConf().equals(selectedStorageConf)) {
+        if(selectedStorageConf == null) {
+            //dialog has been canceled
+            return;
+        }
+        if(storageConfCopy.equals(selectedStorageConf)) {
             LOGGER.info("no changes made to storage configuration");
         }else{
             //type of StorageConf changed
@@ -958,14 +953,15 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
 
     private void openMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openMenuItemActionPerformed
         JFileChooser chooser = new JFileChooser();
+        chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
         FileNameExtensionFilter filter = new FileNameExtensionFilter(
                 "PDF files", "pdf");
         chooser.setFileFilter(filter);
         int returnVal = chooser.showOpenDialog(this);
-        final File selectedFile = chooser.getSelectedFile();
         if (returnVal != JFileChooser.APPROVE_OPTION) {
             return;
         }
+        final File selectedFile = chooser.getSelectedFile();
         try {
             List<ImageWrapper> images = this.mainPanel.retrieveImages(selectedFile);
             if(images == null) {
@@ -1102,6 +1098,24 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                     JOptionPane.ERROR_MESSAGE));
         }
     }//GEN-LAST:event_exportMenuItemActionPerformed
+
+    private void valueDetectionMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_valueDetectionMenuItemActionPerformed
+        ValueDetectionServiceConfDialog serviceConfDialog = new ValueDetectionServiceConfDialog(this,
+                documentScannerConf.getAvailableValueDetectionServiceConfs(),
+                documentScannerConf.getSelectedValueDetectionServiceConfs(),
+                messageHandler);
+        serviceConfDialog.setLocationRelativeTo(this);
+        serviceConfDialog.setVisible(true);
+        List<ValueDetectionServiceConf> availalbleValueDetectionServiceConfs = serviceConfDialog.getAvailableValueDetectionServiceConfs();
+        if(availalbleValueDetectionServiceConfs == null) {
+            //dialog canceled
+            return;
+        }
+        this.documentScannerConf.setAvailableValueDetectionServiceConfs(availalbleValueDetectionServiceConfs);
+        this.documentScannerConf.setSelectedValueDetectionServiceConfs(serviceConfDialog.getSelectedValueDetectionServiceConfs());
+        this.documentScannerConf.setValueDetectionServiceJARPaths(serviceConfDialog.getValueDetectionServiceJARPaths());
+        this.mainPanel.applyValueDetectionServiceSelection();
+    }//GEN-LAST:event_valueDetectionMenuItemActionPerformed
 
     private void addDocument(List<ImageWrapper> images,
             File selectedFile) throws DocumentAddException, IOException {
@@ -1318,15 +1332,31 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                     //read once for configFile parameter...
                     new JCommander(documentScannerConf, args);
 
-                    //...then read configFile...
                     if(documentScannerConf.getConfigFile().exists()) {
+                        //...then for value detection service JARs to load...
                         XStream xStream = new XStream();
-                        xStream.registerConverter(DOCUMENT_SCANNER_CONF_CONVERTER);
+                        xStream.ignoreUnknownElements();
+                            //doesn't avoid com.thoughtworks.xstream.mapper.CannotResolveClassException
+                        xStream.omitField(DocumentScannerConf.class, "availableValueDetectionServiceConfs");
+                        xStream.omitField(DocumentScannerConf.class, "selectedValueDetectionServiceConfs");
                         try {
                             documentScannerConf = (DocumentScannerConf)xStream.fromXML(new FileInputStream(documentScannerConf.getConfigFile()));
                         } catch (FileNotFoundException ex) {
                             throw new RuntimeException(ex);
                         }
+                        List<URL> classLoaderURLs = new LinkedList<>();
+                        for(String valueDetectionServiceJARPath : documentScannerConf.getValueDetectionServiceJARPaths()) {
+                            File valueDetectionServiceJARFile = new File(valueDetectionServiceJARPath);
+                            classLoaderURLs.add(valueDetectionServiceJARFile.toURI().toURL());
+                        }
+                        URLClassLoader classLoader = new URLClassLoader(classLoaderURLs.toArray(new URL[classLoaderURLs.size()]),
+                                Thread.currentThread().getContextClassLoader()
+                                    //System.class.getClassLoader doesn't work
+                        );
+                        //...then read config file
+                        xStream = new XStream();
+                        xStream.setClassLoader(classLoader);
+                        documentScannerConf = (DocumentScannerConf)xStream.fromXML(new FileInputStream(documentScannerConf.getConfigFile()));
                     }else {
                         documentScannerConf = new DocumentScannerConf();
                         LOGGER.info("no previous configuration found in configuration directry '{}', using default values", documentScannerConf.getConfigFile().getAbsolutePath());
@@ -1393,7 +1423,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenuItem aboutMenuItem;
-    private javax.swing.JMenuItem autoOCRValueDetectionMenuItem;
     private javax.swing.JMenuItem closeMenuItem;
     private javax.swing.JPopupMenu.Separator databaseMenuSeparator;
     private javax.swing.JMenuItem editEntryMenuItem;
@@ -1418,5 +1447,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private javax.swing.JMenu storageSelectionMenu;
     private javax.swing.JMenuItem storageSelectionMenuItem;
     private javax.swing.JMenu toolsMenu;
+    private javax.swing.JMenuItem valueDetectionMenuItem;
     // End of variables declaration//GEN-END:variables
 }

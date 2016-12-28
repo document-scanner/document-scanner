@@ -35,7 +35,7 @@ import richtercloud.document.scanner.model.TelephoneNumber;
  *
  * @author richter
  */
-public class ContactAutoOCRValueDetectionService extends AbstractAutoOCRValueDetectionService<Company> {
+public class ContactValueDetectionService extends AbstractValueDetectionService<Company> {
 
     /**
      * Parses addresses which consist of 3 lines (name, street and number and
@@ -44,8 +44,8 @@ public class ContactAutoOCRValueDetectionService extends AbstractAutoOCRValueDet
      * @return the list of detected results
      */
     @Override
-    public LinkedHashSet<AutoOCRValueDetectionResult<Company>> fetchResults0(String input) {
-        LinkedHashSet<AutoOCRValueDetectionResult<Company>> retValue = new LinkedHashSet<>();
+    public LinkedHashSet<ValueDetectionResult<Company>> fetchResults0(String input) {
+        LinkedHashSet<ValueDetectionResult<Company>> retValue = new LinkedHashSet<>();
         StringTokenizer tokenizer = new StringTokenizer(input,
                 "\n", //delimiter
                 false //return delimiters
@@ -118,7 +118,7 @@ public class ContactAutoOCRValueDetectionService extends AbstractAutoOCRValueDet
                                 new LinkedList<EmailAddress>(), //emails (can't set everything here because otherwise the service becomes too complicated)
                                 new LinkedList<TelephoneNumber>() //telephoneNumbers
                         );
-                        AutoOCRValueDetectionResult<Company> autoOCRValueDetectionResult = new AutoOCRValueDetectionResult<>(oCRSource,
+                        ValueDetectionResult<Company> autoOCRValueDetectionResult = new ValueDetectionResult<>(oCRSource,
                                 company
                         );
                         retValue.add(autoOCRValueDetectionResult);

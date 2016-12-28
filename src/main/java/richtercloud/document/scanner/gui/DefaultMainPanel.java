@@ -28,6 +28,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -294,6 +295,15 @@ public class DefaultMainPanel extends MainPanel {
         this.mainPanelDockingManager = new MainPanelDockingManagerFlexdock();
         this.mainPanelDockingManager.init(dockingControlFrame,
                 this);
+    }
+
+    @Override
+    public void applyValueDetectionServiceSelection() {
+        Collection<Pair<OCRPanel, EntityPanel>> pairs = documentSwitchingMap.values();
+        for(Pair<OCRPanel, EntityPanel> pair : pairs) {
+            EntityPanel entityPanel = pair.getValue();
+            entityPanel.applyValueDetectionServiceSelection();
+        }
     }
 
     @Override

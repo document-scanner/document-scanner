@@ -21,6 +21,7 @@ import javax.swing.JDialog;
 import javax.swing.JOptionPane;
 import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
+import richtercloud.reflection.form.builder.storage.StorageConf;
 import richtercloud.reflection.form.builder.storage.StorageConfValidationException;
 
 /**
@@ -39,6 +40,17 @@ public class StorageEditDialog extends JDialog {
     private final JButton cancelButton = new JButton("Cancel");
     private final JButton saveButton = new JButton("Save");
     private final MessageHandler messageHandler;
+    /**
+     * The (eventually) edited {@code StorageConf}. {@code null} indicates that
+     * the dialog has been aborted.
+     */
+    /*
+    internal implementation notes:
+    - It might be possible to get a StorageConf instance from StorageConfPanel,
+    but that's not too elegant and there's need for an indication for dialog
+    cancelation.
+    */
+    private StorageConf editedStorageConf = null;
 
     public StorageEditDialog(Window parent,
             StorageConfPanel storageConfPanel,
@@ -79,7 +91,12 @@ public class StorageEditDialog extends JDialog {
                         JOptionPane.ERROR_MESSAGE));
                 return;
             }
+            this.editedStorageConf = storageConfPanel.getStorageConf();
             this.setVisible(false);
         });
+    }
+
+    public StorageConf getEditedStorageConf() {
+        return editedStorageConf;
     }
 }

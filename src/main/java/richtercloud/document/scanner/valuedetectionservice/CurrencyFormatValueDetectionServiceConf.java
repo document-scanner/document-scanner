@@ -12,25 +12,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.gui.conf;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Set;
+package richtercloud.document.scanner.valuedetectionservice;
 
 /**
  *
  * @author richter
  */
-public class DocumentScannerConfFactory {
+public class CurrencyFormatValueDetectionServiceConf implements ValueDetectionServiceConf {
+    private static final long serialVersionUID = 1L;
 
-    public DocumentScannerConf create(Set<Class<?>> entityClasses,
-            String databaseName,
-            File schemeChecksumFile,
-            File xMLStorageFile) throws IOException {
-        return new DocumentScannerConf(entityClasses,
-                databaseName,
-                schemeChecksumFile,
-                xMLStorageFile);
+    @Override
+    public void validate() throws ValueDetectionServiceConfValidationException {
+        //nothing to validate
     }
 }

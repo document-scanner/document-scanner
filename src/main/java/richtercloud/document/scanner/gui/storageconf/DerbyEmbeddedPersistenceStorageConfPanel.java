@@ -27,7 +27,8 @@ public class DerbyEmbeddedPersistenceStorageConfPanel extends StorageConfPanel<D
     public DerbyEmbeddedPersistenceStorageConfPanel(DerbyEmbeddedPersistenceStorageConf storageConf) {
         this.initComponents();
         this.storageConf = storageConf;
-        this.databaseDirTextField.setText(storageConf.getDatabaseName());
+        this.databaseNameTextField.setText(storageConf.getDatabaseName());
+        this.databaseNameTextField.setText(storageConf.getDatabaseName());
         this.usernameTextField.setText(storageConf.getUsername());
     }
 
@@ -45,14 +46,14 @@ public class DerbyEmbeddedPersistenceStorageConfPanel extends StorageConfPanel<D
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        databaseDirTextField = new javax.swing.JTextField();
-        databaseDirTextFieldLabel = new javax.swing.JLabel();
+        databaseNameTextField = new javax.swing.JTextField();
+        databaseNameTextFieldLabel = new javax.swing.JLabel();
         usernameTextField = new javax.swing.JTextField();
         usernameLabel = new javax.swing.JLabel();
         passwordLabel = new javax.swing.JLabel();
         passwordPasswordField = new javax.swing.JPasswordField();
 
-        databaseDirTextFieldLabel.setText("Database directory");
+        databaseNameTextFieldLabel.setText("Database directory");
 
         usernameLabel.setText("Username");
 
@@ -67,13 +68,13 @@ public class DerbyEmbeddedPersistenceStorageConfPanel extends StorageConfPanel<D
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(databaseDirTextFieldLabel)
+                    .addComponent(databaseNameTextFieldLabel)
                     .addComponent(usernameLabel)
                     .addComponent(passwordLabel))
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(usernameTextField)
-                    .addComponent(databaseDirTextField)
+                    .addComponent(databaseNameTextField)
                     .addComponent(passwordPasswordField, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 224, Short.MAX_VALUE))
                 .addContainerGap())
         );
@@ -82,8 +83,8 @@ public class DerbyEmbeddedPersistenceStorageConfPanel extends StorageConfPanel<D
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(databaseDirTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(databaseDirTextFieldLabel))
+                    .addComponent(databaseNameTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(databaseNameTextFieldLabel))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(usernameTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -98,8 +99,8 @@ public class DerbyEmbeddedPersistenceStorageConfPanel extends StorageConfPanel<D
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JTextField databaseDirTextField;
-    private javax.swing.JLabel databaseDirTextFieldLabel;
+    private javax.swing.JTextField databaseNameTextField;
+    private javax.swing.JLabel databaseNameTextFieldLabel;
     private javax.swing.JLabel passwordLabel;
     private javax.swing.JPasswordField passwordPasswordField;
     private javax.swing.JLabel usernameLabel;
@@ -108,7 +109,7 @@ public class DerbyEmbeddedPersistenceStorageConfPanel extends StorageConfPanel<D
 
     @Override
     public void save() {
-        this.storageConf.setDatabaseName(this.databaseDirTextField.getText());
+        this.storageConf.setDatabaseName(this.databaseNameTextField.getText());
         this.storageConf.setUsername(this.usernameTextField.getText());
         this.storageConf.setPassword(new String(this.passwordPasswordField.getPassword()));
     }

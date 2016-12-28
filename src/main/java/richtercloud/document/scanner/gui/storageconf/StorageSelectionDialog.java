@@ -17,8 +17,6 @@ package richtercloud.document.scanner.gui.storageconf;
 import java.awt.Component;
 import java.awt.Window;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
 import javax.swing.JList;
@@ -58,7 +56,6 @@ public class StorageSelectionDialog extends javax.swing.JDialog {
         }
     };
     private final DocumentScannerConf documentScannerConf;
-    private Map<Class<? extends StorageConf>, StorageConfPanel<?>> storageConfPanelMap = new HashMap<>();
     /**
      * Reference to the selected storage configuration after closing.
      * {@code null} indicates that the selection has been aborted/hasn't
@@ -68,6 +65,7 @@ public class StorageSelectionDialog extends javax.swing.JDialog {
      */
     private StorageConf selectedStorageConf = null;
     private final MessageHandler messageHandler;
+    private final StorageConfPanelFactory storageConfPanelFactory;
 
     /**
      * Creates new form StorageSelectionDialog
@@ -75,21 +73,18 @@ public class StorageSelectionDialog extends javax.swing.JDialog {
     public StorageSelectionDialog(Window parent,
             DocumentScannerConf documentScannerConf,
             MessageHandler messageHandler,
-            ConfirmMessageHandler confirmMessageHandler) throws IOException, StorageConfValidationException {
+            ConfirmMessageHandler confirmMessageHandler) throws IOException, StorageConfValidationException, StorageConfPanelCreationException {
         super(parent,
                 ModalityType.APPLICATION_MODAL //modalityType
         );
         this.documentScannerConf = documentScannerConf;
         this.messageHandler = messageHandler;
 
-        StorageConfPanelFactory storageConfPanelFactory = new DefaultStorageConfPanelFactory(messageHandler,
+        this.storageConfPanelFactory = new DefaultStorageConfPanelFactory(messageHandler,
                 confirmMessageHandler,
                 documentScannerConf.isSkipMD5SumCheck());
         for(StorageConf availableStorageConf : this.documentScannerConf.getAvailableStorageConfs()) {
             this.storageListModel.addElement(availableStorageConf);
-            StorageConfPanel storageConfPanel = storageConfPanelFactory.create(availableStorageConf);
-            this.storageConfPanelMap.put(availableStorageConf.getClass(),
-                    storageConfPanel);
         }
         initComponents();
         this.storageList.setCellRenderer(storageListCellRenderer);
@@ -107,7 +102,7 @@ public class StorageSelectionDialog extends javax.swing.JDialog {
     }
 
     public StorageConf getSelectedStorageConf() {
-        return this.storageList.getSelectedValue();
+        return selectedStorageConf;
     }
 
     /**
@@ -217,6 +212,9 @@ public class StorageSelectionDialog extends javax.swing.JDialog {
     }// </editor-fold>//GEN-END:initComponents
 
     private void storageDialogCancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_storageDialogCancelButtonActionPerformed
+        this.selectedStorageConf = null;
+            //is fine to set null because the value in the dialog doesn't affect
+            //the configuration (has to be handled by caller)
         this.setVisible(false);
     }//GEN-LAST:event_storageDialogCancelButtonActionPerformed
 
@@ -237,7 +235,7 @@ public class StorageSelectionDialog extends javax.swing.JDialog {
 
     private void storageDialogNewButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_storageDialogNewButtonActionPerformed
         StorageCreateDialog storageCreateDialog = new StorageCreateDialog(this,
-                this.storageConfPanelMap);
+                storageConfPanelFactory);
         storageCreateDialog.setLocationRelativeTo(this);
         storageCreateDialog.setVisible(true);
         StorageConf createdStorageConf = storageCreateDialog.getCreatedStorageConf();
@@ -249,13 +247,32 @@ public class StorageSelectionDialog extends javax.swing.JDialog {
         Object storageListSelectedValue = storageList.getSelectedValue();
         assert storageListSelectedValue instanceof StorageConf;
         StorageConf selectedStorageConf = (StorageConf) storageListSelectedValue;
-        StorageConfPanel storageConfPanel = this.storageConfPanelMap.get(selectedStorageConf.getClass());
+        StorageConfPanel storageConfPanel;
+        try {
+            storageConfPanel = this.storageConfPanelFactory.create(selectedStorageConf);
+        } catch (StorageConfPanelCreationException ex) {
+            throw new RuntimeException(ex);
+        }
         assert storageConfPanel != null;
         StorageEditDialog storageEditDialog = new StorageEditDialog(this,
                 storageConfPanel,
                 messageHandler);
         storageEditDialog.setLocationRelativeTo(this);
         storageEditDialog.setVisible(true);
+        StorageConf editedStorageConf = storageEditDialog.getEditedStorageConf();
+        if(editedStorageConf == null) {
+            //dialog canceled
+            return;
+        }
+        //
+        int index = this.storageListModel.indexOf(storageListSelectedValue);
+        this.storageListModel.remove(index);
+        this.storageListModel.add(index, editedStorageConf);
+        this.storageList.setSelectedIndex(index);
+        //documentScannerConf
+        this.documentScannerConf.getAvailableStorageConfs().remove(storageListSelectedValue);
+        this.documentScannerConf.getAvailableStorageConfs().add(editedStorageConf);
+        this.selectedStorageConf = editedStorageConf;
     }//GEN-LAST:event_storageDialogEditButtonActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
