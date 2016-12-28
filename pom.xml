@@ -4,7 +4,7 @@
     <parent>
         <groupId>richtercloud</groupId>
         <artifactId>document-scanner-aggregator</artifactId>
-        <version>1.0-beta</version>
+        <version>1.0-beta2</version>
     </parent>
     <artifactId>document-scanner</artifactId>
     <packaging>jar</packaging>
@@ -18,25 +18,27 @@
         <richtercloud.document.scanner.eclipselink.version>2.6.4</richtercloud.document.scanner.eclipselink.version>
         <izpack.version>5.0.11-SNAPSHOT</izpack.version>
         <izpack.staging>${project.build.directory}/staging</izpack.staging>
+        <richtercloud.document.scanner.version>1.0-beta2</richtercloud.document.scanner.version>
+            <!-- for izpack plugin below (property for better visibility) -->
     </properties>
     <dependencies>
         <!--document-scanner dependencies-->
         <dependency>
             <groupId>richtercloud</groupId>
             <artifactId>document-scanner-ifaces</artifactId>
-            <version>${richtercloud.document.scanner.version}</version>
+            <version>1.0-beta2</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>richtercloud</groupId>
             <artifactId>document-scanner-flexdock</artifactId>
-            <version>${richtercloud.document.scanner.version}</version>
+            <version>1.0-beta</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>richtercloud</groupId>
             <artifactId>reflection-form-builder-jpa</artifactId>
-            <version>${richtercloud.document.scanner.version}</version>
+            <version>1.0-beta2</version>
             <type>jar</type>
         </dependency>
         <!--Other dependencies-->
@@ -401,7 +403,7 @@
                 <version>1.0.6</version>
                 <configuration>
                     <packageName>document-scanner</packageName>
-                    <packageVersion>1.0-beta</packageVersion>
+                    <packageVersion>${project.version}</packageVersion>
                     <packageDescription>A scaning assistant and document
                     management system</packageDescription>
                     <maintainerName>Karl-Philipp Richter</maintainerName>
@@ -472,7 +474,7 @@
                             <mkdirs>true</mkdirs>
                             <installFile>${basedir}/src/main/izpack/install.xml</installFile>
                             <outputDirectory>${project.build.directory}/izpack-installer/</outputDirectory>
-                            <finalName>${project.build.finalName}-${project.version}-installer</finalName>
+                            <finalName>${project.build.finalName}-installer</finalName>
                                 <!--.jar extension is added-->
                         </configuration>
                     </execution>

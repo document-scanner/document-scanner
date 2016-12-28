@@ -10,6 +10,17 @@
   * Advanced: After you scanned some documents (not too many), you might consider using a more sophisticated storage setup with a database running in its own process started, watched and shutdown automatically by `document-scanner`. There's no feature to migrate records from one storage to another (yet), so make your storage choice as soon as you're ready to deal with advanced usage.
 
 ## Installation
+### Binaries
+#### Java Runtime Environment
+Running and eventually installing `document-scanner` requires a Java Runtime Environment (JRE) version 8 which is installed
+
+  * on Debian-based systems (Debian, Ubuntu, Linux Mint, etc.) by running `sudo apt-get update && sudo apt-get install openjdk-8-jre` in a terminal
+  * on Mac OSX by installing it through the AppStore (serach for `Java Runtime Environment`)
+  * on other systems (including Windows) by downloading an installer from the download page referenced at http://www.oracle.com/technetwork/java/javase/overview/index.html (this page should also provide alternative installation routines for the aforementioned operating systems which you might want to consider in case the described ways didn't work)
+
+#### document-scanner
+If you have a Debian-based operating system, checkout the [.deb package download](https://github.com/document-scanner/document-scanner-bin/raw/deb/document-scanner_1.0-beta2-1_all.deb), if you have Mac OSX, the [.dmg download](https://github.com/document-scanner/document-scanner-bin/raw/mac/document-scanner-1.0-beta2.dmg) and otherwise the [cross-platform Java installer](https://github.com/document-scanner/document-scanner-bin/raw/installer/document-scanner-1.0-beta2-installer.jar) (also in case you experience trouble with the former).
+
 ### From source
 Build from source by
 
@@ -20,17 +31,6 @@ Build from source by
 You can then start the program with `java -cp "target/staging/lib/*:target/document-scanner-1.0-beta.jar" richtercloud.document.scanner.gui.DocumentScanner` or use the built packages for Debian-based systems, Mac OSX or the cross-platform installer which are in `target/` and `target/izpack-installer/` respectively after a successful build.
 
 You should be able to open the project in any IDE that supports Maven, including NetBeans, which lets you build and run the application from source maybe more conveniently.
-
-### Binaries
-#### Java Runtime Environment
-Running and eventually installing `document-scanner` requires a Java Runtime Environment (JRE) version 8 which is installed
-
-  * on Debian-based systems (Debian, Ubuntu, Linux Mint, etc.) by running `sudo apt-get update && sudo apt-get install openjdk-8-jre` in a terminal
-  * on Mac OSX by installing it through the AppStore (serach for `Java Runtime Environment`)
-  * on other systems (including Windows) by downloading an installer from the download page referenced at http://www.oracle.com/technetwork/java/javase/overview/index.html (this page should also provide alternative installation routines for the aforementioned operating systems which might want to consider in case the described ways didn't work)
-
-#### document-scanner
-If you have a Debian-based operating system, checkout the [.deb package download](), if you have Mac OSX, the [.dmg download]() and otherwise the [cross-platform Java installer]() (also in case you experience trouble with the former).
 
 ## License
 `document-scanner` is free software - [free as in "free speech" - not as in "free beer"](https://www.gnu.org/philosophy/free-sw.html) licensed under the [GNU General Public License version 3 (GPLv3)](https://en.wikipedia.org/wiki/GNU_General_Public_License#Version_3).
