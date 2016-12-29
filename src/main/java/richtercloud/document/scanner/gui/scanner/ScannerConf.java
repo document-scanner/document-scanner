@@ -12,7 +12,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.gui;
+package richtercloud.document.scanner.gui.scanner;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -33,6 +33,11 @@ import java.util.Set;
  *
  * @author richter
  */
+/*
+internal implementation notes:
+- Don't manage resolutionWish in ScannerConf because it's not a scanner
+configuration parameter, but a user configuration parameter
+*/
 public class ScannerConf implements Serializable {
     private static final long serialVersionUID = 1L;
     public final static ScannerConfPaperFormat PAPER_FORMAT_DEFAULT = new ScannerConfPaperFormat(210, 297, "DIN A4");

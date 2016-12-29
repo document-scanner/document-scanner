@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import org.jscience.economics.money.Currency;
 import richtercloud.document.scanner.gui.DocumentScanner;
-import richtercloud.document.scanner.gui.ScannerConf;
+import richtercloud.document.scanner.gui.scanner.ScannerConf;
 import richtercloud.document.scanner.ifaces.OCREngineConf;
 import richtercloud.document.scanner.ocr.TesseractOCREngineConf;
 import richtercloud.document.scanner.valuedetectionservice.ContactValueDetectionServiceConf;
@@ -100,6 +100,7 @@ public class DocumentScannerConf implements Serializable {
     private final static String POSTGRESQL_DATABASE_DIR_DEFAULT = new File(CONFIG_DIR_DEFAULT, "databases-postgresql").getAbsolutePath();
     private final static String MYSQL_DATABASE_DIR_DEFAULT = new File(CONFIG_DIR_DEFAULT, "databases-mysql").getAbsolutePath();
     public final static String LOG_FILE_PATH_DEFAULT = new File(CONFIG_DIR_DEFAULT, "document-scanner.log").getAbsolutePath();
+    public final static int RESOLUTION_WISH_DEFAULT = 200;
     /**
      * The file the this configuration has been loaded from. Might be
      * {@code null} if no initial configuration file has been specified.
@@ -199,6 +200,11 @@ public class DocumentScannerConf implements Serializable {
     private Set<String> valueDetectionServiceJARPaths = new HashSet<>();
     private List<ValueDetectionServiceConf> availableValueDetectionServiceConfs = new LinkedList<>();
     private List<ValueDetectionServiceConf> selectedValueDetectionServiceConfs = new LinkedList<>();
+    /** A value which is used in determining the default resolution. The value
+     * the closest to this wish is selected from the supported values of the
+     * device.
+     */
+    private int resolutionWish = RESOLUTION_WISH_DEFAULT;
 
     private static Set<StorageConf> generateAvailableStorageConfsDefault(Set<Class<?>> entityClasses,
             File xMLStorageFile) throws IOException {
@@ -293,7 +299,8 @@ public class DocumentScannerConf implements Serializable {
             String logFilePath,
             Set<String> valueDetectionServiceJARPaths,
             List<ValueDetectionServiceConf> availableValueDetectionServiceConfs,
-            List<ValueDetectionServiceConf> selectedValueDetectionServiceConfs
+            List<ValueDetectionServiceConf> selectedValueDetectionServiceConfs,
+            int resolutionWish
     ) {
         this.configFile = configFile;
         this.scannerName = scannerName;
@@ -327,6 +334,7 @@ public class DocumentScannerConf implements Serializable {
         this.valueDetectionServiceJARPaths = valueDetectionServiceJARPaths;
         this.availableValueDetectionServiceConfs = availableValueDetectionServiceConfs;
         this.selectedValueDetectionServiceConfs = selectedValueDetectionServiceConfs;
+        this.resolutionWish = resolutionWish;
     }
 
     /**
@@ -365,8 +373,17 @@ public class DocumentScannerConf implements Serializable {
                 documentScannerConf.getLogFilePath(),
                 documentScannerConf.getValueDetectionServiceJARPaths(),
                 documentScannerConf.getAvailableValueDetectionServiceConfs(),
-                documentScannerConf.getSelectedValueDetectionServiceConfs()
+                documentScannerConf.getSelectedValueDetectionServiceConfs(),
+                documentScannerConf.getResolutionWish()
         );
+    }
+
+    public int getResolutionWish() {
+        return resolutionWish;
+    }
+
+    public void setResolutionWish(int resolutionWish) {
+        this.resolutionWish = resolutionWish;
     }
 
     public Set<String> getValueDetectionServiceJARPaths() {

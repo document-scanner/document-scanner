@@ -12,7 +12,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.gui;
+package richtercloud.document.scanner.gui.scanner;
 
 import au.com.southsky.jfreesane.OptionValueConstraintType;
 import au.com.southsky.jfreesane.OptionValueType;
@@ -36,6 +36,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.gui.DocumentScanner;
 import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
 
@@ -69,6 +70,7 @@ public class ScannerEditDialog extends javax.swing.JDialog {
     public ScannerEditDialog(Dialog parent,
             final SaneDevice device,
             ScannerConf scannerConf,
+            int resolutionWish,
             MessageHandler messageHandler) throws IOException, SaneException {
         super(parent,
                 true //modal
@@ -83,7 +85,8 @@ public class ScannerEditDialog extends javax.swing.JDialog {
         this.scannerConf = scannerConf;
         this.messageHandler = messageHandler;
         init(device,
-                scannerConf);
+                scannerConf,
+                resolutionWish);
     }
 
     /**
@@ -99,6 +102,7 @@ public class ScannerEditDialog extends javax.swing.JDialog {
     public ScannerEditDialog(java.awt.Frame parent,
             final SaneDevice device,
             ScannerConf scannerConf,
+            int resolutionWish,
             MessageHandler messageHandler) throws IOException, SaneException {
         super(parent,
                 DocumentScanner.generateApplicationWindowTitle(String.format("Editing scanner settings of %s", device.toString()),
@@ -116,17 +120,20 @@ public class ScannerEditDialog extends javax.swing.JDialog {
         this.scannerConf = scannerConf;
         this.messageHandler = messageHandler;
         init(device,
-                scannerConf);
+                scannerConf,
+                resolutionWish);
     }
 
     private void init(final SaneDevice device,
-            final ScannerConf scannerConf) throws IOException, SaneException {
+            final ScannerConf scannerConf,
+            int resolutionWish) throws IOException, SaneException {
         initComponents();
         if(!device.isOpen()) {
             device.open();
         }
         configureDefaultOptionValues(device,
-                scannerConf);
+                scannerConf,
+                resolutionWish);
         //values in scannerConf should be != null after
         //configureDefaultOptionValues
         //set values after adding listeners below
@@ -286,7 +293,8 @@ public class ScannerEditDialog extends javax.swing.JDialog {
      * readable or writable
      */
     public static void configureDefaultOptionValues(SaneDevice device,
-            ScannerConf scannerConf) throws IOException, SaneException {
+            ScannerConf scannerConf,
+            int resolutionWish) throws IOException, SaneException {
         assert device != null;
         assert scannerConf != null;
         assert scannerConf.getPaperFormat() != null;
@@ -298,7 +306,8 @@ public class ScannerEditDialog extends javax.swing.JDialog {
         configureModeDefault(device,
                 scannerConf);
         configureResolutionDefault(device,
-                scannerConf);
+                scannerConf,
+                resolutionWish);
         configureDocumentSourceDefault(device,
                 scannerConf);
         setMode(device,
@@ -368,7 +377,8 @@ public class ScannerEditDialog extends javax.swing.JDialog {
     }
 
     public static void configureResolutionDefault(SaneDevice device,
-            ScannerConf scannerConf) throws IOException {
+            ScannerConf scannerConf,
+            int resolutionWish) throws IOException {
         SaneOption resolutionOption = device.getOption(RESOLUTION_OPTION_NAME);
         if(!resolutionOption.isReadable()) {
             throw new IllegalArgumentException(String.format("Option '%s' isn't readable.", RESOLUTION_OPTION_NAME));
@@ -378,7 +388,7 @@ public class ScannerEditDialog extends javax.swing.JDialog {
         }
         Integer resolution = scannerConf.getResolution();
         if(resolution == null) {
-            int resolutionDifference = Integer.MAX_VALUE, resolutionWish = 300;
+            int resolutionDifference = Integer.MAX_VALUE;
             for(SaneWord resolutionConstraint : resolutionOption.getWordConstraints()) {
                 int resolutionConstraintValue = resolutionConstraint.integerValue();
                 int resolutionConstraintDifference = Math.abs(resolutionWish-resolutionConstraintValue);

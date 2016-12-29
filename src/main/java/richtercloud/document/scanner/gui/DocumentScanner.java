@@ -14,6 +14,10 @@
  */
 package richtercloud.document.scanner.gui;
 
+import richtercloud.document.scanner.gui.scanner.ScannerEditDialog;
+import richtercloud.document.scanner.gui.scanner.ScannerSelectionDialog;
+import richtercloud.document.scanner.gui.scanner.ScannerPageSelectDialog;
+import richtercloud.document.scanner.gui.scanner.ScannerConf;
 import au.com.southsky.jfreesane.SaneDevice;
 import au.com.southsky.jfreesane.SaneException;
 import au.com.southsky.jfreesane.SaneSession;
@@ -300,7 +304,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
 
     public static SaneDevice getScannerDevice(String scannerName,
             Map<String, ScannerConf> scannerConfMap,
-            String scannerAddressFallback) throws IOException, SaneException {
+            String scannerAddressFallback,
+            int resolutionWish) throws IOException, SaneException {
         if(scannerAddressFallback == null) {
             throw new IllegalArgumentException("scannerAddressFallback mustn't be null");
         }
@@ -325,7 +330,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             retValue = saneSession.getDevice(scannerName);
             NAME_DEVICE_MAP.put(scannerName, retValue);
             ScannerEditDialog.configureDefaultOptionValues(retValue,
-                    scannerConf
+                    scannerConf,
+                    resolutionWish
             );
         }
         return retValue;
@@ -342,7 +348,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             try {
                 this.scannerDevice = getScannerDevice(scannerName,
                         this.documentScannerConf.getScannerConfMap(),
-                        DocumentScannerConf.SCANNER_SANE_ADDRESS_DEFAULT);
+                        DocumentScannerConf.SCANNER_SANE_ADDRESS_DEFAULT,
+                        documentScannerConf.getResolutionWish());
                 afterScannerSelection();
             } catch (IOException | SaneException ex) {
                 String text = handleSearchScannerException("An exception during the setup of "
@@ -887,7 +894,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         try {
             this.scannerDevice = getScannerDevice(documentScannerConf.getScannerName(),
                     documentScannerConf.getScannerConfMap(),
-                    DocumentScannerConf.SCANNER_SANE_ADDRESS_DEFAULT);
+                    DocumentScannerConf.SCANNER_SANE_ADDRESS_DEFAULT,
+                    documentScannerConf.getResolutionWish());
         } catch (IOException | SaneException ex) {
             throw new RuntimeException(ex);
         }

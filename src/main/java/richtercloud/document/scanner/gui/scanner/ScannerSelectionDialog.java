@@ -12,7 +12,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.gui;
+package richtercloud.document.scanner.gui.scanner;
 
 import au.com.southsky.jfreesane.SaneDevice;
 import au.com.southsky.jfreesane.SaneException;
@@ -33,6 +33,7 @@ import javax.swing.table.DefaultTableModel;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.gui.DocumentScanner;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
@@ -186,7 +187,8 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
         for(String scannerName : documentScannerConf.getScannerConfMap().keySet()) {
             SaneDevice existingDevice = DocumentScanner.getScannerDevice(scannerName,
                     documentScannerConf.getScannerConfMap(),
-                    SCANNER_ADDRESS_DEFAULT);
+                    SCANNER_ADDRESS_DEFAULT,
+                    documentScannerConf.getResolutionWish());
             tableModel.addDevice(existingDevice);
         }
     }
@@ -217,7 +219,8 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
                 }
                 SaneDevice cachedAvailableDevice = DocumentScanner.getScannerDevice(availableDevice.getName(),
                         documentScannerConf.getScannerConfMap(),
-                        addressString); //otherwise option changes are lost
+                        addressString,
+                        documentScannerConf.getResolutionWish()); //otherwise option changes are lost
                 this.tableModel.addDevice(cachedAvailableDevice);
             }
             this.scannerDialogStatusLabel.setText(" ");
@@ -378,10 +381,12 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
         ScannerConf scannerConf = this.documentScannerConf.getScannerConfMap().get(device.getName());
         try {
             ScannerEditDialog.configureDefaultOptionValues(device,
-                scannerConf);
+                scannerConf,
+                documentScannerConf.getResolutionWish());
             scannerEditDialog = new ScannerEditDialog(this,
                 device,
                 scannerConf,
+                documentScannerConf.getResolutionWish(),
                 this.messageHandler);
             scannerEditDialog.setVisible(true);
         } catch (IOException | SaneException ex) {
