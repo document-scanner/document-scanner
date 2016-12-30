@@ -15,6 +15,7 @@
 package richtercloud.document.scanner.model;
 
 import java.io.Serializable;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -24,8 +25,13 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.MappedSuperclass;
+import javax.persistence.PrePersist;
+import javax.persistence.PreUpdate;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 import richtercloud.document.scanner.components.annotations.Tags;
 import richtercloud.reflection.form.builder.FieldInfo;
+import richtercloud.reflection.form.builder.annotations.Skip;
 
 /**
  * A superclass for all entities which allows management of {@link Id} annotated
@@ -85,8 +91,32 @@ public abstract class Identifiable implements Serializable {
     introduce a Tag embeddable)
     */
     private Set<String> tags = new HashSet<>();
+    /**
+     * The timestamp when the entity was last modified. Updated automatically by
+     * JPA provider via {@link PrePersist} and {@link PreUpdate} hook.
+     */
+    /*
+    internal implementation notes:
+    - Is a java.util.Date because otherwise weaving with Eclipselink 2.6.4 fails
+    due to `org.eclipse.persistence.exceptions.ValidationException
+Exception Description: The type [class java.sql.Timestamp] for the attribute [lastModified] on the entity class [class richtercloud.document.scanner.model.Identifiable] is not a valid type for a temporal mapping. The attribute must be defined as java.util.Date or java.util.Calendar.`
+    */
+    @Temporal(TemporalType.TIMESTAMP)
+    @Skip
+    private Date lastModified;
 
     protected Identifiable() {
+    }
+
+    /**
+     * {@link PrePersist} and {@link PreUpdate} JPA callback updating the
+     * {@code lastModified} timestamp. Will be called through reflection only by
+     * JPA provider.
+     */
+    @PrePersist
+    @PreUpdate
+    private void updateTimestamp() {
+        this.lastModified = new Date(System.currentTimeMillis());
     }
 
     public Long getId() {
@@ -107,6 +137,14 @@ public abstract class Identifiable implements Serializable {
 
     protected void setTags(Set<String> tags) {
         this.tags = tags;
+    }
+
+    public Date getLastModified() {
+        return lastModified;
+    }
+
+    protected void setLastModified(Date lastModified) {
+        this.lastModified = lastModified;
     }
 
     /**
