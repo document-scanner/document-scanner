@@ -100,6 +100,7 @@ import richtercloud.reflection.form.builder.jpa.JPACachedFieldRetriever;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.fieldhandler.factory.JPAAmountMoneyMappingFieldHandlerFactory;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
+import richtercloud.reflection.form.builder.jpa.panels.InitialQueryTextGenerator;
 import richtercloud.reflection.form.builder.jpa.storage.FieldInitializer;
 import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 import richtercloud.reflection.form.builder.jpa.typehandler.ElementCollectionTypeHandler;
@@ -194,6 +195,7 @@ public class DefaultMainPanel extends MainPanel {
     private int documentCount = 0;
     private OCREngine oCREngine;
     private final FieldInitializer queryComponentFieldInitializer;
+    private final InitialQueryTextGenerator initialQueryTextGenerator;
 
     public DefaultMainPanel(Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
@@ -211,7 +213,8 @@ public class DefaultMainPanel extends MainPanel {
             TagStorage tagStorage,
             IdApplier idApplier,
             Map<Class<?>, WarningHandler<?>> warningHandlers,
-            FieldInitializer queryComponentFieldInitializer) {
+            FieldInitializer queryComponentFieldInitializer,
+            InitialQueryTextGenerator initialQueryTextGenerator) {
         this(entityClasses,
                 primaryClassSelection,
                 DocumentScanner.VALUE_SETTER_MAPPING_DEFAULT,
@@ -229,7 +232,8 @@ public class DefaultMainPanel extends MainPanel {
                 tagStorage,
                 idApplier,
                 warningHandlers,
-                queryComponentFieldInitializer);
+                queryComponentFieldInitializer,
+                initialQueryTextGenerator);
     }
 
     public DefaultMainPanel(Set<Class<?>> entityClasses,
@@ -249,7 +253,8 @@ public class DefaultMainPanel extends MainPanel {
             TagStorage tagStorage,
             IdApplier idApplier,
             Map<Class<?>, WarningHandler<?>> warningHandlers,
-            FieldInitializer queryComponentFieldInitializer) {
+            FieldInitializer queryComponentFieldInitializer,
+            InitialQueryTextGenerator initialQueryTextGenerator) {
         if(messageHandler == null) {
             throw new IllegalArgumentException("messageHandler mustn't be null");
         }
@@ -283,6 +288,7 @@ public class DefaultMainPanel extends MainPanel {
                 idApplier,
                 warningHandlers,
                 valueSetterMapping);
+        this.initialQueryTextGenerator = initialQueryTextGenerator;
         this.layout = new GroupLayout(this);
         setLayout(layout);
         this.oCREngine = oCREngine;
@@ -660,11 +666,13 @@ public class DefaultMainPanel extends MainPanel {
                     typeHandlerMapping,
                     typeHandlerMapping,
                     BIDIRECTIONAL_HELP_DIALOG_TITLE,
-                    queryComponentFieldInitializer);
+                    queryComponentFieldInitializer,
+                    initialQueryTextGenerator);
             ToOneTypeHandler toOneTypeHandler = new ToOneTypeHandler(storage,
                     messageHandler,
                     BIDIRECTIONAL_HELP_DIALOG_TITLE,
-                    queryComponentFieldInitializer);
+                    queryComponentFieldInitializer,
+                    initialQueryTextGenerator);
             FieldHandler fieldHandler = new DocumentScannerFieldHandler(jPAAmountMoneyMappingFieldHandlerFactory.generateClassMapping(),
                     embeddableFieldHandlerFactory.generateClassMapping(),
                     embeddableFieldHandlerFactory.generatePrimitiveMapping(),
@@ -685,7 +693,8 @@ public class DefaultMainPanel extends MainPanel {
                     tagStorage,
                     idApplier,
                     warningHandlers,
-                    queryComponentFieldInitializer
+                    queryComponentFieldInitializer,
+                    initialQueryTextGenerator
             );
 
             Set<Class<?>> entityClasses0;

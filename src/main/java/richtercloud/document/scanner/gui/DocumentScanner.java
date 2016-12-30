@@ -135,6 +135,7 @@ import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.idapplier.GeneratedValueIdApplier;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
 import richtercloud.reflection.form.builder.jpa.panels.EmbeddableListPanel;
+import richtercloud.reflection.form.builder.jpa.panels.InitialQueryTextGenerator;
 import richtercloud.reflection.form.builder.jpa.panels.LongIdPanel;
 import richtercloud.reflection.form.builder.jpa.panels.StringAutoCompletePanel;
 import richtercloud.reflection.form.builder.jpa.storage.AbstractPersistenceStorageConf;
@@ -301,6 +302,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             messageHandler);
     private final FieldInitializer queryComponentFieldInitializer;
     private final StorageConfCopyFactory storageConfCopyFactory = new DelegatingStorageConfCopyFactory();
+    private final InitialQueryTextGenerator initialQueryTextGenerator = new DocumentScannerInitialQueryTextGenerator();
 
     public static SaneDevice getScannerDevice(String scannerName,
             Map<String, ScannerConf> scannerConfMap,
@@ -589,7 +591,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             }.getType(), new JPAEntityListTypeHandler(storage,
                     messageHandler,
                     BIDIRECTIONAL_HELP_DIALOG_TITLE,
-                    queryComponentFieldInitializer));
+                    queryComponentFieldInitializer,
+                    initialQueryTextGenerator));
         //listen to window close button (x)
         this.addWindowListener(new WindowAdapter() {
             @Override
@@ -630,7 +633,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 tagStorage,
                 idApplier,
                 warningHandlers,
-                queryComponentFieldInitializer
+                queryComponentFieldInitializer,
+                initialQueryTextGenerator
         );
         mainPanelPanel.add(this.mainPanel);
     }
@@ -997,7 +1001,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 confirmMessageHandler,
                 idApplier,
                 warningHandlers,
-                queryComponentFieldInitializer);
+                queryComponentFieldInitializer,
+                initialQueryTextGenerator);
         entityEditingDialog.setVisible(true); //blocks
         List<Object> selectedEntities = entityEditingDialog.getSelectedEntities();
         if(selectedEntities.size() > SELECTED_ENTITIES_EDIT_WARNING) {

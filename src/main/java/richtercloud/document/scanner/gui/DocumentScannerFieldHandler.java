@@ -66,6 +66,7 @@ import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.fieldhandler.JPAMappingFieldHandler;
 import richtercloud.reflection.form.builder.jpa.fieldhandler.factory.JPAAmountMoneyMappingFieldHandlerFactory;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
+import richtercloud.reflection.form.builder.jpa.panels.InitialQueryTextGenerator;
 import richtercloud.reflection.form.builder.jpa.storage.FieldInitializer;
 import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 import richtercloud.reflection.form.builder.jpa.typehandler.ElementCollectionTypeHandler;
@@ -115,6 +116,7 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
     private final Map<Class<?>, WarningHandler<?>> warningHandlers;
     private final FieldInitializer fieldInitializer;
     private final MessageHandler messageHandler;
+    private final InitialQueryTextGenerator initialQueryTextGenerator;
 
     /**
      * A factory method which avoid creation of some type handlers by callers.
@@ -163,7 +165,8 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
             Map<Class<?>, WarningHandler<?>> warningHandlers,
             int initialQueryLimit,
             String bidirectionalHelpDialogTitle,
-            FieldInitializer fieldInitializer) {
+            FieldInitializer fieldInitializer,
+            InitialQueryTextGenerator initialQueryTextGenerator) {
         AmountMoneyMappingFieldHandlerFactory embeddableFieldHandlerFactory = new AmountMoneyMappingFieldHandlerFactory(amountMoneyUsageStatisticsStorage,
                 amountMoneyCurrencyStorage,
                 amountMoneyExchangeRateRetriever,
@@ -186,11 +189,13 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
                 typeHandlerMapping,
                 typeHandlerMapping,
                 bidirectionalHelpDialogTitle,
-                fieldInitializer);
+                fieldInitializer,
+                initialQueryTextGenerator);
         ToOneTypeHandler toOneTypeHandler = new ToOneTypeHandler(storage,
                 messageHandler,
                 bidirectionalHelpDialogTitle,
-                fieldInitializer);
+                fieldInitializer,
+                initialQueryTextGenerator);
         DocumentScannerFieldHandler retValue = new DocumentScannerFieldHandler(jPAAmountMoneyMappingFieldHandlerFactory.generateClassMapping(),
                 embeddableFieldHandlerFactory.generateClassMapping(),
                 embeddableFieldHandlerFactory.generatePrimitiveMapping(),
@@ -211,7 +216,8 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
                 tagStorage,
                 idApplier,
                 warningHandlers,
-                fieldInitializer);
+                fieldInitializer,
+                initialQueryTextGenerator);
         return retValue;
     }
 
@@ -235,7 +241,8 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
             TagStorage tagStorage,
             IdApplier idApplier,
             Map<Class<?>, WarningHandler<?>> warningHandlers,
-            FieldInitializer fieldInitializer) {
+            FieldInitializer fieldInitializer,
+            InitialQueryTextGenerator initialQueryTextGenerator) {
         super(classMapping,
                 embeddableMapping,
                 primitiveMapping,
@@ -261,6 +268,7 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
         this.warningHandlers = warningHandlers;
         this.fieldInitializer = fieldInitializer;
         this.messageHandler = messageHandler;
+        this.initialQueryTextGenerator = initialQueryTextGenerator;
     }
 
     @Override
@@ -331,7 +339,8 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
                     mainPanel,
                     getIdApplier(),
                     warningHandlers,
-                    fieldInitializer
+                    fieldInitializer,
+                    initialQueryTextGenerator
             );
             retValue.addUpdateListener(new WorkflowItemTreePanelUpdateListener() {
                 @Override
