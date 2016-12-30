@@ -121,41 +121,6 @@ public class EntityEditingDialog extends javax.swing.JDialog {
         init1(entityClasses, primaryClassSelection);
     }
 
-    /**
-     * Creates new form EntityEditingDialog
-     * @param parent
-     * @param entityClasses
-     * @param primaryClassSelection
-     * @param entityManager
-     * @param messageHandler
-     * @param idApplier
-     */
-    public EntityEditingDialog(java.awt.Frame parent,
-            Set<Class<?>> entityClasses,
-            Class<?> primaryClassSelection,
-            PersistenceStorage storage,
-            MessageHandler messageHandler,
-            ConfirmMessageHandler confirmMessageHandler,
-            IdApplier<?> idApplier,
-            Map<Class<?>, WarningHandler<?>> warningHandlers,
-            FieldInitializer fieldInitializer) {
-        super(parent,
-                true //modal
-        );
-        this.messageHandler = messageHandler;
-        this.storage = storage;
-        this.fieldInitializer = fieldInitializer;
-        init(entityClasses, primaryClassSelection, storage);
-        reflectionFormBuilder = new JPAReflectionFormBuilder(storage,
-                DocumentScanner.generateApplicationWindowTitle("Field description", DocumentScanner.APP_NAME, DocumentScanner.APP_VERSION),
-                messageHandler,
-                confirmMessageHandler,
-                new JPACachedFieldRetriever(),
-                idApplier,
-                warningHandlers);
-        init1(entityClasses, primaryClassSelection);
-    }
-
     private void init(Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
             PersistenceStorage storage) {
