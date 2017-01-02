@@ -25,6 +25,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.MappedSuperclass;
+import javax.persistence.PostLoad;
 import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.Temporal;
@@ -108,6 +109,14 @@ Exception Description: The type [class java.sql.Timestamp] for the attribute [la
     @Temporal(TemporalType.TIMESTAMP)
     @Invisible
     private Date lastModified;
+    /**
+     * The timestamp when the entity was last used as a reference. Updated
+     * automatically by JPA provider via {@link PrePersist} and
+     * {@link PreUpdate} hook.
+     */
+    @Temporal(TemporalType.TIMESTAMP)
+    @Invisible
+    private Date lastLoaded;
 
     protected Identifiable() {
     }
@@ -121,6 +130,11 @@ Exception Description: The type [class java.sql.Timestamp] for the attribute [la
     @PreUpdate
     private void updateTimestamp() {
         this.lastModified = new Date(System.currentTimeMillis());
+    }
+
+    @PostLoad
+    private void updateLastLoadedTimestamp() {
+        this.lastLoaded = new Date(System.currentTimeMillis());
     }
 
     public Long getId() {
@@ -149,6 +163,14 @@ Exception Description: The type [class java.sql.Timestamp] for the attribute [la
 
     protected void setLastModified(Date lastModified) {
         this.lastModified = lastModified;
+    }
+
+    public Date getLastLoaded() {
+        return lastLoaded;
+    }
+
+    protected void setLastLoaded(Date lastLoaded) {
+        this.lastLoaded = lastLoaded;
     }
 
     /**
