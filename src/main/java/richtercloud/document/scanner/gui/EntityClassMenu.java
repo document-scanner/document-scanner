@@ -29,7 +29,7 @@ import richtercloud.document.scanner.gui.ocrresult.OCRResult;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.reflection.form.builder.FieldInfo;
-import richtercloud.reflection.form.builder.ReflectionFormBuilder;
+import richtercloud.reflection.form.builder.FieldRetriever;
 import richtercloud.reflection.form.builder.ReflectionFormPanel;
 
 /**
@@ -42,7 +42,7 @@ public class EntityClassMenu extends JMenu {
     private final static Logger LOGGER = LoggerFactory.getLogger(EntityClassMenu.class);
 
     public EntityClassMenu(Class<?> entityClass,
-            ReflectionFormBuilder reflectionFormBuilder,
+            FieldRetriever fieldRetriever,
             ReflectionFormPanelTabbedPane reflectionFormPanelTabbedPane,
             Map<Class<? extends JComponent>, ValueSetter<?, ?>> valueSetterMapping,
             AbstractFieldPopupMenuFactory fieldPopupMenuFactory) {
@@ -51,7 +51,7 @@ public class EntityClassMenu extends JMenu {
             @Override
             public void mouseEntered(MouseEvent e) {
                 ReflectionFormPanel reflectionFormPanel = reflectionFormPanelTabbedPane.getReflectionFormPanel(entityClass);
-                List<Field> relevantFields = reflectionFormBuilder.getFieldRetriever().retrieveRelevantFields(entityClass);
+                List<Field> relevantFields = fieldRetriever.retrieveRelevantFields(entityClass);
                 for(Field relevantField : relevantFields) {
                     JComponent relevantFieldComponent = reflectionFormPanel.getComponentByField(relevantField);
                     assert relevantFieldComponent instanceof AutoOCRValueDetectionPanel;

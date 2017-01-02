@@ -131,6 +131,7 @@ import richtercloud.reflection.form.builder.components.money.FailsafeAmountMoney
 import richtercloud.reflection.form.builder.components.money.FileAmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.money.FileAmountMoneyUsageStatisticsStorage;
 import richtercloud.reflection.form.builder.jpa.JPACachedFieldRetriever;
+import richtercloud.reflection.form.builder.jpa.JPAFieldRetriever;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.idapplier.GeneratedValueIdApplier;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
@@ -303,6 +304,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private final FieldInitializer queryComponentFieldInitializer;
     private final StorageConfCopyFactory storageConfCopyFactory = new DelegatingStorageConfCopyFactory();
     private final InitialQueryTextGenerator initialQueryTextGenerator = new DocumentScannerInitialQueryTextGenerator();
+    private final JPAFieldRetriever reflectionFormBuilderFieldRetriever = new DocumentScannerFieldRetriever();
+    private final FieldRetriever readOnlyFieldRetriever = new JPACachedFieldRetriever();
 
     public static SaneDevice getScannerDevice(String scannerName,
             Map<String, ScannerConf> scannerConfMap,
@@ -566,7 +569,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         JPAAmountMoneyMappingTypeHandlerFactory fieldHandlerFactory = new JPAAmountMoneyMappingTypeHandlerFactory(storage,
                 INITIAL_QUERY_LIMIT_DEFAULT,
                 messageHandler,
-                BIDIRECTIONAL_HELP_DIALOG_TITLE);
+                BIDIRECTIONAL_HELP_DIALOG_TITLE,
+                readOnlyFieldRetriever);
         this.typeHandlerMapping = fieldHandlerFactory.generateTypeHandlerMapping();
 
         this.queryComponentFieldInitializer = new ReflectionFieldInitializer(fieldRetriever) {
@@ -592,7 +596,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                     messageHandler,
                     BIDIRECTIONAL_HELP_DIALOG_TITLE,
                     queryComponentFieldInitializer,
-                    initialQueryTextGenerator));
+                    initialQueryTextGenerator,
+                    readOnlyFieldRetriever));
         //listen to window close button (x)
         this.addWindowListener(new WindowAdapter() {
             @Override
@@ -634,7 +639,9 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 idApplier,
                 warningHandlers,
                 queryComponentFieldInitializer,
-                initialQueryTextGenerator
+                initialQueryTextGenerator,
+                reflectionFormBuilderFieldRetriever,
+                readOnlyFieldRetriever
         );
         mainPanelPanel.add(this.mainPanel);
     }
@@ -1002,7 +1009,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 idApplier,
                 warningHandlers,
                 queryComponentFieldInitializer,
-                initialQueryTextGenerator);
+                initialQueryTextGenerator,
+                readOnlyFieldRetriever);
         entityEditingDialog.setVisible(true); //blocks
         List<Object> selectedEntities = entityEditingDialog.getSelectedEntities();
         if(selectedEntities.size() > SELECTED_ENTITIES_EDIT_WARNING) {

@@ -99,6 +99,7 @@ import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
 import richtercloud.reflection.form.builder.fieldhandler.MappingFieldHandler;
 import richtercloud.reflection.form.builder.fieldhandler.factory.AmountMoneyMappingFieldHandlerFactory;
 import richtercloud.reflection.form.builder.jpa.JPACachedFieldRetriever;
+import richtercloud.reflection.form.builder.jpa.JPAFieldRetriever;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.fieldhandler.factory.JPAAmountMoneyMappingFieldHandlerFactory;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
@@ -198,6 +199,8 @@ public class DefaultMainPanel extends MainPanel {
     private OCREngine oCREngine;
     private final FieldInitializer queryComponentFieldInitializer;
     private final InitialQueryTextGenerator initialQueryTextGenerator;
+    private final JPAFieldRetriever reflectionFormBuilderFieldRetriever;
+    private final FieldRetriever readOnlyFieldRetriever;
 
     public DefaultMainPanel(Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
@@ -216,7 +219,9 @@ public class DefaultMainPanel extends MainPanel {
             IdApplier idApplier,
             Map<Class<?>, WarningHandler<?>> warningHandlers,
             FieldInitializer queryComponentFieldInitializer,
-            InitialQueryTextGenerator initialQueryTextGenerator) {
+            InitialQueryTextGenerator initialQueryTextGenerator,
+            JPAFieldRetriever reflectionFormBuilderFieldRetriever,
+            FieldRetriever readOnlyFieldRetriever) {
         this(entityClasses,
                 primaryClassSelection,
                 DocumentScanner.VALUE_SETTER_MAPPING_DEFAULT,
@@ -235,7 +240,9 @@ public class DefaultMainPanel extends MainPanel {
                 idApplier,
                 warningHandlers,
                 queryComponentFieldInitializer,
-                initialQueryTextGenerator);
+                initialQueryTextGenerator,
+                reflectionFormBuilderFieldRetriever,
+                readOnlyFieldRetriever);
     }
 
     public DefaultMainPanel(Set<Class<?>> entityClasses,
@@ -256,7 +263,9 @@ public class DefaultMainPanel extends MainPanel {
             IdApplier idApplier,
             Map<Class<?>, WarningHandler<?>> warningHandlers,
             FieldInitializer queryComponentFieldInitializer,
-            InitialQueryTextGenerator initialQueryTextGenerator) {
+            InitialQueryTextGenerator initialQueryTextGenerator,
+            JPAFieldRetriever reflectionFormBuilderFieldRetriever,
+            FieldRetriever readOnlyFieldRetriever) {
         if(messageHandler == null) {
             throw new IllegalArgumentException("messageHandler mustn't be null");
         }
@@ -280,13 +289,15 @@ public class DefaultMainPanel extends MainPanel {
         this.amountMoneyExchangeRateRetriever = amountMoneyExchangeRateRetriever;
         this.typeHandlerMapping = typeHandlerMapping;
         this.queryComponentFieldInitializer = queryComponentFieldInitializer;
+        this.reflectionFormBuilderFieldRetriever = reflectionFormBuilderFieldRetriever;
+        this.readOnlyFieldRetriever = readOnlyFieldRetriever;
         this.reflectionFormBuilder = new AutoOCRValueDetectionReflectionFormBuilder(storage,
                 DocumentScanner.generateApplicationWindowTitle("Field description",
                         DocumentScanner.APP_NAME,
                         DocumentScanner.APP_VERSION),
                 messageHandler,
                 confirmMessageHandler,
-                new JPACachedFieldRetriever(),
+                reflectionFormBuilderFieldRetriever,
                 idApplier,
                 warningHandlers,
                 valueSetterMapping);
@@ -457,7 +468,7 @@ public class DefaultMainPanel extends MainPanel {
      */
     @Override
     public void addDocument(Object entityToEdit) throws DocumentAddException, IOException {
-        List<Field> entityClassFields = reflectionFormBuilder.getFieldRetriever().retrieveRelevantFields(entityToEdit.getClass());
+        List<Field> entityClassFields = reflectionFormBuilderFieldRetriever.retrieveRelevantFields(entityToEdit.getClass());
         Field entityToEditScanResultField = null;
         for(Field entityClassField : entityClassFields) {
             ScanResult scanResult = entityClassField.getAnnotation(ScanResult.class);
@@ -655,26 +666,30 @@ public class DefaultMainPanel extends MainPanel {
             ElementCollectionTypeHandler elementCollectionTypeHandler = new ElementCollectionTypeHandler(typeHandlerMapping,
                     typeHandlerMapping,
                     messageHandler,
-                    embeddableFieldHandler);
+                    embeddableFieldHandler,
+                    readOnlyFieldRetriever);
             JPAAmountMoneyMappingFieldHandlerFactory jPAAmountMoneyMappingFieldHandlerFactory = JPAAmountMoneyMappingFieldHandlerFactory.create(storage,
                     INITIAL_QUERY_LIMIT_DEFAULT,
                     messageHandler,
                     amountMoneyUsageStatisticsStorage,
                     amountMoneyCurrencyStorage,
                     amountMoneyExchangeRateRetriever,
-                    BIDIRECTIONAL_HELP_DIALOG_TITLE);
+                    BIDIRECTIONAL_HELP_DIALOG_TITLE,
+                    readOnlyFieldRetriever);
             ToManyTypeHandler toManyTypeHandler = new ToManyTypeHandler(storage,
                     messageHandler,
                     typeHandlerMapping,
                     typeHandlerMapping,
                     BIDIRECTIONAL_HELP_DIALOG_TITLE,
                     queryComponentFieldInitializer,
-                    initialQueryTextGenerator);
+                    initialQueryTextGenerator,
+                    readOnlyFieldRetriever);
             ToOneTypeHandler toOneTypeHandler = new ToOneTypeHandler(storage,
                     messageHandler,
                     BIDIRECTIONAL_HELP_DIALOG_TITLE,
                     queryComponentFieldInitializer,
-                    initialQueryTextGenerator);
+                    initialQueryTextGenerator,
+                    readOnlyFieldRetriever);
             FieldHandler fieldHandler = new DocumentScannerFieldHandler(jPAAmountMoneyMappingFieldHandlerFactory.generateClassMapping(),
                     embeddableFieldHandlerFactory.generateClassMapping(),
                     embeddableFieldHandlerFactory.generatePrimitiveMapping(),
@@ -696,7 +711,8 @@ public class DefaultMainPanel extends MainPanel {
                     idApplier,
                     warningHandlers,
                     queryComponentFieldInitializer,
-                    initialQueryTextGenerator
+                    initialQueryTextGenerator,
+                    readOnlyFieldRetriever
             );
 
             Set<Class<?>> entityClasses0;
@@ -719,7 +735,7 @@ public class DefaultMainPanel extends MainPanel {
                     valueSetterMapping,
                     storage,
                     messageHandler,
-                    reflectionFormBuilder,
+                    reflectionFormBuilderFieldRetriever,
                     documentScannerConf);
             EntityPanel entityPanel = new DefaultEntityPanel(entityClasses0,
                     primaryClassSelection0,

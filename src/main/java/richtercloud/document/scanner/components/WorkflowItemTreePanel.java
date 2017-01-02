@@ -47,7 +47,7 @@ import richtercloud.document.scanner.model.validator.WorkflowItemValidator;
 import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
-import richtercloud.reflection.form.builder.ReflectionFormBuilder;
+import richtercloud.reflection.form.builder.FieldRetriever;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
 import richtercloud.reflection.form.builder.jpa.panels.InitialQueryTextGenerator;
@@ -103,6 +103,7 @@ public class WorkflowItemTreePanel extends JPanel {
     private final Map<Class<?>, WarningHandler<?>> warningHandlers;
     private final FieldInitializer fieldInitializer;
     private final InitialQueryTextGenerator initialQueryTextGenerator;
+    private final FieldRetriever fieldRetriever;
 
     /**
      *
@@ -121,7 +122,7 @@ public class WorkflowItemTreePanel extends JPanel {
             List<WorkflowItem> initialValue,
             MessageHandler messageHandler,
             ConfirmMessageHandler confirmMessageHandler,
-            ReflectionFormBuilder reflectionFormBuilder,
+            FieldRetriever fieldRetriever,
             Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
             MainPanel mainPanel,
@@ -142,8 +143,9 @@ public class WorkflowItemTreePanel extends JPanel {
         this.warningHandlers = warningHandlers;
         this.fieldInitializer = fieldInitializer;
         this.initialQueryTextGenerator = initialQueryTextGenerator;
+        this.fieldRetriever = fieldRetriever;
         this.queryListPanel = new QueryListPanel<>(storage,
-                reflectionFormBuilder,
+                fieldRetriever,
                 WorkflowItem.class,
                 messageHandler,
                 initialValue,
@@ -171,7 +173,8 @@ public class WorkflowItemTreePanel extends JPanel {
                                     WorkflowItemTreePanel.this.idApplier,
                                     WorkflowItemTreePanel.this.warningHandlers,
                                     WorkflowItemTreePanel.this.fieldInitializer,
-                                    WorkflowItemTreePanel.this.initialQueryTextGenerator
+                                    WorkflowItemTreePanel.this.initialQueryTextGenerator,
+                                    WorkflowItemTreePanel.this.fieldRetriever
                             );
                             entityEditingDialog.setVisible(true);
                             List<Object> selectedEntities = entityEditingDialog.getSelectedEntities();

@@ -34,8 +34,7 @@ import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.ClassInfo;
-import richtercloud.reflection.form.builder.jpa.JPACachedFieldRetriever;
-import richtercloud.reflection.form.builder.jpa.JPAReflectionFormBuilder;
+import richtercloud.reflection.form.builder.FieldRetriever;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
 import richtercloud.reflection.form.builder.jpa.panels.InitialQueryTextGenerator;
@@ -83,7 +82,7 @@ public class EntityEditingDialog extends javax.swing.JDialog {
     };
     private final DefaultComboBoxModel<Class<?>> entityEditingClassComboBoxModel = new DefaultComboBoxModel<>();
     private final PersistenceStorage storage;
-    private final JPAReflectionFormBuilder reflectionFormBuilder;
+    private final FieldRetriever fieldRetriever;
     private QueryPanel<Object> entityEditingQueryPanel;
     /**
      * A cache to keep custom queries when changing the query class (would be
@@ -107,7 +106,8 @@ public class EntityEditingDialog extends javax.swing.JDialog {
             IdApplier<?> idApplier,
             Map<Class<?>, WarningHandler<?>> warningHandlers,
             FieldInitializer fieldInitializer,
-            InitialQueryTextGenerator initialQueryTextGenerator) {
+            InitialQueryTextGenerator initialQueryTextGenerator,
+            FieldRetriever fieldRetriever) {
         super(parent,
                 ModalityType.APPLICATION_MODAL);
         this.messageHandler = messageHandler;
@@ -115,13 +115,7 @@ public class EntityEditingDialog extends javax.swing.JDialog {
         this.fieldInitializer = fieldInitializer;
         this.initialQueryTextGenerator = initialQueryTextGenerator;
         init(entityClasses, primaryClassSelection, storage);
-        reflectionFormBuilder = new JPAReflectionFormBuilder(storage,
-                DocumentScanner.generateApplicationWindowTitle("Field description", DocumentScanner.APP_NAME, DocumentScanner.APP_VERSION),
-                messageHandler,
-                confirmMessageHandler,
-                new JPACachedFieldRetriever(),
-                idApplier,
-                warningHandlers);
+        this.fieldRetriever = fieldRetriever;
         init1(entityClasses, primaryClassSelection);
     }
 
@@ -173,7 +167,7 @@ public class EntityEditingDialog extends javax.swing.JDialog {
                 this.entityEditingQueryPanel = new QueryPanel(storage,
                         selectedEntityClass,
                         messageHandler,
-                        reflectionFormBuilder,
+                        fieldRetriever,
                         null, //initialValue
                         null, //bidirectionalControlPanel (doesn't make sense)
                         ListSelectionModel.MULTIPLE_INTERVAL_SELECTION,

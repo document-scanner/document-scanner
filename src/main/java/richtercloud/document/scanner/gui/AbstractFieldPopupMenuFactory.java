@@ -24,7 +24,7 @@ import javax.swing.JMenuItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.setter.ValueSetter;
-import richtercloud.reflection.form.builder.ReflectionFormBuilder;
+import richtercloud.reflection.form.builder.FieldRetriever;
 import richtercloud.reflection.form.builder.ReflectionFormPanel;
 
 /**
@@ -67,11 +67,11 @@ public abstract class AbstractFieldPopupMenuFactory {
      */
     public List<JMenuItem> createFieldPopupMenuItems(List<Class<?>> entityClassesSort,
             ReflectionFormPanelTabbedPane reflectionFormPanelMap,
-            ReflectionFormBuilder reflectionFormBuilder) {
+            FieldRetriever fieldRetriever) {
         List<JMenuItem> retValue = new LinkedList<>();
         for(Class<?> entityClass : entityClassesSort) {
             JMenu entityClassMenu = new EntityClassMenu(entityClass,
-                    reflectionFormBuilder,
+                    fieldRetriever,
                     reflectionFormPanelMap,
                     valueSetterMapping,
                     this);

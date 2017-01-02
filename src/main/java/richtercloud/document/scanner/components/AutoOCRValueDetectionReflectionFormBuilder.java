@@ -40,7 +40,7 @@ import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
 import richtercloud.reflection.form.builder.fieldhandler.FieldHandlingException;
-import richtercloud.reflection.form.builder.jpa.JPACachedFieldRetriever;
+import richtercloud.reflection.form.builder.jpa.JPAFieldRetriever;
 import richtercloud.reflection.form.builder.jpa.JPAReflectionFormBuilder;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
@@ -71,7 +71,7 @@ public class AutoOCRValueDetectionReflectionFormBuilder extends JPAReflectionFor
             String fieldDescriptionDialogTitle,
             MessageHandler messageHandler,
             ConfirmMessageHandler confirmMessageHandler,
-            JPACachedFieldRetriever fieldRetriever,
+            JPAFieldRetriever fieldRetriever,
             IdApplier idApplier,
             Map<Class<?>, WarningHandler<?>> warningHandlers,
             Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping) {

@@ -117,6 +117,7 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
     private final FieldInitializer fieldInitializer;
     private final MessageHandler messageHandler;
     private final InitialQueryTextGenerator initialQueryTextGenerator;
+    private final FieldRetriever readOnlyFieldRetriever;
 
     /**
      * A factory method which avoid creation of some type handlers by callers.
@@ -153,6 +154,7 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
             Map<java.lang.reflect.Type, TypeHandler<?, ?,?, ?>> typeHandlerMapping,
             PersistenceStorage storage,
             FieldRetriever fieldRetriever,
+            FieldRetriever readOnlyFieldRetriever,
             OCRResultPanelFetcher oCRResultPanelFetcher,
             ScanResultPanelFetcher scanResultPanelFetcher,
             DocumentScannerConf documentScannerConf,
@@ -176,26 +178,30 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
         ElementCollectionTypeHandler elementCollectionTypeHandler = new ElementCollectionTypeHandler(typeHandlerMapping,
                 typeHandlerMapping,
                 messageHandler,
-                embeddableFieldHandler);
+                embeddableFieldHandler,
+                readOnlyFieldRetriever);
         JPAAmountMoneyMappingFieldHandlerFactory jPAAmountMoneyMappingFieldHandlerFactory = JPAAmountMoneyMappingFieldHandlerFactory.create(storage,
                 initialQueryLimit,
                 messageHandler,
                 amountMoneyUsageStatisticsStorage,
                 amountMoneyCurrencyStorage,
                 amountMoneyExchangeRateRetriever,
-                bidirectionalHelpDialogTitle);
+                bidirectionalHelpDialogTitle,
+                readOnlyFieldRetriever);
         ToManyTypeHandler toManyTypeHandler = new ToManyTypeHandler(storage,
                 messageHandler,
                 typeHandlerMapping,
                 typeHandlerMapping,
                 bidirectionalHelpDialogTitle,
                 fieldInitializer,
-                initialQueryTextGenerator);
+                initialQueryTextGenerator,
+                readOnlyFieldRetriever);
         ToOneTypeHandler toOneTypeHandler = new ToOneTypeHandler(storage,
                 messageHandler,
                 bidirectionalHelpDialogTitle,
                 fieldInitializer,
-                initialQueryTextGenerator);
+                initialQueryTextGenerator,
+                readOnlyFieldRetriever);
         DocumentScannerFieldHandler retValue = new DocumentScannerFieldHandler(jPAAmountMoneyMappingFieldHandlerFactory.generateClassMapping(),
                 embeddableFieldHandlerFactory.generateClassMapping(),
                 embeddableFieldHandlerFactory.generatePrimitiveMapping(),
@@ -217,7 +223,8 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
                 idApplier,
                 warningHandlers,
                 fieldInitializer,
-                initialQueryTextGenerator);
+                initialQueryTextGenerator,
+                readOnlyFieldRetriever);
         return retValue;
     }
 
@@ -242,7 +249,8 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
             IdApplier idApplier,
             Map<Class<?>, WarningHandler<?>> warningHandlers,
             FieldInitializer fieldInitializer,
-            InitialQueryTextGenerator initialQueryTextGenerator) {
+            InitialQueryTextGenerator initialQueryTextGenerator,
+            FieldRetriever readOnlyFieldRetriever) {
         super(classMapping,
                 embeddableMapping,
                 primitiveMapping,
@@ -269,6 +277,7 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
         this.fieldInitializer = fieldInitializer;
         this.messageHandler = messageHandler;
         this.initialQueryTextGenerator = initialQueryTextGenerator;
+        this.readOnlyFieldRetriever = readOnlyFieldRetriever;
     }
 
     @Override
@@ -333,7 +342,7 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
                     fieldValue,
                     getMessageHandler(),
                     confirmMessageHandler,
-                    reflectionFormBuilder,
+                    readOnlyFieldRetriever,
                     entityClasses,
                     primaryClassSelection,
                     mainPanel,

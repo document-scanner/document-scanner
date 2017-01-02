@@ -39,7 +39,7 @@ import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.ifaces.OCRPanel;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.message.handler.MessageHandler;
-import richtercloud.reflection.form.builder.ReflectionFormBuilder;
+import richtercloud.reflection.form.builder.FieldRetriever;
 import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 
 /**
@@ -93,7 +93,7 @@ public class DefaultOCRPanel extends OCRPanel {
             Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping,
             PersistenceStorage storage,
             MessageHandler messageHandler,
-            ReflectionFormBuilder reflectionFormBuilder,
+            FieldRetriever fieldRetriever,
             DocumentScannerConf documentScannerConf) {
         this.initComponents();
         if(messageHandler == null) {
@@ -117,7 +117,7 @@ public class DefaultOCRPanel extends OCRPanel {
                 valueSetterMapping);
         List<JMenuItem> oCRResultPopupPasteIntoMenuItems = oCRFieldMenuPopupFactory.createFieldPopupMenuItems(entityClassesSort,
                 reflectionFormPanelTabbedPane,
-                reflectionFormBuilder);
+                fieldRetriever);
         for(JMenuItem oCRResultPopupPasteIntoMenuItem : oCRResultPopupPasteIntoMenuItems) {
             oCRResultPopupPasteIntoMenu.add(oCRResultPopupPasteIntoMenuItem);
         }
