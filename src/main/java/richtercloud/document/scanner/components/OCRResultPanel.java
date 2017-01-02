@@ -16,10 +16,13 @@ package richtercloud.document.scanner.components;
 
 import java.util.HashSet;
 import java.util.Set;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.ifaces.OCREngineRecognitionException;
+import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
 
 /**
@@ -173,7 +176,13 @@ public class OCRResultPanel extends JPanel {
     */
     public void startOCR() {
         if(!cancelable) {
-            String oCRResult = this.oCRResultPanelFetcher.fetch();
+            String oCRResult;
+            try {
+                oCRResult = this.oCRResultPanelFetcher.fetch();
+            } catch (OCREngineRecognitionException ex) {
+                messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+                return;
+            }
             if(oCRResult != null) {
                 //might be null if fetch has been canceled (this check is
                 //unnecessary for non-cancelable processing, but don't care
@@ -181,7 +190,13 @@ public class OCRResultPanel extends JPanel {
             }
         }else {
             Thread oCRThread = new Thread(() -> {
-                String oCRResult = oCRResultPanelFetcher.fetch();
+                String oCRResult;
+                try {
+                    oCRResult = oCRResultPanelFetcher.fetch();
+                } catch (OCREngineRecognitionException ex) {
+                    messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+                    return;
+                }
                 SwingUtilities.invokeLater(() -> {
                     if(oCRResult != null) {
                         //might be null if fetch has been canceled (this check is

@@ -78,6 +78,7 @@ import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.ifaces.MainPanel;
 import richtercloud.document.scanner.ifaces.MainPanelDockingManager;
 import richtercloud.document.scanner.ifaces.OCREngine;
+import richtercloud.document.scanner.ifaces.OCREngineRecognitionException;
 import richtercloud.document.scanner.ifaces.OCRPanel;
 import richtercloud.document.scanner.ifaces.OCRSelectComponent;
 import richtercloud.document.scanner.ifaces.OCRSelectPanel;
@@ -88,6 +89,7 @@ import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcherProgressLi
 import richtercloud.document.scanner.model.imagewrapper.CachingImageWrapper;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.message.handler.ConfirmMessageHandler;
+import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.FieldRetriever;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorage;
@@ -780,7 +782,13 @@ public class DefaultMainPanel extends MainPanel {
             //image panels only contain selections of width or height <= 0 -> skip silently
             return;
         }
-        String oCRResult = oCREngine.recognizeImages(new LinkedList<>(Arrays.asList(imageSelection)));
+        String oCRResult;
+        try {
+            oCRResult = oCREngine.recognizeImages(new LinkedList<>(Arrays.asList(imageSelection)));
+        } catch (OCREngineRecognitionException ex) {
+            messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+            return;
+        }
         OCRPanel oCRPanel = documentSwitchingMap.get(oCRSelectComponent).getLeft();
         oCRPanel.getoCRResultTextArea().setText(oCRResult);
     }
@@ -814,7 +822,7 @@ public class DefaultMainPanel extends MainPanel {
         }
 
         @Override
-        public String fetch() {
+        public String fetch() throws OCREngineRecognitionException {
             return oCRSelectPanelPanelFetcher.fetch();
         }
 

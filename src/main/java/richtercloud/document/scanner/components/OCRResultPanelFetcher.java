@@ -14,6 +14,8 @@
  */
 package richtercloud.document.scanner.components;
 
+import richtercloud.document.scanner.ifaces.OCREngineRecognitionException;
+
 /**
  *
  * @author richter
@@ -38,7 +40,7 @@ public interface OCRResultPanelFetcher {
      * @return the OCR result or {@code null} if {@link #fetch() } has been
      * canceled with {@link #cancelFetch() }
      */
-    String fetch();
+    String fetch() throws OCREngineRecognitionException;
 
     /**
      * Allows cancelation of a (potentially time taking) {@link #fetch() } from

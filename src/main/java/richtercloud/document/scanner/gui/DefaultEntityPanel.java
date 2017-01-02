@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComponent;
+import javax.swing.JOptionPane;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
 import org.apache.commons.lang3.tuple.Pair;
@@ -32,6 +33,7 @@ import richtercloud.document.scanner.components.OCRResultPanelFetcher;
 import richtercloud.document.scanner.components.ScanResultPanelFetcher;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.ifaces.EntityPanel;
+import richtercloud.document.scanner.ifaces.OCREngineRecognitionException;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcher;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionResult;
@@ -40,6 +42,7 @@ import richtercloud.document.scanner.valuedetectionservice.DelegatingValueDetect
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionService;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceConf;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceConfFactory;
+import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
@@ -159,8 +162,17 @@ public class DefaultEntityPanel extends EntityPanel {
     private void autoOCRValueDetectionNonGUI(OCRSelectPanelPanelFetcher oCRSelectPanelPanelFetcher,
             boolean forceRenewal) {
         if(detectionResults == null || forceRenewal == true) {
-            final String oCRResult = oCRSelectPanelPanelFetcher.fetch();
-            detectionResults = valueDetectionService.fetchResults(oCRResult);
+            final String oCRResult;
+            try {
+                oCRResult = oCRSelectPanelPanelFetcher.fetch();
+            } catch (OCREngineRecognitionException ex) {
+                messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+                return;
+            }
+            if(oCRResult != null) {
+                //null indicates that the recognition has been aborted
+                detectionResults = valueDetectionService.fetchResults(oCRResult);
+            }
         }
     }
 

@@ -33,6 +33,7 @@ import richtercloud.document.scanner.ifaces.OCREngine;
 import richtercloud.document.scanner.ifaces.OCREngineConf;
 import richtercloud.document.scanner.ifaces.OCREngineProgressEvent;
 import richtercloud.document.scanner.ifaces.OCREngineProgressListener;
+import richtercloud.document.scanner.ifaces.OCREngineRecognitionException;
 
 /**
  *
@@ -44,6 +45,8 @@ internal implementation notes:
 FutureTasks), keep caching on a per-image level (caching results for a list of
 images seems pointless) and avoiding unnecessary creation of task instances
 when retrieving cached results -> don't care about creation of task instances.
+- expressing cancelation by returning null from thread workers avoids a boolean
+flag in ParallelOCREngine
 */
 public abstract class ParallelOCREngine<C extends OCREngineConf> implements OCREngine<C> {
     private final Set<OCREngineProgressListener> progressListeners = new HashSet<>();
@@ -58,8 +61,7 @@ public abstract class ParallelOCREngine<C extends OCREngineConf> implements OCRE
         return oCREngineConf;
     }
 
-    @Override
-    public String recognizeImageStreams(OrderedMap<ImageWrapper, InputStream> imageStreams) {
+    private String recognizeTasks(List<FutureTask<String>> tasks) throws OCREngineRecognitionException {
         StringBuilder retValueBuilder = new StringBuilder(1000);
         //check in loop whether cache can be used, otherwise enqueue started
         //SwingWorkers; after loop wait for SwingWorkers until queue is
@@ -68,8 +70,46 @@ public abstract class ParallelOCREngine<C extends OCREngineConf> implements OCRE
         Queue<FutureTask<String>> threadQueue = new LinkedList<>();
             //the Queue preserves the order to workers
         ExecutorService executor = Executors.newCachedThreadPool();
+        for(FutureTask<String> task : tasks) {
+            executor.execute(task);
+            threadQueue.add(task);
+        }
+        executor.shutdown();
+        int i=0;
+        boolean aborted = false;
+        while(!threadQueue.isEmpty()) {
+            FutureTask<String> threadQueueHead = threadQueue.poll();
+            String oCRResult;
+            try {
+                oCRResult = threadQueueHead.get();
+                if(oCRResult == null) {
+                    aborted = true;
+                    //still need to wait for all tasks to finish because it's up
+                    //to implementations to finished them properly
+                }
+            } catch (InterruptedException | ExecutionException ex) {
+                throw new OCREngineRecognitionException(ex);
+            }
+            if(!aborted) {
+                retValueBuilder.append(oCRResult);
+                for(OCREngineProgressListener progressListener: progressListeners) {
+                    progressListener.onProgressUpdate(new OCREngineProgressEvent(oCRResult, i/tasks.size()));
+                }
+                i += 1;
+            }
+        }
+        if(aborted) {
+            return null;
+        }
+        String retValue = retValueBuilder.toString();
+        return retValue;
+    }
+
+    @Override
+    public String recognizeImageStreams(OrderedMap<ImageWrapper, InputStream> imageStreams) throws OCREngineRecognitionException {
+        List<FutureTask<String>> tasks = new LinkedList<>();
         for(Map.Entry<ImageWrapper, InputStream> imageStream : imageStreams.entrySet()) {
-            FutureTask<String> worker = new FutureTask<>(new Callable<String>() {
+            FutureTask<String> task = new FutureTask<>(new Callable<String>() {
                 @Override
                 public String call() throws Exception {
                     String oCRResult = recognizeImageStream(imageStream.getKey(),
@@ -77,67 +117,26 @@ public abstract class ParallelOCREngine<C extends OCREngineConf> implements OCRE
                     return oCRResult;
                 }
             });
-            executor.execute(worker);
-            threadQueue.add(worker);
+            tasks.add(task);
         }
-        executor.shutdown();
-        int i=0;
-        while(!threadQueue.isEmpty()) {
-            FutureTask<String> threadQueueHead = threadQueue.poll();
-            String oCRResult;
-            try {
-                oCRResult = threadQueueHead.get();
-            } catch (InterruptedException | ExecutionException ex) {
-                throw new RuntimeException(ex);
-            }
-            retValueBuilder.append(oCRResult);
-            for(OCREngineProgressListener progressListener: progressListeners) {
-                progressListener.onProgressUpdate(new OCREngineProgressEvent(oCRResult, i/imageStreams.size()));
-            }
-            i += 1;
-        }
-        String retValue = retValueBuilder.toString();
+        String retValue = recognizeTasks(tasks);
         return retValue;
     }
 
     @Override
-    public String recognizeImages(List<BufferedImage> images) {
-        StringBuilder retValueBuilder = new StringBuilder(1000);
-        //check in loop whether cache can be used, otherwise enqueue started
-        //SwingWorkers; after loop wait for SwingWorkers until queue is
-        //empty and append to retValueBuilder (if cache has been used
-        //(partially) queue will be empty)
-        Queue<FutureTask<String>> threadQueue = new LinkedList<>();
-            //the Queue preserves the order to workers
-        ExecutorService executor = Executors.newCachedThreadPool();
+    public String recognizeImages(List<BufferedImage> images) throws OCREngineRecognitionException {
+        List<FutureTask<String>> tasks = new LinkedList<>();
         for(BufferedImage image : images) {
-            FutureTask<String> worker = new FutureTask<>(new Callable<String>() {
+            FutureTask<String> task = new FutureTask<>(new Callable<String>() {
                 @Override
                 public String call() throws Exception {
                     String oCRResult = recognizeImage(image);
                     return oCRResult;
                 }
             });
-            executor.execute(worker);
-            threadQueue.add(worker);
+            tasks.add(task);
         }
-        executor.shutdown();
-        int i=0;
-        while(!threadQueue.isEmpty()) {
-            FutureTask<String> threadQueueHead = threadQueue.poll();
-            String oCRResult;
-            try {
-                oCRResult = threadQueueHead.get();
-            } catch (InterruptedException | ExecutionException ex) {
-                throw new RuntimeException(ex);
-            }
-            retValueBuilder.append(oCRResult);
-            for(OCREngineProgressListener progressListener: progressListeners) {
-                progressListener.onProgressUpdate(new OCREngineProgressEvent(oCRResult, i/images.size()));
-            }
-            i += 1;
-        }
-        String retValue = retValueBuilder.toString();
+        String retValue = recognizeTasks(tasks);
         return retValue;
     }
 

@@ -28,6 +28,7 @@ import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.ifaces.OCREngine;
 import richtercloud.document.scanner.ifaces.OCREngineProgressEvent;
 import richtercloud.document.scanner.ifaces.OCREngineProgressListener;
+import richtercloud.document.scanner.ifaces.OCREngineRecognitionException;
 import richtercloud.document.scanner.ifaces.OCRSelectPanel;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanel;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcher;
@@ -66,7 +67,7 @@ public class DefaultOCRSelectPanelPanelFetcher implements OCRSelectPanelPanelFet
     }
 
     @Override
-    public String fetch() {
+    public String fetch() throws OCREngineRecognitionException {
         int i=0;
         List<OCRSelectPanel> imagePanels = oCRSelectPanelPanel.getoCRSelectPanels();
         OrderedMap<ImageWrapper, InputStream> imageStreams = new LinkedMap<>();
@@ -87,7 +88,8 @@ public class DefaultOCRSelectPanelPanelFetcher implements OCRSelectPanelPanelFet
                 }
             }
         });
-        String oCRResult = oCREngine.recognizeImageStreams(imageStreams);
+        String oCRResult;
+        oCRResult = oCREngine.recognizeImageStreams(imageStreams);
             //need to operate on original image in order to get
             //acceptable OCR results
         if(oCRResult == null) {

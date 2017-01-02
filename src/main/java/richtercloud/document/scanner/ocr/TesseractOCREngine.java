@@ -15,8 +15,10 @@
 package richtercloud.document.scanner.ocr;
 
 import java.awt.image.BufferedImage;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.StringWriter;
 import java.util.Iterator;
 import javax.imageio.ImageIO;
@@ -110,13 +112,18 @@ public class TesseractOCREngine extends ProcessOCREngine<TesseractOCREngineConf>
             while(languagesItr.hasNext()) {
                 lanuguageString += "+"+languagesItr.next();
             }
+            //remember that in the Java Process API stdin is called outputStream
+            //and stdout called inputStream
             ProcessBuilder tesseractProcessBuilder = new ProcessBuilder(this.getoCREngineConf().getBinary(), "-l", lanuguageString, "stdin", "stdout")
-                    .redirectOutput(ProcessBuilder.Redirect.PIPE);
+                    .redirectOutput(ProcessBuilder.Redirect.PIPE)
+                    .redirectInput(ProcessBuilder.Redirect.PIPE);
             Process tesseractProcess = tesseractProcessBuilder.start();
             getBinaryProcesses().add(tesseractProcess);
-            IOUtils.copy(imageStream, tesseractProcess.getOutputStream());
-            tesseractProcess.getOutputStream().flush();
-            tesseractProcess.getOutputStream().close(); //sending EOF not an option because it's not documented what is expected (sending -1 once or twice doesn't have any effect, also with flush)
+            try (OutputStream tesseractProcessStdinStream = new BufferedOutputStream(tesseractProcess.getOutputStream())) {
+                IOUtils.copy(imageStream, tesseractProcessStdinStream);
+                tesseractProcessStdinStream.flush();
+                //sending EOF not an option because it's not documented what is expected (sending -1 once or twice doesn't have any effect, also with flush)
+            }
             int tesseractProcessExitValue = tesseractProcess.waitFor();
             if(tesseractProcessExitValue != 0) {
                 //tesseractProcess.destroy might cause IOException, but

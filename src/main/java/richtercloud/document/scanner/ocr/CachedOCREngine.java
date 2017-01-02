@@ -97,8 +97,11 @@ public abstract class CachedOCREngine<C extends OCREngineConf> extends ParallelO
             if(retValue == null) {
                 LOGGER.trace(String.format("starting OCR for image %s", image));
                 retValue = recognizeImageStream0(inputStream);
-                imageWrapperCache.put(image,
-                            retValue);
+                if(retValue != null) {
+                    //null if process has been canceled
+                    imageWrapperCache.put(image,
+                                retValue);
+                }
             }else {
                 LOGGER.trace(String.format("using cached OCR result for image %s", image));
             }
