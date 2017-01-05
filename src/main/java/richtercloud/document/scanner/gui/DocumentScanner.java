@@ -300,7 +300,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private final DelegatingPersistenceStorageFactory delegatingStorageFactory = new DelegatingPersistenceStorageFactory("richtercloud_document-scanner_jar_1.0-SNAPSHOTPU",
             24, //@TODo: low limit no longer necessary after ImageWrapper is
                 //used for binary data storage in document
-            messageHandler);
+            messageHandler,
+            fieldRetriever);
     private final FieldInitializer queryComponentFieldInitializer;
     private final StorageConfCopyFactory storageConfCopyFactory = new DelegatingStorageConfCopyFactory();
     private final InitialQueryTextGenerator initialQueryTextGenerator = new DocumentScannerInitialQueryTextGenerator();
