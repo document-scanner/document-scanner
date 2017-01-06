@@ -108,6 +108,7 @@ Exception Description: The type [class java.sql.Timestamp] for the attribute [la
     */
     @Temporal(TemporalType.TIMESTAMP)
     @Invisible
+    @FieldInfo(name = "Last modified", description = "When the entity was last modified/written to storage")
     private Date lastModified;
     /**
      * The timestamp when the entity was last used as a reference. Updated
@@ -116,6 +117,7 @@ Exception Description: The type [class java.sql.Timestamp] for the attribute [la
      */
     @Temporal(TemporalType.TIMESTAMP)
     @Invisible
+    @FieldInfo(name = "Last loaded", description = "When the entity was last loaded/read from the storage")
     private Date lastLoaded;
 
     protected Identifiable() {
