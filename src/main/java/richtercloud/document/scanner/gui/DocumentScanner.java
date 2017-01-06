@@ -515,14 +515,15 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         //Check that emptying image storage directory wasn't skipped at shutdown
         //due to application crash
         if(documentScannerConf.getImageWrapperStorageDir().list().length > 0) {
-            int answer = confirmMessageHandler.confirm(new Message(String.format("The image "
+            int answer = confirmMessageHandler.confirm(new Message(String.format(
+                    "<html><body width='175'>The image "
                     + "wrapper storage directory '%s' isn't empty which can "
                     + "happen after an application crash. It needs to be "
                     + "emptied in order to make the application work "
                     + "correctly. In case there's any chance someone put file "
                     + "into that directory abort now and investigate the "
                     + "directory, otherwise confirm to delete all files in "
-                    + "'%s'.",
+                    + "'%s'.</body></html>",
                             documentScannerConf.getImageWrapperStorageDir().getAbsolutePath(),
                             documentScannerConf.getImageWrapperStorageDir().getAbsolutePath()),
                     JOptionPane.WARNING_MESSAGE, "Confirm emptying directory"));
