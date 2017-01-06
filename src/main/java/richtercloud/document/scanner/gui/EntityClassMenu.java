@@ -71,7 +71,8 @@ public class EntityClassMenu extends JMenu {
                                 OCRResult.class));
                         continue;
                     }
-                    String fieldName;
+                    String fieldName; //it's fine to use FieldInfo.name only
+                        //since there're no queries involved
                     FieldInfo fieldInfo = relevantField.getAnnotation(FieldInfo.class);
                     if(fieldInfo != null) {
                         fieldName = fieldInfo.name();
