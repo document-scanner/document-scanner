@@ -14,6 +14,8 @@
  */
 package richtercloud.document.scanner.gui;
 
+import java.util.LinkedList;
+import java.util.List;
 import richtercloud.document.scanner.model.Identifiable;
 import richtercloud.reflection.form.builder.jpa.panels.DefaultInitialQueryTextGenerator;
 import richtercloud.reflection.form.builder.jpa.panels.InitialQueryTextGenerator;
@@ -37,14 +39,22 @@ public class DocumentScannerInitialQueryTextGenerator extends DefaultInitialQuer
     }
 
     @Override
-    public String generateInitialQueryText(Class<?> entityClass,
+    public List<String> generateInitialQueryTexts(Class<?> entityClass,
             boolean forbidSubtypes) {
-        String retValue = super.generateInitialQueryText(entityClass,
+        List<String> superRetValues = super.generateInitialQueryTexts(entityClass,
                 forbidSubtypes);
-        retValue = retValue.concat(String.format(" ORDER BY %s.%s DESC",
-                InitialQueryTextGenerator.generateEntityClassQueryIdentifier(entityClass),
-                LAST_LOADED_FIELD_NAME));
-            //have the last modified at top of the list (avoids scrolling)
-        return retValue;
+        List<String> retValues = new LinkedList<>();
+        for(String superRetValue : superRetValues) {
+            if(!superRetValue.contains("order by")) {
+                String retValue = superRetValue.concat(String.format(" ORDER BY %s.%s DESC",
+                        InitialQueryTextGenerator.generateEntityClassQueryIdentifier(entityClass),
+                        LAST_LOADED_FIELD_NAME));
+                    //have the last modified at top of the list (avoids scrolling)
+                retValues.add(retValue);
+            }else {
+                retValues.add(superRetValue);
+            }
+        }
+        return retValues;
     }
 }
