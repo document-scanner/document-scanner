@@ -14,10 +14,6 @@
  */
 package richtercloud.document.scanner.gui;
 
-import richtercloud.document.scanner.gui.scanner.ScannerEditDialog;
-import richtercloud.document.scanner.gui.scanner.ScannerSelectionDialog;
-import richtercloud.document.scanner.gui.scanner.ScannerPageSelectDialog;
-import richtercloud.document.scanner.gui.scanner.ScannerConf;
 import au.com.southsky.jfreesane.SaneDevice;
 import au.com.southsky.jfreesane.SaneException;
 import au.com.southsky.jfreesane.SaneSession;
@@ -70,6 +66,11 @@ import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.components.tag.FileTagStorage;
 import richtercloud.document.scanner.components.tag.TagStorage;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
+import richtercloud.document.scanner.gui.scanner.DocumentSource;
+import richtercloud.document.scanner.gui.scanner.ScannerConf;
+import richtercloud.document.scanner.gui.scanner.ScannerEditDialog;
+import richtercloud.document.scanner.gui.scanner.ScannerPageSelectDialog;
+import richtercloud.document.scanner.gui.scanner.ScannerSelectionDialog;
 import richtercloud.document.scanner.gui.scanresult.ScannerResultDialog;
 import richtercloud.document.scanner.gui.storageconf.StorageConfPanelCreationException;
 import richtercloud.document.scanner.gui.storageconf.StorageSelectionDialog;
@@ -1171,29 +1172,39 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     }
 
     /**
-     * Different document sources of the scanner require different scann
-     * routines, e.g. calling {@link SaneDevice#acquireImage() } until a
-     * {@link SaneException} with {@link SaneStatus#STATUS_NO_DOCS} occurs for
-     * an ADF.
-     * @return {@code true} if the loop described above has to be used for
-     * scanning
+     * How to select scan source? There might be inimaginable scan sources
+     * besides flatbed, ADF and duplex ADF which will be configurable in the
+     * scanner edit dialog. If those are configured, there can't be any dialog
+     * displayed because we can't know about it's configuration parameters (and
+     * we'll just call {@link SaneDevice#acquireImage() }).
+     *
+     * If no unknown source is configured in scanner edit dialog, we open a
+     * {@link ScannerPageSelectDialog} which allows to configure the following
+     * scan for flatbed, ADF and duplex ADF (with the setting configured in the
+     * scanner edit dialog as initial values).
+     *
+     * A {@link ScannerResultDialog} is always opened - even for one page
+     * flatbed scan results since it allows to scan more.
+     *
+     * @return
+     * @throws SaneException
+     * @throws IOException
      */
-    private boolean scannerDocumentSourceRequiresLoop() throws IOException, SaneException {
-        String documentSource = this.scannerDevice.getOption(ScannerEditDialog.DOCUMENT_SOURCE_OPTION_NAME).getStringValue();
-        boolean retValue = documentSource.equalsIgnoreCase("ADF")
-                || documentSource.equalsIgnoreCase("Automatic document feeder")
-                || documentSource.equalsIgnoreCase("Duplex");
-        return retValue;
-    }
-
     private List<ImageWrapper> retrieveImages() throws SaneException, IOException {
-        final ScannerPageSelectDialog scannerPageSelectDialog = new ScannerPageSelectDialog(this);
-        if(scannerDocumentSourceRequiresLoop()) {
-            //using ADF according to https://github.com/sjamesr/jfreesane/blob/master/README.md
+        DocumentSource configuredDocumentSource = ScannerEditDialog.getDocumentSourceEnum(scannerDevice);
+        final DocumentSource selectedDocumentSource;
+        final ScannerPageSelectDialog scannerPageSelectDialog;
+        if(configuredDocumentSource != DocumentSource.UNKNOWN) {
+            scannerPageSelectDialog = new ScannerPageSelectDialog(this,
+                    configuredDocumentSource);
             scannerPageSelectDialog.setVisible(true);
-            if(scannerPageSelectDialog.isCanceled()) {
-                return null;
-            }
+            selectedDocumentSource = scannerPageSelectDialog.getSelectedDocumentSource();
+        }else {
+            scannerPageSelectDialog = null;
+            selectedDocumentSource = DocumentSource.UNKNOWN;
+        }
+        if(selectedDocumentSource == null) {
+            return null;
         }
         final SwingWorkerGetWaitDialog dialog = new SwingWorkerGetWaitDialog(this,
                 DocumentScanner.generateApplicationWindowTitle("Scanning",
@@ -1205,8 +1216,20 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         SwingWorker<List<ImageWrapper>, Void> worker = new SwingWorker<List<ImageWrapper>, Void>() {
             @Override
             protected List<ImageWrapper> doInBackground() throws Exception {
+                ScannerEditDialog.setDocumentSourceEnum(scannerDevice,
+                        selectedDocumentSource);
                 List<ImageWrapper> retValue = new LinkedList<>();
-                if(scannerDocumentSourceRequiresLoop()) {
+                if(selectedDocumentSource == DocumentSource.FLATBED || selectedDocumentSource == DocumentSource.UNKNOWN) {
+                    BufferedImage scannedImage = scannerDevice.acquireImage();
+                    ImageWrapper imageWrapper = new CachingImageWrapper(documentScannerConf.getImageWrapperStorageDir(), scannedImage);
+                    retValue.add(imageWrapper);
+                }else {
+                    //ADF or duplex ADF
+                    if(selectedDocumentSource == DocumentSource.ADF) {
+                        ScannerEditDialog.setDocumentSource(scannerDevice, "ADF");
+                    }else {
+                        ScannerEditDialog.setDocumentSource(scannerDevice, "Duplex");
+                    }
                     if(scannerPageSelectDialog.isScanAll()) {
                         while (true) {
                             try {
@@ -1246,10 +1269,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         }
                         scannerDevice.cancel(); //scanner remains in scan mode otherwise
                     }
-                }else {
-                    BufferedImage scannedImage = scannerDevice.acquireImage();
-                    ImageWrapper imageWrapper = new CachingImageWrapper(documentScannerConf.getImageWrapperStorageDir(), scannedImage);
-                    retValue.add(imageWrapper);
                 }
                 return retValue;
             }

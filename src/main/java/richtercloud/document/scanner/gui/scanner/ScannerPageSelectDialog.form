@@ -2,7 +2,9 @@
 
 <Form version="1.5" maxVersion="1.9" type="org.netbeans.modules.form.forminfo.JDialogFormInfo">
   <NonVisualComponents>
-    <Component class="javax.swing.ButtonGroup" name="buttonGroup">
+    <Component class="javax.swing.ButtonGroup" name="aDFButtonGroup">
+    </Component>
+    <Component class="javax.swing.ButtonGroup" name="scanSourceButtonGroup">
     </Component>
   </NonVisualComponents>
   <SyntheticProperties>
@@ -24,37 +26,41 @@
   <Layout>
     <DimensionLayout dim="0">
       <Group type="103" groupAlignment="0" attributes="0">
-          <Group type="102" attributes="0">
+          <Group type="102" alignment="0" attributes="0">
+              <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
                   <Group type="102" attributes="0">
-                      <EmptySpace max="-2" attributes="0"/>
+                      <EmptySpace min="12" pref="12" max="-2" attributes="0"/>
+                      <Component id="duplexCheckBox" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace max="32767" attributes="0"/>
+                  </Group>
+                  <Group type="102" attributes="0">
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Group type="102" alignment="0" attributes="0">
-                              <Component id="numberRadioButton" min="-2" max="-2" attributes="0"/>
-                              <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                              <Component id="pageCountSpinner" max="32767" attributes="0"/>
-                          </Group>
                           <Group type="102" attributes="0">
-                              <Group type="103" groupAlignment="0" attributes="0">
-                                  <Component id="label" alignment="0" min="-2" max="-2" attributes="0"/>
-                                  <Component id="allRadioButton" alignment="0" min="-2" max="-2" attributes="0"/>
-                              </Group>
-                              <EmptySpace min="0" pref="503" max="32767" attributes="0"/>
-                          </Group>
-                          <Group type="102" alignment="1" attributes="0">
                               <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
                               <Component id="cancelButton" min="-2" max="-2" attributes="0"/>
                               <EmptySpace max="-2" attributes="0"/>
                               <Component id="scanButton" min="-2" max="-2" attributes="0"/>
                           </Group>
+                          <Component id="flatbedRadioButton" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="aDFRadioButton" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Group type="102" attributes="0">
+                              <EmptySpace min="12" pref="12" max="-2" attributes="0"/>
+                              <Group type="103" groupAlignment="0" attributes="0">
+                                  <Component id="jLabel1" alignment="0" max="32767" attributes="0"/>
+                                  <Component id="allRadioButton" min="-2" max="-2" attributes="0"/>
+                                  <Component id="label" min="-2" max="-2" attributes="0"/>
+                                  <Group type="102" alignment="0" attributes="0">
+                                      <Component id="numberRadioButton" min="-2" max="-2" attributes="0"/>
+                                      <EmptySpace type="separate" max="-2" attributes="0"/>
+                                      <Component id="pageCountSpinner" min="-2" pref="607" max="-2" attributes="0"/>
+                                  </Group>
+                              </Group>
+                          </Group>
                       </Group>
-                  </Group>
-                  <Group type="102" attributes="0">
-                      <EmptySpace min="-2" pref="24" max="-2" attributes="0"/>
-                      <Component id="jLabel1" max="32767" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
                   </Group>
               </Group>
-              <EmptySpace max="-2" attributes="0"/>
           </Group>
       </Group>
     </DimensionLayout>
@@ -62,10 +68,16 @@
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" alignment="1" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
+              <Component id="flatbedRadioButton" min="-2" max="-2" attributes="0"/>
+              <EmptySpace max="-2" attributes="0"/>
+              <Component id="aDFRadioButton" min="-2" max="-2" attributes="0"/>
+              <EmptySpace max="-2" attributes="0"/>
+              <Component id="duplexCheckBox" min="-2" max="-2" attributes="0"/>
+              <EmptySpace max="-2" attributes="0"/>
               <Component id="label" min="-2" max="-2" attributes="0"/>
-              <EmptySpace min="-2" max="-2" attributes="0"/>
+              <EmptySpace max="-2" attributes="0"/>
               <Component id="allRadioButton" min="-2" max="-2" attributes="0"/>
-              <EmptySpace min="-2" max="-2" attributes="0"/>
+              <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="numberRadioButton" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="pageCountSpinner" alignment="3" min="-2" max="-2" attributes="0"/>
@@ -86,12 +98,14 @@
     <Component class="javax.swing.JLabel" name="label">
       <Properties>
         <Property name="text" type="java.lang.String" value="How many pages ought to be scanned?"/>
+        <Property name="enabled" type="boolean" value="false"/>
       </Properties>
     </Component>
     <Component class="javax.swing.JRadioButton" name="allRadioButton">
       <Properties>
         <Property name="selected" type="boolean" value="true"/>
         <Property name="text" type="java.lang.String" value="All in ADF"/>
+        <Property name="enabled" type="boolean" value="false"/>
       </Properties>
       <Events>
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="allRadioButtonActionPerformed"/>
@@ -100,6 +114,7 @@
     <Component class="javax.swing.JRadioButton" name="numberRadioButton">
       <Properties>
         <Property name="text" type="java.lang.String" value="Number of pages:"/>
+        <Property name="enabled" type="boolean" value="false"/>
       </Properties>
       <Events>
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="numberRadioButtonActionPerformed"/>
@@ -133,7 +148,25 @@
       <Properties>
         <Property name="text" type="java.lang.String" value="&lt;html&gt;&lt;body style=&quot;white-space:pre-line; width=10&quot;&gt;&lt;p&gt;If more pages are available in the ADF the scanner might remove them by emptying the ADF&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;"/>
         <Property name="verticalAlignment" type="int" value="1"/>
+        <Property name="enabled" type="boolean" value="false"/>
         <Property name="verticalTextPosition" type="int" value="1"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JRadioButton" name="flatbedRadioButton">
+      <Properties>
+        <Property name="selected" type="boolean" value="true"/>
+        <Property name="text" type="java.lang.String" value="Scan from flatbed"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JRadioButton" name="aDFRadioButton">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Scan from Automated Document Feeder (ADF)"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JCheckBox" name="duplexCheckBox">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Duplex"/>
+        <Property name="enabled" type="boolean" value="false"/>
       </Properties>
     </Component>
   </SubComponents>

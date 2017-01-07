@@ -598,6 +598,45 @@ public class ScannerEditDialog extends javax.swing.JDialog {
         bottomRightYOption.setFixedValue(height);
     }
 
+    public static DocumentSource getDocumentSourceEnum(SaneDevice device) throws IOException, SaneException {
+        if(!device.isOpen()) {
+            LOGGER.debug(String.format("opening closed device '%s'",
+                    device));
+            device.open();
+        }
+        SaneOption documentSourceOption = device.getOption(DOCUMENT_SOURCE_OPTION_NAME);
+        if(!documentSourceOption.isReadable()) {
+            throw new IllegalArgumentException(String.format("option '%s' isn't readable", DOCUMENT_SOURCE_OPTION_NAME));
+        }
+        String documentSource = documentSourceOption.getStringValue();
+        DocumentSource retValue = DocumentSource.UNKNOWN;
+        if(documentSource.equalsIgnoreCase("Flatbed")) {
+            retValue = DocumentSource.FLATBED;
+        }else if(documentSource.equalsIgnoreCase("ADF") || documentSource.equalsIgnoreCase("Automated document feeder")) {
+            retValue = DocumentSource.ADF;
+        }else if(documentSource.equalsIgnoreCase("Duplex")) {
+            retValue = DocumentSource.ADF_DUPLEX;
+        }
+        return retValue;
+    }
+
+    public static void setDocumentSourceEnum(SaneDevice device,
+            DocumentSource documentSource) throws IOException, SaneException {
+        switch(documentSource) {
+            case FLATBED:
+                setDocumentSource(device, "Flatbed");
+                break;
+            case ADF:
+                setDocumentSource(device, "ADF");
+                break;
+            case ADF_DUPLEX:
+                setDocumentSource(device, "Duplex");
+                break;
+            default:
+                throw new IllegalStateException(String.format("document source %s not supported", documentSource));
+        }
+    }
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always

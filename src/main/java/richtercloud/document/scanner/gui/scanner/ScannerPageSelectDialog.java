@@ -14,6 +14,9 @@
  */
 package richtercloud.document.scanner.gui.scanner;
 
+import java.awt.Window;
+import java.util.Arrays;
+import javax.swing.JDialog;
 import richtercloud.document.scanner.gui.DocumentScanner;
 
 /**
@@ -26,20 +29,75 @@ internal implementation notes:
 which is higher than the pages available in the ADF because there's always the
 possibility to add more scanned pages.
 */
-public class ScannerPageSelectDialog extends javax.swing.JDialog {
-    private boolean canceled = false;
+public class ScannerPageSelectDialog extends JDialog {
+    private static final long serialVersionUID = 1L;
+    /**
+     * The selected scan source. {@code null} indicates that the dialog has been
+     * canceled.
+     */
+    private DocumentSource selectedDocumentSource = null;
 
     /**
      * Creates new form ScannerPageSelectDialog
      */
-    public ScannerPageSelectDialog(java.awt.Frame parent) {
+    public ScannerPageSelectDialog(Window parent,
+            DocumentSource initialDocumentSource) {
         super(parent,
                 DocumentScanner.generateApplicationWindowTitle("Select pages to scan", DocumentScanner.APP_NAME, DocumentScanner.APP_VERSION),
-                true //modal
+                ModalityType.APPLICATION_MODAL //modal
         );
+        if(initialDocumentSource == null) {
+            throw new IllegalArgumentException("initialScanSource mustn't be null");
+        }
         initComponents();
-        buttonGroup.add(allRadioButton);
-        buttonGroup.add(numberRadioButton);
+        aDFButtonGroup.add(allRadioButton);
+        aDFButtonGroup.add(numberRadioButton);
+        scanSourceButtonGroup.add(flatbedRadioButton);
+        scanSourceButtonGroup.add(aDFRadioButton);
+        flatbedRadioButton.addActionListener((event) -> {
+            toggleADFButtonGroupComponents(false);
+            //can't use aDFRadioButton.isEnabled because it's still enabled when
+            //this ActionListener is invoked
+        });
+        aDFRadioButton.addActionListener((event) -> {
+            toggleADFButtonGroupComponents(true);
+        });
+        if(initialDocumentSource == DocumentSource.FLATBED) {
+            flatbedRadioButton.setSelected(true);
+                //doesn't invoked action listener
+            toggleADFButtonGroupComponents(false);
+        }else if(initialDocumentSource == DocumentSource.ADF || initialDocumentSource == DocumentSource.ADF_DUPLEX) {
+            //ADF or duplex ADF
+            aDFRadioButton.setSelected(true);
+            toggleADFButtonGroupComponents(true);
+            if(initialDocumentSource == DocumentSource.ADF_DUPLEX) {
+                duplexCheckBox.setSelected(true);
+            }
+        }else {
+            throw new IllegalArgumentException(String.format(
+                    "initialDocumentSource has to be one of %s",
+                    Arrays.toString(DocumentSource.values())));
+        }
+    }
+
+    private void toggleADFButtonGroupComponents(boolean enabled) {
+        label.setEnabled(enabled);
+        allRadioButton.setEnabled(enabled);
+        duplexCheckBox.setEnabled(enabled);
+        numberRadioButton.setEnabled(enabled);
+            //should trigger enabling of components below numberRadioButton
+    }
+
+    public DocumentSource getSelectedDocumentSource() {
+        return selectedDocumentSource;
+    }
+
+    public boolean isScanAll() {
+        return allRadioButton.isSelected();
+    }
+
+    public int getPageCount() {
+        return (int) pageCountSpinner.getValue();
     }
 
     /**
@@ -51,7 +109,8 @@ public class ScannerPageSelectDialog extends javax.swing.JDialog {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        buttonGroup = new javax.swing.ButtonGroup();
+        aDFButtonGroup = new javax.swing.ButtonGroup();
+        scanSourceButtonGroup = new javax.swing.ButtonGroup();
         label = new javax.swing.JLabel();
         allRadioButton = new javax.swing.JRadioButton();
         numberRadioButton = new javax.swing.JRadioButton();
@@ -59,11 +118,16 @@ public class ScannerPageSelectDialog extends javax.swing.JDialog {
         scanButton = new javax.swing.JButton();
         cancelButton = new javax.swing.JButton();
         jLabel1 = new javax.swing.JLabel();
+        flatbedRadioButton = new javax.swing.JRadioButton();
+        aDFRadioButton = new javax.swing.JRadioButton();
+        duplexCheckBox = new javax.swing.JCheckBox();
 
         label.setText("How many pages ought to be scanned?");
+        label.setEnabled(false);
 
         allRadioButton.setSelected(true);
         allRadioButton.setText("All in ADF");
+        allRadioButton.setEnabled(false);
         allRadioButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 allRadioButtonActionPerformed(evt);
@@ -71,6 +135,7 @@ public class ScannerPageSelectDialog extends javax.swing.JDialog {
         });
 
         numberRadioButton.setText("Number of pages:");
+        numberRadioButton.setEnabled(false);
         numberRadioButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 numberRadioButtonActionPerformed(evt);
@@ -96,40 +161,59 @@ public class ScannerPageSelectDialog extends javax.swing.JDialog {
 
         jLabel1.setText("<html><body style=\"white-space:pre-line; width=10\"><p>If more pages are available in the ADF the scanner might remove them by emptying the ADF</p></body></html>");
         jLabel1.setVerticalAlignment(javax.swing.SwingConstants.TOP);
+        jLabel1.setEnabled(false);
         jLabel1.setVerticalTextPosition(javax.swing.SwingConstants.TOP);
+
+        flatbedRadioButton.setSelected(true);
+        flatbedRadioButton.setText("Scan from flatbed");
+
+        aDFRadioButton.setText("Scan from Automated Document Feeder (ADF)");
+
+        duplexCheckBox.setText("Duplex");
+        duplexCheckBox.setEnabled(false);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
+                .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addContainerGap()
+                        .addGap(12, 12, 12)
+                        .addComponent(duplexCheckBox)
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
-                                .addComponent(numberRadioButton)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(pageCountSpinner))
-                            .addGroup(layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(label)
-                                    .addComponent(allRadioButton))
-                                .addGap(0, 503, Short.MAX_VALUE))
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                                 .addGap(0, 0, Short.MAX_VALUE)
                                 .addComponent(cancelButton)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(scanButton))))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(24, 24, 24)
-                        .addComponent(jLabel1)))
-                .addContainerGap())
+                                .addComponent(scanButton))
+                            .addComponent(flatbedRadioButton)
+                            .addComponent(aDFRadioButton)
+                            .addGroup(layout.createSequentialGroup()
+                                .addGap(12, 12, 12)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(jLabel1)
+                                    .addComponent(allRadioButton)
+                                    .addComponent(label)
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addComponent(numberRadioButton)
+                                        .addGap(18, 18, 18)
+                                        .addComponent(pageCountSpinner, javax.swing.GroupLayout.PREFERRED_SIZE, 607, javax.swing.GroupLayout.PREFERRED_SIZE)))))
+                        .addContainerGap())))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
+                .addComponent(flatbedRadioButton)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(aDFRadioButton)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(duplexCheckBox)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(label)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(allRadioButton)
@@ -158,34 +242,35 @@ public class ScannerPageSelectDialog extends javax.swing.JDialog {
     }//GEN-LAST:event_numberRadioButtonActionPerformed
 
     private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelButtonActionPerformed
-        this.canceled = true;
         this.setVisible(false);
     }//GEN-LAST:event_cancelButtonActionPerformed
 
     private void scanButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_scanButtonActionPerformed
+        if(flatbedRadioButton.isSelected()) {
+            this.selectedDocumentSource = DocumentSource.FLATBED;
+        }else {
+            //aDFRadioButton selected
+            if(duplexCheckBox.isSelected()) {
+                this.selectedDocumentSource = DocumentSource.ADF_DUPLEX;
+            }else {
+                this.selectedDocumentSource = DocumentSource.ADF;
+            }
+        }
         this.setVisible(false);
     }//GEN-LAST:event_scanButtonActionPerformed
 
-    public boolean isCanceled() {
-        return canceled;
-    }
-
-    public boolean isScanAll() {
-        return allRadioButton.isSelected();
-    }
-
-    public int getPageCount() {
-        return (int) pageCountSpinner.getValue();
-    }
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.ButtonGroup aDFButtonGroup;
+    private javax.swing.JRadioButton aDFRadioButton;
     private javax.swing.JRadioButton allRadioButton;
-    private javax.swing.ButtonGroup buttonGroup;
     private javax.swing.JButton cancelButton;
+    private javax.swing.JCheckBox duplexCheckBox;
+    private javax.swing.JRadioButton flatbedRadioButton;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel label;
     private javax.swing.JRadioButton numberRadioButton;
     private javax.swing.JSpinner pageCountSpinner;
     private javax.swing.JButton scanButton;
+    private javax.swing.ButtonGroup scanSourceButtonGroup;
     // End of variables declaration//GEN-END:variables
 }
