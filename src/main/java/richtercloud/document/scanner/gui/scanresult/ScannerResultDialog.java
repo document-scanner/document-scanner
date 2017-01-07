@@ -14,8 +14,11 @@
  */
 package richtercloud.document.scanner.gui.scanresult;
 
+import au.com.southsky.jfreesane.SaneDevice;
+import au.com.southsky.jfreesane.SaneException;
 import java.awt.Dimension;
 import java.awt.Window;
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -48,10 +51,13 @@ import javafx.util.Callback;
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JOptionPane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.DocumentScanner;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
+import richtercloud.message.handler.JavaFXDialogMessageHandler;
+import richtercloud.message.handler.Message;
 
 /**
  * Allows associating scan results, i.e. images, with documents which group
@@ -137,14 +143,35 @@ public class ScannerResultDialog extends JDialog {
      * @see #SCAN_RESULT_ADD_MODE_SELECTION_ORDER
      */
     private int scanResultAddMode = SCAN_RESULT_ADD_MODE_SCAN_ORDER;
+    /**
+     * A device used to eventually scan more images.
+     */
+    private final SaneDevice scannerDevice;
+    private final File imageWrapperStorageDir;
+    private final JavaFXDialogMessageHandler messageHandler;
 
     public ScannerResultDialog(Window owner,
-            List<ImageWrapper> scanResultImages,
-            int preferredScanResultPanelWidth) throws IOException {
+            List<ImageWrapper> initialScanResultImages,
+            int preferredScanResultPanelWidth,
+            SaneDevice scannerDevice,
+            File imageWrapperStorageDir,
+            JavaFXDialogMessageHandler messageHandler) throws IOException {
         super(owner,
                 ModalityType.APPLICATION_MODAL);
         this.panelWidth = preferredScanResultPanelWidth;
         this.panelHeight = panelWidth * 297 / 210;
+        if(scannerDevice == null) {
+            throw new IllegalArgumentException("scannerDevice mustn't be null");
+        }
+        this.scannerDevice = scannerDevice;
+        if(imageWrapperStorageDir == null) {
+            throw new IllegalArgumentException("imageWrapperStorageDir mustn't be null");
+        }
+        this.imageWrapperStorageDir = imageWrapperStorageDir;
+        if(messageHandler == null) {
+            throw new IllegalArgumentException("messageHandler mustn't be null");
+        }
+        this.messageHandler = messageHandler;
 
         mainPanel.setPreferredSize(new Dimension(initialWidth, initialHeight));
 
@@ -275,7 +302,7 @@ public class ScannerResultDialog extends JDialog {
                 scanResultPaneScrollPane.layout();
             });
 
-            for(ImageWrapper scanResultImage : scanResultImages) {
+            for(ImageWrapper scanResultImage : initialScanResultImages) {
                 try {
                     addScanResult(scanResultImage,
                             scanResultPane,
@@ -292,6 +319,7 @@ public class ScannerResultDialog extends JDialog {
             buttonPaneRight.setPadding(new Insets(5));
             Button zoomInButton = new Button("+");
             Button zoomOutButton = new Button("-");
+            Button scanMoreButton = new Button("Scan more");
             Button deletePageButton = new Button("Delete page");
             Button selectAllButton = new Button("Select all");
             Button turnRightButton = new Button("Turn right");
@@ -319,6 +347,10 @@ public class ScannerResultDialog extends JDialog {
             );
             buttonPaneTop.add(zoomOutButton,
                     1, //columnIndex
+                    0 //rowIndex
+            );
+            buttonPaneTop.add(scanMoreButton,
+                    2, //columnIndex
                     0 //rowIndex
             );
             buttonPaneRight.add(deletePageButton,
@@ -359,6 +391,25 @@ public class ScannerResultDialog extends JDialog {
                     handleZoomChange(scanResultPane.getScanResultPanes(),
                             oldZoomLevel,
                             ScannerResultDialog.this.zoomLevel);
+                }
+            });
+            scanMoreButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (event) -> {
+                try {
+                    List<ImageWrapper> newImages = DocumentScanner.retrieveImages(scannerDevice,
+                            this,
+                            imageWrapperStorageDir,
+                            messageHandler);
+                    for(ImageWrapper newImage : newImages) {
+                        try {
+                            addScanResult(newImage,
+                                    scanResultPane,
+                                    scanResultPane.getSelectedScanResults());
+                        } catch (IOException ex) {
+                            throw new RuntimeException(ex);
+                        }
+                    }
+                } catch (SaneException | IOException ex) {
+                    messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
                 }
             });
             deletePageButton.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {

@@ -27,6 +27,7 @@ import ch.qos.logback.core.rolling.RollingFileAppender;
 import com.beust.jcommander.JCommander;
 import com.google.common.reflect.TypeToken;
 import com.thoughtworks.xstream.XStream;
+import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
@@ -118,6 +119,7 @@ import richtercloud.document.scanner.valuedetectionservice.ValueDetectionService
 import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.DialogConfirmMessageHandler;
 import richtercloud.message.handler.DialogMessageHandler;
+import richtercloud.message.handler.JavaFXDialogMessageHandler;
 import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.AnyType;
@@ -254,8 +256,9 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private final AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever = new FailsafeAmountMoneyExchangeRateRetriever();
     private final TagStorage tagStorage;
     private final Map<java.lang.reflect.Type, TypeHandler<?, ?,?, ?>> typeHandlerMapping;
-    private MessageHandler messageHandler = new DialogMessageHandler(this);
-    private ConfirmMessageHandler confirmMessageHandler = new DialogConfirmMessageHandler(this);
+    private final MessageHandler messageHandler = new DialogMessageHandler(this);
+    private final JavaFXDialogMessageHandler javaFXDialogMessageHandler = new JavaFXDialogMessageHandler();
+    private final ConfirmMessageHandler confirmMessageHandler = new DialogConfirmMessageHandler(this);
     private final Map<Class<?>, WarningHandler<?>> warningHandlers = new HashMap<>();
     public final static int INITIAL_QUERY_LIMIT_DEFAULT = 20;
     public final static String BIDIRECTIONAL_HELP_DIALOG_TITLE = generateApplicationWindowTitle("Bidirectional relations help", APP_NAME, APP_VERSION);
@@ -1055,7 +1058,11 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 final List<List<ImageWrapper>> scannerResults = new LinkedList<>();
                 ScannerResultDialog scannerResultDialog = new ScannerResultDialog(this,
                         images,
-                        this.documentScannerConf.getPreferredScanResultPanelWidth());
+                        this.documentScannerConf.getPreferredScanResultPanelWidth(),
+                        scannerDevice,
+                        documentScannerConf.getImageWrapperStorageDir(),
+                        javaFXDialogMessageHandler
+                );
                 scannerResultDialog.setLocationRelativeTo(this);
                 scannerResultDialog.setVisible(true);
                 if(this.documentScannerConf.isRememberPreferredScanResultPanelWidth()) {
@@ -1190,12 +1197,15 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
      * @throws SaneException
      * @throws IOException
      */
-    private List<ImageWrapper> retrieveImages() throws SaneException, IOException {
+    public static List<ImageWrapper> retrieveImages(SaneDevice scannerDevice,
+            Window dialogParent,
+            File imageWrapperStorageDir,
+            MessageHandler messageHandler) throws SaneException, IOException {
         DocumentSource configuredDocumentSource = ScannerEditDialog.getDocumentSourceEnum(scannerDevice);
         final DocumentSource selectedDocumentSource;
         final ScannerPageSelectDialog scannerPageSelectDialog;
         if(configuredDocumentSource != DocumentSource.UNKNOWN) {
-            scannerPageSelectDialog = new ScannerPageSelectDialog(this,
+            scannerPageSelectDialog = new ScannerPageSelectDialog(dialogParent,
                     configuredDocumentSource);
             scannerPageSelectDialog.setVisible(true);
             selectedDocumentSource = scannerPageSelectDialog.getSelectedDocumentSource();
@@ -1206,7 +1216,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         if(selectedDocumentSource == null) {
             return null;
         }
-        final SwingWorkerGetWaitDialog dialog = new SwingWorkerGetWaitDialog(this,
+        final SwingWorkerGetWaitDialog dialog = new SwingWorkerGetWaitDialog(dialogParent,
                 DocumentScanner.generateApplicationWindowTitle("Scanning",
                         DocumentScanner.APP_NAME,
                         DocumentScanner.APP_VERSION),
@@ -1221,7 +1231,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 List<ImageWrapper> retValue = new LinkedList<>();
                 if(selectedDocumentSource == DocumentSource.FLATBED || selectedDocumentSource == DocumentSource.UNKNOWN) {
                     BufferedImage scannedImage = scannerDevice.acquireImage();
-                    ImageWrapper imageWrapper = new CachingImageWrapper(documentScannerConf.getImageWrapperStorageDir(), scannedImage);
+                    ImageWrapper imageWrapper = new CachingImageWrapper(imageWrapperStorageDir,
+                            scannedImage);
                     retValue.add(imageWrapper);
                 }else {
                     //ADF or duplex ADF
@@ -1234,7 +1245,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         while (true) {
                             try {
                                 BufferedImage scannedImage = scannerDevice.acquireImage();
-                                ImageWrapper imageWrapper = new CachingImageWrapper(documentScannerConf.getImageWrapperStorageDir(), scannedImage);
+                                ImageWrapper imageWrapper = new CachingImageWrapper(imageWrapperStorageDir,
+                                        scannedImage);
                                 retValue.add(imageWrapper);
                             } catch (SaneException e) {
                                 if (e.getStatus() == SaneStatus.STATUS_NO_DOCS) {
@@ -1253,7 +1265,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                             LOGGER.info(String.format("requested scan of %d pages", scannerPageSelectDialog.getPageCount()));
                             try {
                                 BufferedImage scannedImage = scannerDevice.acquireImage();
-                                ImageWrapper imageWrapper = new CachingImageWrapper(documentScannerConf.getImageWrapperStorageDir(), scannedImage);
+                                ImageWrapper imageWrapper = new CachingImageWrapper(imageWrapperStorageDir,
+                                        scannedImage);
                                 retValue.add(imageWrapper);
                             } catch (SaneException e) {
                                 if (e.getStatus() == SaneStatus.STATUS_NO_DOCS) {
@@ -1294,7 +1307,10 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             if(!this.scannerDevice.isOpen()) {
                 this.scannerDevice.open();
             }
-            List<ImageWrapper> scannedImages = retrieveImages();
+            List<ImageWrapper> scannedImages = retrieveImages(scannerDevice,
+                    this,
+                    documentScannerConf.getImageWrapperStorageDir(),
+                    messageHandler);
             if(scannedImages == null) {
                 //canceled or exception which has been handled inside retrieveImages
                 return;
@@ -1304,7 +1320,11 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 final List<List<ImageWrapper>> scannerResults = new LinkedList<>();
                 ScannerResultDialog scannerResultDialog = new ScannerResultDialog(this,
                         scannedImages,
-                        this.documentScannerConf.getPreferredScanResultPanelWidth());
+                        this.documentScannerConf.getPreferredScanResultPanelWidth(),
+                        scannerDevice,
+                        documentScannerConf.getImageWrapperStorageDir(),
+                        javaFXDialogMessageHandler
+                );
                 scannerResultDialog.setLocationRelativeTo(this);
                 scannerResultDialog.setVisible(true);
                 if(this.documentScannerConf.isRememberPreferredScanResultPanelWidth()) {
