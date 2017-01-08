@@ -101,6 +101,9 @@ public class DocumentScannerConf implements Serializable {
     private final static String MYSQL_DATABASE_DIR_DEFAULT = new File(CONFIG_DIR_DEFAULT, "databases-mysql").getAbsolutePath();
     public final static String LOG_FILE_PATH_DEFAULT = new File(CONFIG_DIR_DEFAULT, "document-scanner.log").getAbsolutePath();
     public final static int RESOLUTION_WISH_DEFAULT = 200;
+    public final static String QUERY_HISTORY_ENTRY_STORAGE_FILE_NAME_DEFAULT = "query-history-storage.xml";
+    public final static File QUERY_HISTORY_ENTRY_STORAGE_FILE_DEFAULT = new File(CONFIG_DIR_DEFAULT,
+            QUERY_HISTORY_ENTRY_STORAGE_FILE_NAME_DEFAULT);
     /**
      * The file the this configuration has been loaded from. Might be
      * {@code null} if no initial configuration file has been specified.
@@ -205,6 +208,7 @@ public class DocumentScannerConf implements Serializable {
      * device.
      */
     private int resolutionWish = RESOLUTION_WISH_DEFAULT;
+    private File queryHistoryEntryStorageFile = QUERY_HISTORY_ENTRY_STORAGE_FILE_DEFAULT;
 
     private static Set<StorageConf> generateAvailableStorageConfsDefault(Set<Class<?>> entityClasses,
             File xMLStorageFile) throws IOException {
@@ -300,7 +304,8 @@ public class DocumentScannerConf implements Serializable {
             Set<String> valueDetectionServiceJARPaths,
             List<ValueDetectionServiceConf> availableValueDetectionServiceConfs,
             List<ValueDetectionServiceConf> selectedValueDetectionServiceConfs,
-            int resolutionWish
+            int resolutionWish,
+            File queryHistoryEntryStorageFile
     ) {
         this.configFile = configFile;
         this.scannerName = scannerName;
@@ -335,6 +340,7 @@ public class DocumentScannerConf implements Serializable {
         this.availableValueDetectionServiceConfs = availableValueDetectionServiceConfs;
         this.selectedValueDetectionServiceConfs = selectedValueDetectionServiceConfs;
         this.resolutionWish = resolutionWish;
+        this.queryHistoryEntryStorageFile = queryHistoryEntryStorageFile;
     }
 
     /**
@@ -374,8 +380,17 @@ public class DocumentScannerConf implements Serializable {
                 documentScannerConf.getValueDetectionServiceJARPaths(),
                 documentScannerConf.getAvailableValueDetectionServiceConfs(),
                 documentScannerConf.getSelectedValueDetectionServiceConfs(),
-                documentScannerConf.getResolutionWish()
+                documentScannerConf.getResolutionWish(),
+                documentScannerConf.getQueryHistoryEntryStorageFile()
         );
+    }
+
+    public File getQueryHistoryEntryStorageFile() {
+        return queryHistoryEntryStorageFile;
+    }
+
+    public void setQueryHistoryEntryStorageFile(File queryHistoryEntryStorageFile) {
+        this.queryHistoryEntryStorageFile = queryHistoryEntryStorageFile;
     }
 
     public int getResolutionWish() {

@@ -103,7 +103,7 @@ import richtercloud.reflection.form.builder.jpa.JPAFieldRetriever;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.fieldhandler.factory.JPAAmountMoneyMappingFieldHandlerFactory;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
-import richtercloud.reflection.form.builder.jpa.panels.InitialQueryTextGenerator;
+import richtercloud.reflection.form.builder.jpa.panels.QueryHistoryEntryStorage;
 import richtercloud.reflection.form.builder.jpa.storage.FieldInitializer;
 import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 import richtercloud.reflection.form.builder.jpa.typehandler.ElementCollectionTypeHandler;
@@ -198,7 +198,7 @@ public class DefaultMainPanel extends MainPanel {
     private int documentCount = 0;
     private OCREngine oCREngine;
     private final FieldInitializer queryComponentFieldInitializer;
-    private final InitialQueryTextGenerator initialQueryTextGenerator;
+    private final QueryHistoryEntryStorage entryStorage;
     private final JPAFieldRetriever reflectionFormBuilderFieldRetriever;
     private final FieldRetriever readOnlyFieldRetriever;
 
@@ -219,7 +219,7 @@ public class DefaultMainPanel extends MainPanel {
             IdApplier idApplier,
             Map<Class<?>, WarningHandler<?>> warningHandlers,
             FieldInitializer queryComponentFieldInitializer,
-            InitialQueryTextGenerator initialQueryTextGenerator,
+            QueryHistoryEntryStorage entryStorage,
             JPAFieldRetriever reflectionFormBuilderFieldRetriever,
             FieldRetriever readOnlyFieldRetriever) {
         this(entityClasses,
@@ -240,7 +240,7 @@ public class DefaultMainPanel extends MainPanel {
                 idApplier,
                 warningHandlers,
                 queryComponentFieldInitializer,
-                initialQueryTextGenerator,
+                entryStorage,
                 reflectionFormBuilderFieldRetriever,
                 readOnlyFieldRetriever);
     }
@@ -263,7 +263,7 @@ public class DefaultMainPanel extends MainPanel {
             IdApplier idApplier,
             Map<Class<?>, WarningHandler<?>> warningHandlers,
             FieldInitializer queryComponentFieldInitializer,
-            InitialQueryTextGenerator initialQueryTextGenerator,
+            QueryHistoryEntryStorage entryStorage,
             JPAFieldRetriever reflectionFormBuilderFieldRetriever,
             FieldRetriever readOnlyFieldRetriever) {
         if(messageHandler == null) {
@@ -301,7 +301,7 @@ public class DefaultMainPanel extends MainPanel {
                 idApplier,
                 warningHandlers,
                 valueSetterMapping);
-        this.initialQueryTextGenerator = initialQueryTextGenerator;
+        this.entryStorage = entryStorage;
         this.layout = new GroupLayout(this);
         setLayout(layout);
         this.oCREngine = oCREngine;
@@ -682,13 +682,13 @@ public class DefaultMainPanel extends MainPanel {
                     typeHandlerMapping,
                     BIDIRECTIONAL_HELP_DIALOG_TITLE,
                     queryComponentFieldInitializer,
-                    initialQueryTextGenerator,
+                    entryStorage,
                     readOnlyFieldRetriever);
             ToOneTypeHandler toOneTypeHandler = new ToOneTypeHandler(storage,
                     messageHandler,
                     BIDIRECTIONAL_HELP_DIALOG_TITLE,
                     queryComponentFieldInitializer,
-                    initialQueryTextGenerator,
+                    entryStorage,
                     readOnlyFieldRetriever);
             FieldHandler fieldHandler = new DocumentScannerFieldHandler(jPAAmountMoneyMappingFieldHandlerFactory.generateClassMapping(),
                     embeddableFieldHandlerFactory.generateClassMapping(),
@@ -711,7 +711,7 @@ public class DefaultMainPanel extends MainPanel {
                     idApplier,
                     warningHandlers,
                     queryComponentFieldInitializer,
-                    initialQueryTextGenerator,
+                    entryStorage,
                     readOnlyFieldRetriever
             );
 

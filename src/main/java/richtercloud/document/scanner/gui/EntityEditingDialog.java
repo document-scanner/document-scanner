@@ -37,11 +37,11 @@ import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.reflection.form.builder.FieldRetriever;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
-import richtercloud.reflection.form.builder.jpa.panels.InitialQueryTextGenerator;
+import richtercloud.reflection.form.builder.jpa.panels.QueryHistoryEntryStorage;
 import richtercloud.reflection.form.builder.jpa.panels.QueryPanel;
+import richtercloud.reflection.form.builder.jpa.storage.FieldInitializer;
 import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 import richtercloud.reflection.form.builder.storage.StorageException;
-import richtercloud.reflection.form.builder.jpa.storage.FieldInitializer;
 
 /**
  * A dialog to select the class and the concrete entity to edit or delete it.
@@ -95,7 +95,7 @@ public class EntityEditingDialog extends javax.swing.JDialog {
     private final Map<Class<?>, QueryPanel<Object>> entityEditingQueryPanelCache = new HashMap<>();
     private final MessageHandler messageHandler;
     private final FieldInitializer fieldInitializer;
-    private final InitialQueryTextGenerator initialQueryTextGenerator;
+    private final QueryHistoryEntryStorage entryStorage;
 
     public EntityEditingDialog(Window parent,
             Set<Class<?>> entityClasses,
@@ -106,14 +106,14 @@ public class EntityEditingDialog extends javax.swing.JDialog {
             IdApplier<?> idApplier,
             Map<Class<?>, WarningHandler<?>> warningHandlers,
             FieldInitializer fieldInitializer,
-            InitialQueryTextGenerator initialQueryTextGenerator,
+            QueryHistoryEntryStorage entryStorage,
             FieldRetriever fieldRetriever) {
         super(parent,
                 ModalityType.APPLICATION_MODAL);
         this.messageHandler = messageHandler;
         this.storage = storage;
         this.fieldInitializer = fieldInitializer;
-        this.initialQueryTextGenerator = initialQueryTextGenerator;
+        this.entryStorage = entryStorage;
         init(entityClasses, primaryClassSelection, storage);
         this.fieldRetriever = fieldRetriever;
         init1(entityClasses, primaryClassSelection);
@@ -172,7 +172,7 @@ public class EntityEditingDialog extends javax.swing.JDialog {
                         null, //bidirectionalControlPanel (doesn't make sense)
                         ListSelectionModel.MULTIPLE_INTERVAL_SELECTION,
                         fieldInitializer,
-                        initialQueryTextGenerator
+                        entryStorage
                 );
             } catch (IllegalArgumentException | IllegalAccessException ex) {
                 throw new RuntimeException(ex);

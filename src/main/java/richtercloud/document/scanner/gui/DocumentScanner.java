@@ -139,8 +139,10 @@ import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.idapplier.GeneratedValueIdApplier;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
 import richtercloud.reflection.form.builder.jpa.panels.EmbeddableListPanel;
-import richtercloud.reflection.form.builder.jpa.panels.InitialQueryTextGenerator;
 import richtercloud.reflection.form.builder.jpa.panels.LongIdPanel;
+import richtercloud.reflection.form.builder.jpa.panels.QueryHistoryEntryStorage;
+import richtercloud.reflection.form.builder.jpa.panels.QueryHistoryEntryStorageCreationException;
+import richtercloud.reflection.form.builder.jpa.panels.QueryHistoryEntryStorageFactory;
 import richtercloud.reflection.form.builder.jpa.panels.StringAutoCompletePanel;
 import richtercloud.reflection.form.builder.jpa.storage.AbstractPersistenceStorageConf;
 import richtercloud.reflection.form.builder.jpa.storage.DelegatingPersistenceStorageFactory;
@@ -308,7 +310,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             fieldRetriever);
     private final FieldInitializer queryComponentFieldInitializer;
     private final StorageConfCopyFactory storageConfCopyFactory = new DelegatingStorageConfCopyFactory();
-    private final InitialQueryTextGenerator initialQueryTextGenerator = new DocumentScannerInitialQueryTextGenerator();
+    private final QueryHistoryEntryStorageFactory entryStorageFactory;
+    private final QueryHistoryEntryStorage entryStorage;
     private final JPAFieldRetriever reflectionFormBuilderFieldRetriever = new DocumentScannerFieldRetriever();
     private final FieldRetriever readOnlyFieldRetriever = new JPACachedFieldRetriever();
 
@@ -494,7 +497,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     internal implementation notes:
     - resources are opened in init methods only (see https://richtercloud.de:446/doku.php?id=programming:java#resource_handling for details)
     */
-    public DocumentScanner(DocumentScannerConf documentScannerConf) throws BinaryNotFoundException, IOException, StorageCreationException, ImageWrapperStorageDirExistsException {
+    public DocumentScanner(DocumentScannerConf documentScannerConf) throws BinaryNotFoundException, IOException, StorageCreationException, ImageWrapperStorageDirExistsException, QueryHistoryEntryStorageCreationException {
         this.documentScannerConf = documentScannerConf;
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
         ch.qos.logback.classic.Logger rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
@@ -543,6 +546,12 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
 
         this.amountMoneyExchangeRetrieverInitThread.start();
         this.cachingImageWrapperInitThread.start();
+
+        this.entryStorageFactory = new DocumentScannerFileQueryHistoryEntryStorageFactory(documentScannerConf.getQueryHistoryEntryStorageFile(),
+                ENTITY_CLASSES,
+                false,
+                messageHandler);
+        this.entryStorage = entryStorageFactory.create();
 
         StorageConf storageConf = documentScannerConf.getStorageConf();
         assert storageConf instanceof AbstractPersistenceStorageConf;
@@ -602,7 +611,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                     messageHandler,
                     BIDIRECTIONAL_HELP_DIALOG_TITLE,
                     queryComponentFieldInitializer,
-                    initialQueryTextGenerator,
+                    entryStorage,
                     readOnlyFieldRetriever));
         //listen to window close button (x)
         this.addWindowListener(new WindowAdapter() {
@@ -645,7 +654,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 idApplier,
                 warningHandlers,
                 queryComponentFieldInitializer,
-                initialQueryTextGenerator,
+                entryStorage,
                 reflectionFormBuilderFieldRetriever,
                 readOnlyFieldRetriever
         );
@@ -1015,7 +1024,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 idApplier,
                 warningHandlers,
                 queryComponentFieldInitializer,
-                initialQueryTextGenerator,
+                entryStorage,
                 readOnlyFieldRetriever);
         entityEditingDialog.setVisible(true); //blocks
         List<Object> selectedEntities = entityEditingDialog.getSelectedEntities();

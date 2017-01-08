@@ -50,13 +50,13 @@ import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.FieldRetriever;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
-import richtercloud.reflection.form.builder.jpa.panels.InitialQueryTextGenerator;
+import richtercloud.reflection.form.builder.jpa.panels.QueryHistoryEntryStorage;
 import richtercloud.reflection.form.builder.jpa.panels.QueryListPanel;
+import richtercloud.reflection.form.builder.jpa.storage.FieldInitializer;
 import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 import richtercloud.reflection.form.builder.panels.ListPanelItemEvent;
 import richtercloud.reflection.form.builder.panels.ListPanelItemEventVetoException;
 import richtercloud.reflection.form.builder.panels.ListPanelItemListener;
-import richtercloud.reflection.form.builder.jpa.storage.FieldInitializer;
 
 /**
  * Allows to set in-reply-to relationship of {@link CommunicationItem} with
@@ -102,7 +102,7 @@ public class WorkflowItemTreePanel extends JPanel {
     private final IdApplier idApplier;
     private final Map<Class<?>, WarningHandler<?>> warningHandlers;
     private final FieldInitializer fieldInitializer;
-    private final InitialQueryTextGenerator initialQueryTextGenerator;
+    private final QueryHistoryEntryStorage entryStorage;
     private final FieldRetriever fieldRetriever;
 
     /**
@@ -129,7 +129,7 @@ public class WorkflowItemTreePanel extends JPanel {
             IdApplier idApplier,
             Map<Class<?>, WarningHandler<?>> warningHandlers,
             FieldInitializer fieldInitializer,
-            InitialQueryTextGenerator initialQueryTextGenerator) throws IllegalArgumentException, IllegalAccessException {
+            QueryHistoryEntryStorage entryStorage) throws IllegalArgumentException, IllegalAccessException {
         this.entityClasses = entityClasses;
         this.primaryClassSelection = primaryClassSelection;
         this.storage = storage;
@@ -142,7 +142,7 @@ public class WorkflowItemTreePanel extends JPanel {
         this.idApplier = idApplier;
         this.warningHandlers = warningHandlers;
         this.fieldInitializer = fieldInitializer;
-        this.initialQueryTextGenerator = initialQueryTextGenerator;
+        this.entryStorage = entryStorage;
         this.fieldRetriever = fieldRetriever;
         this.queryListPanel = new QueryListPanel<>(storage,
                 fieldRetriever,
@@ -153,7 +153,7 @@ public class WorkflowItemTreePanel extends JPanel {
                         DocumentScanner.APP_NAME,
                         DocumentScanner.APP_VERSION),
                 fieldInitializer,
-                initialQueryTextGenerator);
+                entryStorage);
         communicationTree.setModel(communicationTreeModel);
 
         initTreeModel(initialValue);
@@ -173,7 +173,7 @@ public class WorkflowItemTreePanel extends JPanel {
                                     WorkflowItemTreePanel.this.idApplier,
                                     WorkflowItemTreePanel.this.warningHandlers,
                                     WorkflowItemTreePanel.this.fieldInitializer,
-                                    WorkflowItemTreePanel.this.initialQueryTextGenerator,
+                                    WorkflowItemTreePanel.this.entryStorage,
                                     WorkflowItemTreePanel.this.fieldRetriever
                             );
                             entityEditingDialog.setVisible(true);

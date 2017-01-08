@@ -14,17 +14,20 @@
  */
 package richtercloud.document.scanner.gui;
 
+import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import richtercloud.document.scanner.model.Identifiable;
-import richtercloud.reflection.form.builder.jpa.panels.DefaultInitialQueryTextGenerator;
-import richtercloud.reflection.form.builder.jpa.panels.InitialQueryTextGenerator;
+import richtercloud.message.handler.MessageHandler;
+import richtercloud.reflection.form.builder.jpa.panels.XMLFileQueryHistoryEntryStorageFactory;
+import richtercloud.reflection.form.builder.jpa.panels.QueryHistoryEntryStorageFactory;
 
 /**
  *
  * @author richter
  */
-public class DocumentScannerInitialQueryTextGenerator extends DefaultInitialQueryTextGenerator {
+public class DocumentScannerFileQueryHistoryEntryStorageFactory extends XMLFileQueryHistoryEntryStorageFactory {
     private final static String LAST_LOADED_FIELD_NAME;
     static {
         //assert that the field exists/hasn't been renamed
@@ -35,7 +38,14 @@ public class DocumentScannerInitialQueryTextGenerator extends DefaultInitialQuer
         }
     }
 
-    public DocumentScannerInitialQueryTextGenerator() {
+    public DocumentScannerFileQueryHistoryEntryStorageFactory(File file,
+            Set<Class<?>> entityClasses,
+            boolean forbidSubtypes,
+            MessageHandler messageHandler) {
+        super(file,
+                entityClasses,
+                forbidSubtypes,
+                messageHandler);
     }
 
     @Override
@@ -47,7 +57,7 @@ public class DocumentScannerInitialQueryTextGenerator extends DefaultInitialQuer
         for(String superRetValue : superRetValues) {
             if(!superRetValue.contains("order by")) {
                 String retValue = superRetValue.concat(String.format(" ORDER BY %s.%s DESC",
-                        InitialQueryTextGenerator.generateEntityClassQueryIdentifier(entityClass),
+                        QueryHistoryEntryStorageFactory.generateEntityClassQueryIdentifier(entityClass),
                         LAST_LOADED_FIELD_NAME));
                     //have the last modified at top of the list (avoids scrolling)
                 retValues.add(retValue);
