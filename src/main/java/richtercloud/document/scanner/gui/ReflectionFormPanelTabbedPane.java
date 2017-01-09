@@ -30,6 +30,8 @@ import javax.swing.event.ChangeEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.ifaces.Constants;
+import richtercloud.message.handler.Message;
+import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.reflection.form.builder.ReflectionFormPanel;
 import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
@@ -59,6 +61,7 @@ public class ReflectionFormPanelTabbedPane extends JTabbedPane {
     private final Class<?> primaryClassSelection;
     private final JPAReflectionFormBuilder reflectionFormBuilder;
     private final FieldHandler fieldHandler;
+    private final MessageHandler messageHandler;
 
     /**
      * Creates a {@code ReflectionFormPanelTabbedPane} with lazy loading tabs
@@ -77,11 +80,13 @@ public class ReflectionFormPanelTabbedPane extends JTabbedPane {
             Class<?> primaryClassSelection,
             Object entityToEdit,
             JPAReflectionFormBuilder reflectionFormBuilder,
-            FieldHandler fieldHandler) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, FieldHandlingException {
+            FieldHandler fieldHandler,
+            MessageHandler messageHandler) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, FieldHandlingException {
         this.entityClasses = entityClasses;
         this.primaryClassSelection = primaryClassSelection;
         this.reflectionFormBuilder = reflectionFormBuilder;
         this.fieldHandler = fieldHandler;
+        this.messageHandler = messageHandler;
         int i=0;
         for(Class<?> entityClass : Tools.sortEntityClasses(entityClasses)) {
             indexClassMap.put(i,
@@ -164,13 +169,10 @@ public class ReflectionFormPanelTabbedPane extends JTabbedPane {
             } catch (FieldHandlingException ex) {
                 String message = String.format("An exception during creation of components occured (details: %s)",
                         ex.getMessage());
-                JOptionPane.showMessageDialog(ReflectionFormPanelTabbedPane.this,
-                        message,
-                        DocumentScanner.generateApplicationWindowTitle("Exception",
-                                DocumentScanner.APP_NAME,
-                                DocumentScanner.APP_VERSION),
-                        JOptionPane.WARNING_MESSAGE);
                 LOGGER.error(message, ex);
+                messageHandler.handle(new Message(message,
+                        JOptionPane.ERROR_MESSAGE,
+                        "Component creation failed"));
                 throw new RuntimeException(ex);
             } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException ex) {
                 throw new RuntimeException(ex);

@@ -258,12 +258,14 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private final AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever = new FailsafeAmountMoneyExchangeRateRetriever();
     private final TagStorage tagStorage;
     private final Map<java.lang.reflect.Type, TypeHandler<?, ?,?, ?>> typeHandlerMapping;
-    private final MessageHandler messageHandler = new DialogMessageHandler(this);
+    private final MessageHandler messageHandler = new DialogMessageHandler(this,
+            "", //titlePrefix
+            String.format("- %s %s", APP_NAME, APP_VERSION));
     private final JavaFXDialogMessageHandler javaFXDialogMessageHandler = new JavaFXDialogMessageHandler();
     private final ConfirmMessageHandler confirmMessageHandler = new DialogConfirmMessageHandler(this);
     private final Map<Class<?>, WarningHandler<?>> warningHandlers = new HashMap<>();
     public final static int INITIAL_QUERY_LIMIT_DEFAULT = 20;
-    public final static String BIDIRECTIONAL_HELP_DIALOG_TITLE = generateApplicationWindowTitle("Bidirectional relations help", APP_NAME, APP_VERSION);
+    public final static String BIDIRECTIONAL_HELP_DIALOG_TITLE = "Bidirectional relations help";
     static {
         new JFXPanel();
     }
@@ -1029,12 +1031,12 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         entityEditingDialog.setVisible(true); //blocks
         List<Object> selectedEntities = entityEditingDialog.getSelectedEntities();
         if(selectedEntities.size() > SELECTED_ENTITIES_EDIT_WARNING) {
-            int answer = JOptionPane.showConfirmDialog(this,
+            String answer = confirmMessageHandler.confirm(new Message(
                     String.format("More than %d entities are supposed to be opened for editing. This might take a long time. Continue?", SELECTED_ENTITIES_EDIT_WARNING),
-                    DocumentScanner.generateApplicationWindowTitle("Open documents?", APP_NAME, APP_VERSION),
-                    JOptionPane.YES_NO_OPTION,
-                    JOptionPane.WARNING_MESSAGE);
-            if(answer != JOptionPane.NO_OPTION) {
+                    JOptionPane.QUESTION_MESSAGE,
+                    "Open documents?"),
+                    "Yes", "No");
+            if(!answer.equals("Yes")) {
                 return;
             }
         }
@@ -1118,13 +1120,13 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 return;
             }
             if(selectedFile.exists()) {
-                int answer = JOptionPane.showConfirmDialog(this, //parentComponent
+                String answer = confirmMessageHandler.confirm(new Message(
                         String.format("selected file '%s' exists. Overwrite?",
                                 selectedFile.getName()),
-                        "File exists",
-                        JOptionPane.YES_NO_OPTION,
-                        JOptionPane.WARNING_MESSAGE);
-                success = answer == JOptionPane.YES_OPTION;
+                        JOptionPane.WARNING_MESSAGE,
+                        "File exists"),
+                        "Yes", "No");
+                success = answer.equals("Yes");
             }else {
                 success = true;
             }
@@ -1229,8 +1231,9 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 DocumentScanner.generateApplicationWindowTitle("Scanning",
                         DocumentScanner.APP_NAME,
                         DocumentScanner.APP_VERSION),
-                "Scanning",
-                "Scanning");
+                "Scanning", //labelText
+                "Scanning" //progressBarText
+        );
         SwingWorkerCompletionWaiter swingWorkerCompletionWaiter = new SwingWorkerCompletionWaiter(dialog);
         SwingWorker<List<ImageWrapper>, Void> worker = new SwingWorker<List<ImageWrapper>, Void>() {
             @Override
@@ -1455,10 +1458,10 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 } catch (BinaryNotFoundException ex) {
                     String message = "The tesseract binary isn't available. Install it on your system and make sure it's executable (in doubt check if tesseract runs on the console)";
                     LOGGER.error(message);
-                    JOptionPane.showMessageDialog(null, //parent
+                    messageHandler.handle(new Message(
                             message,
-                            DocumentScanner.generateApplicationWindowTitle("tesseract binary missing", APP_NAME, APP_VERSION),
-                            JOptionPane.ERROR_MESSAGE);
+                            JOptionPane.ERROR_MESSAGE,
+                            "tesseract binary missing"));
                     if(documentScanner != null) {
                         documentScanner.setVisible(false);
                         documentScanner.close();
@@ -1467,7 +1470,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                     }
                 } catch(StorageConfValidationException | StorageCreationException ex) {
                     LOGGER.error("An unexpected exception during initialization of storage occured, see nested exception for details", ex);
-                    messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+                    messageHandler.handle(new Message(ex,
+                            JOptionPane.ERROR_MESSAGE));
                     if(documentScanner != null) {
                         documentScanner.setVisible(false);
                         documentScanner.close();
@@ -1477,10 +1481,10 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 } catch(Exception ex) {
                     String message = String.format("The unexpected exception '%s' occured", ExceptionUtils.getRootCauseMessage(ex));
                     LOGGER.error(message, ex);
-                    JOptionPane.showMessageDialog(null, //parent
-                            message,
-                            DocumentScanner.generateApplicationWindowTitle("unexpected exception occurred", APP_NAME, APP_VERSION),
-                            JOptionPane.ERROR_MESSAGE);
+                    messageHandler.handle(new Message(message,
+                            JOptionPane.ERROR_MESSAGE,
+                            "unexpected exception occurred"
+                    ));
                     if(documentScanner != null) {
                         documentScanner.setVisible(false);
                         documentScanner.close();

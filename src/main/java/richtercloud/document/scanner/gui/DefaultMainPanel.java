@@ -70,7 +70,6 @@ import static richtercloud.document.scanner.gui.DocumentScanner.APP_NAME;
 import static richtercloud.document.scanner.gui.DocumentScanner.APP_VERSION;
 import static richtercloud.document.scanner.gui.DocumentScanner.BIDIRECTIONAL_HELP_DIALOG_TITLE;
 import static richtercloud.document.scanner.gui.DocumentScanner.INITIAL_QUERY_LIMIT_DEFAULT;
-import static richtercloud.document.scanner.gui.DocumentScanner.generateApplicationWindowTitle;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.ifaces.DocumentAddException;
 import richtercloud.document.scanner.ifaces.EntityPanel;
@@ -292,9 +291,7 @@ public class DefaultMainPanel extends MainPanel {
         this.reflectionFormBuilderFieldRetriever = reflectionFormBuilderFieldRetriever;
         this.readOnlyFieldRetriever = readOnlyFieldRetriever;
         this.reflectionFormBuilder = new AutoOCRValueDetectionReflectionFormBuilder(storage,
-                DocumentScanner.generateApplicationWindowTitle("Field description",
-                        DocumentScanner.APP_NAME,
-                        DocumentScanner.APP_VERSION),
+                "Field description",
                 messageHandler,
                 confirmMessageHandler,
                 reflectionFormBuilderFieldRetriever,
@@ -728,7 +725,8 @@ public class DefaultMainPanel extends MainPanel {
                     primaryClassSelection0,
                     entityToEdit,
                     reflectionFormBuilder,
-                    fieldHandler);
+                    fieldHandler,
+                    messageHandler);
 
             OCRPanel oCRPanel = new DefaultOCRPanel(entityClasses0,
                     reflectionFormPanelTabbedPane,
@@ -777,17 +775,14 @@ public class DefaultMainPanel extends MainPanel {
             if(progressMonitor != null) {
                 progressMonitor.close();
             }
-            JOptionPane.showMessageDialog(DefaultMainPanel.this, //parentComponent
-                    String.format("<html>%s. Please consider filing a "
-                            + "bug at <a href=\"%s\">%s</a>. Stacktrace: %s</html>",
-                            message,
-                            DocumentScanner.BUG_URL,
-                            DocumentScanner.BUG_URL,
-                            ExceptionUtils.getFullStackTrace(ex)),
-                    generateApplicationWindowTitle("An exception occured",
-                            APP_NAME,
-                            APP_VERSION),
-                    JOptionPane.ERROR_MESSAGE);
+            messageHandler.handle(new Message(String.format("<html>%s. Please consider filing a "
+                    + "bug at <a href=\"%s\">%s</a>. Stacktrace: %s</html>",
+                    message,
+                    DocumentScanner.BUG_URL,
+                    DocumentScanner.BUG_URL,
+                    ExceptionUtils.getFullStackTrace(ex)),
+                    JOptionPane.ERROR_MESSAGE,
+                    "An exception occured"));
         }
         return retValue;
     }

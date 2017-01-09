@@ -94,6 +94,7 @@ public class EntityEditingDialog extends javax.swing.JDialog {
     */
     private final Map<Class<?>, QueryPanel<Object>> entityEditingQueryPanelCache = new HashMap<>();
     private final MessageHandler messageHandler;
+    private final ConfirmMessageHandler confirmMessageHandler;
     private final FieldInitializer fieldInitializer;
     private final QueryHistoryEntryStorage entryStorage;
 
@@ -111,6 +112,7 @@ public class EntityEditingDialog extends javax.swing.JDialog {
         super(parent,
                 ModalityType.APPLICATION_MODAL);
         this.messageHandler = messageHandler;
+        this.confirmMessageHandler = confirmMessageHandler;
         this.storage = storage;
         this.fieldInitializer = fieldInitializer;
         this.entryStorage = entryStorage;
@@ -305,14 +307,12 @@ public class EntityEditingDialog extends javax.swing.JDialog {
     }//GEN-LAST:event_editButtonActionPerformed
 
     private void deleteButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteButtonActionPerformed
-        int answer = JOptionPane.showConfirmDialog(this,
+        String answer = confirmMessageHandler.confirm(new Message(
                 "Do you really want to delete all selected entities?",
-                DocumentScanner.generateApplicationWindowTitle("Delete entities",
-                        DocumentScanner.APP_NAME,
-                        DocumentScanner.APP_VERSION),
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.WARNING_MESSAGE);
-        if(answer == JOptionPane.YES_OPTION) {
+                JOptionPane.QUESTION_MESSAGE,
+                "Delete entities"),
+                "Yes", "No");
+        if(answer.equals("Yes")) {
             List<Object> selectedEntities = this.entityEditingQueryPanel.getSelectedObjects();
             for(Object selectedEntity : selectedEntities) {
                 try {
