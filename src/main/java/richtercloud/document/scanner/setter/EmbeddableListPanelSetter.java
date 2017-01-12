@@ -17,6 +17,7 @@ package richtercloud.document.scanner.setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.ocrresult.OCRResult;
+import richtercloud.reflection.form.builder.TransformationException;
 import richtercloud.reflection.form.builder.jpa.panels.EmbeddableListPanel;
 
 /**
@@ -33,7 +34,7 @@ public class EmbeddableListPanelSetter implements ValueSetter<Object, Embeddable
 
     @Override
     public void setValue(Object value,
-            EmbeddableListPanel comp) {
+            EmbeddableListPanel comp) throws TransformationException {
         comp.addValue(value);
     }
 

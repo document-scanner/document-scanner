@@ -22,15 +22,19 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.components.AutoOCRValueDetectionPanel;
 import richtercloud.document.scanner.gui.ocrresult.OCRResult;
 import richtercloud.document.scanner.setter.ValueSetter;
+import richtercloud.message.handler.Message;
+import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.reflection.form.builder.FieldInfo;
 import richtercloud.reflection.form.builder.FieldRetriever;
 import richtercloud.reflection.form.builder.ReflectionFormPanel;
+import richtercloud.reflection.form.builder.TransformationException;
 
 /**
  * A {@link JMenu} which permits lazy loading of contained items representing
@@ -40,17 +44,26 @@ import richtercloud.reflection.form.builder.ReflectionFormPanel;
 public class EntityClassMenu extends JMenu {
     private static final long serialVersionUID = 1L;
     private final static Logger LOGGER = LoggerFactory.getLogger(EntityClassMenu.class);
+    private final MessageHandler messageHandler;
 
     public EntityClassMenu(Class<?> entityClass,
             FieldRetriever fieldRetriever,
             ReflectionFormPanelTabbedPane reflectionFormPanelTabbedPane,
             Map<Class<? extends JComponent>, ValueSetter<?, ?>> valueSetterMapping,
-            AbstractFieldPopupMenuFactory fieldPopupMenuFactory) {
+            AbstractFieldPopupMenuFactory fieldPopupMenuFactory,
+            MessageHandler messageHandler) {
         super(findClassName(entityClass));
+        this.messageHandler = messageHandler;
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                ReflectionFormPanel reflectionFormPanel = reflectionFormPanelTabbedPane.getReflectionFormPanel(entityClass);
+                ReflectionFormPanel reflectionFormPanel;
+                try {
+                    reflectionFormPanel = reflectionFormPanelTabbedPane.getReflectionFormPanel(entityClass);
+                } catch (TransformationException ex) {
+                    EntityClassMenu.this.messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+                    return;
+                }
                 List<Field> relevantFields = fieldRetriever.retrieveRelevantFields(entityClass);
                 for(Field relevantField : relevantFields) {
                     JComponent relevantFieldComponent = reflectionFormPanel.getComponentByField(relevantField);

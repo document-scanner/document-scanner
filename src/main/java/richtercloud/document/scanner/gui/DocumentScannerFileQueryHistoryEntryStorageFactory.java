@@ -28,11 +28,11 @@ import richtercloud.reflection.form.builder.jpa.panels.QueryHistoryEntryStorageF
  * @author richter
  */
 public class DocumentScannerFileQueryHistoryEntryStorageFactory extends XMLFileQueryHistoryEntryStorageFactory {
-    private final static String LAST_LOADED_FIELD_NAME;
+    private final static String LAST_USED_FIELD_NAME;
     static {
         //assert that the field exists/hasn't been renamed
         try {
-            LAST_LOADED_FIELD_NAME = Identifiable.class.getDeclaredField("lastLoaded").getName();
+            LAST_USED_FIELD_NAME = Identifiable.class.getDeclaredField("lastUsed").getName();
         } catch (NoSuchFieldException | SecurityException ex) {
             throw new ExceptionInInitializerError(ex);
         }
@@ -58,7 +58,7 @@ public class DocumentScannerFileQueryHistoryEntryStorageFactory extends XMLFileQ
             if(!superRetValue.contains("order by")) {
                 String retValue = superRetValue.concat(String.format(" ORDER BY %s.%s DESC",
                         QueryHistoryEntryStorageFactory.generateEntityClassQueryIdentifier(entityClass),
-                        LAST_LOADED_FIELD_NAME));
+                        LAST_USED_FIELD_NAME));
                     //have the last modified at top of the list (avoids scrolling)
                 retValues.add(retValue);
             }else {

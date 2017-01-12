@@ -97,6 +97,7 @@ import richtercloud.reflection.form.builder.components.money.AmountMoneyUsageSta
 import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
 import richtercloud.reflection.form.builder.fieldhandler.MappingFieldHandler;
 import richtercloud.reflection.form.builder.fieldhandler.factory.AmountMoneyMappingFieldHandlerFactory;
+import richtercloud.reflection.form.builder.jpa.IdGenerator;
 import richtercloud.reflection.form.builder.jpa.JPACachedFieldRetriever;
 import richtercloud.reflection.form.builder.jpa.JPAFieldRetriever;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
@@ -216,6 +217,7 @@ public class DefaultMainPanel extends MainPanel {
             Window oCRProgressMonitorParent,
             TagStorage tagStorage,
             IdApplier idApplier,
+            IdGenerator idGenerator,
             Map<Class<?>, WarningHandler<?>> warningHandlers,
             FieldInitializer queryComponentFieldInitializer,
             QueryHistoryEntryStorage entryStorage,
@@ -237,6 +239,7 @@ public class DefaultMainPanel extends MainPanel {
                 oCRProgressMonitorParent,
                 tagStorage,
                 idApplier,
+                idGenerator,
                 warningHandlers,
                 queryComponentFieldInitializer,
                 entryStorage,
@@ -260,6 +263,7 @@ public class DefaultMainPanel extends MainPanel {
             Window oCRProgressMonitorParent,
             TagStorage tagStorage,
             IdApplier idApplier,
+            IdGenerator idGenerator,
             Map<Class<?>, WarningHandler<?>> warningHandlers,
             FieldInitializer queryComponentFieldInitializer,
             QueryHistoryEntryStorage entryStorage,
@@ -296,6 +300,7 @@ public class DefaultMainPanel extends MainPanel {
                 confirmMessageHandler,
                 reflectionFormBuilderFieldRetriever,
                 idApplier,
+                idGenerator,
                 warningHandlers,
                 valueSetterMapping);
         this.entryStorage = entryStorage;

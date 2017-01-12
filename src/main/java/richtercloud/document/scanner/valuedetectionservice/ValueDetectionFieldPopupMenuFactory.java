@@ -34,7 +34,8 @@ public class ValueDetectionFieldPopupMenuFactory extends AbstractFieldPopupMenuF
     public ValueDetectionFieldPopupMenuFactory(Object value,
             MessageHandler messageHandler,
             Map<Class<? extends JComponent>, ValueSetter<?, ?>> valueSetterMapping) {
-        super(valueSetterMapping);
+        super(valueSetterMapping,
+                messageHandler);
         this.value = value;
         this.messageHandler = messageHandler;
     }

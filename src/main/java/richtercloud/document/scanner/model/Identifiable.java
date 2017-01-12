@@ -21,11 +21,9 @@ import java.util.Objects;
 import java.util.Set;
 import javax.persistence.ElementCollection;
 import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.MappedSuperclass;
-import javax.persistence.PostLoad;
 import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.Temporal;
@@ -33,6 +31,7 @@ import javax.persistence.TemporalType;
 import richtercloud.document.scanner.components.annotations.Invisible;
 import richtercloud.document.scanner.components.annotations.Tags;
 import richtercloud.reflection.form.builder.FieldInfo;
+import richtercloud.reflection.form.builder.jpa.annotations.UsedUpdate;
 
 /**
  * A superclass for all entities which allows management of {@link Id} annotated
@@ -47,6 +46,11 @@ import richtercloud.reflection.form.builder.FieldInfo;
  * @author richter
  */
 /*
+internal implementation notes:
+- Since there're entities which don't have properties which allow to use them
+as a business key, IDs will be manually assigned using IdGenerator. Assignment
+is enforced in constructor.
+obsolete:
 - In order to provide a common super type for entities and embeddables which
 don't need an id the generation of an id is moved to SelfIdentifiable -> this
 requires passing down a type for the root entity or embeddable because it needs
@@ -60,18 +64,13 @@ code gets very ugly and duplicating the hierarchy manually is an inacceptable
 source of mistakes) -> keep the factory code in a central factory class (which
 is IdGenerator and subclasses) and manage dependencies of id generation there
 and only there.
-- Switching to @GeneratedValue caused the storage of entities with identical
-important properties to be possible (e.g. two companies with the same name).
-This is fine if it's handled well (including warnings for the user and internal
-checks). The switch should have been documented which apparently isn't the case.
- */
+*/
 @MappedSuperclass
 @Inheritance
 public abstract class Identifiable implements Serializable {
 
     private static final long serialVersionUID = 1L;
     @Id
-    @GeneratedValue
     @FieldInfo(name = "ID", description = "The unique ID used for storage in the database (automatic and save generation is supported by components)")
     /*
     internal implementation notes:
@@ -93,50 +92,33 @@ public abstract class Identifiable implements Serializable {
     */
     private Set<String> tags = new HashSet<>();
     /**
-     * The timestamp when the entity was last modified. Updated automatically by
-     * JPA provider via {@link PrePersist} and {@link PreUpdate} hook.
+     * The timestamp when the entity was last modified or used as a reference.
+     * Updated automatically by JPA provider via {@link PrePersist},
+     * {@link PreUpdate} and {@code PostLoad} hook.
      */
+    @Temporal(TemporalType.TIMESTAMP)
+    @Invisible
+    @FieldInfo(name = "Last used", description = "When the entity was last modified/written to storage or used in a relationship")
     /*
     internal implementation notes:
     - Is a java.util.Date because otherwise weaving with Eclipselink 2.6.4 fails
     due to `org.eclipse.persistence.exceptions.ValidationException
-Exception Description: The type [class java.sql.Timestamp] for the attribute [lastModified] on the entity class [class richtercloud.document.scanner.model.Identifiable] is not a valid type for a temporal mapping. The attribute must be defined as java.util.Date or java.util.Calendar.`
+Exception Description: The type [class java.sql.Timestamp] for the attribute [lastUsed] on the entity class [class richtercloud.document.scanner.model.Identifiable] is not a valid type for a temporal mapping. The attribute must be defined as java.util.Date or java.util.Calendar.`
     Don't annotate with richtercloud.reflection.form.builder.annotations.Skip
     because the value should still appear in query component tables (like ID,
     but it shouldn't be editable -> omit in DocumentScannerFieldHandler via
     Invisible annotation)
     */
-    @Temporal(TemporalType.TIMESTAMP)
-    @Invisible
-    @FieldInfo(name = "Last modified", description = "When the entity was last modified/written to storage")
-    private Date lastModified;
-    /**
-     * The timestamp when the entity was last used as a reference. Updated
-     * automatically by JPA provider via {@link PrePersist} and
-     * {@link PreUpdate} hook.
-     */
-    @Temporal(TemporalType.TIMESTAMP)
-    @Invisible
-    @FieldInfo(name = "Last loaded", description = "When the entity was last loaded/read from the storage")
-    private Date lastLoaded;
+    private Date lastUsed;
 
     protected Identifiable() {
     }
 
-    /**
-     * {@link PrePersist} and {@link PreUpdate} JPA callback updating the
-     * {@code lastModified} timestamp. Will be called through reflection only by
-     * JPA provider.
-     */
     @PrePersist
     @PreUpdate
-    private void updateTimestamp() {
-        this.lastModified = new Date(System.currentTimeMillis());
-    }
-
-    @PostLoad
-    private void updateLastLoadedTimestamp() {
-        this.lastLoaded = new Date(System.currentTimeMillis());
+    @UsedUpdate
+    private void updateLastModifiedTimestamp() {
+        this.lastUsed = new Date(System.currentTimeMillis());
     }
 
     public Long getId() {
@@ -159,20 +141,12 @@ Exception Description: The type [class java.sql.Timestamp] for the attribute [la
         this.tags = tags;
     }
 
-    public Date getLastModified() {
-        return lastModified;
+    protected Date getLastUsed() {
+        return lastUsed;
     }
 
-    protected void setLastModified(Date lastModified) {
-        this.lastModified = lastModified;
-    }
-
-    public Date getLastLoaded() {
-        return lastLoaded;
-    }
-
-    protected void setLastLoaded(Date lastLoaded) {
-        this.lastLoaded = lastLoaded;
+    protected void setLastUsed(Date lastUsed) {
+        this.lastUsed = lastUsed;
     }
 
     /**

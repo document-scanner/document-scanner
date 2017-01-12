@@ -24,12 +24,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import javax.persistence.Id;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.GroupLayout;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.ListCellRenderer;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -37,9 +39,12 @@ import org.apache.commons.lang3.tuple.Pair;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionResult;
 import richtercloud.message.handler.ConfirmMessageHandler;
+import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
+import richtercloud.reflection.form.builder.TransformationException;
 import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
 import richtercloud.reflection.form.builder.fieldhandler.FieldHandlingException;
+import richtercloud.reflection.form.builder.jpa.IdGenerator;
 import richtercloud.reflection.form.builder.jpa.JPAFieldRetriever;
 import richtercloud.reflection.form.builder.jpa.JPAReflectionFormBuilder;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
@@ -73,6 +78,7 @@ public class AutoOCRValueDetectionReflectionFormBuilder extends JPAReflectionFor
             ConfirmMessageHandler confirmMessageHandler,
             JPAFieldRetriever fieldRetriever,
             IdApplier idApplier,
+            IdGenerator idGenerator,
             Map<Class<?>, WarningHandler<?>> warningHandlers,
             Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping) {
         super(storage,
@@ -81,6 +87,7 @@ public class AutoOCRValueDetectionReflectionFormBuilder extends JPAReflectionFor
                 confirmMessageHandler,
                 fieldRetriever,
                 idApplier,
+                idGenerator,
                 warningHandlers);
         this.valueSetterMapping = valueSetterMapping;
     }
@@ -157,7 +164,11 @@ public class AutoOCRValueDetectionReflectionFormBuilder extends JPAReflectionFor
                     if(valueSetter == null) {
                         throw new IllegalArgumentException(String.format("no %s mapped to component class %s", ValueSetter.class, classComponent.getClass()));
                     }
-                    valueSetter.setValue(detectionResult.getValue(), classComponent);
+                    try {
+                        valueSetter.setValue(detectionResult.getValue(), classComponent);
+                    } catch (TransformationException ex) {
+                        getMessageHandler().handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+                    }
 
                     //set the combobox back to null in order to avoid the
                     //impression that it reflects the state of the component
@@ -179,7 +190,13 @@ public class AutoOCRValueDetectionReflectionFormBuilder extends JPAReflectionFor
         Pair<Class, Field> pair = new ImmutablePair<>(entityClass, field);
         comboBoxModelMap.put(pair, comboBoxModel);
         autoOCRValueDetectionPanels.add(autoOCRValueDetectionPanel);
+        if(field.getAnnotation(Id.class) != null) {
+            getIdFieldComponentMap().remove(instance);
+                //remove mapped LongIdPanel which is contained in retValue
+            registerIdFieldComponent(instance,
+                    retValue);
+                //overwrite mapping for instance
+        }
         return retValue;
     }
-
 }

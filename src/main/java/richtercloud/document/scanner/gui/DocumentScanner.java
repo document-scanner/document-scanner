@@ -64,6 +64,7 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.jscience.economics.money.Currency;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.components.AutoOCRValueDetectionPanel;
 import richtercloud.document.scanner.components.tag.FileTagStorage;
 import richtercloud.document.scanner.components.tag.TagStorage;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
@@ -133,10 +134,12 @@ import richtercloud.reflection.form.builder.components.money.AmountMoneyUsageSta
 import richtercloud.reflection.form.builder.components.money.FailsafeAmountMoneyExchangeRateRetriever;
 import richtercloud.reflection.form.builder.components.money.FileAmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.money.FileAmountMoneyUsageStatisticsStorage;
+import richtercloud.reflection.form.builder.jpa.IdGenerationException;
+import richtercloud.reflection.form.builder.jpa.IdGenerator;
 import richtercloud.reflection.form.builder.jpa.JPACachedFieldRetriever;
 import richtercloud.reflection.form.builder.jpa.JPAFieldRetriever;
+import richtercloud.reflection.form.builder.jpa.SequentialIdGenerator;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
-import richtercloud.reflection.form.builder.jpa.idapplier.GeneratedValueIdApplier;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
 import richtercloud.reflection.form.builder.jpa.panels.EmbeddableListPanel;
 import richtercloud.reflection.form.builder.jpa.panels.LongIdPanel;
@@ -144,6 +147,8 @@ import richtercloud.reflection.form.builder.jpa.panels.QueryHistoryEntryStorage;
 import richtercloud.reflection.form.builder.jpa.panels.QueryHistoryEntryStorageCreationException;
 import richtercloud.reflection.form.builder.jpa.panels.QueryHistoryEntryStorageFactory;
 import richtercloud.reflection.form.builder.jpa.panels.StringAutoCompletePanel;
+import richtercloud.reflection.form.builder.jpa.sequence.MySQLSequenceManager;
+import richtercloud.reflection.form.builder.jpa.sequence.SequenceManager;
 import richtercloud.reflection.form.builder.jpa.storage.AbstractPersistenceStorageConf;
 import richtercloud.reflection.form.builder.jpa.storage.DelegatingPersistenceStorageFactory;
 import richtercloud.reflection.form.builder.jpa.storage.FieldInitializer;
@@ -297,7 +302,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             + "saned bug, try <tt>/usr/sbin/saned -d -s -a saned</tt> with "
             + "appropriate privileges in order to restart saned and try again"
             + "</html>";
-    private final IdApplier<?> idApplier = new GeneratedValueIdApplier();
+    private final IdApplier<AutoOCRValueDetectionPanel> idApplier;
+    private final IdGenerator<Long> idGenerator;
     /**
      * If multiple entities are selected in a {@link EntityEditingDialog} it
      * might take a long time to open documents for all of them, so a warning is
@@ -310,6 +316,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 //used for binary data storage in document
             messageHandler,
             fieldRetriever);
+    private final SequenceManager<Long> sequenceManager;
     private final FieldInitializer queryComponentFieldInitializer;
     private final StorageConfCopyFactory storageConfCopyFactory = new DelegatingStorageConfCopyFactory();
     private final QueryHistoryEntryStorageFactory entryStorageFactory;
@@ -499,7 +506,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     internal implementation notes:
     - resources are opened in init methods only (see https://richtercloud.de:446/doku.php?id=programming:java#resource_handling for details)
     */
-    public DocumentScanner(DocumentScannerConf documentScannerConf) throws BinaryNotFoundException, IOException, StorageCreationException, ImageWrapperStorageDirExistsException, QueryHistoryEntryStorageCreationException {
+    public DocumentScanner(DocumentScannerConf documentScannerConf) throws BinaryNotFoundException, IOException, StorageCreationException, ImageWrapperStorageDirExistsException, QueryHistoryEntryStorageCreationException, IdGenerationException {
         this.documentScannerConf = documentScannerConf;
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
         ch.qos.logback.classic.Logger rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
@@ -558,6 +565,11 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         StorageConf storageConf = documentScannerConf.getStorageConf();
         assert storageConf instanceof AbstractPersistenceStorageConf;
         this.storage = (PersistenceStorage) delegatingStorageFactory.create(storageConf);
+
+        this.sequenceManager = new MySQLSequenceManager(storage);
+            //after storage initialization
+        this.idGenerator = new SequentialIdGenerator(sequenceManager);
+        this.idApplier = new AutoOCRValueDetectionPanelIdApplier(idGenerator);
 
         OCREngineConf oCREngineConf = documentScannerConf.getoCREngineConf();
         this.oCREngine = oCREngineFactory.create(oCREngineConf);
@@ -654,6 +666,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 this, //oCRProgressMonitorParent
                 tagStorage,
                 idApplier,
+                idGenerator,
                 warningHandlers,
                 queryComponentFieldInitializer,
                 entryStorage,

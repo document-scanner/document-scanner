@@ -33,7 +33,8 @@ public class OCRFieldPopupMenuFactory extends AbstractFieldPopupMenuFactory {
     public OCRFieldPopupMenuFactory(JTextArea oCRResultTextArea,
             MessageHandler messageHandler,
             Map<Class<? extends JComponent>, ValueSetter<?, ?>> valueSetterMapping) {
-        super(valueSetterMapping);
+        super(valueSetterMapping,
+                messageHandler);
         this.oCRResultTextArea = oCRResultTextArea;
         this.messageHandler = messageHandler;
     }

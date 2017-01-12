@@ -16,6 +16,7 @@ package richtercloud.document.scanner.setter;
 
 import javax.swing.JComponent;
 import richtercloud.document.scanner.gui.ocrresult.OCRResult;
+import richtercloud.reflection.form.builder.TransformationException;
 
 /**
  * An interface to handle different setter methods of different
@@ -35,7 +36,7 @@ public interface ValueSetter<V, C extends JComponent> {
 
     void setOCRResult(OCRResult oCRResult, C comp);
 
-    void setValue(V value, C comp);
+    void setValue(V value, C comp) throws TransformationException;
 
     /**
      * Whether or not this setter supports setting of {@link OCRResult} with

@@ -24,6 +24,7 @@ import javax.swing.JMenuItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.setter.ValueSetter;
+import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.FieldRetriever;
 import richtercloud.reflection.form.builder.ReflectionFormPanel;
 
@@ -45,9 +46,12 @@ returns the menu items in order to allow the caller to process them.
 public abstract class AbstractFieldPopupMenuFactory {
     private final static Logger LOGGER = LoggerFactory.getLogger(AbstractFieldPopupMenuFactory.class);
     private final Map<Class<? extends JComponent>, ValueSetter<?, ?>> valueSetterMapping;
+    private final MessageHandler messageHandler;
 
-    public AbstractFieldPopupMenuFactory(Map<Class<? extends JComponent>, ValueSetter<?, ?>> valueSetterMapping) {
+    public AbstractFieldPopupMenuFactory(Map<Class<? extends JComponent>, ValueSetter<?, ?>> valueSetterMapping,
+            MessageHandler messageHandler) {
         this.valueSetterMapping = valueSetterMapping;
+        this.messageHandler = messageHandler;
     }
 
     public Map<Class<? extends JComponent>, ValueSetter<?, ?>> getValueSetterMapping() {
@@ -74,7 +78,8 @@ public abstract class AbstractFieldPopupMenuFactory {
                     fieldRetriever,
                     reflectionFormPanelMap,
                     valueSetterMapping,
-                    this);
+                    this,
+                    messageHandler);
             retValue.add(entityClassMenu);
         }
         return retValue;

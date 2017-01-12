@@ -15,7 +15,6 @@
 package richtercloud.document.scanner.gui;
 
 import java.awt.Component;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,8 +33,8 @@ import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.reflection.form.builder.ReflectionFormPanel;
+import richtercloud.reflection.form.builder.TransformationException;
 import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
-import richtercloud.reflection.form.builder.fieldhandler.FieldHandlingException;
 import richtercloud.reflection.form.builder.jpa.JPAReflectionFormBuilder;
 
 /**
@@ -81,7 +80,7 @@ public class ReflectionFormPanelTabbedPane extends JTabbedPane {
             Object entityToEdit,
             JPAReflectionFormBuilder reflectionFormBuilder,
             FieldHandler fieldHandler,
-            MessageHandler messageHandler) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, FieldHandlingException {
+            MessageHandler messageHandler) throws TransformationException {
         this.entityClasses = entityClasses;
         this.primaryClassSelection = primaryClassSelection;
         this.reflectionFormBuilder = reflectionFormBuilder;
@@ -127,7 +126,17 @@ public class ReflectionFormPanelTabbedPane extends JTabbedPane {
             Class<?> entityClass = indexClassMap.get(selectedIndex);
             assert entityClass != null;
             ReflectionFormPanel selectedTabPanel = classPanelMap.get(entityClass);
-            selectedTabPanel = getReflectionFormPanel(entityClass);
+            try {
+                selectedTabPanel = getReflectionFormPanel(entityClass);
+            } catch (TransformationException ex) {
+                String message = String.format("An exception during creation of components occured (details: %s)",
+                        ex.getMessage());
+                LOGGER.error(message, ex);
+                messageHandler.handle(new Message(message,
+                        JOptionPane.ERROR_MESSAGE,
+                        "Component creation failed"));
+                throw new RuntimeException(ex);
+            }
             JScrollPane reflectionFormPanelScrollPane = createReflectionFormPanelScrollPane(selectedTabPanel);
             this.setComponentAt(selectedIndex,
                     reflectionFormPanelScrollPane);
@@ -155,28 +164,16 @@ public class ReflectionFormPanelTabbedPane extends JTabbedPane {
         return retValue;
     }
 
-    public ReflectionFormPanel getReflectionFormPanel(Class<?> entityClass) {
+    public ReflectionFormPanel getReflectionFormPanel(Class<?> entityClass) throws TransformationException {
         ReflectionFormPanel reflectionFormPanel = classPanelMap.get(entityClass);
         if(reflectionFormPanel == null) {
-            try {
-                reflectionFormPanel = reflectionFormBuilder.transformEntityClass(entityClass,
-                        null, //entityToUpdate
-                        false, //editingMode
-                        fieldHandler
-                );
-                classPanelMap.put(entityClass,
-                        reflectionFormPanel);
-            } catch (FieldHandlingException ex) {
-                String message = String.format("An exception during creation of components occured (details: %s)",
-                        ex.getMessage());
-                LOGGER.error(message, ex);
-                messageHandler.handle(new Message(message,
-                        JOptionPane.ERROR_MESSAGE,
-                        "Component creation failed"));
-                throw new RuntimeException(ex);
-            } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException ex) {
-                throw new RuntimeException(ex);
-            }
+            reflectionFormPanel = reflectionFormBuilder.transformEntityClass(entityClass,
+                    null, //entityToUpdate
+                    false, //editingMode
+                    fieldHandler
+            );
+            classPanelMap.put(entityClass,
+                    reflectionFormPanel);
         }
         return reflectionFormPanel;
     }
