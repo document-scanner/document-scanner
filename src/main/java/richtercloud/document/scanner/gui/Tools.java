@@ -14,10 +14,14 @@
  */
 package richtercloud.document.scanner.gui;
 
+import java.awt.Component;
+import java.awt.Container;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.Set;
 import richtercloud.reflection.form.builder.ClassInfo;
 
@@ -50,6 +54,19 @@ public class Tools {
             }
         });
         return entityClassesSort;
+    }
+
+    public static void disableRecursively(Container container,
+            boolean enable) {
+        Queue<Component> queue = new LinkedList<>(Arrays.asList(container.getComponents()));
+        while(!queue.isEmpty()) {
+            Component head = queue.poll();
+            head.setEnabled(enable);
+            if(head instanceof Container) {
+                Container headCast = (Container) head;
+                queue.addAll(Arrays.asList(headCast.getComponents()));
+            }
+        }
     }
 
     private Tools() {

@@ -22,6 +22,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.gui.Tools;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
@@ -171,7 +172,14 @@ public class ScanResultPanel extends JPanel {
         );
     }// </editor-fold>//GEN-END:initComponents
 
+    /*
+    internal implementation notes:
+    - @TODO: implement cancelation with GUI control on a layer of the component
+    */
     public void save(boolean async) {
+        Tools.disableRecursively(this,
+                false //enable
+        );
         if(!async) {
             saveNonGUI();
             saveGUI();
@@ -181,7 +189,6 @@ public class ScanResultPanel extends JPanel {
                 saveNonGUI();
                 SwingUtilities.invokeLater(() -> {
                     saveGUI();
-                    ScanResultPanel.this.setEnabled(true);
                 });
             },
                     "save-scan-result-thread");
@@ -195,6 +202,9 @@ public class ScanResultPanel extends JPanel {
 
     public void saveGUI() {
         setValue(scanData);
+        Tools.disableRecursively(this,
+                true //enable
+        );
     }
 
     private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveButtonActionPerformed

@@ -21,6 +21,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.gui.Tools;
 import richtercloud.document.scanner.ifaces.OCREngineRecognitionException;
 import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
@@ -35,11 +36,11 @@ public class OCRResultPanel extends JPanel {
     private OCRResultPanelFetcher oCRResultPanelFetcher;
     private final Set<OCRResultPanelUpdateListener> updateListeners = new HashSet<>();
     /**
-     * Whether the OCR recognition process can be canceled with a GUI control
+     * Whether the OCR recognition process will be run in a background thread
      * (currently component is simply disabled while fetching OCR data in
      * background thread).
      */
-    private boolean cancelable = true;
+    private boolean async = true;
     private final MessageHandler messageHandler;
     private final String initialValue;
 
@@ -48,7 +49,7 @@ public class OCRResultPanel extends JPanel {
             MessageHandler messageHandler) {
         this(retriever,
                 initialValue,
-                true,
+                true, //async
                 messageHandler);
     }
 
@@ -57,25 +58,22 @@ public class OCRResultPanel extends JPanel {
      *
      * @param retriever
      * @param initialValue
-     * @param cancelable
+     * @param async
      * @param messageHandler
      */
     /*
     internal implementation notes:
-    - It doesn't make sense to call start in constructor because a dialog needs
-    to be displayed (at least if the OCR recognition is cancelable) which
-    results in weird appearance if the OCRResultPanel isn't added to a parent.
     - a flag to automatically start OCR recognition isn't added here for the
     same reason it's not added to ScanResultPanel
     */
     public OCRResultPanel(OCRResultPanelFetcher retriever,
             String initialValue,
-            boolean cancelable,
+            boolean async,
             MessageHandler messageHandler) {
         this.initComponents();
         this.oCRResultPanelFetcher = retriever;
         this.oCRResultTextArea.setText(initialValue);
-        this.cancelable = cancelable;
+        this.async = async;
         this.initialValue = initialValue;
         this.messageHandler = messageHandler;
         reset0();
@@ -101,8 +99,8 @@ public class OCRResultPanel extends JPanel {
         this.updateListeners.remove(updateListener);
     }
 
-    public boolean isCancelable() {
-        return cancelable;
+    public boolean isAsync() {
+        return async;
     }
 
     private void reset0() {
@@ -170,50 +168,57 @@ public class OCRResultPanel extends JPanel {
      */
     /*
     internal implementation notes:
-    - There's no sense in checking whether OCR has been canceled with something
-    different from the ProgressMonitor because it can only be canceled with the
-    dialog, but a check for null has to be added.
+    - @TODO: implement cancelation with GUI control on a layer of the component
     */
     public void startOCR() {
-        if(!cancelable) {
-            String oCRResult;
-            try {
-                oCRResult = this.oCRResultPanelFetcher.fetch();
-            } catch (OCREngineRecognitionException ex) {
-                messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
-                return;
-            }
-            if(oCRResult != null) {
-                //might be null if fetch has been canceled (this check is
-                //unnecessary for non-cancelable processing, but don't care
-                setValue(oCRResult);
-            }
+        Tools.disableRecursively(this,
+                false //enable
+        );
+        if(!async) {
+            String oCRResult = startOCRNonGUI();
+            startOCRGUI(oCRResult);
         }else {
             Thread oCRThread = new Thread(() -> {
-                String oCRResult;
-                try {
-                    oCRResult = oCRResultPanelFetcher.fetch();
-                } catch (OCREngineRecognitionException ex) {
-                    messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
-                    return;
-                }
+                String oCRResult = startOCRNonGUI();
                 SwingUtilities.invokeLater(() -> {
-                    if(oCRResult != null) {
-                        //might be null if fetch has been canceled (this check is
-                        //unnecessary for non-cancelable processing, but don't care
-                        setValue(oCRResult);
-                        OCRResultPanel.this.oCRResultTextArea.setCaretPosition(0);
-                            //scroll to top after setting value
-                            //from http://stackoverflow.com/questions/291115/java-swing-using-jscrollpane-and-having-it-scroll-back-to-top
-                            //JTextArea.scrollRectToVisible doesn't work
-                    }
-                    OCRResultPanel.this.setEnabled(true);
+                    startOCRGUI(oCRResult);
                 });
             },
                     "ocr-fetch-thread");
-            setEnabled(false);
             oCRThread.start();
         }
+    }
+
+    /**
+     * Fetches the OCR result from {@link oCRResultPanelFetcher} and catches
+     * eventual exceptions.
+     * @return the OCR result or {@code null} iff an exception occured.
+     */
+    private String startOCRNonGUI() {
+        String oCRResult;
+        try {
+            oCRResult = oCRResultPanelFetcher.fetch();
+            assert oCRResult != null;
+        } catch (OCREngineRecognitionException ex) {
+            messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+            return null;
+        }
+        return oCRResult;
+    }
+
+    private void startOCRGUI(String oCRResult) {
+        if(oCRResult != null) {
+            //might be null if fetch has been canceled (this check is
+            //unnecessary for non-async processing, but don't care
+            setValue(oCRResult);
+            OCRResultPanel.this.oCRResultTextArea.setCaretPosition(0);
+                //scroll to top after setting value
+                //from http://stackoverflow.com/questions/291115/java-swing-using-jscrollpane-and-having-it-scroll-back-to-top
+                //JTextArea.scrollRectToVisible doesn't work
+        }
+        Tools.disableRecursively(this,
+                true //enable
+        );
     }
 
     private void oCRResultButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_oCRResultButtonActionPerformed

@@ -37,6 +37,7 @@ public interface ScanResultPanelFetcher {
     /**
      * Fetches binary data from a {@link ScanResultPanel} which is retrieved
      * from internal references (e.g. to {@link OCRSelectPanelPanel}).
+     * @return the fetched binary data, never {@code null}
      */
     List<ImageWrapper> fetch();
 }
