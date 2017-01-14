@@ -87,7 +87,7 @@ public class ScannerResultDialog extends JDialog {
      * @param documentImagePane the currently selected document in
      * {@code documentPane}
      */
-    private static void handleScanResultSelection(List<? extends ImageViewPane> selectedPanes,
+    private void handleScanResultSelection(List<? extends ImageViewPane> selectedPanes,
             List<? extends ImageViewPane> toChecks) {
         for(Node toCheck : toChecks) {
             Pane toCheckPane = (Pane) toCheck;
@@ -97,6 +97,7 @@ public class ScannerResultDialog extends JDialog {
                 toCheckPane.setBorder(BORDER_UNSELECTED);
             }
         }
+        addImagesButton.setDisable(false);
     }
     private float zoomLevel = 1.0f;
     private float zoomMultiplicator = 0.3f;
@@ -120,6 +121,7 @@ public class ScannerResultDialog extends JDialog {
     private final JFXPanel mainPanel = new JFXPanel();
     private final JButton openButton = new JButton("Open documents");
     private final JButton cancelButton = new JButton("Cancel");
+    private final Button addImagesButton = new Button("Add to document");
     /**
      * The result of the dialog. {@code null} indicates that the dialog has been
      * canceled.
@@ -203,7 +205,6 @@ public class ScannerResultDialog extends JDialog {
             leftPane.setPadding(new Insets(10));
             Button addDocumentButton = new Button("New document");
             Button removeDocumentButton = new Button("Remove document");
-            Button addImagesButton = new Button("Add to document");
             leftPane.setCenter(documentPaneScrollPane);
             GridPane buttonPaneTop = new GridPane();
             GridPane buttonPaneLeft = new GridPane();
@@ -213,6 +214,7 @@ public class ScannerResultDialog extends JDialog {
             buttonPaneLeft.add(removeDocumentButton, 1, 0);
             buttonPaneLeft.add(addImagesButton, 2, 0);
             leftPane.setBottom(buttonPaneLeft);
+            addImagesButton.setDisable(true);
             addDocumentButton.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
                 @Override
                 public void handle(MouseEvent event) {
@@ -272,6 +274,8 @@ public class ScannerResultDialog extends JDialog {
                             SCAN_RESULT_ADD_MODE_SCAN_ORDER,
                             SCAN_RESULT_ADD_MODE_SELECTION_ORDER));
                 }
+                assert !selectedScanResults.isEmpty();
+                    //should be avoided by dis- and enabling of addImagesButton
                 for(ScanResultViewPane selectedScanResult : selectedScanResults) {
                     //...and add to selected document in document pane
                     try {
@@ -300,6 +304,9 @@ public class ScannerResultDialog extends JDialog {
                 scanResultPaneScrollPane.setVvalue(scanResultPaneScrollPaneVValue);
                     //scroll to the beginning of the first added document
                 scanResultPaneScrollPane.layout();
+
+                //scanResultPane.getSelectedScanResults() is empty now
+                addImagesButton.setDisable(true);
             });
 
             for(ImageWrapper scanResultImage : initialScanResultImages) {
