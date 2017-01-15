@@ -82,23 +82,14 @@ public class ScannerResultDialog extends JDialog {
             CornerRadii.EMPTY,
             BorderWidths.DEFAULT));
     /**
-     *
-     * @param documentPane the pane containing the document collection elements
-     * @param documentImagePane the currently selected document in
-     * {@code documentPane}
+     * Add scan results in the order of selection.
      */
-    private void handleScanResultSelection(List<? extends ImageViewPane> selectedPanes,
-            List<? extends ImageViewPane> toChecks) {
-        for(Node toCheck : toChecks) {
-            Pane toCheckPane = (Pane) toCheck;
-            if(selectedPanes.contains(toCheckPane)) {
-                toCheckPane.setBorder(BORDER_SELECTED);
-            }else {
-                toCheckPane.setBorder(BORDER_UNSELECTED);
-            }
-        }
-        addImagesButton.setDisable(false);
-    }
+    public final static int SCAN_RESULT_ADD_MODE_SELECTION_ORDER = 1;
+    /**
+     * Add scan results in the order of scanning. This makes it impossible to
+     * change the order of pages inside a document.
+     */
+    public final static int SCAN_RESULT_ADD_MODE_SCAN_ORDER = 2;
     private float zoomLevel = 1.0f;
     private float zoomMultiplicator = 0.3f;
     private int initialWidth = 600;
@@ -130,15 +121,6 @@ public class ScannerResultDialog extends JDialog {
     private final DocumentPane documentPane;
     private final ScrollPane documentPaneScrollPane;
     private final SplitPane splitPane;
-    /**
-     * Add scan results in the order of selection.
-     */
-    public final static int SCAN_RESULT_ADD_MODE_SELECTION_ORDER = 1;
-    /**
-     * Add scan results in the order of scanning. This makes it impossible to
-     * change the order of pages inside a document.
-     */
-    public final static int SCAN_RESULT_ADD_MODE_SCAN_ORDER = 2;
     /**
      * How selected scan result ought to be added.
      * @see #SCAN_RESULT_ADD_MODE_SCAN_ORDER
@@ -225,7 +207,9 @@ public class ScannerResultDialog extends JDialog {
                     //high that the user wants to proceed with the newly added
                     //document
                     handleScanResultSelection(new LinkedList<>(Arrays.asList(addedDocument)),
-                            documentPane.getDocumentNodes());
+                            documentPane.getDocumentNodes(),
+                            false //enableAddImagesButton
+                    );
                     documentPane.setSelectedDocument(addedDocument);
                 }
             });
@@ -429,7 +413,9 @@ public class ScannerResultDialog extends JDialog {
                 @Override
                 public void handle(MouseEvent event) {
                     handleScanResultSelection(scanResultPane.getScanResultPanes(),
-                            scanResultPane.getScanResultPanes());
+                            scanResultPane.getScanResultPanes(),
+                            true //enableAddImagesButton
+                    );
                     scanResultPane.getSelectedScanResults().clear();
                     scanResultPane.getSelectedScanResults().addAll(scanResultPane.getScanResultPanes());
                 }
@@ -487,6 +473,28 @@ public class ScannerResultDialog extends JDialog {
     }
 
     /**
+     *
+     * @param documentPane the pane containing the document collection elements
+     * @param documentImagePane the currently selected document in
+     * {@code documentPane}
+     */
+    private void handleScanResultSelection(List<? extends ImageViewPane> selectedPanes,
+            List<? extends ImageViewPane> toChecks,
+            boolean enableAddImagesButton) {
+        for(Node toCheck : toChecks) {
+            Pane toCheckPane = (Pane) toCheck;
+            if(selectedPanes.contains(toCheckPane)) {
+                toCheckPane.setBorder(BORDER_SELECTED);
+            }else {
+                toCheckPane.setBorder(BORDER_UNSELECTED);
+            }
+        }
+        if(enableAddImagesButton) {
+            addImagesButton.setDisable(false);
+        }
+    }
+
+    /**
      * The panel width resulting after zoom. Can be used after closing the
      * dialog to store for restauration after application restart.
      *
@@ -531,7 +539,9 @@ public class ScannerResultDialog extends JDialog {
                 }
                 selectedScanResults.add(scanResultImageViewPane);
                 handleScanResultSelection(selectedScanResults,
-                        scanResultPane.getScanResultPanes());
+                        scanResultPane.getScanResultPanes(),
+                        true //enableAddImagesButton
+                );
             }
         });
     }
@@ -555,7 +565,10 @@ public class ScannerResultDialog extends JDialog {
         retValue.addEventHandler(MouseEvent.MOUSE_CLICKED,
             (MouseEvent event) -> {
                 handleScanResultSelection(new LinkedList<>(Arrays.asList(retValue)),
-                        documentPane.getDocumentNodes());
+                        documentPane.getDocumentNodes(),
+                        false //enableAddImagesButton (no need to enable if a
+                            //document is selected)
+                );
                 documentPane.setSelectedDocument(retValue);
             });
             //if ImageViewPane is created with empty WritableImage, the listener
