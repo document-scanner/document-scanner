@@ -38,14 +38,8 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SplitPane;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.BorderStroke;
-import javafx.scene.layout.BorderStrokeStyle;
-import javafx.scene.layout.BorderWidths;
-import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.util.Callback;
 import javax.swing.GroupLayout;
@@ -73,14 +67,6 @@ import richtercloud.message.handler.Message;
 public class ScannerResultDialog extends JDialog {
     private static final long serialVersionUID = 1L;
     private final static Logger LOGGER = LoggerFactory.getLogger(ScannerResultDialog.class);
-    private final static Border BORDER_UNSELECTED = new Border(new BorderStroke(Color.BLACK,
-            BorderStrokeStyle.SOLID,
-            CornerRadii.EMPTY,
-            BorderWidths.DEFAULT));
-    private final static Border BORDER_SELECTED = new Border(new BorderStroke(Color.RED,
-            BorderStrokeStyle.SOLID,
-            CornerRadii.EMPTY,
-            BorderWidths.DEFAULT));
     /**
      * Add scan results in the order of selection.
      */
@@ -237,6 +223,7 @@ public class ScannerResultDialog extends JDialog {
                             panelWidth,
                             panelHeight);
                     documentPane.setSelectedDocument(addedDocument);
+                    addedDocument.setSelected(true);
                 }
                 assert documentPane.getSelectedDocument() != null;
                 assert documentPane.containsDocumentNode(documentPane.getSelectedDocument());
@@ -481,12 +468,11 @@ public class ScannerResultDialog extends JDialog {
     private void handleScanResultSelection(List<? extends ImageViewPane> selectedPanes,
             List<? extends ImageViewPane> toChecks,
             boolean enableAddImagesButton) {
-        for(Node toCheck : toChecks) {
-            Pane toCheckPane = (Pane) toCheck;
-            if(selectedPanes.contains(toCheckPane)) {
-                toCheckPane.setBorder(BORDER_SELECTED);
+        for(ImageViewPane toCheck : toChecks) {
+            if(selectedPanes.contains(toCheck)) {
+                toCheck.setSelected(true);
             }else {
-                toCheckPane.setBorder(BORDER_UNSELECTED);
+                toCheck.setSelected(false);
             }
         }
         if(enableAddImagesButton) {

@@ -51,6 +51,14 @@ internal implementation notes:
 - extending BorderPane instead of Pane which causes border to be not changed
  */
 public abstract class ImageViewPane extends GridPane {
+    private final static Border BORDER_UNSELECTED = new Border(new BorderStroke(Color.BLACK,
+            BorderStrokeStyle.SOLID,
+            CornerRadii.EMPTY,
+            BorderWidths.DEFAULT));
+    private final static Border BORDER_SELECTED = new Border(new BorderStroke(Color.RED,
+            BorderStrokeStyle.SOLID,
+            CornerRadii.EMPTY,
+            BorderWidths.DEFAULT));
     /**
      * The topmost {@link ImageView}.
      */
@@ -146,5 +154,13 @@ public abstract class ImageViewPane extends GridPane {
     public void turnLeft(int width) {
         turn(-90,
                 width);
+    }
+
+    public void setSelected(boolean selected) {
+        if(selected) {
+            this.setBorder(BORDER_SELECTED);
+        }else {
+            this.setBorder(BORDER_UNSELECTED);
+        }
     }
 }
