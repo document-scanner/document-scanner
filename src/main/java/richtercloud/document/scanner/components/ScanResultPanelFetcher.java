@@ -40,4 +40,6 @@ public interface ScanResultPanelFetcher {
      * @return the fetched binary data, never {@code null}
      */
     List<ImageWrapper> fetch();
+
+    void cancelFetch();
 }

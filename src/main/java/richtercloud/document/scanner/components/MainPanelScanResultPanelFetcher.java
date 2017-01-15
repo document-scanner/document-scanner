@@ -28,6 +28,7 @@ import richtercloud.document.scanner.ifaces.OCRSelectPanelPanel;
  */
 public class MainPanelScanResultPanelFetcher implements ScanResultPanelFetcher {
     private OCRSelectPanelPanel oCRSelectComponent;
+    private boolean canceled = false;
 
     /**
      * Creates a {@code MainPanelScanResultPanelFetcher}.
@@ -52,10 +53,19 @@ public class MainPanelScanResultPanelFetcher implements ScanResultPanelFetcher {
      */
     @Override
     public List<ImageWrapper> fetch() {
+        this.canceled = false;
         List<ImageWrapper> retValue = new LinkedList<>();
         for (OCRSelectPanel imagePanel : this.oCRSelectComponent.getoCRSelectPanels()) {
+            if(canceled) {
+                return null;
+            }
             retValue.add(imagePanel.getImage());
         }
         return retValue;
+    }
+
+    @Override
+    public void cancelFetch() {
+        this.canceled = true;
     }
 }

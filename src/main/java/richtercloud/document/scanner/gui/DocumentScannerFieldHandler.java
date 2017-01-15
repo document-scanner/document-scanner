@@ -309,7 +309,9 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
                 //if fieldValue != null there's no need to start OCR (i.e. if
                 //an invalid value has been persisted it's up to the user to
                 //(re)start OCR manually
-                retValue.startOCR();
+                retValue.doTask(true, //async
+                        true //cancelable
+                );
             }
             return new ImmutablePair<JComponent, ComponentHandler<?>>(retValue,
                     OCR_RESULT_PANEL_COMPONENT_RESETTABLE);
@@ -318,8 +320,9 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
             List<ImageWrapper> fieldValue = (List<ImageWrapper>) field.get(instance);
             ScanResultPanel retValue = new ScanResultPanel(scanResultPanelFetcher,
                     fieldValue,
-                    messageHandler,
-                    storage);
+                    true, //async
+                    true //cancelable
+            );
             retValue.addUpdateListerner(new ScanResultPanelUpdateListener() {
                 @Override
                 public void onUpdate(ScanResultPanelUpdateEvent event) {
@@ -330,7 +333,8 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
                     && (fieldValue == null || fieldValue.isEmpty())) {
                 //if fieldValue != null and !fieldValue.isEmpty then there's no
                 //need to save the image data
-                retValue.save(true //async
+                retValue.doTask(true, //async
+                        true //cancelable
                 );
             }
             return new ImmutablePair<JComponent, ComponentHandler<?>>(retValue,
