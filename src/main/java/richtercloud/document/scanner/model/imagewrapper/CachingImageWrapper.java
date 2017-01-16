@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import javafx.scene.image.WritableImage;
 import javax.cache.Cache;
 import javax.cache.CacheManager;
@@ -46,10 +48,12 @@ public class CachingImageWrapper extends DefaultImageWrapper {
                  Caching.getCachingProvider().getCacheManager();
     private final static Cache<Long, Map<Integer, BufferedImage>> CACHE;
     private final static Cache<Long, Map<Integer, WritableImage>> JAVAFX_CACHE;
+    private final static Cache<Long, File> STREAM_CACHE;
     static {
         MutableConfiguration<Long, Map<Integer, BufferedImage>> config = new MutableConfiguration<>();
         MutableConfiguration<Long, Map<Integer, WritableImage>> javaFXConfig = new MutableConfiguration<>();
-        for(MutableConfiguration config0 : new MutableConfiguration[] {config, javaFXConfig}) {
+        MutableConfiguration<Long, File> streamConfig = new MutableConfiguration<>();
+        for(MutableConfiguration config0 : new MutableConfiguration[] {config, javaFXConfig, streamConfig}) {
             config0.setStoreByValue(false)
                     .setStatisticsEnabled(true)
                     .setExpiryPolicyFactory(FactoryBuilder.factoryOf(
@@ -59,9 +63,12 @@ public class CachingImageWrapper extends DefaultImageWrapper {
                 config);
         JAVAFX_CACHE = MANAGER.createCache("javafx-cache",
                 javaFXConfig);
+        STREAM_CACHE = MANAGER.createCache("stream-cache",
+                streamConfig);
     }
     private static Long cacheIdCounter = 0L;
     private final long cacheId;
+    private final Lock streamCacheLock = new ReentrantLock();
 
     public CachingImageWrapper(File storageDir, BufferedImage image) throws IOException {
         super(storageDir, image);
@@ -99,6 +106,21 @@ public class CachingImageWrapper extends DefaultImageWrapper {
             wrapperCacheEntry.put(width, imagePreview);
         }
         return imagePreview;
+    }
+
+    @Override
+    public File getOriginalImageStream0(String formatName) throws IOException {
+        streamCacheLock.lock();
+        try {
+            File streamSource = STREAM_CACHE.get(cacheId);
+            if(streamSource == null) {
+                streamSource = super.getOriginalImageStream0(formatName);
+                STREAM_CACHE.put(cacheId, streamSource);
+            }
+            return streamSource;
+        }finally {
+            streamCacheLock.unlock();
+        }
     }
 
     @Override

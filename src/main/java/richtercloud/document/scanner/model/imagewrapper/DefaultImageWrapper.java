@@ -149,11 +149,33 @@ public class DefaultImageWrapper implements ImageWrapper {
     */
     @Override
     public InputStream getOriginalImageStream(String formatName) throws IOException {
+        File tmpFile = getOriginalImageStream0(formatName);
+        InputStream retValue = new BufferedInputStream(new FileInputStream(tmpFile));
+        return retValue;
+    }
+
+    /**
+     * Generates a temporary file with the rotated image data written to it
+     * which can be used as source for an input stream.
+     *
+     * @param formatName
+     * @return
+     * @throws IOException
+     */
+    /*
+    internal implementation notes:
+    - This is exposed in order to allow subclasses to cache the generated files.
+    */
+    protected File getOriginalImageStream0(String formatName) throws IOException {
         File tmpFile = File.createTempFile("image-wrapper", null);
+        LOGGER.debug(String.format("using '%s' as temporary file",
+                tmpFile));
         FutureTask<Image> javaFXTask = new FutureTask<>(() -> {
             ImageView imageView = new ImageView(this.storageFile.toURI().toURL().toString());
             imageView.setRotate(rotationDegrees);
-            Image rotatedImage = imageView.getImage();
+            Image rotatedImage = imageView.snapshot(null, //params
+                    null //image
+            );
             return rotatedImage;
         });
         Platform.runLater(javaFXTask);
@@ -170,8 +192,11 @@ public class DefaultImageWrapper implements ImageWrapper {
         ImageIO.write(renderedImage,
                 formatName,
                 tmpFile);
-        InputStream retValue = new BufferedInputStream(new FileInputStream(tmpFile));
-        return retValue;
+        return tmpFile;
+    }
+
+    protected File getOriginalImageStream0() throws IOException {
+        return getOriginalImageStream0(FORMAT_DEFAULT);
     }
 
     @Override
@@ -210,20 +235,18 @@ public class DefaultImageWrapper implements ImageWrapper {
         );
         ImageView imageView = getImagePreviewFXImageView(originalImage,
                 width);
-        BufferedImage[] imageValue = new BufferedImage[1];
+        BufferedImage image;
         //this will be called form Swing EDT
-        Platform.runLater(() -> {
-            BufferedImage image = SwingFXUtils.fromFXImage(imageView.snapshot(null, null), null);
-            imageValue[0] = image;
+        FutureTask<BufferedImage> javaFXTask = new FutureTask<>(() -> {
+            BufferedImage image0 = SwingFXUtils.fromFXImage(imageView.snapshot(null, null), null);
+            return image0;
         });
-        while(imageValue[0] == null) {
-            try {
-                Thread.sleep(50);
-            } catch (InterruptedException ex) {
-                throw new RuntimeException(ex);
-            }
+        Platform.runLater(javaFXTask);
+        try {
+            image = javaFXTask.get();
+        }catch(InterruptedException | ExecutionException ex) {
+            throw new RuntimeException(ex);
         }
-        BufferedImage image = imageValue[0];
         return image;
 
         //Implementation using Graphics2D
