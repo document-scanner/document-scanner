@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.embed.swing.JFXPanel;
@@ -45,10 +47,14 @@ import javafx.util.Callback;
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.DocumentScanner;
+import richtercloud.document.scanner.gui.Tools;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.message.handler.JavaFXDialogMessageHandler;
 import richtercloud.message.handler.Message;
@@ -119,15 +125,18 @@ public class ScannerResultDialog extends JDialog {
     private final SaneDevice scannerDevice;
     private final File imageWrapperStorageDir;
     private final JavaFXDialogMessageHandler messageHandler;
+    private final Window openDocumentWaitDialogParent;
 
     public ScannerResultDialog(Window owner,
             List<ImageWrapper> initialScanResultImages,
             int preferredScanResultPanelWidth,
             SaneDevice scannerDevice,
             File imageWrapperStorageDir,
-            JavaFXDialogMessageHandler messageHandler) throws IOException {
+            JavaFXDialogMessageHandler messageHandler,
+            Window openDocumentWaitDialogParent) throws IOException {
         super(owner,
                 ModalityType.APPLICATION_MODAL);
+        this.openDocumentWaitDialogParent = openDocumentWaitDialogParent;
         this.panelWidth = preferredScanResultPanelWidth;
         this.panelHeight = panelWidth * 297 / 210;
         if(scannerDevice == null) {
@@ -298,6 +307,7 @@ public class ScannerResultDialog extends JDialog {
             Button zoomInButton = new Button("+");
             Button zoomOutButton = new Button("-");
             Button scanMoreButton = new Button("Scan more");
+            Button openDocumentButton = new Button("Open scan");
             Button deletePageButton = new Button("Delete page");
             Button selectAllButton = new Button("Select all");
             Button turnRightButton = new Button("Turn right");
@@ -329,6 +339,10 @@ public class ScannerResultDialog extends JDialog {
             );
             buttonPaneTop.add(scanMoreButton,
                     2, //columnIndex
+                    0 //rowIndex
+            );
+            buttonPaneTop.add(openDocumentButton,
+                    3, //columnIndex
                     0 //rowIndex
             );
             buttonPaneRight.add(deletePageButton,
@@ -377,6 +391,10 @@ public class ScannerResultDialog extends JDialog {
                             this,
                             imageWrapperStorageDir,
                             messageHandler);
+                    if(newImages == null) {
+                        //dialog has been canceled
+                        return;
+                    }
                     for(ImageWrapper newImage : newImages) {
                         try {
                             addScanResult(newImage,
@@ -388,6 +406,43 @@ public class ScannerResultDialog extends JDialog {
                     }
                 } catch (SaneException | IOException ex) {
                     messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+                }
+            });
+            openDocumentButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (event) -> {
+                JFileChooser chooser = new JFileChooser();
+                FileNameExtensionFilter filter = new FileNameExtensionFilter(
+                        "PDF files", "pdf");
+                chooser.setFileFilter(filter);
+                int returnVal = chooser.showOpenDialog(this);
+                final File selectedFile = chooser.getSelectedFile();
+                if (returnVal != JFileChooser.APPROVE_OPTION) {
+                    return;
+                }
+                List<ImageWrapper> newImages;
+                FutureTask<List<ImageWrapper>> swingTask = new FutureTask<>(() -> {
+                    List<ImageWrapper> images0 = Tools.retrieveImages(selectedFile,
+                            openDocumentWaitDialogParent, imageWrapperStorageDir);
+                    return images0;
+                });
+                SwingUtilities.invokeLater(swingTask);
+                try {
+                    newImages = swingTask.get();
+                } catch (InterruptedException | ExecutionException ex) {
+                    messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+                    return;
+                }
+                if(newImages == null) {
+                    LOGGER.debug("image retrieval has been canceled, discontinuing adding document");
+                    return;
+                }
+                for(ImageWrapper newImage : newImages) {
+                    try {
+                        addScanResult(newImage,
+                                scanResultPane,
+                                scanResultPane.getSelectedScanResults());
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
                 }
             });
             deletePageButton.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {

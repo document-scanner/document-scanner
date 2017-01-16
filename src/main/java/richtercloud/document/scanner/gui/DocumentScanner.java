@@ -1012,7 +1012,9 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
         final File selectedFile = chooser.getSelectedFile();
         try {
-            List<ImageWrapper> images = this.mainPanel.retrieveImages(selectedFile);
+            List<ImageWrapper> images = Tools.retrieveImages(selectedFile,
+                    this,
+                    documentScannerConf.getImageWrapperStorageDir());
             if(images == null) {
                 LOGGER.debug("image retrieval has been canceled, discontinuing adding document");
                 return;
@@ -1073,7 +1075,9 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             return;
         }
         try {
-            List<ImageWrapper> images = this.mainPanel.retrieveImages(selectedFile);
+            List<ImageWrapper> images = Tools.retrieveImages(selectedFile,
+                    this,
+                    documentScannerConf.getImageWrapperStorageDir());
             if(images == null) {
                 LOGGER.debug("image retrieval has been canceled, discontinuing adding document");
                 return;
@@ -1085,7 +1089,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         this.documentScannerConf.getPreferredScanResultPanelWidth(),
                         scannerDevice,
                         documentScannerConf.getImageWrapperStorageDir(),
-                        javaFXDialogMessageHandler
+                        javaFXDialogMessageHandler,
+                        this //openDocumentWaitDialogParent
                 );
                 scannerResultDialog.setLocationRelativeTo(this);
                 scannerResultDialog.setVisible(true);
@@ -1217,7 +1222,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
      * A {@link ScannerResultDialog} is always opened - even for one page
      * flatbed scan results since it allows to scan more.
      *
-     * @return
+     * @return the retrieved images or {@code null} if the wait dialog has been
+     * canceled
      * @throws SaneException
      * @throws IOException
      */
@@ -1348,7 +1354,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         this.documentScannerConf.getPreferredScanResultPanelWidth(),
                         scannerDevice,
                         documentScannerConf.getImageWrapperStorageDir(),
-                        javaFXDialogMessageHandler
+                        javaFXDialogMessageHandler,
+                        this //openDocumentWaitDialogParent
                 );
                 scannerResultDialog.setLocationRelativeTo(this);
                 scannerResultDialog.setVisible(true);

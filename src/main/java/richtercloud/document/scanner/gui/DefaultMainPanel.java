@@ -19,9 +19,7 @@ import java.awt.Window;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -35,15 +33,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import javax.imageio.ImageIO;
 import javax.swing.GroupLayout;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.ProgressMonitor;
-import javax.swing.SwingUtilities;
-import javax.swing.SwingWorker;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -54,8 +49,6 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
-import org.apache.pdfbox.rendering.ImageType;
-import org.apache.pdfbox.rendering.PDFRenderer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.components.AutoOCRValueDetectionReflectionFormBuilder;
@@ -66,8 +59,6 @@ import richtercloud.document.scanner.components.OCRResultPanelFetcherProgressLis
 import richtercloud.document.scanner.components.annotations.ScanResult;
 import richtercloud.document.scanner.components.tag.TagStorage;
 import richtercloud.document.scanner.flexdock.MainPanelDockingManagerFlexdock;
-import static richtercloud.document.scanner.gui.DocumentScanner.APP_NAME;
-import static richtercloud.document.scanner.gui.DocumentScanner.APP_VERSION;
 import static richtercloud.document.scanner.gui.DocumentScanner.BIDIRECTIONAL_HELP_DIALOG_TITLE;
 import static richtercloud.document.scanner.gui.DocumentScanner.INITIAL_QUERY_LIMIT_DEFAULT;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
@@ -85,7 +76,6 @@ import richtercloud.document.scanner.ifaces.OCRSelectPanelPanel;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcher;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcherProgressEvent;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcherProgressListener;
-import richtercloud.document.scanner.model.imagewrapper.CachingImageWrapper;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.Message;
@@ -110,8 +100,6 @@ import richtercloud.reflection.form.builder.jpa.typehandler.ElementCollectionTyp
 import richtercloud.reflection.form.builder.jpa.typehandler.ToManyTypeHandler;
 import richtercloud.reflection.form.builder.jpa.typehandler.ToOneTypeHandler;
 import richtercloud.reflection.form.builder.typehandler.TypeHandler;
-import richtercloud.swing.worker.get.wait.dialog.SwingWorkerCompletionWaiter;
-import richtercloud.swing.worker.get.wait.dialog.SwingWorkerGetWaitDialog;
 
 /**
  * Manages all central windows (see {@link DocumentScanner} for details and
@@ -395,69 +383,6 @@ public class DefaultMainPanel extends MainPanel {
         }else {
             throw new IllegalArgumentException("export format %s isn't supported");
         }
-    }
-
-    /**
-     * Uses a modal dialog in order to display the progress of the retrieval and
-     * make the operation cancelable.
-     * @param documentFile
-     * @return the retrieved images or {@code null} if the retrieval has been
-     * canceled (in dialog)
-     * @throws DocumentAddException
-     * @throws InterruptedException
-     * @throws ExecutionException
-     */
-    /*
-    internal implementation notes:
-    - can't use ProgressMonitor without blocking EVT instead of a model dialog
-    when using SwingWorker.get
-    */
-    @Override
-    public List<ImageWrapper> retrieveImages(final File documentFile) throws DocumentAddException, InterruptedException, ExecutionException {
-        if(documentFile == null) {
-            throw new IllegalArgumentException("documentFile mustn't be null");
-        }
-        final SwingWorkerGetWaitDialog dialog = new SwingWorkerGetWaitDialog(SwingUtilities.getWindowAncestor(this), //owner
-                DocumentScanner.generateApplicationWindowTitle("Wait", APP_NAME, APP_VERSION), //dialogTitle
-                "Retrieving image data", //labelText
-                null //progressBarText
-        );
-        final SwingWorker<List<ImageWrapper>, Void> worker = new SwingWorker<List<ImageWrapper>, Void>() {
-            @Override
-            protected List<ImageWrapper> doInBackground() throws Exception {
-                List<ImageWrapper> retValue = new LinkedList<>();
-                try {
-                    InputStream pdfInputStream = new FileInputStream(documentFile);
-                    try (PDDocument document = PDDocument.load(pdfInputStream)) {
-                        PDFRenderer pdfRenderer = new PDFRenderer(document);
-                        for(int page=0; page<document.getNumberOfPages(); page++) {
-                            if(dialog.isCanceled()) {
-                                document.close();
-                                DefaultMainPanel.LOGGER.debug("tab generation aborted");
-                                return null;
-                            }
-                            BufferedImage image = pdfRenderer.renderImageWithDPI(page, 300, ImageType.RGB);
-                            ImageWrapper imageWrapper = new CachingImageWrapper(documentScannerConf.getImageWrapperStorageDir(), image);
-                            retValue.add(imageWrapper);
-                        }
-                    }
-                }catch(IOException ex) {
-                    throw new DocumentAddException(ex);
-                }
-                return retValue;
-            }
-
-            @Override
-            protected void done() {
-            }
-        };
-        worker.addPropertyChangeListener(
-            new SwingWorkerCompletionWaiter(dialog));
-        worker.execute();
-        //the dialog will be visible until the SwingWorker is done
-        dialog.setVisible(true);
-        List<ImageWrapper> retValue = worker.get();
-        return retValue;
     }
 
     /**
