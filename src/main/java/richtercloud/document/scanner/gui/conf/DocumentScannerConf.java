@@ -104,6 +104,10 @@ public class DocumentScannerConf implements Serializable {
     public final static String QUERY_HISTORY_ENTRY_STORAGE_FILE_NAME_DEFAULT = "query-history-storage.xml";
     public final static File QUERY_HISTORY_ENTRY_STORAGE_FILE_DEFAULT = new File(CONFIG_DIR_DEFAULT,
             QUERY_HISTORY_ENTRY_STORAGE_FILE_NAME_DEFAULT);
+    public final static String AMOUNT_MONEY_EXCHANGE_RATE_RETRIEVER_FILE_CACHE_DIR_NAME_DEFAULT = "amount-money-exchange-rate-retriever-cache";
+    public final static File AMOUNT_MONEY_EXCHANGE_RATE_RETRIEVER_FILE_CACHE_DIR_DEFAULT = new File(CONFIG_DIR_DEFAULT,
+            AMOUNT_MONEY_EXCHANGE_RATE_RETRIEVER_FILE_CACHE_DIR_NAME_DEFAULT);
+    public final static int AMOUNT_MONEY_EXCHANGE_RATE_RETRIEVER_EXPIRATION_MILLIS = 24*60*60*1000; //24 hours
     /**
      * The file the this configuration has been loaded from. Might be
      * {@code null} if no initial configuration file has been specified.
@@ -209,6 +213,8 @@ public class DocumentScannerConf implements Serializable {
      */
     private int resolutionWish = RESOLUTION_WISH_DEFAULT;
     private File queryHistoryEntryStorageFile = QUERY_HISTORY_ENTRY_STORAGE_FILE_DEFAULT;
+    private File amountMoneyExchangeRateRetrieverFileCacheDir = AMOUNT_MONEY_EXCHANGE_RATE_RETRIEVER_FILE_CACHE_DIR_DEFAULT;
+    private int amountMoneyExchangeRateRetrieverExpirationMillis = AMOUNT_MONEY_EXCHANGE_RATE_RETRIEVER_EXPIRATION_MILLIS;
 
     private static Set<StorageConf> generateAvailableStorageConfsDefault(Set<Class<?>> entityClasses,
             File xMLStorageFile) throws IOException {
@@ -305,7 +311,9 @@ public class DocumentScannerConf implements Serializable {
             List<ValueDetectionServiceConf> availableValueDetectionServiceConfs,
             List<ValueDetectionServiceConf> selectedValueDetectionServiceConfs,
             int resolutionWish,
-            File queryHistoryEntryStorageFile
+            File queryHistoryEntryStorageFile,
+            File amountMoneyExchangeRateRetrieverFileCacheDir,
+            int amountMoneyExchangeRateRetrieverExpirationMillis
     ) {
         this.configFile = configFile;
         this.scannerName = scannerName;
@@ -341,6 +349,8 @@ public class DocumentScannerConf implements Serializable {
         this.selectedValueDetectionServiceConfs = selectedValueDetectionServiceConfs;
         this.resolutionWish = resolutionWish;
         this.queryHistoryEntryStorageFile = queryHistoryEntryStorageFile;
+        this.amountMoneyExchangeRateRetrieverFileCacheDir = amountMoneyExchangeRateRetrieverFileCacheDir;
+        this.amountMoneyExchangeRateRetrieverExpirationMillis = amountMoneyExchangeRateRetrieverExpirationMillis;
     }
 
     /**
@@ -381,8 +391,26 @@ public class DocumentScannerConf implements Serializable {
                 documentScannerConf.getAvailableValueDetectionServiceConfs(),
                 documentScannerConf.getSelectedValueDetectionServiceConfs(),
                 documentScannerConf.getResolutionWish(),
-                documentScannerConf.getQueryHistoryEntryStorageFile()
+                documentScannerConf.getQueryHistoryEntryStorageFile(),
+                documentScannerConf.getAmountMoneyExchangeRateRetrieverFileCacheDir(),
+                documentScannerConf.getAmountMoneyExchangeRateRetrieverExpirationMillis()
         );
+    }
+
+    public int getAmountMoneyExchangeRateRetrieverExpirationMillis() {
+        return amountMoneyExchangeRateRetrieverExpirationMillis;
+    }
+
+    public void setAmountMoneyExchangeRateRetrieverExpirationMillis(int amountMoneyExchangeRateRetrieverExpirationMillis) {
+        this.amountMoneyExchangeRateRetrieverExpirationMillis = amountMoneyExchangeRateRetrieverExpirationMillis;
+    }
+
+    public File getAmountMoneyExchangeRateRetrieverFileCacheDir() {
+        return amountMoneyExchangeRateRetrieverFileCacheDir;
+    }
+
+    public void setAmountMoneyExchangeRateRetrieverFileCacheDir(File amountMoneyExchangeRateRetrieverFileCacheDir) {
+        this.amountMoneyExchangeRateRetrieverFileCacheDir = amountMoneyExchangeRateRetrieverFileCacheDir;
     }
 
     public File getQueryHistoryEntryStorageFile() {

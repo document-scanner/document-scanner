@@ -260,7 +260,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     }
     private final AmountMoneyUsageStatisticsStorage amountMoneyUsageStatisticsStorage;
     private final AmountMoneyCurrencyStorage amountMoneyCurrencyStorage;
-    private final AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever = new FailsafeAmountMoneyExchangeRateRetriever();
+    private final AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever;
     private final TagStorage tagStorage;
     private final Map<java.lang.reflect.Type, TypeHandler<?, ?,?, ?>> typeHandlerMapping;
     private final MessageHandler messageHandler = new DialogMessageHandler(this,
@@ -527,6 +527,9 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         fileAppender.start();
         rootLogger.addAppender(fileAppender);
         LOGGER.info(String.format("logging to file '%s'", documentScannerConf.getLogFilePath()));
+
+        this.amountMoneyExchangeRateRetriever = new FailsafeAmountMoneyExchangeRateRetriever(documentScannerConf.getAmountMoneyExchangeRateRetrieverFileCacheDir(),
+                documentScannerConf.getAmountMoneyExchangeRateRetrieverExpirationMillis());
 
         //Check that emptying image storage directory wasn't skipped at shutdown
         //due to application crash
