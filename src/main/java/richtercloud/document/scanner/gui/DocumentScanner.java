@@ -1265,6 +1265,10 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 List<ImageWrapper> retValue = new LinkedList<>();
                 if(selectedDocumentSource == DocumentSource.FLATBED || selectedDocumentSource == DocumentSource.UNKNOWN) {
                     BufferedImage scannedImage = scannerDevice.acquireImage();
+                    //catching ScanException and invoking scannerDevice.close
+                    //causes all settings to be reset (resolution, color, etc.)
+                    //and doesn't avoid SaneException at every following call to
+                    //scannerDevice.acquireImage
                     ImageWrapper imageWrapper = new CachingImageWrapper(imageWrapperStorageDir,
                             scannedImage);
                     retValue.add(imageWrapper);
