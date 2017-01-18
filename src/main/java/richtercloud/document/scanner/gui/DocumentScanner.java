@@ -147,8 +147,6 @@ import richtercloud.reflection.form.builder.jpa.panels.QueryHistoryEntryStorage;
 import richtercloud.reflection.form.builder.jpa.panels.QueryHistoryEntryStorageCreationException;
 import richtercloud.reflection.form.builder.jpa.panels.QueryHistoryEntryStorageFactory;
 import richtercloud.reflection.form.builder.jpa.panels.StringAutoCompletePanel;
-import richtercloud.reflection.form.builder.jpa.sequence.MySQLSequenceManager;
-import richtercloud.reflection.form.builder.jpa.sequence.SequenceManager;
 import richtercloud.reflection.form.builder.jpa.storage.AbstractPersistenceStorageConf;
 import richtercloud.reflection.form.builder.jpa.storage.DelegatingPersistenceStorageFactory;
 import richtercloud.reflection.form.builder.jpa.storage.FieldInitializer;
@@ -316,7 +314,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 //used for binary data storage in document
             messageHandler,
             fieldRetriever);
-    private final SequenceManager<Long> sequenceManager;
     private final FieldInitializer queryComponentFieldInitializer;
     private final StorageConfCopyFactory storageConfCopyFactory = new DelegatingStorageConfCopyFactory();
     private final QueryHistoryEntryStorageFactory entryStorageFactory;
@@ -569,9 +566,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         assert storageConf instanceof AbstractPersistenceStorageConf;
         this.storage = (PersistenceStorage) delegatingStorageFactory.create(storageConf);
 
-        this.sequenceManager = new MySQLSequenceManager(storage);
-            //after storage initialization
-        this.idGenerator = new SequentialIdGenerator(sequenceManager);
+        this.idGenerator = new SequentialIdGenerator(storage);
         this.idApplier = new AutoOCRValueDetectionPanelIdApplier(idGenerator);
 
         OCREngineConf oCREngineConf = documentScannerConf.getoCREngineConf();
