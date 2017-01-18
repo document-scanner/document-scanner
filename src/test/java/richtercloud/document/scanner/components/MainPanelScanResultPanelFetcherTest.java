@@ -24,7 +24,6 @@ import java.util.LinkedList;
 import java.util.List;
 import javax.imageio.ImageIO;
 import org.apache.commons.io.IOUtils;
-import static org.junit.Assert.*;
 import org.junit.Ignore;
 import org.junit.Test;
 import static org.mockito.Mockito.mock;
