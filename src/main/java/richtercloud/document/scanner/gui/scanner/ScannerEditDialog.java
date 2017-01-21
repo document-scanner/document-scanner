@@ -36,6 +36,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.gui.DocumentScanner;
 import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
@@ -106,8 +107,8 @@ public class ScannerEditDialog extends javax.swing.JDialog {
             MessageHandler messageHandler) throws IOException, SaneException {
         super(parent,
                 DocumentScanner.generateApplicationWindowTitle(String.format("Editing scanner settings of %s", device.toString()),
-                        DocumentScanner.APP_NAME,
-                        DocumentScanner.APP_VERSION),
+                        Constants.APP_NAME,
+                        Constants.APP_VERSION),
                 true //modal
         );
         if(device == null) {

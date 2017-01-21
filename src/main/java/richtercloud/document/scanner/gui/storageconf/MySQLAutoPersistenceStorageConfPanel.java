@@ -41,6 +41,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.gui.DocumentScanner;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.message.handler.ConfirmMessageHandler;
@@ -434,8 +435,8 @@ public class MySQLAutoPersistenceStorageConfPanel extends StorageConfPanel<MySQL
             String md5Sum) {
         final SwingWorkerGetWaitDialog dialog = new SwingWorkerGetWaitDialog(JOptionPane.getFrameForComponent(this),
                 DocumentScanner.generateApplicationWindowTitle("Downloading MySQL",
-                        DocumentScanner.APP_NAME,
-                        DocumentScanner.APP_VERSION),
+                        Constants.APP_NAME,
+                        Constants.APP_VERSION),
                 "Downloading MySQL",
                 "Downloading MySQL");
         SwingWorker<Boolean, Void> downloadWorker = new SwingWorker<Boolean, Void>() {

@@ -37,6 +37,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.MutableTreeNode;
+import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.gui.DocumentScanner;
 import richtercloud.document.scanner.gui.EntityEditingDialog;
 import richtercloud.document.scanner.ifaces.DocumentAddException;
@@ -150,8 +151,8 @@ public class WorkflowItemTreePanel extends JPanel {
                 messageHandler,
                 initialValue,
                 DocumentScanner.generateApplicationWindowTitle("Bidirectional relation help",
-                        DocumentScanner.APP_NAME,
-                        DocumentScanner.APP_VERSION),
+                        Constants.APP_NAME,
+                        Constants.APP_VERSION),
                 fieldInitializer,
                 entryStorage);
         communicationTree.setModel(communicationTreeModel);

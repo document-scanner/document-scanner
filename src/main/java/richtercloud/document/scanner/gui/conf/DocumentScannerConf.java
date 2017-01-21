@@ -25,8 +25,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.jscience.economics.money.Currency;
-import richtercloud.document.scanner.gui.DocumentScanner;
+import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.gui.scanner.ScannerConf;
 import richtercloud.document.scanner.ifaces.OCREngineConf;
 import richtercloud.document.scanner.ocr.TesseractOCREngineConf;
@@ -230,18 +231,18 @@ public class DocumentScannerConf implements Serializable {
      * Creates an configuration with default values.
      */
     public DocumentScannerConf() throws IOException {
-        this.storageConf = new DerbyEmbeddedPersistenceStorageConf(DocumentScanner.ENTITY_CLASSES,
+        this.storageConf = new DerbyEmbeddedPersistenceStorageConf(Constants.ENTITY_CLASSES,
             DATABASE_NAME_DEFAULT,
             SCHEME_CHECKSUM_FILE_DEFAULT);
         this.availableStorageConfs.add(this.storageConf);
-        this.availableStorageConfs.add(new DerbyNetworkPersistenceStorageConf(DocumentScanner.ENTITY_CLASSES,
+        this.availableStorageConfs.add(new DerbyNetworkPersistenceStorageConf(Constants.ENTITY_CLASSES,
                 HOSTNAME_DEFAULT,
                 SCHEME_CHECKSUM_FILE_DEFAULT));
-        this.availableStorageConfs.add(new PostgresqlAutoPersistenceStorageConf(DocumentScanner.ENTITY_CLASSES,
+        this.availableStorageConfs.add(new PostgresqlAutoPersistenceStorageConf(Constants.ENTITY_CLASSES,
                 "document-scanner",
                 SCHEME_CHECKSUM_FILE_DEFAULT,
                 POSTGRESQL_DATABASE_DIR_DEFAULT));
-        this.availableStorageConfs.add(new MySQLAutoPersistenceStorageConf(DocumentScanner.ENTITY_CLASSES,
+        this.availableStorageConfs.add(new MySQLAutoPersistenceStorageConf(Constants.ENTITY_CLASSES,
                 "document-scanner",
                 MYSQL_DATABASE_DIR_DEFAULT,
                 SCHEME_CHECKSUM_FILE_DEFAULT
@@ -713,5 +714,13 @@ public class DocumentScannerConf implements Serializable {
      */
     public File getAmountMoneyCurrencyStorageFile() {
         return amountMoneyCurrencyStorageFile;
+    }
+
+    @Override
+    public String toString() {
+        ReflectionToStringBuilder toStringBuilder = new ReflectionToStringBuilder(this);
+        toStringBuilder.setAppendStatics(false);
+        String retValue = toStringBuilder.toString();
+        return retValue;
     }
 }

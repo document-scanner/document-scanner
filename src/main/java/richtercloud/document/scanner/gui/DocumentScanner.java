@@ -40,10 +40,8 @@ import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -81,25 +79,8 @@ import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.ifaces.MainPanel;
 import richtercloud.document.scanner.ifaces.OCREngine;
 import richtercloud.document.scanner.ifaces.OCREngineConf;
-import richtercloud.document.scanner.model.APackage;
-import richtercloud.document.scanner.model.Bill;
 import richtercloud.document.scanner.model.Company;
 import richtercloud.document.scanner.model.Document;
-import richtercloud.document.scanner.model.Email;
-import richtercloud.document.scanner.model.EmailAddress;
-import richtercloud.document.scanner.model.Employment;
-import richtercloud.document.scanner.model.FinanceAccount;
-import richtercloud.document.scanner.model.Leaflet;
-import richtercloud.document.scanner.model.Location;
-import richtercloud.document.scanner.model.Payment;
-import richtercloud.document.scanner.model.Person;
-import richtercloud.document.scanner.model.Shipping;
-import richtercloud.document.scanner.model.TelephoneCall;
-import richtercloud.document.scanner.model.TelephoneNumber;
-import richtercloud.document.scanner.model.Transport;
-import richtercloud.document.scanner.model.TransportTicket;
-import richtercloud.document.scanner.model.Withdrawal;
-import richtercloud.document.scanner.model.Workflow;
 import richtercloud.document.scanner.model.imagewrapper.CachingImageWrapper;
 import richtercloud.document.scanner.model.imagewrapper.ImageWrapperStorageDirExistsException;
 import richtercloud.document.scanner.model.warninghandler.CompanyWarningHandler;
@@ -204,38 +185,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
 
     private static final long serialVersionUID = 1L;
     private static final Logger LOGGER = LoggerFactory.getLogger(DocumentScanner.class);
-    public static final String APP_NAME = "Document scanner";
-    public static final String APP_VERSION = "1.0";
-    public static final String BUG_URL = "https://github.com/krichter722/document-scanner";
     private SaneDevice scannerDevice;
-    /**
-     * The default value for resolution in DPI. The closest value to it might be
-     * chosen if the exact resolution isn't available.
-     */
-    public final static int RESOLUTION_DEFAULT = 300;
-    public final static Set<Class<?>> ENTITY_CLASSES = Collections.unmodifiableSet(new HashSet<Class<?>>(
-            Arrays.asList(APackage.class,
-                    Bill.class,
-                    Company.class,
-                    Document.class,
-                    Email.class,
-                    EmailAddress.class,
-                    Employment.class,
-                    FinanceAccount.class,
-                    Leaflet.class,
-                    Location.class,
-                    Payment.class,
-                    Person.class,
-                    Shipping.class,
-                    TelephoneCall.class,
-                    TelephoneNumber.class,
-                    Transport.class,
-                    TransportTicket.class,
-                    Withdrawal.class,
-                    Workflow.class
-//                    WorkflowItem.class // is an entity, but abstract
-                    )));
-    public final static Class<?> PRIMARY_CLASS_SELECTION = Document.class;
     private DocumentScannerConf documentScannerConf;
     public final static Map<Class<? extends JComponent>, ValueSetter<?,?>> VALUE_SETTER_MAPPING_DEFAULT;
     static {
@@ -263,12 +213,10 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private final Map<java.lang.reflect.Type, TypeHandler<?, ?,?, ?>> typeHandlerMapping;
     private final MessageHandler messageHandler = new DialogMessageHandler(this,
             "", //titlePrefix
-            String.format("- %s %s", APP_NAME, APP_VERSION));
+            String.format("- %s %s", Constants.APP_NAME, Constants.APP_VERSION));
     private final JavaFXDialogMessageHandler javaFXDialogMessageHandler = new JavaFXDialogMessageHandler();
     private final ConfirmMessageHandler confirmMessageHandler = new DialogConfirmMessageHandler(this);
     private final Map<Class<?>, WarningHandler<?>> warningHandlers = new HashMap<>();
-    public final static int INITIAL_QUERY_LIMIT_DEFAULT = 20;
-    public final static String BIDIRECTIONAL_HELP_DIALOG_TITLE = "Bidirectional relations help";
     static {
         new JFXPanel();
     }
@@ -296,10 +244,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
      * avoid confusion with equality of {@link InetAddress}es.
      */
     private final static Map<String, SaneSession> ADDRESS_SESSION_MAP = new HashMap<>();
-    public final static String SANED_BUG_INFO = "<br/>You might suffer from a "
-            + "saned bug, try <tt>/usr/sbin/saned -d -s -a saned</tt> with "
-            + "appropriate privileges in order to restart saned and try again"
-            + "</html>";
     private final IdApplier<AutoOCRValueDetectionPanel> idApplier;
     private final IdGenerator<Long> idGenerator;
     /**
@@ -307,7 +251,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
      * might take a long time to open documents for all of them, so a warning is
      * displayed if more documents than this value are about to be opened.
      */
-    private final static int SELECTED_ENTITIES_EDIT_WARNING = 5;
     private PersistenceStorage storage;
     private final DelegatingPersistenceStorageFactory delegatingStorageFactory = new DelegatingPersistenceStorageFactory("richtercloud_document-scanner_jar_1.0-SNAPSHOTPU",
             24, //@TODo: low limit no longer necessary after ImageWrapper is
@@ -320,140 +263,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private final QueryHistoryEntryStorage entryStorage;
     private final JPAFieldRetriever reflectionFormBuilderFieldRetriever = new DocumentScannerFieldRetriever();
     private final FieldRetriever readOnlyFieldRetriever = new JPACachedFieldRetriever();
-
-    public static SaneDevice getScannerDevice(String scannerName,
-            Map<String, ScannerConf> scannerConfMap,
-            String scannerAddressFallback,
-            int resolutionWish) throws IOException, SaneException {
-        if(scannerAddressFallback == null) {
-            throw new IllegalArgumentException("scannerAddressFallback mustn't be null");
-        }
-        SaneDevice retValue = NAME_DEVICE_MAP.get(scannerName);
-        if(retValue == null) {
-            ScannerConf scannerConf = scannerConfMap.get(scannerName);
-            if(scannerConf == null) {
-                scannerConf = new ScannerConf(scannerName);
-                scannerConfMap.put(scannerName, scannerConf);
-            }
-            SaneSession saneSession = ADDRESS_SESSION_MAP.get(scannerConf.getScannerAddress());
-            if(saneSession == null) {
-                String scannerAddress = scannerConf.getScannerAddress();
-                if(scannerAddress == null) {
-                    scannerAddress = scannerAddressFallback;
-                }
-                InetAddress scannerInetAddress = InetAddress.getByName(scannerAddress);
-                saneSession = SaneSession.withRemoteSane(scannerInetAddress);
-                ADDRESS_SESSION_MAP.put(scannerConf.getScannerAddress(), saneSession);
-                scannerConf.setScannerAddress(scannerAddress);
-            }
-            retValue = saneSession.getDevice(scannerName);
-            NAME_DEVICE_MAP.put(scannerName, retValue);
-            ScannerEditDialog.configureDefaultOptionValues(retValue,
-                    scannerConf,
-                    resolutionWish
-            );
-        }
-        return retValue;
-    }
-
-    /**
-     * Validates  {@code conf} from configuration file.
-     */
-    private void validateProperties() throws IOException {
-        //if a scanner address and device name is in persisted conf check if
-        //it's accessible and treat it as selected scanner silently
-        String scannerName = this.documentScannerConf.getScannerName();
-        if(scannerName != null) {
-            try {
-                this.scannerDevice = getScannerDevice(scannerName,
-                        this.documentScannerConf.getScannerConfMap(),
-                        DocumentScannerConf.SCANNER_SANE_ADDRESS_DEFAULT,
-                        documentScannerConf.getResolutionWish());
-                afterScannerSelection();
-            } catch (IOException | SaneException ex) {
-                String text = handleSearchScannerException("An exception during the setup of "
-                        + "previously selected scanner occured: ",
-                        ex,
-                        SANED_BUG_INFO);
-                messageHandler.handle(new Message(String.format("Exception during setup of previously selected scanner: %s\n%s", ExceptionUtils.getRootCauseMessage(ex), text),
-                        JOptionPane.WARNING_MESSAGE,
-                        "Exception occured"));
-            }
-        }
-        if(!this.documentScannerConf.getImageWrapperStorageDir().exists()) {
-            if(!this.documentScannerConf.getImageWrapperStorageDir().mkdirs()) {
-                throw new IOException(String.format("Creation of image wrapper storage directory '%s' failed",
-                        this.documentScannerConf.getImageWrapperStorageDir().getAbsolutePath()));
-            }
-        }else {
-            if(!this.documentScannerConf.getImageWrapperStorageDir().isDirectory()) {
-                throw new IllegalStateException(String.format("Configured image wrapper storage directory '%s' is a file",
-                        this.documentScannerConf.getImageWrapperStorageDir().getAbsolutePath()));
-            }
-        }
-    }
-
-    public static String handleSearchScannerException(String text,
-            Exception ex,
-            String additional) {
-        String message = ex.getMessage();
-        if (ex.getCause() != null) {
-            message = String.format("%s (caused by '%s')", message, ex.getCause().getMessage());
-        }
-        String retValue = String.format("<html>%s%s%s</html>", text, message, additional);
-        return retValue;
-    }
-
-    private void afterScannerSelection() {
-        this.scanMenuItem.setEnabled(true);
-        this.scanMenuItem.getParent().revalidate();
-    }
-
-    /**
-     * Handles all non-resource related cleanup tasks (like persistence of
-     * configuration). Callers have to make sure that this is invoked only once.
-     * @see #close()
-     */
-    private void shutdownHook() {
-        LOGGER.info(String.format("running shutdown hooks in %s", DocumentScanner.class));
-        if (this.documentScannerConf != null) {
-            try {
-                XStream xStream = new XStream();
-                xStream.toXML(this.documentScannerConf, new FileOutputStream(this.documentScannerConf.getConfigFile()));
-            } catch (FileNotFoundException ex) {
-                LOGGER.warn("an unexpected exception occured during save of configurations into file '{}', changes most likely lost", this.documentScannerConf.getConfigFile().getAbsolutePath());
-            }
-        }
-        if(this.scannerDevice != null) {
-            if(this.scannerDevice.isOpen()) {
-                try {
-                    this.scannerDevice.close();
-                } catch (IOException ex) {
-                    LOGGER.warn(String.format("an unexpected exception occured during closing the scanner device '%s'",
-                            this.scannerDevice.getName()));
-                }
-            }
-        }
-        if(this.storage != null) {
-            this.storage.shutdown();
-        }
-        LOGGER.info(String.format("emptying image wrapper storage directory '%s'", this.documentScannerConf.getImageWrapperStorageDir().getAbsolutePath()));
-        try {
-            FileUtils.deleteDirectory(this.documentScannerConf.getImageWrapperStorageDir());
-        } catch (IOException ex) {
-            LOGGER.error("removal of image wrapper storage directory failed, see nested exception for details", ex);
-        }
-        if(!this.documentScannerConf.getImageWrapperStorageDir().mkdirs()) {
-            LOGGER.error(String.format("re-creation of image wrapper storage dir '%s' failed", this.documentScannerConf.getImageWrapperStorageDir().getAbsolutePath()));
-        }
-        Caching.getCachingProvider().close();
-        Platform.exit();
-            //necessary in order to prevent hanging after all shutdown hooks
-            //have been processed
-        close();
-        LOGGER.info(String.format("shutdown hooks in %s finished", DocumentScanner.class));
-    }
-
     /**
      * Start to fetch results and warm up the cache after start.
      */
@@ -556,7 +365,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         this.cachingImageWrapperInitThread.start();
 
         this.entryStorageFactory = new DocumentScannerFileQueryHistoryEntryStorageFactory(documentScannerConf.getQueryHistoryEntryStorageFile(),
-                ENTITY_CLASSES,
+                Constants.ENTITY_CLASSES,
                 false,
                 messageHandler);
         this.entryStorage = entryStorageFactory.create();
@@ -593,9 +402,9 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         this.amountMoneyCurrencyStorage = new FileAmountMoneyCurrencyStorage(documentScannerConf.getAmountMoneyCurrencyStorageFile());
         this.tagStorage = new FileTagStorage(documentScannerConf.getTagStorageFile());
         JPAAmountMoneyMappingTypeHandlerFactory fieldHandlerFactory = new JPAAmountMoneyMappingTypeHandlerFactory(storage,
-                INITIAL_QUERY_LIMIT_DEFAULT,
+                Constants.INITIAL_QUERY_LIMIT_DEFAULT,
                 messageHandler,
-                BIDIRECTIONAL_HELP_DIALOG_TITLE,
+                Constants.BIDIRECTIONAL_HELP_DIALOG_TITLE,
                 readOnlyFieldRetriever);
         this.typeHandlerMapping = fieldHandlerFactory.generateTypeHandlerMapping();
 
@@ -620,7 +429,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         this.typeHandlerMapping.put(new TypeToken<List<AnyType>>() {
             }.getType(), new JPAEntityListTypeHandler(storage,
                     messageHandler,
-                    BIDIRECTIONAL_HELP_DIALOG_TITLE,
+                    Constants.BIDIRECTIONAL_HELP_DIALOG_TITLE,
                     queryComponentFieldInitializer,
                     entryStorage,
                     readOnlyFieldRetriever));
@@ -648,8 +457,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         confirmMessageHandler));
             //after entityManager has been initialized
 
-        this.mainPanel = new DefaultMainPanel(ENTITY_CLASSES,
-                PRIMARY_CLASS_SELECTION,
+        this.mainPanel = new DefaultMainPanel(Constants.ENTITY_CLASSES,
+                Constants.PRIMARY_CLASS_SELECTION,
                 storage,
                 amountMoneyUsageStatisticsStorage,
                 amountMoneyCurrencyStorage,
@@ -671,6 +480,139 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 readOnlyFieldRetriever
         );
         mainPanelPanel.add(this.mainPanel);
+    }
+
+    public static SaneDevice getScannerDevice(String scannerName,
+            Map<String, ScannerConf> scannerConfMap,
+            String scannerAddressFallback,
+            int resolutionWish) throws IOException, SaneException {
+        if(scannerAddressFallback == null) {
+            throw new IllegalArgumentException("scannerAddressFallback mustn't be null");
+        }
+        SaneDevice retValue = NAME_DEVICE_MAP.get(scannerName);
+        if(retValue == null) {
+            ScannerConf scannerConf = scannerConfMap.get(scannerName);
+            if(scannerConf == null) {
+                scannerConf = new ScannerConf(scannerName);
+                scannerConfMap.put(scannerName, scannerConf);
+            }
+            SaneSession saneSession = ADDRESS_SESSION_MAP.get(scannerConf.getScannerAddress());
+            if(saneSession == null) {
+                String scannerAddress = scannerConf.getScannerAddress();
+                if(scannerAddress == null) {
+                    scannerAddress = scannerAddressFallback;
+                }
+                InetAddress scannerInetAddress = InetAddress.getByName(scannerAddress);
+                saneSession = SaneSession.withRemoteSane(scannerInetAddress);
+                ADDRESS_SESSION_MAP.put(scannerConf.getScannerAddress(), saneSession);
+                scannerConf.setScannerAddress(scannerAddress);
+            }
+            retValue = saneSession.getDevice(scannerName);
+            NAME_DEVICE_MAP.put(scannerName, retValue);
+            ScannerEditDialog.configureDefaultOptionValues(retValue,
+                    scannerConf,
+                    resolutionWish
+            );
+        }
+        return retValue;
+    }
+
+    /**
+     * Validates  {@code conf} from configuration file.
+     */
+    private void validateProperties() throws IOException {
+        //if a scanner address and device name is in persisted conf check if
+        //it's accessible and treat it as selected scanner silently
+        String scannerName = this.documentScannerConf.getScannerName();
+        if(scannerName != null) {
+            try {
+                this.scannerDevice = getScannerDevice(scannerName,
+                        this.documentScannerConf.getScannerConfMap(),
+                        DocumentScannerConf.SCANNER_SANE_ADDRESS_DEFAULT,
+                        documentScannerConf.getResolutionWish());
+                afterScannerSelection();
+            } catch (IOException | SaneException ex) {
+                String text = handleSearchScannerException("An exception during the setup of "
+                        + "previously selected scanner occured: ",
+                        ex,
+                        Constants.SANED_BUG_INFO);
+                messageHandler.handle(new Message(String.format("Exception during setup of previously selected scanner: %s\n%s", ExceptionUtils.getRootCauseMessage(ex), text),
+                        JOptionPane.WARNING_MESSAGE,
+                        "Exception occured"));
+            }
+        }
+        if(!this.documentScannerConf.getImageWrapperStorageDir().exists()) {
+            if(!this.documentScannerConf.getImageWrapperStorageDir().mkdirs()) {
+                throw new IOException(String.format("Creation of image wrapper storage directory '%s' failed",
+                        this.documentScannerConf.getImageWrapperStorageDir().getAbsolutePath()));
+            }
+        }else {
+            if(!this.documentScannerConf.getImageWrapperStorageDir().isDirectory()) {
+                throw new IllegalStateException(String.format("Configured image wrapper storage directory '%s' is a file",
+                        this.documentScannerConf.getImageWrapperStorageDir().getAbsolutePath()));
+            }
+        }
+    }
+
+    public static String handleSearchScannerException(String text,
+            Exception ex,
+            String additional) {
+        String message = ex.getMessage();
+        if (ex.getCause() != null) {
+            message = String.format("%s (caused by '%s')", message, ex.getCause().getMessage());
+        }
+        String retValue = String.format("<html>%s%s%s</html>", text, message, additional);
+        return retValue;
+    }
+
+    private void afterScannerSelection() {
+        this.scanMenuItem.setEnabled(true);
+        this.scanMenuItem.getParent().revalidate();
+    }
+
+    /**
+     * Handles all non-resource related cleanup tasks (like persistence of
+     * configuration). Callers have to make sure that this is invoked only once.
+     * @see #close()
+     */
+    private void shutdownHook() {
+        LOGGER.info(String.format("running shutdown hooks in %s", DocumentScanner.class));
+        if (this.documentScannerConf != null) {
+            try {
+                XStream xStream = new XStream();
+                xStream.toXML(this.documentScannerConf, new FileOutputStream(this.documentScannerConf.getConfigFile()));
+            } catch (FileNotFoundException ex) {
+                LOGGER.warn("an unexpected exception occured during save of configurations into file '{}', changes most likely lost", this.documentScannerConf.getConfigFile().getAbsolutePath());
+            }
+        }
+        if(this.scannerDevice != null) {
+            if(this.scannerDevice.isOpen()) {
+                try {
+                    this.scannerDevice.close();
+                } catch (IOException ex) {
+                    LOGGER.warn(String.format("an unexpected exception occured during closing the scanner device '%s'",
+                            this.scannerDevice.getName()));
+                }
+            }
+        }
+        if(this.storage != null) {
+            this.storage.shutdown();
+        }
+        LOGGER.info(String.format("emptying image wrapper storage directory '%s'", this.documentScannerConf.getImageWrapperStorageDir().getAbsolutePath()));
+        try {
+            FileUtils.deleteDirectory(this.documentScannerConf.getImageWrapperStorageDir());
+        } catch (IOException ex) {
+            LOGGER.error("removal of image wrapper storage directory failed, see nested exception for details", ex);
+        }
+        if(!this.documentScannerConf.getImageWrapperStorageDir().mkdirs()) {
+            LOGGER.error(String.format("re-creation of image wrapper storage dir '%s' failed", this.documentScannerConf.getImageWrapperStorageDir().getAbsolutePath()));
+        }
+        Caching.getCachingProvider().close();
+        Platform.exit();
+            //necessary in order to prevent hanging after all shutdown hooks
+            //have been processed
+        close();
+        LOGGER.info(String.format("shutdown hooks in %s finished", DocumentScanner.class));
     }
 
     /**
@@ -744,7 +686,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         optionsMenuItem = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle(String.format("%s %s", APP_NAME, APP_VERSION) //generateApplicationWindowTitle not applicable
+        setTitle(String.format("%s %s", Constants.APP_NAME, Constants.APP_VERSION) //generateApplicationWindowTitle not applicable
         );
         setBounds(new java.awt.Rectangle(0, 0, 800, 600));
         setSize(new java.awt.Dimension(800, 600));
@@ -1030,8 +972,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
 
     private void editEntryMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_editEntryMenuItemActionPerformed
         EntityEditingDialog entityEditingDialog = new EntityEditingDialog(this,
-                ENTITY_CLASSES,
-                PRIMARY_CLASS_SELECTION,
+                Constants.ENTITY_CLASSES,
+                Constants.PRIMARY_CLASS_SELECTION,
                 storage,
                 messageHandler,
                 confirmMessageHandler,
@@ -1042,9 +984,10 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 readOnlyFieldRetriever);
         entityEditingDialog.setVisible(true); //blocks
         List<Object> selectedEntities = entityEditingDialog.getSelectedEntities();
-        if(selectedEntities.size() > SELECTED_ENTITIES_EDIT_WARNING) {
+        if(selectedEntities.size() > Constants.SELECTED_ENTITIES_EDIT_WARNING) {
             String answer = confirmMessageHandler.confirm(new Message(
-                    String.format("More than %d entities are supposed to be opened for editing. This might take a long time. Continue?", SELECTED_ENTITIES_EDIT_WARNING),
+                    String.format("More than %d entities are supposed to be opened for editing. This might take a long time. Continue?",
+                            Constants.SELECTED_ENTITIES_EDIT_WARNING),
                     JOptionPane.QUESTION_MESSAGE,
                     "Open documents?"),
                     "Yes", "No");
@@ -1245,8 +1188,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
         final SwingWorkerGetWaitDialog dialog = new SwingWorkerGetWaitDialog(dialogParent,
                 DocumentScanner.generateApplicationWindowTitle("Scanning",
-                        DocumentScanner.APP_NAME,
-                        DocumentScanner.APP_VERSION),
+                        Constants.APP_NAME,
+                        Constants.APP_VERSION),
                 "Scanning", //labelText
                 "Scanning" //progressBarText
         );

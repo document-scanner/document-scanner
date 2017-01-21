@@ -33,6 +33,7 @@ import javax.swing.table.DefaultTableModel;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.gui.DocumentScanner;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.message.handler.Message;
@@ -168,8 +169,8 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
             DocumentScannerConf documentScannerConf) throws UnknownHostException, IOException, SaneException {
         super(parent,
                 DocumentScanner.generateApplicationWindowTitle("Select scanner",
-                        DocumentScanner.APP_NAME,
-                        DocumentScanner.APP_VERSION),
+                        Constants.APP_NAME,
+                        Constants.APP_VERSION),
                 true //modal
         );
         if(messageHandler == null) {
@@ -227,7 +228,7 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
             this.address = addressString;
         } catch (ConnectException ex) {
             this.handleSearchScannerException(ex,
-                    DocumentScanner.SANED_BUG_INFO);
+                    Constants.SANED_BUG_INFO);
         } catch (IOException | SaneException ex) {
             this.handleSearchScannerException(ex, "");
         }

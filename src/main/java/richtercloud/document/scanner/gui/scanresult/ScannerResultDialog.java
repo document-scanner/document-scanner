@@ -53,6 +53,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.gui.DocumentScanner;
 import richtercloud.document.scanner.gui.Tools;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
@@ -155,8 +156,8 @@ public class ScannerResultDialog extends JDialog {
         mainPanel.setPreferredSize(new Dimension(initialWidth, initialHeight));
 
         setTitle(DocumentScanner.generateApplicationWindowTitle("Scanner result",
-                DocumentScanner.APP_NAME,
-                DocumentScanner.APP_VERSION));
+                Constants.APP_NAME,
+                Constants.APP_VERSION));
 
         this.documentPane = new DocumentPane();
         this.documentPaneScrollPane = new ScrollPane(documentPane);

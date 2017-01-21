@@ -18,7 +18,7 @@ package richtercloud.document.scanner.valuedetectionservice;
  *
  * @author richter
  */
-public class ContactValueDetectionServiceConf implements ValueDetectionServiceConf {
+public class ContactValueDetectionServiceConf extends AbstractValueDetectionServiceConf {
     private static final long serialVersionUID = 1L;
 
     @Override

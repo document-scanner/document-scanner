@@ -33,8 +33,6 @@ import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import static richtercloud.document.scanner.gui.DocumentScanner.APP_NAME;
-import static richtercloud.document.scanner.gui.DocumentScanner.APP_VERSION;
 import richtercloud.document.scanner.ifaces.DocumentAddException;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.model.imagewrapper.CachingImageWrapper;
@@ -96,7 +94,9 @@ public class Tools {
             throw new IllegalArgumentException("documentFile mustn't be null");
         }
         final SwingWorkerGetWaitDialog dialog = new SwingWorkerGetWaitDialog(SwingUtilities.getWindowAncestor(waitDialogParent), //owner
-                DocumentScanner.generateApplicationWindowTitle("Wait", APP_NAME, APP_VERSION), //dialogTitle
+                DocumentScanner.generateApplicationWindowTitle("Wait",
+                        Constants.APP_NAME,
+                        Constants.APP_VERSION), //dialogTitle
                 "Retrieving image data", //labelText
                 null //progressBarText
         );

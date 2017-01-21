@@ -21,6 +21,7 @@ import javax.swing.DefaultListModel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
+import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.gui.DocumentScanner;
 
 /**
@@ -266,7 +267,9 @@ public class TagComponent extends JPanel {
         String selectedTag = availableList.getSelectedValue();
         int answer = JOptionPane.showConfirmDialog(this,
                 String.format("Do you want to delete the tag '%s'?", selectedTag),
-                DocumentScanner.generateApplicationWindowTitle("Delete tag", DocumentScanner.APP_NAME, DocumentScanner.APP_VERSION),
+                DocumentScanner.generateApplicationWindowTitle("Delete tag",
+                        Constants.APP_NAME,
+                        Constants.APP_VERSION),
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE);
         if(answer == JOptionPane.YES_OPTION) {

@@ -18,6 +18,9 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import org.apache.commons.lang3.builder.RecursiveToStringStyle;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
  * Since jFreeSane doesn't have persistable {@link SaneDevice} and
@@ -125,5 +128,13 @@ public class ScannerConf implements Serializable {
 
     public void setAvailablePaperFormats(Set<ScannerConfPaperFormat> availablePaperFormats) {
         this.availablePaperFormats = availablePaperFormats;
+    }
+
+    @Override
+    public String toString() {
+        ToStringBuilder toStringBuilder = new ReflectionToStringBuilder(this,
+                new RecursiveToStringStyle());
+        String retValue = toStringBuilder.toString();
+        return retValue;
     }
 }

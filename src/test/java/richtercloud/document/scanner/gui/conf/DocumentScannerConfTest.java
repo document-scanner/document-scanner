@@ -12,17 +12,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package richtercloud.document.scanner.valuedetectionservice;
+package richtercloud.document.scanner.gui.conf;
+
+import java.io.IOException;
+import org.junit.Test;
 
 /**
  *
  * @author richter
  */
-public class DateFormatValueDetectionServiceConf extends AbstractValueDetectionServiceConf {
-    private static final long serialVersionUID = 1L;
+public class DocumentScannerConfTest {
 
-    @Override
-    public void validate() throws ValueDetectionServiceConfValidationException {
-        //nothing to validate
+    @Test
+    public void testToString() throws IOException {
+        DocumentScannerConf instance = new DocumentScannerConf();
+        String result = instance.toString();
     }
 }

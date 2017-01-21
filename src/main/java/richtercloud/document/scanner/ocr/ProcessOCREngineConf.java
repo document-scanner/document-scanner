@@ -14,6 +14,9 @@
  */
 package richtercloud.document.scanner.ocr;
 
+import org.apache.commons.lang3.builder.RecursiveToStringStyle;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import richtercloud.document.scanner.ifaces.OCREngineConf;
 
 /**
@@ -34,5 +37,13 @@ public class ProcessOCREngineConf implements OCREngineConf {
 
     public void setBinary(String binary) {
         this.binary = binary;
+    }
+
+    @Override
+    public String toString() {
+        ToStringBuilder toStringBuilder = new ReflectionToStringBuilder(this,
+                new RecursiveToStringStyle());
+        String retValue = toStringBuilder.toString();
+        return retValue;
     }
 }

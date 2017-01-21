@@ -17,6 +17,7 @@ package richtercloud.document.scanner.gui.scanner;
 import java.awt.Window;
 import java.util.Arrays;
 import javax.swing.JDialog;
+import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.gui.DocumentScanner;
 
 /**
@@ -43,7 +44,9 @@ public class ScannerPageSelectDialog extends JDialog {
     public ScannerPageSelectDialog(Window parent,
             DocumentSource initialDocumentSource) {
         super(parent,
-                DocumentScanner.generateApplicationWindowTitle("Select pages to scan", DocumentScanner.APP_NAME, DocumentScanner.APP_VERSION),
+                DocumentScanner.generateApplicationWindowTitle("Select pages to scan",
+                        Constants.APP_NAME,
+                        Constants.APP_VERSION),
                 ModalityType.APPLICATION_MODAL //modal
         );
         if(initialDocumentSource == null) {

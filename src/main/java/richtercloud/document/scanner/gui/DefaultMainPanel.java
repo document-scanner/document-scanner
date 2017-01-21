@@ -59,8 +59,6 @@ import richtercloud.document.scanner.components.OCRResultPanelFetcherProgressLis
 import richtercloud.document.scanner.components.annotations.ScanResult;
 import richtercloud.document.scanner.components.tag.TagStorage;
 import richtercloud.document.scanner.flexdock.MainPanelDockingManagerFlexdock;
-import static richtercloud.document.scanner.gui.DocumentScanner.BIDIRECTIONAL_HELP_DIALOG_TITLE;
-import static richtercloud.document.scanner.gui.DocumentScanner.INITIAL_QUERY_LIMIT_DEFAULT;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.ifaces.DocumentAddException;
 import richtercloud.document.scanner.ifaces.EntityPanel;
@@ -596,24 +594,24 @@ public class DefaultMainPanel extends MainPanel {
                     embeddableFieldHandler,
                     readOnlyFieldRetriever);
             JPAAmountMoneyMappingFieldHandlerFactory jPAAmountMoneyMappingFieldHandlerFactory = JPAAmountMoneyMappingFieldHandlerFactory.create(storage,
-                    INITIAL_QUERY_LIMIT_DEFAULT,
+                    Constants.INITIAL_QUERY_LIMIT_DEFAULT,
                     messageHandler,
                     amountMoneyUsageStatisticsStorage,
                     amountMoneyCurrencyStorage,
                     amountMoneyExchangeRateRetriever,
-                    BIDIRECTIONAL_HELP_DIALOG_TITLE,
+                    Constants.BIDIRECTIONAL_HELP_DIALOG_TITLE,
                     readOnlyFieldRetriever);
             ToManyTypeHandler toManyTypeHandler = new ToManyTypeHandler(storage,
                     messageHandler,
                     typeHandlerMapping,
                     typeHandlerMapping,
-                    BIDIRECTIONAL_HELP_DIALOG_TITLE,
+                    Constants.BIDIRECTIONAL_HELP_DIALOG_TITLE,
                     queryComponentFieldInitializer,
                     entryStorage,
                     readOnlyFieldRetriever);
             ToOneTypeHandler toOneTypeHandler = new ToOneTypeHandler(storage,
                     messageHandler,
-                    BIDIRECTIONAL_HELP_DIALOG_TITLE,
+                    Constants.BIDIRECTIONAL_HELP_DIALOG_TITLE,
                     queryComponentFieldInitializer,
                     entryStorage,
                     readOnlyFieldRetriever);
@@ -708,8 +706,8 @@ public class DefaultMainPanel extends MainPanel {
             messageHandler.handle(new Message(String.format("<html>%s. Please consider filing a "
                     + "bug at <a href=\"%s\">%s</a>. Stacktrace: %s</html>",
                     message,
-                    DocumentScanner.BUG_URL,
-                    DocumentScanner.BUG_URL,
+                    Constants.BUG_URL,
+                    Constants.BUG_URL,
                     ExceptionUtils.getFullStackTrace(ex)),
                     JOptionPane.ERROR_MESSAGE,
                     "An exception occured"));
