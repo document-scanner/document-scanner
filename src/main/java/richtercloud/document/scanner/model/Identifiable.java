@@ -129,7 +129,7 @@ Exception Description: The type [class java.sql.Timestamp] for the attribute [la
      * IDs are supposed to be set using an {@link IdApplier}.
      * @param id the ID to set
      */
-    protected void setId(Long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -137,15 +137,15 @@ Exception Description: The type [class java.sql.Timestamp] for the attribute [la
         return tags;
     }
 
-    protected void setTags(Set<String> tags) {
+    public void setTags(Set<String> tags) {
         this.tags = tags;
     }
 
-    protected Date getLastUsed() {
+    public Date getLastUsed() {
         return lastUsed;
     }
 
-    protected void setLastUsed(Date lastUsed) {
+    public void setLastUsed(Date lastUsed) {
         this.lastUsed = lastUsed;
     }
 
