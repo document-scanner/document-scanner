@@ -109,6 +109,8 @@ public class DocumentScannerConf implements Serializable {
     public final static File AMOUNT_MONEY_EXCHANGE_RATE_RETRIEVER_FILE_CACHE_DIR_DEFAULT = new File(CONFIG_DIR_DEFAULT,
             AMOUNT_MONEY_EXCHANGE_RATE_RETRIEVER_FILE_CACHE_DIR_NAME_DEFAULT);
     public final static int AMOUNT_MONEY_EXCHANGE_RATE_RETRIEVER_EXPIRATION_MILLIS = 24*60*60*1000; //24 hours
+    public final static String CREDENTIALS_STORE_FILE_NAME_DEFAULT = "credentials.xml";
+    public final static File CREDENTIALS_STORE_FILE_DEFAULT = new File(CONFIG_DIR_DEFAULT, CREDENTIALS_STORE_FILE_NAME_DEFAULT);
     /**
      * The file the this configuration has been loaded from. Might be
      * {@code null} if no initial configuration file has been specified.
@@ -216,6 +218,17 @@ public class DocumentScannerConf implements Serializable {
     private File queryHistoryEntryStorageFile = QUERY_HISTORY_ENTRY_STORAGE_FILE_DEFAULT;
     private File amountMoneyExchangeRateRetrieverFileCacheDir = AMOUNT_MONEY_EXCHANGE_RATE_RETRIEVER_FILE_CACHE_DIR_DEFAULT;
     private int amountMoneyExchangeRateRetrieverExpirationMillis = AMOUNT_MONEY_EXCHANGE_RATE_RETRIEVER_EXPIRATION_MILLIS;
+    /**
+     * Whether or not the user has confirmed the usage of external automatic bug
+     * tracking based on stacktraces of uncaught exceptions.
+     */
+    private boolean userAllowedAutoBugTracking = false;
+    /**
+     * Whether or not the user doesn't want to be asked again about whether
+     * he_she allows the usage of external automatic bug tracking.
+     */
+    private boolean skipUserAllowedAutoBugTrackingQuestion = false;
+    private File credentialsStoreFile = CREDENTIALS_STORE_FILE_DEFAULT;
 
     private static Set<StorageConf> generateAvailableStorageConfsDefault(Set<Class<?>> entityClasses,
             File xMLStorageFile) throws IOException {
@@ -314,7 +327,10 @@ public class DocumentScannerConf implements Serializable {
             int resolutionWish,
             File queryHistoryEntryStorageFile,
             File amountMoneyExchangeRateRetrieverFileCacheDir,
-            int amountMoneyExchangeRateRetrieverExpirationMillis
+            int amountMoneyExchangeRateRetrieverExpirationMillis,
+            boolean userAllowedAutoBugTracking,
+            boolean skipUserAllowedAutoBugTrackingQuestion,
+            File credentialsStoreFile
     ) {
         this.configFile = configFile;
         this.scannerName = scannerName;
@@ -352,6 +368,8 @@ public class DocumentScannerConf implements Serializable {
         this.queryHistoryEntryStorageFile = queryHistoryEntryStorageFile;
         this.amountMoneyExchangeRateRetrieverFileCacheDir = amountMoneyExchangeRateRetrieverFileCacheDir;
         this.amountMoneyExchangeRateRetrieverExpirationMillis = amountMoneyExchangeRateRetrieverExpirationMillis;
+        this.userAllowedAutoBugTracking = userAllowedAutoBugTracking;
+        this.skipUserAllowedAutoBugTrackingQuestion = this.skipUserAllowedAutoBugTrackingQuestion;
     }
 
     /**
@@ -394,8 +412,35 @@ public class DocumentScannerConf implements Serializable {
                 documentScannerConf.getResolutionWish(),
                 documentScannerConf.getQueryHistoryEntryStorageFile(),
                 documentScannerConf.getAmountMoneyExchangeRateRetrieverFileCacheDir(),
-                documentScannerConf.getAmountMoneyExchangeRateRetrieverExpirationMillis()
+                documentScannerConf.getAmountMoneyExchangeRateRetrieverExpirationMillis(),
+                documentScannerConf.isUserAllowedAutoBugTracking(),
+                documentScannerConf.isSkipUserAllowedAutoBugTrackingQuestion(),
+                documentScannerConf.getCredentialsStoreFile()
         );
+    }
+
+    public File getCredentialsStoreFile() {
+        return credentialsStoreFile;
+    }
+
+    public void setCredentialsStoreFile(File credentialsStoreFile) {
+        this.credentialsStoreFile = credentialsStoreFile;
+    }
+
+    public boolean isUserAllowedAutoBugTracking() {
+        return userAllowedAutoBugTracking;
+    }
+
+    public void setUserAllowedAutoBugTracking(boolean userAllowedAutoBugTracking) {
+        this.userAllowedAutoBugTracking = userAllowedAutoBugTracking;
+    }
+
+    public boolean isSkipUserAllowedAutoBugTrackingQuestion() {
+        return skipUserAllowedAutoBugTrackingQuestion;
+    }
+
+    public void setSkipUserAllowedAutoBugTrackingQuestion(boolean skipUserAllowedAutoBugTrackingQuestion) {
+        this.skipUserAllowedAutoBugTrackingQuestion = skipUserAllowedAutoBugTrackingQuestion;
     }
 
     public int getAmountMoneyExchangeRateRetrieverExpirationMillis() {

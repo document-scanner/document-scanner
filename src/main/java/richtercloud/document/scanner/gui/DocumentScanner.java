@@ -62,6 +62,8 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.jscience.economics.money.Currency;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.credential.store.CredentialStore;
+import richtercloud.credential.store.EncryptedFileCredentialStore;
 import richtercloud.document.scanner.components.AutoOCRValueDetectionPanel;
 import richtercloud.document.scanner.components.tag.FileTagStorage;
 import richtercloud.document.scanner.components.tag.TagStorage;
@@ -98,12 +100,17 @@ import richtercloud.document.scanner.setter.UtilDatePickerSetter;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceConf;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceConfDialog;
+import richtercloud.message.handler.BugHandler;
 import richtercloud.message.handler.ConfirmMessageHandler;
+import richtercloud.message.handler.DefaultIssueHandler;
+import richtercloud.message.handler.DialogBugHandler;
 import richtercloud.message.handler.DialogConfirmMessageHandler;
 import richtercloud.message.handler.DialogMessageHandler;
+import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.JavaFXDialogMessageHandler;
 import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
+import richtercloud.message.handler.RavenBugHandler;
 import richtercloud.reflection.form.builder.AnyType;
 import richtercloud.reflection.form.builder.FieldRetriever;
 import richtercloud.reflection.form.builder.components.date.UtilDatePicker;
@@ -211,6 +218,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private final AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever;
     private final TagStorage tagStorage;
     private final Map<java.lang.reflect.Type, TypeHandler<?, ?,?, ?>> typeHandlerMapping;
+    private final IssueHandler issueHandler;
     private final MessageHandler messageHandler = new DialogMessageHandler(this,
             "", //titlePrefix
             String.format("- %s %s", Constants.APP_NAME, Constants.APP_VERSION));
@@ -263,6 +271,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private final QueryHistoryEntryStorage entryStorage;
     private final JPAFieldRetriever reflectionFormBuilderFieldRetriever = new DocumentScannerFieldRetriever();
     private final FieldRetriever readOnlyFieldRetriever = new JPACachedFieldRetriever();
+    private final CredentialStore credentialStore;
     /**
      * Start to fetch results and warm up the cache after start.
      */
@@ -314,6 +323,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     */
     public DocumentScanner(DocumentScannerConf documentScannerConf) throws BinaryNotFoundException, IOException, StorageCreationException, ImageWrapperStorageDirExistsException, QueryHistoryEntryStorageCreationException, IdGenerationException {
         this.documentScannerConf = documentScannerConf;
+
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
         ch.qos.logback.classic.Logger rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
         //configure debug level of root logger
@@ -333,6 +343,44 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         fileAppender.start();
         rootLogger.addAppender(fileAppender);
         LOGGER.info(String.format("logging to file '%s'", documentScannerConf.getLogFilePath()));
+
+        this.credentialStore = new EncryptedFileCredentialStore(documentScannerConf.getCredentialsStoreFile());
+
+        //check whether user allowed automatic bug tracking
+        if(!documentScannerConf.isSkipUserAllowedAutoBugTrackingQuestion()) {
+            String yesOnce = "Yes, but in this session only";
+            String yesAlways = "Yes, and never ask me again";
+            String noOnce = "No, not this time";
+            String noAlways = "No, and never ask me again";
+            String answer = confirmMessageHandler.confirm(new Message(String.format("Do "
+                    + "you allow %s to anonymously and automatically track "
+                    + "issues and bugs?",
+                    Constants.APP_NAME),
+                    JOptionPane.QUESTION_MESSAGE,
+                    "Anoymous contribution"),
+                    yesOnce,
+                    yesAlways,
+                    noOnce,
+                    noAlways);
+            if(answer.equals(yesAlways) || answer.equals(noAlways)) {
+                this.documentScannerConf.setSkipUserAllowedAutoBugTrackingQuestion(true);
+            }
+            this.documentScannerConf.setUserAllowedAutoBugTracking(answer.equals(yesOnce) || answer.equals(yesAlways));
+        }
+        BugHandler bugHandler;
+        if(this.documentScannerConf.isUserAllowedAutoBugTracking()) {
+            bugHandler = new RavenBugHandler(credentialStore,
+                    messageHandler,
+                    this);
+        }else {
+            bugHandler = new DialogBugHandler(this,
+                    Constants.BUG_URL,
+                    "", //titlePrefix
+                    String.format("- %s %s", Constants.APP_NAME, Constants.APP_VERSION) //titleSuffix
+            );
+        }
+        this.issueHandler = new DefaultIssueHandler(messageHandler,
+                bugHandler);
 
         this.amountMoneyExchangeRateRetriever = new FailsafeAmountMoneyExchangeRateRetriever(documentScannerConf.getAmountMoneyExchangeRateRetrieverFileCacheDir(),
                 documentScannerConf.getAmountMoneyExchangeRateRetrieverExpirationMillis());
@@ -463,7 +511,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 amountMoneyUsageStatisticsStorage,
                 amountMoneyCurrencyStorage,
                 amountMoneyExchangeRateRetriever,
-                messageHandler,
+                issueHandler,
                 confirmMessageHandler,
                 this,
                 oCREngine,

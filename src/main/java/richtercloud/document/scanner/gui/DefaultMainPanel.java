@@ -39,7 +39,6 @@ import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.ProgressMonitor;
-import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -76,8 +75,9 @@ import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcherProgressEv
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcherProgressListener;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.message.handler.ConfirmMessageHandler;
+import richtercloud.message.handler.ExceptionMessage;
+import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.Message;
-import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.FieldRetriever;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
@@ -158,7 +158,7 @@ public class DefaultMainPanel extends MainPanel {
     private final Class<?> primaryClassSelection;
     private final Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping;
     private PersistenceStorage storage;
-    private final MessageHandler messageHandler;
+    private final IssueHandler issueHandler;
     private final ConfirmMessageHandler confirmMessageHandler;
     private final AutoOCRValueDetectionReflectionFormBuilder reflectionFormBuilder;
     private final AmountMoneyUsageStatisticsStorage amountMoneyUsageStatisticsStorage;
@@ -194,7 +194,7 @@ public class DefaultMainPanel extends MainPanel {
             AmountMoneyUsageStatisticsStorage amountMoneyUsageStatisticsStorage,
             AmountMoneyCurrencyStorage amountMoneyAdditionalCurrencyStorage,
             AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever,
-            MessageHandler messageHandler,
+            IssueHandler issueHandler,
             ConfirmMessageHandler confirmMessageHandler,
             JFrame dockingControlFrame,
             OCREngine oCREngine,
@@ -216,7 +216,7 @@ public class DefaultMainPanel extends MainPanel {
                 amountMoneyUsageStatisticsStorage,
                 amountMoneyAdditionalCurrencyStorage,
                 amountMoneyExchangeRateRetriever,
-                messageHandler,
+                issueHandler,
                 confirmMessageHandler,
                 dockingControlFrame,
                 oCREngine,
@@ -240,7 +240,7 @@ public class DefaultMainPanel extends MainPanel {
             AmountMoneyUsageStatisticsStorage amountMoneyUsageStatisticsStorage,
             AmountMoneyCurrencyStorage amountMoneyCurrencyStorage,
             AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever,
-            MessageHandler messageHandler,
+            IssueHandler issueHandler,
             ConfirmMessageHandler confirmMessageHandler,
             JFrame dockingControlFrame,
             OCREngine oCREngine,
@@ -255,10 +255,10 @@ public class DefaultMainPanel extends MainPanel {
             QueryHistoryEntryStorage entryStorage,
             JPAFieldRetriever reflectionFormBuilderFieldRetriever,
             FieldRetriever readOnlyFieldRetriever) {
-        if(messageHandler == null) {
+        if(issueHandler == null) {
             throw new IllegalArgumentException("messageHandler mustn't be null");
         }
-        this.messageHandler = messageHandler;
+        this.issueHandler = issueHandler;
         if(documentScannerConf == null) {
             throw new IllegalArgumentException("documentScannerConf mustn't be "
                     + "null");
@@ -282,7 +282,7 @@ public class DefaultMainPanel extends MainPanel {
         this.readOnlyFieldRetriever = readOnlyFieldRetriever;
         this.reflectionFormBuilder = new AutoOCRValueDetectionReflectionFormBuilder(storage,
                 "Field description",
-                messageHandler,
+                issueHandler,
                 confirmMessageHandler,
                 reflectionFormBuilderFieldRetriever,
                 idApplier,
@@ -585,24 +585,24 @@ public class DefaultMainPanel extends MainPanel {
             AmountMoneyMappingFieldHandlerFactory embeddableFieldHandlerFactory = new AmountMoneyMappingFieldHandlerFactory(amountMoneyUsageStatisticsStorage,
                     amountMoneyCurrencyStorage,
                     amountMoneyExchangeRateRetriever,
-                    messageHandler);
+                    issueHandler);
             FieldHandler embeddableFieldHandler = new MappingFieldHandler(embeddableFieldHandlerFactory.generateClassMapping(),
                     embeddableFieldHandlerFactory.generatePrimitiveMapping());
             ElementCollectionTypeHandler elementCollectionTypeHandler = new ElementCollectionTypeHandler(typeHandlerMapping,
                     typeHandlerMapping,
-                    messageHandler,
+                    issueHandler,
                     embeddableFieldHandler,
                     readOnlyFieldRetriever);
             JPAAmountMoneyMappingFieldHandlerFactory jPAAmountMoneyMappingFieldHandlerFactory = JPAAmountMoneyMappingFieldHandlerFactory.create(storage,
                     Constants.INITIAL_QUERY_LIMIT_DEFAULT,
-                    messageHandler,
+                    issueHandler,
                     amountMoneyUsageStatisticsStorage,
                     amountMoneyCurrencyStorage,
                     amountMoneyExchangeRateRetriever,
                     Constants.BIDIRECTIONAL_HELP_DIALOG_TITLE,
                     readOnlyFieldRetriever);
             ToManyTypeHandler toManyTypeHandler = new ToManyTypeHandler(storage,
-                    messageHandler,
+                    issueHandler,
                     typeHandlerMapping,
                     typeHandlerMapping,
                     Constants.BIDIRECTIONAL_HELP_DIALOG_TITLE,
@@ -610,7 +610,7 @@ public class DefaultMainPanel extends MainPanel {
                     entryStorage,
                     readOnlyFieldRetriever);
             ToOneTypeHandler toOneTypeHandler = new ToOneTypeHandler(storage,
-                    messageHandler,
+                    issueHandler,
                     Constants.BIDIRECTIONAL_HELP_DIALOG_TITLE,
                     queryComponentFieldInitializer,
                     entryStorage,
@@ -621,7 +621,7 @@ public class DefaultMainPanel extends MainPanel {
                     elementCollectionTypeHandler,
                     toManyTypeHandler,
                     toOneTypeHandler,
-                    messageHandler,
+                    issueHandler,
                     confirmMessageHandler,
                     fieldRetriever,
                     oCRResultPanelFetcher,
@@ -654,13 +654,13 @@ public class DefaultMainPanel extends MainPanel {
                     entityToEdit,
                     reflectionFormBuilder,
                     fieldHandler,
-                    messageHandler);
+                    issueHandler);
 
             OCRPanel oCRPanel = new DefaultOCRPanel(entityClasses0,
                     reflectionFormPanelTabbedPane,
                     valueSetterMapping,
                     storage,
-                    messageHandler,
+                    issueHandler,
                     reflectionFormBuilderFieldRetriever,
                     documentScannerConf);
             EntityPanel entityPanel = new DefaultEntityPanel(entityClasses0,
@@ -673,7 +673,7 @@ public class DefaultMainPanel extends MainPanel {
                     amountMoneyExchangeRateRetriever,
                     reflectionFormBuilder,
                     fieldHandler,
-                    messageHandler,
+                    issueHandler,
                     documentScannerConf,
                     reflectionFormPanelTabbedPane);
             OCRSelectComponent oCRSelectComponent = new DefaultOCRSelectComponent(oCRSelectPanelPanel,
@@ -697,20 +697,13 @@ public class DefaultMainPanel extends MainPanel {
             //exceptions and a lot of JVMs don't provide debugging
             //symbols.
             String message = "An unexpected exception occured "
-                            + "during initialization (see stacktrace "
-                            + "for details)";
+                            + "during initialization, see nested exception for "
+                            + "details";
             LOGGER.error(message, ex);
             if(progressMonitor != null) {
                 progressMonitor.close();
             }
-            messageHandler.handle(new Message(String.format("<html>%s. Please consider filing a "
-                    + "bug at <a href=\"%s\">%s</a>. Stacktrace: %s</html>",
-                    message,
-                    Constants.BUG_URL,
-                    Constants.BUG_URL,
-                    ExceptionUtils.getFullStackTrace(ex)),
-                    JOptionPane.ERROR_MESSAGE,
-                    "An exception occured"));
+            issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
         }
         return retValue;
     }
@@ -725,7 +718,7 @@ public class DefaultMainPanel extends MainPanel {
         try {
             oCRResult = oCREngine.recognizeImages(new LinkedList<>(Arrays.asList(imageSelection)));
         } catch (OCREngineRecognitionException ex) {
-            messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+            issueHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
             return;
         }
         OCRPanel oCRPanel = documentSwitchingMap.get(oCRSelectComponent).getLeft();

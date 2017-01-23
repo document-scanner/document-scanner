@@ -211,6 +211,12 @@
             <type>jar</type>
         </dependency>
         <dependency>
+            <groupId>richtercloud</groupId>
+            <artifactId>credential-store</artifactId>
+            <version>1.0-beta2</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
             <groupId>javax</groupId>
             <artifactId>javaee-api</artifactId>
             <version>7.0</version>
