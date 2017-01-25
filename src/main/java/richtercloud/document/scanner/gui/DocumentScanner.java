@@ -62,7 +62,7 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.jscience.economics.money.Currency;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import richtercloud.credential.store.CredentialStore;
+import richtercloud.credential.store.EncryptedCredentialStore;
 import richtercloud.credential.store.EncryptedFileCredentialStore;
 import richtercloud.document.scanner.components.AutoOCRValueDetectionPanel;
 import richtercloud.document.scanner.components.tag.FileTagStorage;
@@ -106,6 +106,7 @@ import richtercloud.message.handler.DefaultIssueHandler;
 import richtercloud.message.handler.DialogBugHandler;
 import richtercloud.message.handler.DialogConfirmMessageHandler;
 import richtercloud.message.handler.DialogMessageHandler;
+import richtercloud.message.handler.ExceptionMessage;
 import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.JavaFXDialogMessageHandler;
 import richtercloud.message.handler.Message;
@@ -271,7 +272,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private final QueryHistoryEntryStorage entryStorage;
     private final JPAFieldRetriever reflectionFormBuilderFieldRetriever = new DocumentScannerFieldRetriever();
     private final FieldRetriever readOnlyFieldRetriever = new JPACachedFieldRetriever();
-    private final CredentialStore credentialStore;
+    private final EncryptedCredentialStore<String, String> credentialStore;
     /**
      * Start to fetch results and warm up the cache after start.
      */
@@ -344,7 +345,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         rootLogger.addAppender(fileAppender);
         LOGGER.info(String.format("logging to file '%s'", documentScannerConf.getLogFilePath()));
 
-        this.credentialStore = new EncryptedFileCredentialStore(documentScannerConf.getCredentialsStoreFile());
+        this.credentialStore = new EncryptedFileCredentialStore<>(documentScannerConf.getCredentialsStoreFile());
 
         //check whether user allowed automatic bug tracking
         if(!documentScannerConf.isSkipUserAllowedAutoBugTrackingQuestion()) {
@@ -1412,6 +1413,11 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 DocumentScannerConf documentScannerConf = null;
                 MessageHandler messageHandler = new DialogMessageHandler(null //parent
                         );
+                BugHandler bugHandler = new RavenBugHandler(null, //credentialStore
+                        messageHandler,
+                        null //ravenDSNDialogParent
+                );
+                IssueHandler issueHandler = new DefaultIssueHandler(messageHandler, bugHandler);
                 try {
                     assert DocumentScannerConf.HOME_DIR.exists();
                     documentScannerConf = new DocumentScannerConf();
@@ -1491,12 +1497,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         documentScanner.dispose();
                     }
                 } catch(Exception ex) {
-                    String message = String.format("The unexpected exception '%s' occured", ExceptionUtils.getRootCauseMessage(ex));
-                    LOGGER.error(message, ex);
-                    messageHandler.handle(new Message(message,
-                            JOptionPane.ERROR_MESSAGE,
-                            "unexpected exception occurred"
-                    ));
+                    LOGGER.error("An unexpected exception occured, see nested exception for details", ex);
+                    issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                     if(documentScanner != null) {
                         documentScanner.setVisible(false);
                         documentScanner.close();
