@@ -14,6 +14,8 @@
  */
 package richtercloud.document.scanner.ocr;
 
+import richtercloud.document.scanner.ifaces.OCREngineConfValidationException;
+
 /**
  *
  * @author richter
@@ -34,5 +36,10 @@ public class PdfsandwichOCREngineConf extends ProcessOCREngineConf {
 
     public void setInputTempFilePrefix(String inputTempFilePrefix) {
         this.inputTempFilePrefix = inputTempFilePrefix;
+    }
+
+    @Override
+    public void validate() throws OCREngineConfValidationException {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

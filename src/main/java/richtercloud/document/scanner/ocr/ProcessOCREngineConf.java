@@ -23,7 +23,7 @@ import richtercloud.document.scanner.ifaces.OCREngineConf;
  *
  * @author richter
  */
-public class ProcessOCREngineConf implements OCREngineConf {
+public abstract class ProcessOCREngineConf implements OCREngineConf {
     private static final long serialVersionUID = 1L;
     private String binary;
 

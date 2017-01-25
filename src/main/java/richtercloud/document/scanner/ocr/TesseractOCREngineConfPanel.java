@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.swing.DefaultListModel;
 import javax.swing.JOptionPane;
+import richtercloud.document.scanner.ifaces.OCREngineConfValidationException;
 import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
 
@@ -31,7 +32,7 @@ import richtercloud.message.handler.MessageHandler;
 public class TesseractOCREngineConfPanel extends OCREngineConfPanel<TesseractOCREngineConf> {
     private static final long serialVersionUID = 1L;
     private final DefaultListModel<String> languageListModel = new DefaultListModel<>();
-    private final TesseractOCREngineConf conf;
+    private TesseractOCREngineConf conf;
     private final MessageHandler messageHandler;
 
     /**
@@ -85,25 +86,28 @@ public class TesseractOCREngineConfPanel extends OCREngineConfPanel<TesseractOCR
         confToValidate.setBinary(binaryTextField.getText());
         try {
             confToValidate.validate();
-        } catch (BinaryNotFoundException | IllegalStateException ex) {
+
+            //update model if validation succeeded (need to be able to handle
+            //invalid configuration at initialization and after change)
+            languageListModel.clear();
+            List<String> availableLanguages = confToValidate.getAvailableLanguages();
+            for(String lang : availableLanguages) {
+                this.languageListModel.addElement(lang);
+            }
+            List<Integer> selectedLanguageIndices = new ArrayList<>();
+            for(String selectedLanguage : confToValidate.getSelectedLanguages()) {
+                int index = this.languageListModel.indexOf(selectedLanguage);
+                selectedLanguageIndices.add(index);
+            }
+            int[] selectedLanguageIndicesArray = new int[selectedLanguageIndices.size()];
+            for(int i =0; i<selectedLanguageIndices.size(); i++) {
+                selectedLanguageIndicesArray[i] = selectedLanguageIndices.get(i);
+            }
+            this.languageList.setSelectedIndices(selectedLanguageIndicesArray);
+            this.conf = confToValidate;
+        } catch (OCREngineConfValidationException ex) {
             this.messageHandler.handle(new Message(ex, JOptionPane.WARNING_MESSAGE));
         }
-        //update model
-        languageListModel.clear();
-        List<String> availableLanguages = confToValidate.getAvailableLanguages();
-        for(String lang : availableLanguages) {
-            this.languageListModel.addElement(lang);
-        }
-        List<Integer> selectedLanguageIndices = new ArrayList<>();
-        for(String selectedLanguage : confToValidate.getSelectedLanguages()) {
-            int index = this.languageListModel.indexOf(selectedLanguage);
-            selectedLanguageIndices.add(index);
-        }
-        int[] selectedLanguageIndicesArray = new int[selectedLanguageIndices.size()];
-        for(int i =0; i<selectedLanguageIndices.size(); i++) {
-            selectedLanguageIndicesArray[i] = selectedLanguageIndices.get(i);
-        }
-        this.languageList.setSelectedIndices(selectedLanguageIndicesArray);
     }
 
     @Override

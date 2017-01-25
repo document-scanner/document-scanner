@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
+import richtercloud.document.scanner.ifaces.OCREngineConfValidationException;
 
 /**
  *
@@ -95,12 +96,17 @@ public class TesseractOCREngineConf extends ProcessOCREngineConf {
         return langs;
     }
 
-    public void validate() throws BinaryNotFoundException, IllegalStateException {
-        ProcessOCREngine.checkBinaryAvailableExceptions(this.getBinary());
+    @Override
+    public void validate() throws OCREngineConfValidationException {
+        try {
+            ProcessOCREngine.checkBinaryAvailableExceptions(this.getBinary());
+        } catch (BinaryNotFoundException ex) {
+            throw new OCREngineConfValidationException(ex);
+        }
         try {
             getAvailableLanguages();
-        } catch (IOException | InterruptedException ex) {
-            throw new RuntimeException(ex);
+        } catch (IOException | InterruptedException | IllegalStateException ex) {
+            throw new OCREngineConfValidationException(ex);
         }
     }
 }

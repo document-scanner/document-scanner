@@ -28,6 +28,8 @@ import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 import javax.swing.MutableComboBoxModel;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
+import richtercloud.document.scanner.ifaces.OCREngineConfValidationException;
+import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
 
 /**
@@ -207,7 +209,14 @@ public class OCREngineSelectDialog extends javax.swing.JDialog {
         Class<? extends OCREngineConf> oCREngineClass = this.oCRDialogEngineComboBox.getItemAt(this.oCRDialogEngineComboBox.getSelectedIndex());
         this.currentOCREngineConfPanel = this.oCREngineConfPanelMap.get(oCREngineClass);
         assert this.currentOCREngineConfPanel != null;
-        this.selectedOCREngineConf = this.currentOCREngineConfPanel.getOCREngineConf();
+        OCREngineConf selectedOCREngineConf0 = this.currentOCREngineConfPanel.getOCREngineConf();
+        try {
+            selectedOCREngineConf0.validate();
+        }catch(OCREngineConfValidationException ex) {
+            messageHandler.handle(new Message(ex));
+            return;
+        }
+        this.selectedOCREngineConf = selectedOCREngineConf0;
         this.setVisible(false);
     }//GEN-LAST:event_oCRDialogSaveButtonActionPerformed
 
