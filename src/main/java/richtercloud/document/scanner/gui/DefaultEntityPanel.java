@@ -182,7 +182,10 @@ public class DefaultEntityPanel extends EntityPanel {
     }
 
     private void autoOCRValueDetectionGUI() {
-        if(!detectionResults.isEmpty()) {
+        if(detectionResults != null && !detectionResults.isEmpty()
+            //might be null if OCREngineRecognitionException occured in
+            //autoOCRValueDetectionNonGUI
+        ) {
             for(Pair<Class, Field> pair : this.reflectionFormBuilder.getComboBoxModelMap().keySet()) {
                 DefaultComboBoxModel<ValueDetectionResult<?>> comboBoxModel = this.reflectionFormBuilder.getComboBoxModelMap().get(pair);
                 Field field = pair.getValue();
