@@ -36,14 +36,15 @@ import richtercloud.document.scanner.ifaces.EntityPanel;
 import richtercloud.document.scanner.ifaces.OCREngineRecognitionException;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcher;
 import richtercloud.document.scanner.setter.ValueSetter;
-import richtercloud.document.scanner.valuedetectionservice.ValueDetectionResult;
 import richtercloud.document.scanner.valuedetectionservice.DelegatingValueDetectionService;
 import richtercloud.document.scanner.valuedetectionservice.DelegatingValueDetectionServiceConfFactory;
+import richtercloud.document.scanner.valuedetectionservice.ValueDetectionResult;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionService;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceConf;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceConfFactory;
+import richtercloud.message.handler.ExceptionMessage;
+import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.Message;
-import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyUsageStatisticsStorage;
@@ -60,7 +61,7 @@ public class DefaultEntityPanel extends EntityPanel {
     private final Set<Class<?>> entityClasses;
     private final AutoOCRValueDetectionReflectionFormBuilder reflectionFormBuilder;
     private final Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping;
-    private final MessageHandler messageHandler;
+    private final IssueHandler issueHandler;
     private final DocumentScannerConf documentScannerConf;
     private ReflectionFormPanelTabbedPane entityCreationTabbedPane;
     private final AmountMoneyCurrencyStorage amountMoneyAdditionalCurrencyStorage;
@@ -79,7 +80,7 @@ public class DefaultEntityPanel extends EntityPanel {
             AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever,
             AutoOCRValueDetectionReflectionFormBuilder reflectionFormBuilder,
             FieldHandler fieldHandler,
-            MessageHandler messageHandler,
+            IssueHandler issueHandler,
             DocumentScannerConf documentScannerConf,
             ReflectionFormPanelTabbedPane reflectionFormPanelTabbedPane) throws InstantiationException,
             IllegalAccessException,
@@ -109,10 +110,10 @@ public class DefaultEntityPanel extends EntityPanel {
             throw new IllegalArgumentException("valueSetterMapping mustn't be null");
         }
         this.valueSetterMapping = valueSetterMapping;
-        if(messageHandler == null) {
+        if(issueHandler == null) {
             throw new IllegalArgumentException("messageHandler mustn't be null");
         }
-        this.messageHandler = messageHandler;
+        this.issueHandler = issueHandler;
         if(documentScannerConf == null) {
             throw new IllegalArgumentException("documentScannerConf mustn't be null");
         }
@@ -152,7 +153,11 @@ public class DefaultEntityPanel extends EntityPanel {
         Thread autoOCRValueDetectionThread = new Thread(() -> {
             autoOCRValueDetectionNonGUI(oCRSelectPanelPanelFetcher, forceRenewal);
             SwingUtilities.invokeLater(() -> {
-                autoOCRValueDetectionGUI();
+                try {
+                    autoOCRValueDetectionGUI();
+                }catch(Exception ex) {
+                    issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+                }
             });
         },
                 "auto-ocr-value-detection-thread");
@@ -166,7 +171,7 @@ public class DefaultEntityPanel extends EntityPanel {
             try {
                 oCRResult = oCRSelectPanelPanelFetcher.fetch();
             } catch (OCREngineRecognitionException ex) {
-                messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+                issueHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
                 return;
             }
             if(oCRResult != null) {
