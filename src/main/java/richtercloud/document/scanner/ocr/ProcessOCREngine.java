@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.ifaces.OCREngineRecognitionException;
 
 /**
  *
@@ -80,7 +81,7 @@ public abstract class ProcessOCREngine<C extends ProcessOCREngineConf> extends C
     }
 
     @Override
-    protected String recognizeImage0(BufferedImage image) throws IllegalStateException {
+    protected String recognizeImage0(BufferedImage image) throws IllegalStateException, OCREngineRecognitionException {
         if(image == null) {
             throw new IllegalArgumentException("image mustn't be null");
         }
@@ -93,7 +94,7 @@ public abstract class ProcessOCREngine<C extends ProcessOCREngineConf> extends C
         return recognizeImage1(image);
     }
 
-    protected abstract String recognizeImage1(BufferedImage image) throws IllegalStateException;
+    protected abstract String recognizeImage1(BufferedImage image) throws IllegalStateException, OCREngineRecognitionException;
 
     @Override
     public void cancelRecognizeImages() {

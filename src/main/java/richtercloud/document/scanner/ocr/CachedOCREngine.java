@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.ifaces.OCREngineConf;
+import richtercloud.document.scanner.ifaces.OCREngineRecognitionException;
 
 /**
  * An {@link OCREngine} which checks a non-persistent cache to fetch OCR
@@ -54,7 +55,7 @@ public abstract class CachedOCREngine<C extends OCREngineConf> extends ParallelO
     }
 
     @Override
-    protected String recognizeImage(BufferedImage image) {
+    protected String recognizeImage(BufferedImage image) throws OCREngineRecognitionException {
         String retValue = cache.get(image);
         if(retValue == null) {
             Lock imageLock = lockMap.get(image);
@@ -75,7 +76,7 @@ public abstract class CachedOCREngine<C extends OCREngineConf> extends ParallelO
     }
 
     @Override
-    protected String recognizeImageStream(ImageWrapper image, InputStream inputStream) {
+    protected String recognizeImageStream(ImageWrapper image, InputStream inputStream) throws OCREngineRecognitionException {
         //The lock for the image need to be acquired before the
         //imageWrapperCache is checked, otherwise recognizeImageStream0 is
         //invoked for every parallel execution
@@ -112,7 +113,7 @@ public abstract class CachedOCREngine<C extends OCREngineConf> extends ParallelO
         return retValue;
     }
 
-    protected abstract String recognizeImage0(BufferedImage image);
+    protected abstract String recognizeImage0(BufferedImage image) throws OCREngineRecognitionException;
 
-    protected abstract String recognizeImageStream0(InputStream inputStream);
+    protected abstract String recognizeImageStream0(InputStream inputStream) throws OCREngineRecognitionException;
 }

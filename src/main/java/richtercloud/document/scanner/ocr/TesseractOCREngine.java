@@ -25,6 +25,7 @@ import javax.imageio.ImageIO;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.ifaces.OCREngineRecognitionException;
 
 /**
  * A {@link OCREngine} which uses tesseract in inter-process communication
@@ -59,53 +60,22 @@ public class TesseractOCREngine extends ProcessOCREngine<TesseractOCREngineConf>
      * @return {@code null} if the recognition has been canceled using {@link #cancelRecognizeImage() } or the recognition process crashed or the recognition result otherwise
      */
     @Override
-    protected String recognizeImage1(BufferedImage image) throws IllegalStateException {
-        try {
-            Iterator<String> languagesItr = this.oCREngineConf.getSelectedLanguages().iterator();
-            String lanuguageString = languagesItr.next();
-            while(languagesItr.hasNext()) {
-                lanuguageString += "+"+languagesItr.next();
-            }
-            ProcessBuilder tesseractProcessBuilder = new ProcessBuilder(this.getoCREngineConf().getBinary(), "-l", lanuguageString, "stdin", "stdout")
-                    .redirectOutput(ProcessBuilder.Redirect.PIPE);
-            Process tesseractProcess = tesseractProcessBuilder.start();
-            getBinaryProcesses().add(tesseractProcess);
-            ImageIO.write(image, "png", tesseractProcess.getOutputStream());
-            tesseractProcess.getOutputStream().flush();
-            tesseractProcess.getOutputStream().close(); //sending EOF not an option because it's not documented what is expected (sending -1 once or twice doesn't have any effect, also with flush)
-            int tesseractProcessExitValue = tesseractProcess.waitFor();
-            if(tesseractProcessExitValue != 0) {
-                //tesseractProcess.destroy might cause IOException, but
-                //termination with exit value != 0 might occur as well
-                StringWriter tesseractStderrWriter = new StringWriter();
-                IOUtils.copy(tesseractProcess.getErrorStream(), tesseractStderrWriter);
-                String tesseractProcessStderr = tesseractStderrWriter.toString();
-                LOGGER.debug(String.format("tesseract process '%s' failed with "
-                        + "returncode %d and output '%s'",
-                        this.getoCREngineConf().getBinary(),
-                        tesseractProcessExitValue,
-                        tesseractProcessStderr));
-                return null;
-            }
-            StringWriter tesseractResultWriter = new StringWriter();
-            IOUtils.copy(tesseractProcess.getInputStream(), tesseractResultWriter);
-            String tesseractResult = tesseractResultWriter.toString();
-            LOGGER.debug("OCR result: {}", tesseractResult);
-            return tesseractResult;
-        } catch(InterruptedException ex) {
-            //InterruptedException is an IOException
-            return null; //might at one point be thrown due to Process.destroy
-                    //cancelation
-        } catch (IOException ex) {
-            if(ex.getMessage().equals("Stream closed")) {
-                return null; //result of Process.destroy
-            }
-            throw new RuntimeException(ex);
-        }
+    protected String recognizeImage1(BufferedImage image) throws IllegalStateException, OCREngineRecognitionException {
+        String retValue = doRecognizeTask((tesseractProcessStdinStream) -> {
+            ImageIO.write(image, "png", tesseractProcessStdinStream);
+        });
+        return retValue;
     }
 
     @Override
-    protected String recognizeImageStream0(InputStream imageStream) {
+    protected String recognizeImageStream0(InputStream imageStream) throws OCREngineRecognitionException {
+        String retValue = doRecognizeTask((tesseractProcessStdinStream) -> {
+            IOUtils.copy(imageStream, tesseractProcessStdinStream);
+        });
+        return retValue;
+    }
+
+    private String doRecognizeTask(RecognizeTask task) throws OCREngineRecognitionException {
         try {
             Iterator<String> languagesItr = this.oCREngineConf.getSelectedLanguages().iterator();
             String lanuguageString = languagesItr.next();
@@ -120,7 +90,7 @@ public class TesseractOCREngine extends ProcessOCREngine<TesseractOCREngineConf>
             Process tesseractProcess = tesseractProcessBuilder.start();
             getBinaryProcesses().add(tesseractProcess);
             try (OutputStream tesseractProcessStdinStream = new BufferedOutputStream(tesseractProcess.getOutputStream())) {
-                IOUtils.copy(imageStream, tesseractProcessStdinStream);
+                task.run(tesseractProcessStdinStream);
                 tesseractProcessStdinStream.flush();
                 //sending EOF not an option because it's not documented what is expected (sending -1 once or twice doesn't have any effect, also with flush)
             }
@@ -131,12 +101,12 @@ public class TesseractOCREngine extends ProcessOCREngine<TesseractOCREngineConf>
                 StringWriter tesseractStderrWriter = new StringWriter();
                 IOUtils.copy(tesseractProcess.getErrorStream(), tesseractStderrWriter);
                 String tesseractProcessStderr = tesseractStderrWriter.toString();
-                LOGGER.debug(String.format("tesseract process '%s' failed with "
+                String message = String.format("tesseract process '%s' failed with "
                         + "returncode %d and output '%s'",
                         this.getoCREngineConf().getBinary(),
                         tesseractProcessExitValue,
-                        tesseractProcessStderr));
-                return null;
+                        tesseractProcessStderr);
+                throw new OCREngineRecognitionException(message);
             }
             StringWriter tesseractResultWriter = new StringWriter();
             IOUtils.copy(tesseractProcess.getInputStream(), tesseractResultWriter);
@@ -151,7 +121,12 @@ public class TesseractOCREngine extends ProcessOCREngine<TesseractOCREngineConf>
             if(ex.getMessage().equals("Stream closed")) {
                 return null; //result of Process.destroy
             }
-            throw new RuntimeException(ex);
+            throw new OCREngineRecognitionException(ex);
         }
+    }
+
+    @FunctionalInterface
+    private interface RecognizeTask {
+        void run(OutputStream tesseractProcessStdinStream) throws IOException;
     }
 }

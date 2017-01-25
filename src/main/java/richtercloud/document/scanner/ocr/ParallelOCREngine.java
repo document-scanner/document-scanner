@@ -140,9 +140,9 @@ public abstract class ParallelOCREngine<C extends OCREngineConf> implements OCRE
         return retValue;
     }
 
-    protected abstract String recognizeImage(BufferedImage image);
+    protected abstract String recognizeImage(BufferedImage image) throws OCREngineRecognitionException;
 
-    protected abstract String recognizeImageStream(ImageWrapper image, InputStream imageStream);
+    protected abstract String recognizeImageStream(ImageWrapper image, InputStream imageStream) throws OCREngineRecognitionException;
 
     @Override
     public void addProgressListener(OCREngineProgressListener progressListener) {
