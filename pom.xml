@@ -213,7 +213,7 @@
         <dependency>
             <groupId>richtercloud</groupId>
             <artifactId>credential-store</artifactId>
-            <version>1.0-beta2</version>
+            <version>1.0-SNAPSHOT</version>
             <type>jar</type>
         </dependency>
         <dependency>
