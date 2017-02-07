@@ -12,14 +12,14 @@
 ## Installation
 ### Binaries
 #### Java Runtime Environment
-Running and eventually installing `document-scanner` requires a Java Runtime Environment (JRE) version 8 which is installed
+Running and eventually installing `document-scanner` requires a Java Runtime Environment (JRE) version 8 which is free of charge and installed
 
   * on Debian-based systems (Debian, Ubuntu, Linux Mint, etc.) by running `sudo apt-get update && sudo apt-get install openjdk-8-jre` in a terminal
   * on Mac OSX by installing it through the AppStore (serach for `Java Runtime Environment`)
-  * on other systems (including Windows) by downloading an installer from the download page referenced at http://www.oracle.com/technetwork/java/javase/overview/index.html (this page should also provide alternative installation routines for the aforementioned operating systems which you might want to consider in case the described ways didn't work)
+  * on other systems (including Windows) by downloading an installer from the download page ("Downloads" tab) referenced at http://www.oracle.com/technetwork/java/javase/overview/index.html. You only need the Java _Runtime Environment_ (J_RE_), and not the Java _Development Kit_ (J_DK_), but it's not a problem to install the latter. Choose the highest version starting with 8. You'll need to accept the use of cookies by Oracle depending on which country you're in/from and the license agreement for download and usage by Oracle. The download should also provide alternative installation routines for the aforementioned operating systems which you might want to consider in case the described ways didn't work.
 
 #### document-scanner
-If you have a Debian-based operating system, checkout the [.deb package download](https://github.com/document-scanner/document-scanner-bin/raw/deb/document-scanner_1.0-beta2-1_all.deb), if you have Mac OSX, the [.dmg download](https://github.com/document-scanner/document-scanner-bin/raw/mac/document-scanner-1.0-beta2.dmg) and otherwise the [cross-platform Java installer](https://github.com/document-scanner/document-scanner-bin/raw/installer/document-scanner-1.0-beta2-installer.jar) (also in case you experience trouble with the former).
+If you have a Debian-based operating system, checkout the [.deb package download](https://richtercloud.de:451/index.php/s/WZQNbSSMeJ5SjMi), if you have Mac OSX, the [.dmg download](https://richtercloud.de:451/index.php/s/nNCw5nDnEmi7ijb) and otherwise the [cross-platform Java installer](https://richtercloud.de:451/index.php/s/lZrdswA1zzH6CzG) (also in case you experience trouble with the former).
 
 ### From source
 Build from source by
@@ -30,7 +30,7 @@ Build from source by
 
 You can then start the program with `java -cp "target/staging/lib/*:target/document-scanner-1.0-beta.jar" richtercloud.document.scanner.gui.DocumentScanner` or use the built packages for Debian-based systems, Mac OSX or the cross-platform installer which are in `target/` and `target/izpack-installer/` respectively after a successful build.
 
-You should be able to open the project in any IDE that supports Maven, including NetBeans, which lets you build and run the application from source maybe more conveniently.
+You should be able to open the project in any IDE that supports Maven, including NetBeans, which lets you build and run the application from source maybe more conveniently. The project uses Maven aggregator and parent projects.
 
 ## License
 `document-scanner` is free software - [free as in "free speech" - not as in "free beer"](https://www.gnu.org/philosophy/free-sw.html) licensed under the [GNU General Public License version 3 (GPLv3)](https://en.wikipedia.org/wiki/GNU_General_Public_License#Version_3).
