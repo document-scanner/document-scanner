@@ -46,8 +46,9 @@
     </panels>
 
     <!--Required for Windows shortcuts-->
-    <!--<native type="izpack" name="ShellLink.dll"/>-->
-        <!-- causes failure due to `file:///mnt/data/home/document-scanner-aggregator/document-scanner/src/main/izpack/install.xml; Zeilennummer50; Spaltennummer47; cvc-complex-type.2.4.a: Invalid content was found starting with element 'native'. One of '{properties, info, variables, dynamicvariables, conditions, installerrequirements, dynamicinstallerrequirements, consoleprefs, guiprefs, locale, resources, packaging, jar, listeners, panels, packs, natives}' is expected.`-->
+    <natives>
+        <native type="izpack" name="ShellLink.dll"/>
+    </natives>
 
     <packs>
         <pack name="Document-scanner Core" required="yes">
