@@ -111,7 +111,7 @@ import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.JavaFXDialogMessageHandler;
 import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
-import richtercloud.message.handler.RavenBugHandler;
+import richtercloud.message.handler.raven.bug.handler.RavenBugHandler;
 import richtercloud.reflection.form.builder.AnyType;
 import richtercloud.reflection.form.builder.FieldRetriever;
 import richtercloud.reflection.form.builder.components.date.UtilDatePicker;
