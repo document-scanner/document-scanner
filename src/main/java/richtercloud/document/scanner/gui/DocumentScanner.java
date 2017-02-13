@@ -193,6 +193,12 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
 
     private static final long serialVersionUID = 1L;
     private static final Logger LOGGER = LoggerFactory.getLogger(DocumentScanner.class);
+    /**
+     * The Raven/sentry.io DSN. Doesn't make sense to hide from source according
+     * to http://stackoverflow.com/questions/41843941/where-to-get-the-sentry-
+     * raven-dsn-from-at-runtime.
+     */
+    private final static String RAVEN_DSN = "https://d4001abecf704dd790bb72bb5a7e0dc8:e131224c9d3e413fa194f3210ba99751@sentry.io/131229";
     private SaneDevice scannerDevice;
     private DocumentScannerConf documentScannerConf;
     public final static Map<Class<? extends JComponent>, ValueSetter<?,?>> VALUE_SETTER_MAPPING_DEFAULT;
@@ -370,9 +376,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
         BugHandler bugHandler;
         if(this.documentScannerConf.isUserAllowedAutoBugTracking()) {
-            bugHandler = new RavenBugHandler(credentialStore,
-                    messageHandler,
-                    this);
+            bugHandler = new RavenBugHandler(RAVEN_DSN);
         }else {
             bugHandler = new DialogBugHandler(this,
                     Constants.BUG_URL,
@@ -1382,6 +1386,48 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     }
 
     /**
+     * This methods handles the fact that before checking
+     * {@link DocumentScannerConf#isSkipUserAllowedAutoBugTrackingQuestion} the
+     * user needs to be asked separately whether he_she allows upload of an
+     * occured exception.
+     *
+     * @param ex the exception to handle
+     */
+    private static void handleExceptionInEventQueueThread(Throwable ex) {
+        ConfirmMessageHandler confirmMessageHandler = new DialogConfirmMessageHandler(null, //parent
+                "", //titlePrefix
+                String.format("- %s %s", Constants.APP_NAME, Constants.APP_VERSION) //titleSuffix
+        );
+        String yes = "Yes";
+        String no = "No";
+        String answer = confirmMessageHandler.confirm(new Message(String.format(
+                "The error '%s' occured. Do you allow anonymous upload of "
+                        + "information about the reason for issue to the"
+                        + " developers?",
+                        ExceptionUtils.getRootCauseMessage(ex)),
+                JOptionPane.QUESTION_MESSAGE,
+                "Anoymous contribution"),
+                yes,
+                no);
+        BugHandler bugHandler;
+        if(!answer.equals(yes)) {
+            //still display the error message with the complete stacktrace
+            bugHandler = new DialogBugHandler(null, //parent
+                    Constants.BUG_URL,
+                    "", //titlePrefix
+                    String.format("- %s %s", Constants.APP_NAME, Constants.APP_VERSION) //titleSuffix
+            );
+        }else {
+            bugHandler = new RavenBugHandler(RAVEN_DSN);
+        }
+        bugHandler.handleUnexpectedException(new ExceptionMessage(ex));
+    }
+
+    public IssueHandler getIssueHandler() {
+        return issueHandler;
+    }
+
+    /**
      * @param args the command line arguments
      */
     public static void main(String args[]) {
@@ -1413,11 +1459,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 DocumentScannerConf documentScannerConf = null;
                 MessageHandler messageHandler = new DialogMessageHandler(null //parent
                         );
-                BugHandler bugHandler = new RavenBugHandler(null, //credentialStore
-                        messageHandler,
-                        null //ravenDSNDialogParent
-                );
-                IssueHandler issueHandler = new DefaultIssueHandler(messageHandler, bugHandler);
                 try {
                     assert DocumentScannerConf.HOME_DIR.exists();
                     documentScannerConf = new DocumentScannerConf();
@@ -1498,7 +1539,12 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                     }
                 } catch(Exception ex) {
                     LOGGER.error("An unexpected exception occured, see nested exception for details", ex);
-                    issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+                    if(documentScanner != null
+                            && documentScanner.getIssueHandler() != null) {
+                        documentScanner.getIssueHandler().handleUnexpectedException(new ExceptionMessage(ex));
+                    }else {
+                        handleExceptionInEventQueueThread(ex);
+                    }
                     if(documentScanner != null) {
                         documentScanner.setVisible(false);
                         documentScanner.close();
