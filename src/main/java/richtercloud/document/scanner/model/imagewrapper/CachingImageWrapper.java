@@ -68,7 +68,15 @@ public class CachingImageWrapper extends DefaultImageWrapper {
     }
     private static Long cacheIdCounter = 0L;
     private final long cacheId;
-    private final Lock streamCacheLock = new ReentrantLock();
+    /**
+     * The lock for writing to and reading from the stream cache.
+     */
+    /*
+    internal implementation notes:
+    - can't be private because it eventually needs to be initialized in
+    writeObject or readObject during (de-)serialization
+    */
+    private Lock streamCacheLock = new ReentrantLock();
 
     public CachingImageWrapper(File storageDir, BufferedImage image) throws IOException {
         super(storageDir, image);
@@ -128,5 +136,19 @@ public class CachingImageWrapper extends DefaultImageWrapper {
         super.setRotationDegrees(rotationDegrees);
         CACHE.remove(cacheId);
         JAVAFX_CACHE.remove(cacheId);
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out)
+            throws IOException {
+        if(this.streamCacheLock == null) {
+            this.streamCacheLock = new ReentrantLock();
+        }
+    }
+
+    private void readObject(java.io.ObjectInputStream in)
+            throws IOException, ClassNotFoundException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
+        if(this.streamCacheLock == null) {
+            this.streamCacheLock = new ReentrantLock();
+        }
     }
 }
