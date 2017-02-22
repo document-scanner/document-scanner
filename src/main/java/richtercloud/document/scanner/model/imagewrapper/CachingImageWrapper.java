@@ -73,10 +73,11 @@ public class CachingImageWrapper extends DefaultImageWrapper {
      */
     /*
     internal implementation notes:
-    - can't be private because it eventually needs to be initialized in
-    writeObject or readObject during (de-)serialization
+    - a static STREAM_CACHE needs a static lock; this also works around the
+    problem that during (de-)serialization the locks needs to be checked for
+    initialization
     */
-    private Lock streamCacheLock = new ReentrantLock();
+    private final static Lock STREAM_CACHE_LOCK = new ReentrantLock();
 
     public CachingImageWrapper(File storageDir, BufferedImage image) throws IOException {
         super(storageDir, image);
@@ -118,7 +119,7 @@ public class CachingImageWrapper extends DefaultImageWrapper {
 
     @Override
     public File getOriginalImageStream0(String formatName) throws IOException {
-        streamCacheLock.lock();
+        STREAM_CACHE_LOCK.lock();
         try {
             File streamSource = STREAM_CACHE.get(cacheId);
             if(streamSource == null) {
@@ -127,7 +128,7 @@ public class CachingImageWrapper extends DefaultImageWrapper {
             }
             return streamSource;
         }finally {
-            streamCacheLock.unlock();
+            STREAM_CACHE_LOCK.unlock();
         }
     }
 
@@ -136,19 +137,6 @@ public class CachingImageWrapper extends DefaultImageWrapper {
         super.setRotationDegrees(rotationDegrees);
         CACHE.remove(cacheId);
         JAVAFX_CACHE.remove(cacheId);
-    }
-
-    private void writeObject(java.io.ObjectOutputStream out)
-            throws IOException {
-        if(this.streamCacheLock == null) {
-            this.streamCacheLock = new ReentrantLock();
-        }
-    }
-
-    private void readObject(java.io.ObjectInputStream in)
-            throws IOException, ClassNotFoundException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
-        if(this.streamCacheLock == null) {
-            this.streamCacheLock = new ReentrantLock();
-        }
+        STREAM_CACHE.remove(cacheId);
     }
 }
