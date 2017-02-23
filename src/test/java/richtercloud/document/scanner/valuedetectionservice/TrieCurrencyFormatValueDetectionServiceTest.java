@@ -21,7 +21,6 @@ import org.jscience.economics.money.Currency;
 import org.jscience.economics.money.Money;
 import org.jscience.physics.amount.Amount;
 import static org.junit.Assert.*;
-import org.junit.Ignore;
 import org.junit.Test;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -37,16 +36,13 @@ import richtercloud.reflection.form.builder.components.money.MemoryAmountMoneyCu
  *
  * @author richter
  */
-public class CurrencyFormatAutoOCRValueDetectionService2Test {
-    private final static Logger LOGGER = LoggerFactory.getLogger(CurrencyFormatAutoOCRValueDetectionService2Test.class);
+public class TrieCurrencyFormatValueDetectionServiceTest {
+    private final static Logger LOGGER = LoggerFactory.getLogger(TrieCurrencyFormatValueDetectionServiceTest.class);
 
     /**
      * Test of fetchResults0 method, of class CurrencyFormatValueDetectionService2.
      */
     @Test
-    @Ignore //fails due to unknown reasons (result set is empty) on
-        //travis-ci.org; tried to reproduce with Java version used on
-        //travis-ci.org without success
     public void testFetchResults0() throws AmountMoneyCurrencyStorageException, AmountMoneyExchangeRateRetrieverException {
         //test with currency symbol (without space)
         String input = "jfklds jklfd jklds jkldfs fjkdls jkdflss fdjskl f jklfds fkd 5€ jkfdls fkldfsjklf  fdjklf sjklfds f jkldslskd ";
@@ -54,7 +50,7 @@ public class CurrencyFormatAutoOCRValueDetectionService2Test {
         amountMoneyCurrencyStorage.saveCurrency(Currency.EUR);
         AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever = mock(AmountMoneyExchangeRateRetriever.class);
         when(amountMoneyExchangeRateRetriever.getSupportedCurrencies()).thenReturn(new HashSet<>(Arrays.asList(Currency.EUR)));
-        CurrencyFormatValueDetectionService2 instance = new CurrencyFormatValueDetectionService2(amountMoneyCurrencyStorage,
+        TrieCurrencyFormatValueDetectionService instance = new TrieCurrencyFormatValueDetectionService(amountMoneyCurrencyStorage,
                 amountMoneyExchangeRateRetriever);
         LOGGER.debug(String.format("running with currency symbol without space with input '%s'", input));
         LinkedHashSet<ValueDetectionResult<Amount<Money>>> result = instance.fetchResults0(input);
@@ -100,5 +96,16 @@ public class CurrencyFormatAutoOCRValueDetectionService2Test {
         assertTrue(result.contains(new ValueDetectionResult<>("EUR 5",
                 Amount.valueOf(5.0d, Currency.EUR)
         )));
+
+        //test two occurances (one with and one without space assuming that not
+        //all combinations need to be run again)
+        input = "jfklds jklfd jklds jkldfs fjkdls jkdflss 4€ fdjskl f jklfds fkd EUR 5 jkfdls fkldfsjklf  fdjklf sjklfds f jkldslskd ";
+        LOGGER.debug(String.format("running with currency name before value with space with input '%s'", input));
+        result = instance.fetchResults0(input);
+        assertTrue(result.contains(new ValueDetectionResult<>("EUR 5",
+                Amount.valueOf(5.0d, Currency.EUR)
+        )));
+        assertTrue(result.contains(new ValueDetectionResult<>("4€",
+                Amount.valueOf(4.0d, Currency.EUR))));
     }
 }

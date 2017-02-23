@@ -21,18 +21,18 @@ import richtercloud.reflection.form.builder.components.money.AmountMoneyExchange
  *
  * @author richter
  */
-public class CurrencyFormatValueDetectionService2ConfFactory implements ValueDetectionServiceConfFactory<CurrencyFormatValueDetectionService2, CurrencyFormatValueDetectionService2Conf> {
+public class TrieCurrencyFormatValueDetectionServiceConfFactory implements ValueDetectionServiceConfFactory<TrieCurrencyFormatValueDetectionService, TrieCurrencyFormatValueDetectionServiceConf> {
     private final AmountMoneyCurrencyStorage amountMoneyCurrencyStorage;
     private final AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever;
 
-    public CurrencyFormatValueDetectionService2ConfFactory(AmountMoneyCurrencyStorage amountMoneyCurrencyStorage, AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever) {
+    public TrieCurrencyFormatValueDetectionServiceConfFactory(AmountMoneyCurrencyStorage amountMoneyCurrencyStorage, AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever) {
         this.amountMoneyCurrencyStorage = amountMoneyCurrencyStorage;
         this.amountMoneyExchangeRateRetriever = amountMoneyExchangeRateRetriever;
     }
 
     @Override
-    public CurrencyFormatValueDetectionService2 createService(CurrencyFormatValueDetectionService2Conf serviceConf) {
-        CurrencyFormatValueDetectionService2 retValue = new CurrencyFormatValueDetectionService2(amountMoneyCurrencyStorage,
+    public TrieCurrencyFormatValueDetectionService createService(TrieCurrencyFormatValueDetectionServiceConf serviceConf) {
+        TrieCurrencyFormatValueDetectionService retValue = new TrieCurrencyFormatValueDetectionService(amountMoneyCurrencyStorage,
                 amountMoneyExchangeRateRetriever);
         return retValue;
     }

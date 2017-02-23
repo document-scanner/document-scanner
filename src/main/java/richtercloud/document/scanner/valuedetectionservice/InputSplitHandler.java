@@ -17,6 +17,10 @@ package richtercloud.document.scanner.valuedetectionservice;
 import java.util.List;
 
 /**
+ * A generator for all sequences with the maximal length returned by
+ * {@link #getMaxWords() }.
+ * {@link #handle0(java.util.List, java.util.List, int) } is invoked on each of
+ * them.
  *
  * @author richter
  */

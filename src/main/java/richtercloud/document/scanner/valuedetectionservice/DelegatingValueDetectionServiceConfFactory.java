@@ -24,7 +24,7 @@ import richtercloud.reflection.form.builder.components.money.AmountMoneyExchange
 public class DelegatingValueDetectionServiceConfFactory implements ValueDetectionServiceConfFactory<ValueDetectionService<?>, ValueDetectionServiceConf> {
     private final ContactValueDetectionServiceConfFactory contactValueDetectionServiceConfFactory;
     private final CurrencyFormatValueDetectionServiceConfFactory currencyFormatValueDetectionServiceConfFactory;
-    private final CurrencyFormatValueDetectionService2ConfFactory currencyFormatValueDetectionService2ConfFactory;
+    private final TrieCurrencyFormatValueDetectionServiceConfFactory trieCurrencyFormatValueDetectionServiceConfFactory;
     private final DateFormatValueDetectionServiceConfFactory dateFormatValueDetectionServiceConfFactory;
 
     public DelegatingValueDetectionServiceConfFactory(AmountMoneyCurrencyStorage amountMoneyCurrencyStorage,
@@ -32,7 +32,7 @@ public class DelegatingValueDetectionServiceConfFactory implements ValueDetectio
         this.contactValueDetectionServiceConfFactory = new ContactValueDetectionServiceConfFactory();
         this.currencyFormatValueDetectionServiceConfFactory = new CurrencyFormatValueDetectionServiceConfFactory(amountMoneyCurrencyStorage,
                 amountMoneyExchangeRateRetriever);
-        this.currencyFormatValueDetectionService2ConfFactory = new CurrencyFormatValueDetectionService2ConfFactory(amountMoneyCurrencyStorage,
+        this.trieCurrencyFormatValueDetectionServiceConfFactory = new TrieCurrencyFormatValueDetectionServiceConfFactory(amountMoneyCurrencyStorage,
                 amountMoneyExchangeRateRetriever);
         this.dateFormatValueDetectionServiceConfFactory = new DateFormatValueDetectionServiceConfFactory();
     }
@@ -44,8 +44,8 @@ public class DelegatingValueDetectionServiceConfFactory implements ValueDetectio
             retValue = contactValueDetectionServiceConfFactory.createService((ContactValueDetectionServiceConf) serviceConf);
         }else if(serviceConf instanceof CurrencyFormatValueDetectionServiceConf) {
             retValue = currencyFormatValueDetectionServiceConfFactory.createService((CurrencyFormatValueDetectionServiceConf) serviceConf);
-        }else if(serviceConf instanceof CurrencyFormatValueDetectionService2Conf) {
-            retValue = currencyFormatValueDetectionService2ConfFactory.createService((CurrencyFormatValueDetectionService2Conf) serviceConf);
+        }else if(serviceConf instanceof TrieCurrencyFormatValueDetectionServiceConf) {
+            retValue = trieCurrencyFormatValueDetectionServiceConfFactory.createService((TrieCurrencyFormatValueDetectionServiceConf) serviceConf);
         }else if(serviceConf instanceof DateFormatValueDetectionServiceConf) {
             retValue = dateFormatValueDetectionServiceConfFactory.createService((DateFormatValueDetectionServiceConf) serviceConf);
         }else {
