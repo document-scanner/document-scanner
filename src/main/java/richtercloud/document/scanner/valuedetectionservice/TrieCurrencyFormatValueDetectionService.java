@@ -15,10 +15,10 @@
 package richtercloud.document.scanner.valuedetectionservice;
 
 import com.googlecode.concurrenttrees.common.Iterables;
+import com.googlecode.concurrenttrees.common.PrettyPrinter;
 import com.googlecode.concurrenttrees.radix.node.NodeFactory;
 import com.googlecode.concurrenttrees.radix.node.concrete.DefaultCharSequenceNodeFactory;
 import com.googlecode.concurrenttrees.suffix.ConcurrentSuffixTree;
-import com.googlecode.concurrenttrees.suffix.SuffixTree;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.HashSet;
@@ -75,7 +75,9 @@ public class TrieCurrencyFormatValueDetectionService extends AbstractValueDetect
         final List<String> tokens = new LinkedList<>();
         StringTokenizer tokenizer = new StringTokenizer(input);
         NodeFactory nodeFactory = new DefaultCharSequenceNodeFactory();
-        SuffixTree<Integer> suffixTree = new ConcurrentSuffixTree<>(nodeFactory);
+        ConcurrentSuffixTree<Integer> suffixTree = new ConcurrentSuffixTree<>(nodeFactory);
+            //make a ConcurrentSuffixTree because SuffixTree is not a
+            //PrettyPrintable (necessary for trace logging)
         int index = 0;
         while(tokenizer.hasMoreElements()) {
             String token = tokenizer.nextToken();
@@ -84,6 +86,7 @@ public class TrieCurrencyFormatValueDetectionService extends AbstractValueDetect
             index += 1;
         }
         LOGGER.trace(String.format("tokens: %s", tokens));
+        LOGGER.trace(String.format("suffixTree: %s", PrettyPrinter.prettyPrint(suffixTree)));
         for(final Map.Entry<NumberFormat, Set<Locale>> currencyFormat : FormatUtils.getDisjointCurrencyFormatsEntySet()) {
             //completely unclear why ConcurrentModificationException occurs when
             //reading unmodifiable
@@ -99,9 +102,9 @@ public class TrieCurrencyFormatValueDetectionService extends AbstractValueDetect
             Iterable<CharSequence> tokensContainingCurrencyCode = suffixTree.getKeysContaining(currencyCode);
             Iterable<CharSequence> tokensContainingCurrencySymbol = suffixTree.getKeysContaining(currencySymbol);
             Set<CharSequence> relevantTokens = new HashSet<>();
-            LOGGER.trace(String.format("relevantTokens: %s", relevantTokens));
             relevantTokens.addAll(Iterables.toSet(tokensContainingCurrencyCode));
             relevantTokens.addAll(Iterables.toSet(tokensContainingCurrencySymbol));
+            LOGGER.trace(String.format("relevantTokens for currency code %s and currency symbol %s: %s", currencyCode, currencySymbol, relevantTokens));
             for(CharSequence token : relevantTokens) {
                 String tokenString = token.toString();
                 Integer tokenIndex = suffixTree.getValueForExactKey(token);
