@@ -117,6 +117,7 @@ public class TrieCurrencyFormatValueDetectionService extends AbstractValueDetect
                 int subListToIndex = Math.min(tokens.size()-1, tokenIndex+CurrencyFormatValueDetectionService.MAX_FORMAT_WORDS);
                 List<String> subList = tokens.subList(subListFromIndex,
                         subListToIndex);
+                LOGGER.trace(String.format("checking sublist from index %d to %d with content %s based on token index %d", subListFromIndex, subListToIndex, subList, tokenIndex));
                     //add 1 since it's possible that the value and the
                     //currency symbol are separated with a space
                 InputSplitHandler inputSplitHandler = new InputSplitHandler() {
