@@ -5,11 +5,13 @@
         <groupId>richtercloud</groupId>
         <artifactId>document-scanner-parent</artifactId>
         <version>1.0-beta4</version>
+        <relativePath>..</relativePath>
     </parent>
     <artifactId>document-scanner</artifactId>
     <packaging>jar</packaging>
     <name>document-scanner</name>
     <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <richtercloud.document.scanner.openjpa.version>2.2.0</richtercloud.document.scanner.openjpa.version>
         <richtercloud.document.scanner.hibernate.version>5.0.11.Final</richtercloud.document.scanner.hibernate.version>
         <richtercloud.document.scanner.eclipselink.version>2.6.4</richtercloud.document.scanner.eclipselink.version>
