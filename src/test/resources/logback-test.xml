@@ -8,8 +8,10 @@
     </encoder>
   </appender>
   <logger name="richtercloud.document.scanner.gui" level="DEBUG"/>
-  <logger name="richtercloud.document.scanner.valuedetectionservice.CurrencyFormatAutoOCRValueDetectionService2Text" level="TRACE"/>
-
+  <logger name="richtercloud.document.scanner.valuedetectionservice.TrieCurrencyFormatValueDetectionServiceTest" level="TRACE"/>
+  <logger name="richtercloud.document.scanner.valuedetectionservice.TrieCurrencyFormatValueDetectionService" level="TRACE"/>
+  <logger name="richtercloud.document.scanner.gui.FormatUtils" level="INFO"/>
+    <!-- avoid debugging of result of FormatUtils.getDisjoint... methods -->
   <root level="INFO">
     <appender-ref ref="STDOUT" />
   </root>

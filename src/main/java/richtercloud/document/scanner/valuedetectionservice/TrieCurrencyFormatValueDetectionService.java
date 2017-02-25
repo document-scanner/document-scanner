@@ -83,6 +83,7 @@ public class TrieCurrencyFormatValueDetectionService extends AbstractValueDetect
             suffixTree.put(token, index);
             index += 1;
         }
+        LOGGER.trace(String.format("tokens: %s", tokens));
         for(final Map.Entry<NumberFormat, Set<Locale>> currencyFormat : FormatUtils.getDisjointCurrencyFormatsEntySet()) {
             //completely unclear why ConcurrentModificationException occurs when
             //reading unmodifiable
@@ -98,6 +99,7 @@ public class TrieCurrencyFormatValueDetectionService extends AbstractValueDetect
             Iterable<CharSequence> tokensContainingCurrencyCode = suffixTree.getKeysContaining(currencyCode);
             Iterable<CharSequence> tokensContainingCurrencySymbol = suffixTree.getKeysContaining(currencySymbol);
             Set<CharSequence> relevantTokens = new HashSet<>();
+            LOGGER.trace(String.format("relevantTokens: %s", relevantTokens));
             relevantTokens.addAll(Iterables.toSet(tokensContainingCurrencyCode));
             relevantTokens.addAll(Iterables.toSet(tokensContainingCurrencySymbol));
             for(CharSequence token : relevantTokens) {
@@ -118,6 +120,7 @@ public class TrieCurrencyFormatValueDetectionService extends AbstractValueDetect
                     @Override
                     protected void handle0(List<String> inputSplitsSubs, List<String> inputSplits, int index) {
                         String subListString = String.join(" ", inputSplitsSubs);
+                        LOGGER.trace(String.format("subListString: %s", subListString));
                         try  {
                             //Since currency values seem to be parsed only
                             //if there's a space between the currency symbol
@@ -163,6 +166,7 @@ public class TrieCurrencyFormatValueDetectionService extends AbstractValueDetect
                             ValueDetectionResult<Amount<Money>> autoOCRValueDetectionResult = new ValueDetectionResult<>(subListString,
                                     value
                             );
+                            LOGGER.trace(String.format("detection result: %s", autoOCRValueDetectionResult));
                             //not sufficient to check whether result
                             //is already contained because the same date
                             //might be retrieved from a longer and a
