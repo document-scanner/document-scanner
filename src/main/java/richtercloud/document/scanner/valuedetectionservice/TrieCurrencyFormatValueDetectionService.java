@@ -29,6 +29,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import javax.measure.converter.ConversionException;
 import org.jscience.economics.money.Currency;
 import org.jscience.economics.money.Money;
@@ -87,113 +90,127 @@ public class TrieCurrencyFormatValueDetectionService extends AbstractValueDetect
         }
         LOGGER.trace(String.format("tokens: %s", tokens));
         LOGGER.trace(String.format("suffixTree: %s", PrettyPrinter.prettyPrint(suffixTree)));
+        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         for(final Map.Entry<NumberFormat, Set<Locale>> currencyFormat : FormatUtils.getDisjointCurrencyFormatsEntySet()) {
-            //completely unclear why ConcurrentModificationException occurs when
-            //reading unmodifiable
-            //FormatUtils.getDisjointCurrencyFormats.entrySet -> copy as a
-            //workaround
-            final String currencyCode = currencyFormat.getKey().getCurrency().getCurrencyCode();
-            final String currencySymbol = currencyFormat.getKey().getCurrency().getSymbol();
-            //- checking tokens.indexOf(currencyCode) isn't sufficient because
-            //the currency code doesn't have to be separated by whitespace and
-            //represent a token alone
-            //- search for currencyCode and currencySymbol and add the results
-            //since they will be disjoint and need the same treatment
-            Iterable<CharSequence> tokensContainingCurrencyCode = suffixTree.getKeysContaining(currencyCode);
-            Iterable<CharSequence> tokensContainingCurrencySymbol = suffixTree.getKeysContaining(currencySymbol);
-            Set<CharSequence> relevantTokens = new HashSet<>();
-            relevantTokens.addAll(Iterables.toSet(tokensContainingCurrencyCode));
-            relevantTokens.addAll(Iterables.toSet(tokensContainingCurrencySymbol));
-            LOGGER.trace(String.format("relevantTokens for currency code %s and currency symbol %s: %s", currencyCode, currencySymbol, relevantTokens));
-            for(CharSequence token : relevantTokens) {
-                String tokenString = token.toString();
-                Integer tokenIndex = suffixTree.getValueForExactKey(token);
-                //take a sublist of n positions before and n positions after
-                //the occurance (with
-                //n=CurrencyFormatValueDetectionService.MAX_FORMAT_WORDS)
-                //and shift it to the left. This also ensures that longest
-                //matches are detected first
-                int subListFromIndex = Math.max(0, tokenIndex-CurrencyFormatValueDetectionService.MAX_FORMAT_WORDS);
-                int subListToIndex = Math.min(tokens.size()-1, tokenIndex+CurrencyFormatValueDetectionService.MAX_FORMAT_WORDS);
-                List<String> subList = tokens.subList(subListFromIndex,
-                        subListToIndex);
-                LOGGER.trace(String.format("checking sublist from index %d to %d with content %s based on token index %d", subListFromIndex, subListToIndex, subList, tokenIndex));
-                    //add 1 since it's possible that the value and the
-                    //currency symbol are separated with a space
-                InputSplitHandler inputSplitHandler = new InputSplitHandler() {
-                    @Override
-                    protected void handle0(List<String> inputSplitsSubs, List<String> inputSplits, int index) {
-                        String subListString = String.join(" ", inputSplitsSubs);
-                        LOGGER.trace(String.format("subListString: %s", subListString));
-                        try  {
-                            //Since currency values seem to be parsed only
-                            //if there's a space between the currency symbol
-                            //and the value
-                            Number currencyValue;
-                            try {
-                                LOGGER.trace(String.format("attempting to parse substring '%s'", subListString));
-                                currencyValue = currencyFormat.getKey().parse(subListString);
-                            }catch(ParseException ex) {
-                                try {
-                                    String subListStringSpace;
-                                    if(tokenString.contains(currencySymbol)) {
-                                        subListStringSpace = subListString.replace(currencySymbol, " "+currencySymbol+" ");
-                                    }else {
-                                        subListStringSpace = subListString.replace(currencyCode, " "+currencyCode+" ");
+            Runnable thread = () -> {
+                for(Locale locale : currencyFormat.getValue()) {
+                    //completely unclear why ConcurrentModificationException occurs when
+                    //reading unmodifiable
+                    //FormatUtils.getDisjointCurrencyFormats.entrySet -> copy as a
+                    //workaround
+                    final String currencyCode = currencyFormat.getKey().getCurrency().getCurrencyCode();
+                    final String currencySymbol = currencyFormat.getKey().getCurrency().getSymbol(locale);
+                        //NumberFormat.getCurrency.getSymbol returns different
+                        //symbols depending on default locale
+                    //- checking tokens.indexOf(currencyCode) isn't sufficient because
+                    //the currency code doesn't have to be separated by whitespace and
+                    //represent a token alone
+                    //- search for currencyCode and currencySymbol and add the results
+                    //since they will be disjoint and need the same treatment
+                    Iterable<CharSequence> tokensContainingCurrencyCode = suffixTree.getKeysContaining(currencyCode);
+                    Iterable<CharSequence> tokensContainingCurrencySymbol = suffixTree.getKeysContaining(currencySymbol);
+                    Set<CharSequence> relevantTokens = new HashSet<>();
+                    relevantTokens.addAll(Iterables.toSet(tokensContainingCurrencyCode));
+                    relevantTokens.addAll(Iterables.toSet(tokensContainingCurrencySymbol));
+                    LOGGER.trace(String.format("relevantTokens for currency code %s and currency symbol %s: %s", currencyCode, currencySymbol, relevantTokens));
+                    for(CharSequence token : relevantTokens) {
+                        String tokenString = token.toString();
+                        Integer tokenIndex = suffixTree.getValueForExactKey(token);
+                        //take a sublist of n positions before and n positions after
+                        //the occurance (with
+                        //n=CurrencyFormatValueDetectionService.MAX_FORMAT_WORDS)
+                        //and shift it to the left. This also ensures that longest
+                        //matches are detected first
+                        int subListFromIndex = Math.max(0, tokenIndex-CurrencyFormatValueDetectionService.MAX_FORMAT_WORDS);
+                        int subListToIndex = Math.min(tokens.size()-1, tokenIndex+CurrencyFormatValueDetectionService.MAX_FORMAT_WORDS);
+                        List<String> subList = tokens.subList(subListFromIndex,
+                                subListToIndex);
+                        LOGGER.trace(String.format("checking sublist from index %d to %d with content %s based on token index %d", subListFromIndex, subListToIndex, subList, tokenIndex));
+                            //add 1 since it's possible that the value and the
+                            //currency symbol are separated with a space
+                        InputSplitHandler inputSplitHandler = new InputSplitHandler() {
+                            @Override
+                            protected void handle0(List<String> inputSplitsSubs, List<String> inputSplits, int index) {
+                                String subListString = String.join(" ", inputSplitsSubs);
+                                LOGGER.trace(String.format("subListString: %s", subListString));
+                                try  {
+                                    //Since currency values seem to be parsed only
+                                    //if there's a space between the currency symbol
+                                    //and the value
+                                    Number currencyValue;
+                                    try {
+                                        LOGGER.trace(String.format("attempting to parse substring '%s'", subListString));
+                                        currencyValue = currencyFormat.getKey().parse(subListString);
+                                    }catch(ParseException ex) {
+                                        try {
+                                            String subListStringSpace;
+                                            if(tokenString.contains(currencySymbol)) {
+                                                subListStringSpace = subListString.replace(currencySymbol, " "+currencySymbol+" ");
+                                            }else {
+                                                subListStringSpace = subListString.replace(currencyCode, " "+currencyCode+" ");
+                                            }
+                                            LOGGER.trace(String.format("attempting to parse substring '%s'", subListString));
+                                            currencyValue = currencyFormat.getKey().parse(subListStringSpace);
+                                        }catch(ParseException ex1) {
+                                            return;
+                                        }
                                     }
-                                    LOGGER.trace(String.format("attempting to parse substring '%s'", subListString));
-                                    currencyValue = currencyFormat.getKey().parse(subListStringSpace);
-                                }catch(ParseException ex1) {
-                                    return;
+                                    Currency currency = TrieCurrencyFormatValueDetectionService.this.amountMoneyCurrencyStorage.translate(currencyFormat.getKey().getCurrency());
+                                    if(currency == null) {
+                                        //Currency is not supported by JScience and plainly
+                                        //creating it with Currency code (passed to constructor)
+                                        //gets the application in a state where a missing
+                                        //exchange rate which cannot be retrieved has to be
+                                        //handled manually; currencies should only be created
+                                        //manually in dialog
+                                        return;
+                                    }
+                                    if(!amountMoneyExchangeRateRetriever.getSupportedCurrencies().contains(currency)) {
+                                        LOGGER.debug(String.format("skipping eventual currency '%s' which isn't supported by exchange rate retriever", currency.getCode()));
+                                        return;
+                                    }
+                                    try {
+                                        currency.getExchangeRate();
+                                    }catch(ConversionException ex) {
+                                        TrieCurrencyFormatValueDetectionService.this.amountMoneyExchangeRateRetriever.retrieveExchangeRate(currency);
+                                    }
+                                    Amount<Money> value = Amount.<Money>valueOf(currencyValue.doubleValue(), currency);
+                                    ValueDetectionResult<Amount<Money>> autoOCRValueDetectionResult = new ValueDetectionResult<>(subListString,
+                                            value
+                                    );
+                                    LOGGER.trace(String.format("detection result: %s", autoOCRValueDetectionResult));
+                                    //not sufficient to check whether result
+                                    //is already contained because the same date
+                                    //might be retrieved from a longer and a
+                                    //shorter substring of a substring
+                                    retValue.add(autoOCRValueDetectionResult);
+                                    for(ValueDetectionServiceUpdateListener<Amount<Money>> listener : getListeners()) {
+                                        listener.onUpdate(new ValueDetectionServiceUpdateEvent<>(new LinkedList<>(retValue),
+                                                tokens.size(),
+                                                index //lastIndex is closest to current progress
+                                        ));
+                                    }
+                                } catch (AmountMoneyCurrencyStorageException | AmountMoneyExchangeRateRetrieverException ex) {
+                                    throw new RuntimeException(ex);
                                 }
                             }
-                            Currency currency = TrieCurrencyFormatValueDetectionService.this.amountMoneyCurrencyStorage.translate(currencyFormat.getKey().getCurrency());
-                            if(currency == null) {
-                                //Currency is not supported by JScience and plainly
-                                //creating it with Currency code (passed to constructor)
-                                //gets the application in a state where a missing
-                                //exchange rate which cannot be retrieved has to be
-                                //handled manually; currencies should only be created
-                                //manually in dialog
-                                return;
-                            }
-                            if(!amountMoneyExchangeRateRetriever.getSupportedCurrencies().contains(currency)) {
-                                LOGGER.debug(String.format("skipping eventual currency '%s' which isn't supported by exchange rate retriever", currency.getCode()));
-                                return;
-                            }
-                            try {
-                                currency.getExchangeRate();
-                            }catch(ConversionException ex) {
-                                TrieCurrencyFormatValueDetectionService.this.amountMoneyExchangeRateRetriever.retrieveExchangeRate(currency);
-                            }
-                            Amount<Money> value = Amount.<Money>valueOf(currencyValue.doubleValue(), currency);
-                            ValueDetectionResult<Amount<Money>> autoOCRValueDetectionResult = new ValueDetectionResult<>(subListString,
-                                    value
-                            );
-                            LOGGER.trace(String.format("detection result: %s", autoOCRValueDetectionResult));
-                            //not sufficient to check whether result
-                            //is already contained because the same date
-                            //might be retrieved from a longer and a
-                            //shorter substring of a substring
-                            retValue.add(autoOCRValueDetectionResult);
-                            for(ValueDetectionServiceUpdateListener<Amount<Money>> listener : getListeners()) {
-                                listener.onUpdate(new ValueDetectionServiceUpdateEvent<>(new LinkedList<>(retValue),
-                                        tokens.size(),
-                                        index //lastIndex is closest to current progress
-                                ));
-                            }
-                        } catch (AmountMoneyCurrencyStorageException | AmountMoneyExchangeRateRetrieverException ex) {
-                            throw new RuntimeException(ex);
-                        }
-                    }
 
-                    @Override
-                    protected int getMaxWords() {
-                        return CurrencyFormatValueDetectionService.MAX_FORMAT_WORDS;
+                            @Override
+                            protected int getMaxWords() {
+                                return CurrencyFormatValueDetectionService.MAX_FORMAT_WORDS;
+                            }
+                        };
+                        inputSplitHandler.handle(subList);
                     }
-                };
-                inputSplitHandler.handle(subList);
-            }
+                }
+            };
+            executorService.submit(thread);
+        }
+        executorService.shutdown();
+        try {
+            executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        } catch (InterruptedException ex) {
+            throw new RuntimeException(ex);
         }
         return retValue;
     }
