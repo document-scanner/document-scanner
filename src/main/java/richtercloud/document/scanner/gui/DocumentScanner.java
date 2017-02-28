@@ -1382,7 +1382,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         LOGGER.info("handling exception {}", ex);
         this.messageHandler.handle(new Message(String.format("The following exception occured: %s", ExceptionUtils.getRootCauseMessage(ex)),
                 JOptionPane.ERROR_MESSAGE,
-                "Exception occured"));
+                title));
     }
 
     /**
