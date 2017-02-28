@@ -71,6 +71,7 @@ import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.gui.scanner.DocumentSource;
 import richtercloud.document.scanner.gui.scanner.ScannerConf;
 import richtercloud.document.scanner.gui.scanner.ScannerEditDialog;
+import static richtercloud.document.scanner.gui.scanner.ScannerEditDialog.DOCUMENT_SOURCE_OPTION_NAME;
 import richtercloud.document.scanner.gui.scanner.ScannerPageSelectDialog;
 import richtercloud.document.scanner.gui.scanner.ScannerSelectionDialog;
 import richtercloud.document.scanner.gui.scanresult.ScannerResultDialog;
@@ -1087,6 +1088,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         scannerDevice,
                         documentScannerConf.getImageWrapperStorageDir(),
                         javaFXDialogMessageHandler,
+                        issueHandler,
                         this //openDocumentWaitDialogParent
                 );
                 scannerResultDialog.setLocationRelativeTo(this);
@@ -1227,7 +1229,12 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     public static List<ImageWrapper> retrieveImages(SaneDevice scannerDevice,
             Window dialogParent,
             File imageWrapperStorageDir,
-            MessageHandler messageHandler) throws SaneException, IOException {
+            MessageHandler messageHandler) throws SaneException, IOException, DocumentSourceOptionMissingException {
+        if(scannerDevice.getOption(DOCUMENT_SOURCE_OPTION_NAME) == null) {
+            //an exception is thrown in order to allow data to be reported
+            //through BugHandler
+            throw new DocumentSourceOptionMissingException(scannerDevice);
+        }
         DocumentSource configuredDocumentSource = ScannerEditDialog.getDocumentSourceEnum(scannerDevice);
         final DocumentSource selectedDocumentSource;
         final ScannerPageSelectDialog scannerPageSelectDialog;
@@ -1333,7 +1340,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
     }
 
-    private void scan() {
+    private void scan() throws DocumentSourceOptionMissingException {
         assert this.scannerDevice != null;
         try {
             if(!this.scannerDevice.isOpen()) {
@@ -1356,6 +1363,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         scannerDevice,
                         documentScannerConf.getImageWrapperStorageDir(),
                         javaFXDialogMessageHandler,
+                        issueHandler,
                         this //openDocumentWaitDialogParent
                 );
                 scannerResultDialog.setLocationRelativeTo(this);

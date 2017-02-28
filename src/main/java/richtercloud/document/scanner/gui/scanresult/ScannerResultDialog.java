@@ -55,8 +55,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.gui.DocumentScanner;
+import richtercloud.document.scanner.gui.DocumentSourceOptionMissingException;
 import richtercloud.document.scanner.gui.Tools;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
+import richtercloud.message.handler.BugHandler;
+import richtercloud.message.handler.ExceptionMessage;
 import richtercloud.message.handler.JavaFXDialogMessageHandler;
 import richtercloud.message.handler.Message;
 
@@ -126,6 +129,7 @@ public class ScannerResultDialog extends JDialog {
     private final SaneDevice scannerDevice;
     private final File imageWrapperStorageDir;
     private final JavaFXDialogMessageHandler messageHandler;
+    private final BugHandler bugHandler;
     private final Window openDocumentWaitDialogParent;
 
     public ScannerResultDialog(Window owner,
@@ -134,6 +138,7 @@ public class ScannerResultDialog extends JDialog {
             SaneDevice scannerDevice,
             File imageWrapperStorageDir,
             JavaFXDialogMessageHandler messageHandler,
+            BugHandler bugHandler,
             Window openDocumentWaitDialogParent) throws IOException {
         super(owner,
                 ModalityType.APPLICATION_MODAL);
@@ -152,6 +157,7 @@ public class ScannerResultDialog extends JDialog {
             throw new IllegalArgumentException("messageHandler mustn't be null");
         }
         this.messageHandler = messageHandler;
+        this.bugHandler = bugHandler;
 
         mainPanel.setPreferredSize(new Dimension(initialWidth, initialHeight));
 
@@ -407,6 +413,8 @@ public class ScannerResultDialog extends JDialog {
                     }
                 } catch (SaneException | IOException ex) {
                     messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+                } catch(DocumentSourceOptionMissingException ex) {
+                    bugHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             });
             openDocumentButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (event) -> {
