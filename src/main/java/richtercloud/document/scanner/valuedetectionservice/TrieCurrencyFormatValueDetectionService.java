@@ -191,7 +191,9 @@ public class TrieCurrencyFormatValueDetectionService extends AbstractValueDetect
                                     //is already contained because the same date
                                     //might be retrieved from a longer and a
                                     //shorter substring of a substring
-                                    retValue.add(autoOCRValueDetectionResult);
+                                    synchronized(retValue) {
+                                        retValue.add(autoOCRValueDetectionResult);
+                                    }
                                     for(ValueDetectionServiceUpdateListener<Amount<Money>> listener : getListeners()) {
                                         listener.onUpdate(new ValueDetectionServiceUpdateEvent<>(new LinkedList<>(retValue),
                                                 tokens.size(),
