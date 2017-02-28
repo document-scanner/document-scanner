@@ -15,10 +15,11 @@
 package richtercloud.document.scanner.valuedetectionservice;
 
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -34,7 +35,7 @@ public class DelegatingValueDetectionService extends AbstractValueDetectionServi
     @Override
     public LinkedHashSet<ValueDetectionResult<?>> fetchResults0(final String input) {
         final LinkedHashSet<ValueDetectionResult<?>> retValue = new LinkedHashSet<>();
-        Queue<Thread> threads = new LinkedList<>();
+        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         for(final ValueDetectionService autoOCRValueDetectionService : valueDetectionServices) {
             Runnable runnable = new Runnable() {
                 @Override
@@ -47,18 +48,13 @@ public class DelegatingValueDetectionService extends AbstractValueDetectionServi
                     }
                 }
             };
-            Thread thread = new Thread(runnable,
-                    "delegating-auto-value-detection-service-thread");
-            thread.start();
-            threads.add(thread);
+            executorService.submit(runnable);
         }
-        while(!threads.isEmpty()) {
-            Thread threadsHead = threads.poll();
-            try {
-                threadsHead.join();
-            } catch (InterruptedException ex) {
-                throw new RuntimeException(ex);
-            }
+        executorService.shutdown();
+        try {
+            executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        } catch (InterruptedException ex) {
+            throw new RuntimeException(ex);
         }
         return retValue;
     }
