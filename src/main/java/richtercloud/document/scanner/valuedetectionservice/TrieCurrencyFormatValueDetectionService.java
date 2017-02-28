@@ -33,6 +33,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import javax.measure.converter.ConversionException;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jscience.economics.money.Currency;
 import org.jscience.economics.money.Money;
 import org.jscience.physics.amount.Amount;
@@ -93,6 +95,7 @@ public class TrieCurrencyFormatValueDetectionService extends AbstractValueDetect
         ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         for(final Map.Entry<NumberFormat, Set<Locale>> currencyFormat : FormatUtils.getDisjointCurrencyFormatsEntySet()) {
             Runnable thread = () -> {
+                Set<Pair<String, String>> currencyCodeSymbolPairs = new HashSet<>();
                 for(Locale locale : currencyFormat.getValue()) {
                     //completely unclear why ConcurrentModificationException occurs when
                     //reading unmodifiable
@@ -102,6 +105,11 @@ public class TrieCurrencyFormatValueDetectionService extends AbstractValueDetect
                     final String currencySymbol = currencyFormat.getKey().getCurrency().getSymbol(locale);
                         //NumberFormat.getCurrency.getSymbol returns different
                         //symbols depending on default locale
+                    currencyCodeSymbolPairs.add(new ImmutablePair<>(currencyCode, currencySymbol));
+                }
+                for(Pair<String, String> currencyCodeSymbolPair : currencyCodeSymbolPairs) {
+                    String currencyCode = currencyCodeSymbolPair.getKey();
+                    String currencySymbol = currencyCodeSymbolPair.getValue();
                     //- checking tokens.indexOf(currencyCode) isn't sufficient because
                     //the currency code doesn't have to be separated by whitespace and
                     //represent a token alone
