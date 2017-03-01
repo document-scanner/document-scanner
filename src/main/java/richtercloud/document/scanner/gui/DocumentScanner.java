@@ -1427,7 +1427,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 yes,
                 no);
         BugHandler bugHandler;
-        if(!answer.equals(yes)) {
+        if(answer == null //if dialog has been canceled
+                || !answer.equals(yes)) {
             //still display the error message with the complete stacktrace
             bugHandler = new DialogBugHandler(null, //parent
                     Constants.BUG_URL,
