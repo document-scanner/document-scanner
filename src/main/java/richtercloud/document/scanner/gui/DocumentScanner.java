@@ -905,7 +905,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         try {
             this.scan();
         }catch(Exception ex) {
-            handleException(ex, "Unexpected exception occured during scan");
+            handleUnexpectedException(ex, "Unexpected exception occured during scan");
         }
     }//GEN-LAST:event_scanMenuItemActionPerformed
 
@@ -1395,6 +1395,11 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         this.messageHandler.handle(new Message(String.format("The following exception occured: %s", ExceptionUtils.getRootCauseMessage(ex)),
                 JOptionPane.ERROR_MESSAGE,
                 title));
+    }
+
+    private void handleUnexpectedException(Throwable ex, String title) {
+        handleException(ex, title);
+        this.issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
     }
 
     /**
