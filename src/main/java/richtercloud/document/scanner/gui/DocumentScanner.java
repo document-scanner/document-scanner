@@ -260,6 +260,10 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
      * avoid confusion with equality of {@link InetAddress}es.
      */
     private final static Map<String, SaneSession> ADDRESS_SESSION_MAP = new HashMap<>();
+    /**
+     * The default non-zero exit code.
+     */
+    private final static int SYSTEM_EXIT_ERROR_GENERAL = 1;
     private final IdApplier<AutoOCRValueDetectionPanel> idApplier;
     private final IdGenerator<Long> idGenerator;
     /**
@@ -661,12 +665,16 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         if(!this.documentScannerConf.getImageWrapperStorageDir().mkdirs()) {
             LOGGER.error(String.format("re-creation of image wrapper storage dir '%s' failed", this.documentScannerConf.getImageWrapperStorageDir().getAbsolutePath()));
         }
+        close();
+        shutdownHookThreads();
+        LOGGER.info(String.format("shutdown hooks in %s finished", DocumentScanner.class));
+    }
+
+    private static void shutdownHookThreads() {
         Caching.getCachingProvider().close();
         Platform.exit();
             //necessary in order to prevent hanging after all shutdown hooks
             //have been processed
-        close();
-        LOGGER.info(String.format("shutdown hooks in %s finished", DocumentScanner.class));
     }
 
     /**
@@ -1400,6 +1408,9 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private void handleUnexpectedException(Throwable ex, String title) {
         handleException(ex, title);
         this.issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+        this.shutdownHook();
+            //there's few sense to leave the application running after an
+            //unexpected exception which the user has been informed about
     }
 
     /**
@@ -1439,6 +1450,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             bugHandler = new RavenBugHandler(RAVEN_DSN);
         }
         bugHandler.handleUnexpectedException(new ExceptionMessage(ex));
+        shutdownHookThreads();
     }
 
     public IssueHandler getIssueHandler() {
@@ -1569,6 +1581,11 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         documentScanner.shutdownHook();
                         documentScanner.dispose();
                     }
+                    System.exit(SYSTEM_EXIT_ERROR_GENERAL);
+                        //calling System.exit is the only way to be able to
+                        //close DocumentScanner resources which have been
+                        //initialized in the constructor after an exception in
+                        //the constructor occured
                 }
             }
         });
