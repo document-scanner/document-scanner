@@ -18,6 +18,7 @@ import com.beust.jcommander.Parameter;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -27,14 +28,16 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.jscience.economics.money.Currency;
+import richtercloud.document.scanner.components.DateOCRResultFormatter;
+import richtercloud.document.scanner.components.OCRResultFormatter;
 import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.gui.scanner.ScannerConf;
 import richtercloud.document.scanner.ifaces.OCREngineConf;
 import richtercloud.document.scanner.ocr.TesseractOCREngineConf;
 import richtercloud.document.scanner.valuedetectionservice.ContactValueDetectionServiceConf;
-import richtercloud.document.scanner.valuedetectionservice.TrieCurrencyFormatValueDetectionServiceConf;
 import richtercloud.document.scanner.valuedetectionservice.CurrencyFormatValueDetectionServiceConf;
 import richtercloud.document.scanner.valuedetectionservice.DateFormatValueDetectionServiceConf;
+import richtercloud.document.scanner.valuedetectionservice.TrieCurrencyFormatValueDetectionServiceConf;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceConf;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyEmbeddedPersistenceStorageConf;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyNetworkPersistenceStorageConf;
@@ -111,6 +114,12 @@ public class DocumentScannerConf implements Serializable {
     public final static int AMOUNT_MONEY_EXCHANGE_RATE_RETRIEVER_EXPIRATION_MILLIS = 24*60*60*1000; //24 hours
     public final static String CREDENTIALS_STORE_FILE_NAME_DEFAULT = "credentials.xml";
     public final static File CREDENTIALS_STORE_FILE_DEFAULT = new File(CONFIG_DIR_DEFAULT, CREDENTIALS_STORE_FILE_NAME_DEFAULT);
+    public final static Map<Class<?>, OCRResultFormatter<?>> AUTO_OCR_VALUE_DETECTION_FORMATTER_MAP;
+    static {
+        AUTO_OCR_VALUE_DETECTION_FORMATTER_MAP = new HashMap<>();
+        AUTO_OCR_VALUE_DETECTION_FORMATTER_MAP.put(Date.class,
+                new DateOCRResultFormatter());
+    }
     /**
      * The file the this configuration has been loaded from. Might be
      * {@code null} if no initial configuration file has been specified.
@@ -229,6 +238,20 @@ public class DocumentScannerConf implements Serializable {
      */
     private boolean skipUserAllowedAutoBugTrackingQuestion = false;
     private File credentialsStoreFile = CREDENTIALS_STORE_FILE_DEFAULT;
+    /**
+     * A mapping for classes and associated
+     * {@link AutoOCRValueDetectionResultFormatter}s.
+     *
+     * @see AutoOCRValueDetectionResultFormatter
+     */
+    /*
+    internal implementation notes:
+    - type chosen in order to allow easy configurability in GUI later (e.g. with
+    annotation based discovery of AutoOCRValueDetectionResultFormatter on
+    classpath which has an edit dialog associated where details (e.g. which
+    date format to use) can be configured
+    */
+    private Map<Class<?>, OCRResultFormatter<?>> autoOCRValueDetectionFormatterMap = AUTO_OCR_VALUE_DETECTION_FORMATTER_MAP;
 
     private static Set<StorageConf> generateAvailableStorageConfsDefault(Set<Class<?>> entityClasses,
             File xMLStorageFile) throws IOException {
@@ -330,7 +353,8 @@ public class DocumentScannerConf implements Serializable {
             int amountMoneyExchangeRateRetrieverExpirationMillis,
             boolean userAllowedAutoBugTracking,
             boolean skipUserAllowedAutoBugTrackingQuestion,
-            File credentialsStoreFile
+            File credentialsStoreFile,
+            Map<Class<?>, OCRResultFormatter<?>> autoOCRValueDetectionFormatterMap
     ) {
         this.configFile = configFile;
         this.scannerName = scannerName;
@@ -370,6 +394,7 @@ public class DocumentScannerConf implements Serializable {
         this.amountMoneyExchangeRateRetrieverExpirationMillis = amountMoneyExchangeRateRetrieverExpirationMillis;
         this.userAllowedAutoBugTracking = userAllowedAutoBugTracking;
         this.skipUserAllowedAutoBugTrackingQuestion = this.skipUserAllowedAutoBugTrackingQuestion;
+        this.autoOCRValueDetectionFormatterMap = autoOCRValueDetectionFormatterMap;
     }
 
     /**
@@ -415,8 +440,17 @@ public class DocumentScannerConf implements Serializable {
                 documentScannerConf.getAmountMoneyExchangeRateRetrieverExpirationMillis(),
                 documentScannerConf.isUserAllowedAutoBugTracking(),
                 documentScannerConf.isSkipUserAllowedAutoBugTrackingQuestion(),
-                documentScannerConf.getCredentialsStoreFile()
+                documentScannerConf.getCredentialsStoreFile(),
+                documentScannerConf.getAutoOCRValueDetectionFormatterMap()
         );
+    }
+
+    public Map<Class<?>, OCRResultFormatter<?>> getAutoOCRValueDetectionFormatterMap() {
+        return autoOCRValueDetectionFormatterMap;
+    }
+
+    public void setAutoOCRValueDetectionFormatterMap(Map<Class<?>, OCRResultFormatter<?>> autoOCRValueDetectionFormatterMap) {
+        this.autoOCRValueDetectionFormatterMap = autoOCRValueDetectionFormatterMap;
     }
 
     public File getCredentialsStoreFile() {

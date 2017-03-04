@@ -288,7 +288,8 @@ public class DefaultMainPanel extends MainPanel {
                 idApplier,
                 idGenerator,
                 warningHandlers,
-                valueSetterMapping);
+                valueSetterMapping,
+                documentScannerConf);
         this.entryStorage = entryStorage;
         this.layout = new GroupLayout(this);
         setLayout(layout);

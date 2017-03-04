@@ -22,8 +22,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.persistence.Id;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.GroupLayout;
@@ -36,11 +39,13 @@ import javax.swing.JPanel;
 import javax.swing.ListCellRenderer;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionResult;
 import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
+import richtercloud.reflection.form.builder.Tools;
 import richtercloud.reflection.form.builder.TransformationException;
 import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
 import richtercloud.reflection.form.builder.fieldhandler.FieldHandlingException;
@@ -71,6 +76,7 @@ public class AutoOCRValueDetectionReflectionFormBuilder extends JPAReflectionFor
     private final Map<Pair<Class, Field>, DefaultComboBoxModel<ValueDetectionResult<?>>> comboBoxModelMap = new HashMap<>();
     private final Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping;
     private final Set<JPanel> autoOCRValueDetectionPanels = new HashSet<>();
+    private final DocumentScannerConf documentScannerConf;
 
     public AutoOCRValueDetectionReflectionFormBuilder(PersistenceStorage storage,
             String fieldDescriptionDialogTitle,
@@ -80,7 +86,8 @@ public class AutoOCRValueDetectionReflectionFormBuilder extends JPAReflectionFor
             IdApplier idApplier,
             IdGenerator idGenerator,
             Map<Class<?>, WarningHandler<?>> warningHandlers,
-            Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping) {
+            Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping,
+            DocumentScannerConf documentScannerConf) {
         super(storage,
                 fieldDescriptionDialogTitle,
                 messageHandler,
@@ -90,6 +97,7 @@ public class AutoOCRValueDetectionReflectionFormBuilder extends JPAReflectionFor
                 idGenerator,
                 warningHandlers);
         this.valueSetterMapping = valueSetterMapping;
+        this.documentScannerConf = documentScannerConf;
     }
 
     public Map<Pair<Class, Field>, DefaultComboBoxModel<ValueDetectionResult<?>>> getComboBoxModelMap() {
@@ -148,9 +156,26 @@ public class AutoOCRValueDetectionReflectionFormBuilder extends JPAReflectionFor
 //                        .addGap(GroupLayout.DEFAULT_SIZE)
 //                        .addComponent(oCRSourceLabel));
 //                return retValue;
+                assert documentScannerConf.getAutoOCRValueDetectionFormatterMap() != null;
+                OCRResultFormatter formatter = documentScannerConf.getAutoOCRValueDetectionFormatterMap().get(value.getValue().getClass());
+                if(formatter == null) {
+                    List<Class<?>> relevantKeys = new LinkedList<>(documentScannerConf.getAutoOCRValueDetectionFormatterMap().keySet()).stream().filter(clazz -> clazz.isAssignableFrom(value.getValue().getClass())).collect(Collectors.toList());
+                    if(!relevantKeys.isEmpty()) {
+                        Collections.sort(relevantKeys,
+                                Tools.CLASS_COMPARATOR_SUBCLASS_FIRST);
+                        Class<?> topKey = relevantKeys.get(0);
+                        formatter = documentScannerConf.getAutoOCRValueDetectionFormatterMap().get(topKey);
+                    }
+                }
+                String valueString;
+                if(formatter != null) {
+                    valueString = formatter.format(value.getValue());
+                }else {
+                    valueString = value.getValue().toString();
+                }
                 return new JLabel(String.format("Value: %s    OCR source: %s",
                             //\t instead of 4 space doesn't work
-                        value.getValue().toString(),
+                        valueString,
                         value.getoCRSource()));
             }
         });
