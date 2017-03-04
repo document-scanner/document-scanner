@@ -631,40 +631,45 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
      * @see #close()
      */
     private void shutdownHook() {
-        LOGGER.info(String.format("running shutdown hooks in %s", DocumentScanner.class));
-        if (this.documentScannerConf != null) {
-            try {
-                XStream xStream = new XStream();
-                xStream.toXML(this.documentScannerConf, new FileOutputStream(this.documentScannerConf.getConfigFile()));
-            } catch (FileNotFoundException ex) {
-                LOGGER.warn("an unexpected exception occured during save of configurations into file '{}', changes most likely lost", this.documentScannerConf.getConfigFile().getAbsolutePath());
-            }
-        }
-        if(this.scannerDevice != null) {
-            if(this.scannerDevice.isOpen()) {
+        try {
+            LOGGER.info(String.format("running shutdown hooks in %s", DocumentScanner.class));
+            if (this.documentScannerConf != null) {
                 try {
-                    this.scannerDevice.close();
-                } catch (IOException ex) {
-                    LOGGER.warn(String.format("an unexpected exception occured during closing the scanner device '%s'",
-                            this.scannerDevice.getName()));
+                    XStream xStream = new XStream();
+                    xStream.toXML(this.documentScannerConf, new FileOutputStream(this.documentScannerConf.getConfigFile()));
+                } catch (FileNotFoundException ex) {
+                    LOGGER.warn("an unexpected exception occured during save of configurations into file '{}', changes most likely lost", this.documentScannerConf.getConfigFile().getAbsolutePath());
                 }
             }
+            if(this.scannerDevice != null) {
+                if(this.scannerDevice.isOpen()) {
+                    try {
+                        this.scannerDevice.close();
+                    } catch (IOException ex) {
+                        LOGGER.warn(String.format("an unexpected exception occured during closing the scanner device '%s'",
+                                this.scannerDevice.getName()));
+                    }
+                }
+            }
+            if(this.storage != null) {
+                this.storage.shutdown();
+            }
+            LOGGER.info(String.format("emptying image wrapper storage directory '%s'", this.documentScannerConf.getImageWrapperStorageDir().getAbsolutePath()));
+            try {
+                FileUtils.deleteDirectory(this.documentScannerConf.getImageWrapperStorageDir());
+            } catch (IOException ex) {
+                LOGGER.error("removal of image wrapper storage directory failed, see nested exception for details", ex);
+            }
+            if(!this.documentScannerConf.getImageWrapperStorageDir().mkdirs()) {
+                LOGGER.error(String.format("re-creation of image wrapper storage dir '%s' failed", this.documentScannerConf.getImageWrapperStorageDir().getAbsolutePath()));
+            }
+            close();
+            shutdownHookThreads();
+            LOGGER.info(String.format("shutdown hooks in %s finished", DocumentScanner.class));
+        }catch(Exception ex) {
+            issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
         }
-        if(this.storage != null) {
-            this.storage.shutdown();
-        }
-        LOGGER.info(String.format("emptying image wrapper storage directory '%s'", this.documentScannerConf.getImageWrapperStorageDir().getAbsolutePath()));
-        try {
-            FileUtils.deleteDirectory(this.documentScannerConf.getImageWrapperStorageDir());
-        } catch (IOException ex) {
-            LOGGER.error("removal of image wrapper storage directory failed, see nested exception for details", ex);
-        }
-        if(!this.documentScannerConf.getImageWrapperStorageDir().mkdirs()) {
-            LOGGER.error(String.format("re-creation of image wrapper storage dir '%s' failed", this.documentScannerConf.getImageWrapperStorageDir().getAbsolutePath()));
-        }
-        close();
-        shutdownHookThreads();
-        LOGGER.info(String.format("shutdown hooks in %s finished", DocumentScanner.class));
+        this.issueHandler.shutdown();
     }
 
     private static void shutdownHookThreads() {
