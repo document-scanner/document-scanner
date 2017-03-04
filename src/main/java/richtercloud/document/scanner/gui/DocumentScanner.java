@@ -287,22 +287,21 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     /**
      * Start to fetch results and warm up the cache after start.
      */
-    private final Thread amountMoneyExchangeRetrieverInitThread = new Thread("amount-money-exchange-rate-retriever-init-thread") {
-        @Override
-        public void run() {
-            LOGGER.debug("Starting prefetching of currency exchange rates in "
-                    + "the background");
-            try {
-                Set<Currency> supportedCurrencies = DocumentScanner.this.amountMoneyExchangeRateRetriever.getSupportedCurrencies();
-                for(Currency supportedCurrency : supportedCurrencies) {
-                    DocumentScanner.this.amountMoneyExchangeRateRetriever.retrieveExchangeRate(supportedCurrency);
-                }
-            } catch (AmountMoneyExchangeRateRetrieverException ex) {
-                //all parts of FailsafeAmountMoneyExchangeRateRetriever failed
-                throw new RuntimeException(ex);
+    private final Thread amountMoneyExchangeRetrieverInitThread = new Thread(() -> {
+        LOGGER.debug("Starting prefetching of currency exchange rates in "
+                + "the background");
+        try {
+            Set<Currency> supportedCurrencies = DocumentScanner.this.amountMoneyExchangeRateRetriever.getSupportedCurrencies();
+            for(Currency supportedCurrency : supportedCurrencies) {
+                DocumentScanner.this.amountMoneyExchangeRateRetriever.retrieveExchangeRate(supportedCurrency);
             }
+        } catch (AmountMoneyExchangeRateRetrieverException ex) {
+            //all parts of FailsafeAmountMoneyExchangeRateRetriever failed
+            throw new RuntimeException(ex);
         }
-    };
+    },
+            "amount-money-exchange-rate-retriever-init-thread"
+    );
     /**
      * Allows early initialization of Apache Ignite in the background.
      */
@@ -310,19 +309,18 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     internal implementatio notes:
     - not necessary that this is a property, but kept as such for convenience.
     */
-    private final Thread cachingImageWrapperInitThread = new Thread("caching-image-wrapper-init-thread") {
-        @Override
-        public void run() {
-            try {
-                Class.forName(CachingImageWrapper.class.getName());
-                    //loads the static block in CachingImageWrapper in order
-                    //to minimize delay when initializing the first
-                    //CachingImageWrapper
-            } catch (ClassNotFoundException ex) {
-                throw new RuntimeException(ex);
-            }
+    private final Thread cachingImageWrapperInitThread = new Thread(() -> {
+        try {
+            Class.forName(CachingImageWrapper.class.getName());
+                //loads the static block in CachingImageWrapper in order
+                //to minimize delay when initializing the first
+                //CachingImageWrapper
+        } catch (ClassNotFoundException ex) {
+            throw new RuntimeException(ex);
         }
-    };
+    },
+            "caching-image-wrapper-init-thread"
+    );
 
     /**
      * Creates new DocumentScanner which does nothing unless
@@ -444,13 +442,12 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             //after initComponents because of afterScannerSelection involving
             //GUI components
 
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                LOGGER.info("running {} shutdown hooks", DocumentScanner.class);
-                DocumentScanner.this.shutdownHook();
-            }
-        });
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            LOGGER.info("running {} shutdown hooks", DocumentScanner.class);
+            DocumentScanner.this.shutdownHook();
+        },
+                String.format("%s shutdown hook", DocumentScanner.class.getSimpleName())
+        ));
 
         try {
             this.amountMoneyUsageStatisticsStorage = new FileAmountMoneyUsageStatisticsStorage(documentScannerConf.getAmountMoneyUsageStatisticsStorageFile());
