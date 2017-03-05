@@ -9,11 +9,11 @@
             description="Launch document-scanner"
             workingDirectory="$INSTALL_PATH"
             initialState="normal"
-            programGroup="yes"
-            desktop="yes"
-            applications="yes"
-            startMenu="yes"
-            startup="no"
+            programGroup="false"
+            desktop="true"
+            applications="false"
+            startMenu="false"
+            startup="false"
             terminal="false"
             type="Application">
             <!-- - Exec command in .desktop file is put in '', which makes it

@@ -6,16 +6,29 @@
     <programGroup defaultName="document-scanner"
             location="applications"/>
     <shortcut
-            name="wekautils"
+            name="document-scanner"
             target="$INSTALL_PATH\document-scanner.jar"
             description="Launch document-scanner"
             workingDirectory="$INSTALL_PATH"
             initialState="normal"
-            programGroup="yes"
-            desktop="yes"
-            applications="no"
-            startMenu="no"
-            startup="no">
+            programGroup="true"
+            desktop="true"
+            applications="true"
+            terminal="false"
+            startMenu="true"
+            startup="false">
+            <!-- - desktop=yes doesn't select "Install additional shortcuts on the
+                desktop" by default which installs a .desktop file in $HOME on
+                Ubuntu 16.10 and possibly others
+                - terminal=true might be helpful, but might be confusing for
+                users so that they close the terminal and therefore the
+                application
+                - `startMenu`, `startup` and `subgroup` are not supported on
+                Unix, but they still need to be specified in order to create a
+                cross-platform-installer
+                -->
         <createForPack name="Document-scanner Core"/>
     </shortcut>
+        <!-- izPack shortcut specification is at
+            https://izpack.atlassian.net/wiki/display/IZPACK/Shortcut+Specification -->
 </izpack:shortcuts>

@@ -33,8 +33,11 @@
         <modifier key="useHeadingPanel" value="yes" />
     </guiprefs>
     <resources>
-        <res id="shortcutSpec.xml" src="shortcutSpec.xml"/>
+        <res id="Win_shortcutSpec.xml" src="shortcutSpec.xml"/>
         <res id="Unix_shortcutSpec.xml" src="unixShortcutSpec.xml"/>
+            <!-- prefixes of res ids are very important and determine discovery
+                of resources, see https://github.com/izpack/izpack/blob/master/src/doc-reST/desktop-shortcuts.txt
+                for details -->
     </resources>
 
     <panels>
