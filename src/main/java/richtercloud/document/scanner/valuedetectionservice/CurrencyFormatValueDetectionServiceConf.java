@@ -25,4 +25,9 @@ public class CurrencyFormatValueDetectionServiceConf extends AbstractValueDetect
     public void validate() throws ValueDetectionServiceConfValidationException {
         //nothing to validate
     }
+
+    @Override
+    public String getDescription() {
+        return "Currency detection service";
+    }
 }

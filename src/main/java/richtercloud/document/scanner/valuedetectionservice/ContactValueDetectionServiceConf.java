@@ -25,4 +25,9 @@ public class ContactValueDetectionServiceConf extends AbstractValueDetectionServ
     public void validate() throws ValueDetectionServiceConfValidationException {
         //nothing to validate
     }
+
+    @Override
+    public String getDescription() {
+        return "Contact detection service";
+    }
 }

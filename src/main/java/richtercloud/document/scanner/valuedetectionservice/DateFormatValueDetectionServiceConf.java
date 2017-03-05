@@ -25,4 +25,9 @@ public class DateFormatValueDetectionServiceConf extends AbstractValueDetectionS
     public void validate() throws ValueDetectionServiceConfValidationException {
         //nothing to validate
     }
+
+    @Override
+    public String getDescription() {
+        return "Date detection service";
+    }
 }

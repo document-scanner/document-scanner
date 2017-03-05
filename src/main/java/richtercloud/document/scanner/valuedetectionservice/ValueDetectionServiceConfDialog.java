@@ -14,13 +14,17 @@
  */
 package richtercloud.document.scanner.valuedetectionservice;
 
+import java.awt.Component;
 import java.awt.Window;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
+import javax.swing.JList;
+import javax.swing.ListCellRenderer;
 import org.apache.commons.lang3.tuple.Pair;
 import richtercloud.message.handler.MessageHandler;
 
@@ -40,6 +44,22 @@ public class ValueDetectionServiceConfDialog extends javax.swing.JDialog {
     private List<ValueDetectionServiceConf> availableValueDetectionServiceConfs = new LinkedList<>();
     private List<ValueDetectionServiceConf> selectedValueDetectionServiceConfs = new LinkedList<>();
     private Set<String> valueDetectionServiceJARPaths = new HashSet<>();
+    private final ListCellRenderer valueDetectionServiceListCellRenderer = new DefaultListCellRenderer() {
+        @Override
+        public Component getListCellRendererComponent(JList<?> list,
+                Object value,
+                int index,
+                boolean isSelected,
+                boolean cellHasFocus) {
+            assert value instanceof ValueDetectionService;
+            ValueDetectionServiceConf valueCast = (ValueDetectionServiceConf) value;
+            return super.getListCellRendererComponent(list,
+                    valueCast.getDescription(),
+                    index,
+                    isSelected,
+                    cellHasFocus);
+        }
+    };
 
     /**
      * Creates new form AutoOCRValueDetectionConfDialog
@@ -63,6 +83,8 @@ public class ValueDetectionServiceConfDialog extends javax.swing.JDialog {
         for(ValueDetectionServiceConf selectedService : selectedValueDetectionServiceConfs) {
             selectedListModel.addElement(selectedService);
         }
+        this.availableList.setCellRenderer(valueDetectionServiceListCellRenderer);
+        this.selectedList.setCellRenderer(valueDetectionServiceListCellRenderer);
     }
 
     public List<ValueDetectionServiceConf> getAvailableValueDetectionServiceConfs() {
