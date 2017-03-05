@@ -687,6 +687,9 @@ public class DefaultMainPanel extends MainPanel {
                     documentScannerConf,
                     this.reflectionFormBuilder.getAutoOCRValueDetectionPanels(),
                     documentFile);
+            reflectionFormPanelTabbedPane.addReflectionFormPanelTabbedPaneListener((reflectionFormPanel) -> {
+                entityPanel.autoOCRValueDetectionGUI();
+            });
             retValue = new ImmutablePair<>(oCRSelectComponent, entityPanel);
             if(progressMonitor == null || !progressMonitor.isCanceled()) {
                 documentSwitchingMap.put(oCRSelectComponent,

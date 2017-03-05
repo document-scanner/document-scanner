@@ -66,6 +66,12 @@ import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
  * -> @TODO
  * @author richter
  */
+/*
+internal implementation notes:
+- although more elegant, it's overkill to pass a reference to EntityPanel in
+order to be able to call EntityPanel.autoOCRValueDetectionGUI, so do that in the
+MainPanel implementation
+*/
 public class AutoOCRValueDetectionReflectionFormBuilder extends JPAReflectionFormBuilder {
     /**
      * The association of the field of each class (used in order to avoid

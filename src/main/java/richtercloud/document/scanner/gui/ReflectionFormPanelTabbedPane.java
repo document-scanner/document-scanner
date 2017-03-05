@@ -17,6 +17,7 @@ package richtercloud.document.scanner.gui;
 import java.awt.Component;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import javax.swing.Icon;
@@ -43,6 +44,7 @@ import richtercloud.reflection.form.builder.jpa.JPAReflectionFormBuilder;
  *
  * @author richter
  */
+
 public class ReflectionFormPanelTabbedPane extends JTabbedPane {
     private static final long serialVersionUID = 1L;
     private final static Logger LOGGER = LoggerFactory.getLogger(ReflectionFormPanelTabbedPane.class);
@@ -61,6 +63,7 @@ public class ReflectionFormPanelTabbedPane extends JTabbedPane {
     private final JPAReflectionFormBuilder reflectionFormBuilder;
     private final FieldHandler fieldHandler;
     private final MessageHandler messageHandler;
+    private final Set<ReflectionFormPanelTabbedPaneLister> listeners = new HashSet<>();
 
     /**
      * Creates a {@code ReflectionFormPanelTabbedPane} with lazy loading tabs
@@ -174,7 +177,18 @@ public class ReflectionFormPanelTabbedPane extends JTabbedPane {
             );
             classPanelMap.put(entityClass,
                     reflectionFormPanel);
+            for(ReflectionFormPanelTabbedPaneLister listener : listeners) {
+                listener.onReflectionFormPanelLazilyCreated(reflectionFormPanel);
+            }
         }
         return reflectionFormPanel;
+    }
+
+    public void addReflectionFormPanelTabbedPaneListener(ReflectionFormPanelTabbedPaneLister listener) {
+        listeners.add(listener);
+    }
+
+    public void removeReflectionFormPanelTabbedPaneListener(ReflectionFormPanelTabbedPaneLister listener) {
+        listeners.remove(listener);
     }
 }

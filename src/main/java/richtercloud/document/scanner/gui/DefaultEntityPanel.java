@@ -16,6 +16,7 @@ package richtercloud.document.scanner.gui;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -151,6 +152,11 @@ public class DefaultEntityPanel extends EntityPanel {
     private List<ValueDetectionResult<?>> detectionResults;
 
     @Override
+    public List<ValueDetectionResult<?>> getDetectionResults() {
+        return Collections.unmodifiableList(detectionResults);
+    }
+
+    @Override
     public void autoOCRValueDetection(OCRSelectPanelPanelFetcher oCRSelectPanelPanelFetcher,
             boolean forceRenewal) {
         for(Pair<Class, Field> pair : this.reflectionFormBuilder.getComboBoxModelMap().keySet()) {
@@ -191,7 +197,8 @@ public class DefaultEntityPanel extends EntityPanel {
         }
     }
 
-    private void autoOCRValueDetectionGUI() {
+    @Override
+    public void autoOCRValueDetectionGUI() {
         if(detectionResults != null && !detectionResults.isEmpty()
             //might be null if OCREngineRecognitionException occured in
             //autoOCRValueDetectionNonGUI
