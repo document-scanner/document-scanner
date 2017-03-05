@@ -518,6 +518,10 @@ public class DefaultMainPanel extends MainPanel {
             images.add(oCRSelectPanel.getImage());
         }
         if(this.documentScannerConf.isAutoOCRValueDetection()) {
+            oCRSelectComponent.getAutoOCRValueDetectionButton().setEnabled(false);
+            entityPanel.addAutoOCRValueDetectionListener(() -> {
+                oCRSelectComponent.getAutoOCRValueDetectionButton().setEnabled(true);
+            });
             entityPanel.autoOCRValueDetection(new DefaultOCRSelectPanelPanelFetcher(oCRSelectComponent.getoCRSelectPanelPanel(),
                     oCREngine,
                     documentScannerConf),

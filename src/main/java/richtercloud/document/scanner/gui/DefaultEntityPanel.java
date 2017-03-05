@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JOptionPane;
 import javax.swing.JTabbedPane;
@@ -32,6 +33,7 @@ import richtercloud.document.scanner.components.AutoOCRValueDetectionReflectionF
 import richtercloud.document.scanner.components.OCRResultPanelFetcher;
 import richtercloud.document.scanner.components.ScanResultPanelFetcher;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
+import richtercloud.document.scanner.ifaces.AutoOCRValueDetectionListener;
 import richtercloud.document.scanner.ifaces.EntityPanel;
 import richtercloud.document.scanner.ifaces.OCREngineRecognitionException;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcher;
@@ -66,6 +68,7 @@ public class DefaultEntityPanel extends EntityPanel {
     private ReflectionFormPanelTabbedPane entityCreationTabbedPane;
     private final AmountMoneyCurrencyStorage amountMoneyAdditionalCurrencyStorage;
     private final AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever;
+    private final Set<AutoOCRValueDetectionListener> listeners = new HashSet<>();
 
     /**
      * Creates new form EntityPanel
@@ -150,6 +153,10 @@ public class DefaultEntityPanel extends EntityPanel {
     @Override
     public void autoOCRValueDetection(OCRSelectPanelPanelFetcher oCRSelectPanelPanelFetcher,
             boolean forceRenewal) {
+        for(Pair<Class, Field> pair : this.reflectionFormBuilder.getComboBoxModelMap().keySet()) {
+            JComboBox<ValueDetectionResult<?>> comboBox = this.reflectionFormBuilder.getComboBoxModelMap().get(pair);
+            comboBox.setEnabled(false);
+        }
         Thread autoOCRValueDetectionThread = new Thread(() -> {
             autoOCRValueDetectionNonGUI(oCRSelectPanelPanelFetcher, forceRenewal);
             SwingUtilities.invokeLater(() -> {
@@ -159,6 +166,9 @@ public class DefaultEntityPanel extends EntityPanel {
                     issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             });
+            for(AutoOCRValueDetectionListener listener : listeners) {
+                listener.onAutoOCRValueDetectionFinished();
+            }
         },
                 "auto-ocr-value-detection-thread");
         autoOCRValueDetectionThread.start();
@@ -187,7 +197,9 @@ public class DefaultEntityPanel extends EntityPanel {
             //autoOCRValueDetectionNonGUI
         ) {
             for(Pair<Class, Field> pair : this.reflectionFormBuilder.getComboBoxModelMap().keySet()) {
-                DefaultComboBoxModel<ValueDetectionResult<?>> comboBoxModel = this.reflectionFormBuilder.getComboBoxModelMap().get(pair);
+                JComboBox<ValueDetectionResult<?>> comboBox = this.reflectionFormBuilder.getComboBoxModelMap().get(pair);
+                comboBox.setEnabled(true);
+                DefaultComboBoxModel<ValueDetectionResult<?>> comboBoxModel = (DefaultComboBoxModel<ValueDetectionResult<?>>) comboBox.getModel();
                 Field field = pair.getValue();
                 comboBoxModel.removeAllElements();
                 comboBoxModel.addElement(null);
@@ -212,5 +224,15 @@ public class DefaultEntityPanel extends EntityPanel {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(entityCreationTabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 347, Short.MAX_VALUE)
         );
+    }
+
+    @Override
+    public void addAutoOCRValueDetectionListener(AutoOCRValueDetectionListener listener) {
+        this.listeners.add(listener);
+    }
+
+    @Override
+    public void removeAutoOCRValueDetectionListener(AutoOCRValueDetectionListener listener) {
+        this.listeners.remove(listener);
     }
 }

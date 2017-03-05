@@ -244,9 +244,14 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
                 }
             }
         });
+        entityPanel.addAutoOCRValueDetectionListener(() -> {
+            DefaultOCRSelectComponent.this.autoOCRValueDetectionButton.setEnabled(true);
+        });
         autoOCRValueDetectionResultsButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                DefaultOCRSelectComponent.this.entityPanel.setEnabled(false);
+                    //will be re-enabled in AutoOCRValueDetectionListener
                 DefaultOCRSelectComponent.this.entityPanel.autoOCRValueDetection(new DefaultOCRSelectPanelPanelFetcher(DefaultOCRSelectComponent.this.getoCRSelectPanelPanel(),
                         DefaultOCRSelectComponent.this.oCREngine,
                         documentScannerConf),
@@ -274,6 +279,11 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
         });
         autoOCRValueDetectionCheckBox.setSelected(true); //should trigger
             //action listener above
+    }
+
+    @Override
+    public JButton getAutoOCRValueDetectionButton() {
+        return autoOCRValueDetectionButton;
     }
 
     @Override

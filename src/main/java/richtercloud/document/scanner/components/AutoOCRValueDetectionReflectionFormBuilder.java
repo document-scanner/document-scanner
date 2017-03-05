@@ -70,10 +70,16 @@ public class AutoOCRValueDetectionReflectionFormBuilder extends JPAReflectionFor
     /**
      * The association of the field of each class (used in order to avoid
      * confusion between the same field used in (super) classes and subclasses)
-     * and the {@link DefaultComboBoxModel} to represent detected values for
-     * selection.
+     * and the {@link JComboBox} to represent detected values for selection.
      */
-    private final Map<Pair<Class, Field>, DefaultComboBoxModel<ValueDetectionResult<?>>> comboBoxModelMap = new HashMap<>();
+    /*
+    internal implementation notes:
+    - map to JComboBox instead of model because both the combo box and its model
+    are needed for adding values and deactivating the component while OCR value
+    detection is in progress and the model can be retrieved from JComboBox
+    (requires a cast to DefaultComboBoxModel, but that's fine)
+    */
+    private final Map<Pair<Class, Field>, JComboBox<ValueDetectionResult<?>>> comboBoxModelMap = new HashMap<>();
     private final Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping;
     private final Set<JPanel> autoOCRValueDetectionPanels = new HashSet<>();
     private final DocumentScannerConf documentScannerConf;
@@ -100,7 +106,7 @@ public class AutoOCRValueDetectionReflectionFormBuilder extends JPAReflectionFor
         this.documentScannerConf = documentScannerConf;
     }
 
-    public Map<Pair<Class, Field>, DefaultComboBoxModel<ValueDetectionResult<?>>> getComboBoxModelMap() {
+    public Map<Pair<Class, Field>, JComboBox<ValueDetectionResult<?>>> getComboBoxModelMap() {
         return Collections.unmodifiableMap(comboBoxModelMap);
     }
 
@@ -213,7 +219,7 @@ public class AutoOCRValueDetectionReflectionFormBuilder extends JPAReflectionFor
                 autoOCRValueDetectionPanel);
 
         Pair<Class, Field> pair = new ImmutablePair<>(entityClass, field);
-        comboBoxModelMap.put(pair, comboBoxModel);
+        comboBoxModelMap.put(pair, comboBox);
         autoOCRValueDetectionPanels.add(autoOCRValueDetectionPanel);
         if(field.getAnnotation(Id.class) != null) {
             getIdFieldComponentMap().remove(instance);
