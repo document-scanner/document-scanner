@@ -169,6 +169,8 @@ public class DefaultEntityPanel extends EntityPanel {
                 try {
                     autoOCRValueDetectionGUI();
                 }catch(Exception ex) {
+                    LOGGER.error("unexpected exception during fetching of "
+                            + "auto-OCR-detection values", ex);
                     issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             });
@@ -187,6 +189,8 @@ public class DefaultEntityPanel extends EntityPanel {
             try {
                 oCRResult = oCRSelectPanelPanelFetcher.fetch();
             } catch (OCREngineRecognitionException ex) {
+                LOGGER.error("unexpected exception during fetching of "
+                        + "auto-OCR-detection values", ex);
                 issueHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
                 return;
             }
