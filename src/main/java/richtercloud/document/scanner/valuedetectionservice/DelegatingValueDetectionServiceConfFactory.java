@@ -14,6 +14,9 @@
  */
 package richtercloud.document.scanner.valuedetectionservice;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import richtercloud.document.scanner.valuedetectionservice.annotations.ConfFactory;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
 
@@ -49,9 +52,25 @@ public class DelegatingValueDetectionServiceConfFactory implements ValueDetectio
         }else if(serviceConf instanceof DateFormatValueDetectionServiceConf) {
             retValue = dateFormatValueDetectionServiceConfFactory.createService((DateFormatValueDetectionServiceConf) serviceConf);
         }else {
-            throw new IllegalArgumentException(String.format("service "
-                    + "configuration of type %s not supported",
-                    serviceConf.getClass()));
+            ConfFactory confFactory = serviceConf.getClass().getAnnotation(ConfFactory.class);
+            if(confFactory != null) {
+                Class<? extends ValueDetectionServiceConfFactory> serviceConfFactoryClass = confFactory.confFactoryClass();
+                try {
+                    Constructor<? extends ValueDetectionServiceConfFactory> serviceConfFactoryClassConstructor = serviceConfFactoryClass.getConstructor();
+                    try {
+                        ValueDetectionServiceConfFactory serviceConfFactory = serviceConfFactoryClassConstructor.newInstance();
+                        retValue = serviceConfFactory.createService(serviceConf);
+                    } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                } catch (NoSuchMethodException | SecurityException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }else {
+                throw new IllegalArgumentException(String.format("service "
+                        + "configuration of type %s not supported",
+                        serviceConf.getClass()));
+            }
         }
         return retValue;
     }
