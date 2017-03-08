@@ -26,7 +26,7 @@ import javax.swing.DefaultListModel;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 import org.apache.commons.lang3.tuple.Pair;
-import richtercloud.message.handler.MessageHandler;
+import richtercloud.message.handler.IssueHandler;
 
 /**
  *
@@ -36,7 +36,7 @@ public class ValueDetectionServiceConfDialog extends javax.swing.JDialog {
     private static final long serialVersionUID = 1L;
     private final DefaultListModel<ValueDetectionServiceConf> availableListModel = new DefaultListModel<>();
     private final DefaultListModel<ValueDetectionServiceConf> selectedListModel = new DefaultListModel<>();
-    private final MessageHandler messageHandler;
+    private final IssueHandler issueHandler;
     /**
      * The values changed by dialog operations. {@code null} indicates that the
      * dialog has been canceled.
@@ -67,10 +67,10 @@ public class ValueDetectionServiceConfDialog extends javax.swing.JDialog {
     public ValueDetectionServiceConfDialog(Window parent,
             List<ValueDetectionServiceConf> availableValueDetectionServiceConfs,
             List<ValueDetectionServiceConf> selectedValueDetectionServiceConfs,
-            MessageHandler messageHandler) {
+            IssueHandler issueHandler) {
         super(parent,
                 ModalityType.APPLICATION_MODAL);
-        this.messageHandler = messageHandler;
+        this.issueHandler = issueHandler;
         initComponents();
         this.splitPane.setDividerLocation(splitPane.getPreferredSize().width/2);
         assert Collections.disjoint(availableValueDetectionServiceConfs,
@@ -266,7 +266,7 @@ public class ValueDetectionServiceConfDialog extends javax.swing.JDialog {
 
     private void availableAddButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_availableAddButtonActionPerformed
         ValueDetectionServiceAddDialog addDialog = new ValueDetectionServiceAddDialog(this,
-                messageHandler);
+                issueHandler);
         addDialog.setLocationRelativeTo(this);
         addDialog.setVisible(true);
         Pair<String, ValueDetectionServiceConf> createdConf = addDialog.getCreatedConf();

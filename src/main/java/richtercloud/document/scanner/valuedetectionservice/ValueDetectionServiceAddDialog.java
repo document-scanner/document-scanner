@@ -48,8 +48,9 @@ import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
 import org.reflections.util.FilterBuilder;
 import richtercloud.document.scanner.valuedetectionservice.annotations.ConfPanel;
+import richtercloud.message.handler.ExceptionMessage;
+import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.Message;
-import richtercloud.message.handler.MessageHandler;
 
 /**
  * Allows scanning a JAR for implementations of
@@ -66,7 +67,7 @@ import richtercloud.message.handler.MessageHandler;
  */
 public class ValueDetectionServiceAddDialog extends JDialog {
     private static final long serialVersionUID = 1L;
-    private final MessageHandler messageHandler;
+    private final IssueHandler issueHandler;
     private final DefaultComboBoxModel<Pair<String, ValueDetectionServiceConfPanel>> servicesComboBoxModel = new DefaultComboBoxModel<>();
     private final ListCellRenderer servicesComboBoxCellRenderer = new DefaultListCellRenderer() {
         @Override
@@ -107,10 +108,10 @@ public class ValueDetectionServiceAddDialog extends JDialog {
      * Creates new form AutoOCRValueDetectionServiceAddDialog
      */
     public ValueDetectionServiceAddDialog(Window parent,
-            MessageHandler messageHandler) {
+            IssueHandler issueHandler) {
         super(parent,
                 ModalityType.APPLICATION_MODAL);
-        this.messageHandler = messageHandler;
+        this.issueHandler = issueHandler;
         initComponents();
         servicesComboBox.setRenderer(servicesComboBoxCellRenderer);
         servicesComboBox.addItemListener((ItemEvent e) -> {
@@ -329,7 +330,7 @@ public class ValueDetectionServiceAddDialog extends JDialog {
     private void loadButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loadButtonActionPerformed
         File selectedFile = new File(this.pathTextField.getText());
         if(!selectedFile.exists()) {
-            messageHandler.handle(new Message(String.format("Selected file "
+            issueHandler.handle(new Message(String.format("Selected file "
                     + "'%s' doesn't exist",
                             selectedFile.getName()
                         //don't use absolute path here beacuse the message that
@@ -349,7 +350,7 @@ public class ValueDetectionServiceAddDialog extends JDialog {
             Set<Class<? extends ValueDetectionService>> services = loadValueDetectionServices(selectedFile,
                     classLoader);
             if(services.isEmpty()) {
-                messageHandler.handle(new Message(String.format("Loaded JAR doesn't contain "
+                issueHandler.handle(new Message(String.format("Loaded JAR doesn't contain "
                         + "classes implementing %s",
                                 ValueDetectionService.class),
                         JOptionPane.ERROR_MESSAGE,
@@ -359,7 +360,7 @@ public class ValueDetectionServiceAddDialog extends JDialog {
             for(Class<? extends ValueDetectionService> service : services) {
                 ConfPanel serviceConfPanelAnnotation = service.getAnnotation(ConfPanel.class);
                 if(serviceConfPanelAnnotation == null) {
-                    messageHandler.handle(new Message(String.format("implementation of %s doesn't have a class "
+                    issueHandler.handle(new Message(String.format("implementation of %s doesn't have a class "
                             + "annotation %s, implementation will be ignored",
                             service,
                             ConfPanel.class),
@@ -374,7 +375,7 @@ public class ValueDetectionServiceAddDialog extends JDialog {
                     try {
                         serviceConfPanelClassConstructor = serviceConfPanelClass.getDeclaredConstructor();
                     } catch (NoSuchMethodException | SecurityException ex) {
-                        messageHandler.handle(new Message(String.format(
+                        issueHandler.handle(new Message(String.format(
                                 "configuration "
                                 + "panel class %s of service implementation %s "
                                 + "doesn't have an accessible constructor "
@@ -389,9 +390,9 @@ public class ValueDetectionServiceAddDialog extends JDialog {
                         continue;
                     }
                     serviceConfPanel = serviceConfPanelClassConstructor.newInstance();
-                    serviceConfPanel.init(messageHandler);
+                    serviceConfPanel.init(issueHandler);
                 } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
-                    messageHandler.handle(new Message(String.format(
+                    issueHandler.handle(new Message(String.format(
                             "initialization of %s for service implementation "
                             + "%s failed due to the following exception: %s",
                                     serviceConfPanelClass,
@@ -408,23 +409,27 @@ public class ValueDetectionServiceAddDialog extends JDialog {
                 this.lastSuccessfulPath = selectedFilePath;
             }
         } catch (MalformedURLException ex) {
-            messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+            issueHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
         } catch (IOException ex) {
             Logger.getLogger(ValueDetectionServiceAddDialog.class.getName()).log(Level.SEVERE, null, ex);
         }
     }//GEN-LAST:event_loadButtonActionPerformed
 
     private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveButtonActionPerformed
-        ValueDetectionServiceConf createdConf = this.serviceConfPanel.getServiceConf();
         try {
-            createdConf.validate();
-        } catch (ValueDetectionServiceConfValidationException ex) {
-            messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
-            return;
+            ValueDetectionServiceConf createdConf = this.serviceConfPanel.getServiceConf();
+            try {
+                createdConf.validate();
+            } catch (ValueDetectionServiceConfValidationException ex) {
+                issueHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+                return;
+            }
+            this.createdConf = new ImmutablePair<>(this.lastSuccessfulPath,
+                    createdConf);
+            this.setVisible(false);
+        }catch(Exception ex) {
+            issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
         }
-        this.createdConf = new ImmutablePair<>(this.lastSuccessfulPath,
-                createdConf);
-        this.setVisible(false);
     }//GEN-LAST:event_saveButtonActionPerformed
 
     private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelButtonActionPerformed

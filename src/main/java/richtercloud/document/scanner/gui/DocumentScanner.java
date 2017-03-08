@@ -1172,7 +1172,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         ValueDetectionServiceConfDialog serviceConfDialog = new ValueDetectionServiceConfDialog(this,
                 documentScannerConf.getAvailableValueDetectionServiceConfs(),
                 documentScannerConf.getSelectedValueDetectionServiceConfs(),
-                messageHandler);
+                issueHandler);
         serviceConfDialog.setLocationRelativeTo(this);
         serviceConfDialog.setVisible(true);
         List<ValueDetectionServiceConf> availalbleValueDetectionServiceConfs = serviceConfDialog.getAvailableValueDetectionServiceConfs();
