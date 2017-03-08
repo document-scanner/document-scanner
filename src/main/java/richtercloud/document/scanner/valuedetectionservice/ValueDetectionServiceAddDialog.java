@@ -417,6 +417,10 @@ public class ValueDetectionServiceAddDialog extends JDialog {
 
     private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveButtonActionPerformed
         try {
+            if(this.serviceConfPanel == null) {
+                //no panel has been selected yet -> do nothing
+                return;
+            }
             ValueDetectionServiceConf createdConf = this.serviceConfPanel.getServiceConf();
             try {
                 createdConf.validate();
