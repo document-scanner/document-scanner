@@ -992,19 +992,23 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     }//GEN-LAST:event_storageSelectionMenuItemActionPerformed
 
     private void oCRMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_oCRMenuItemActionPerformed
-        OCREngineSelectDialog oCREngineSelectDialog = new OCREngineSelectDialog(this,
-                this.documentScannerConf,
-                this.messageHandler);
-        oCREngineSelectDialog.setLocationRelativeTo(this);
-        oCREngineSelectDialog.setVisible(true);
-        OCREngineConf selectedOCREngineConf = oCREngineSelectDialog.getSelectedOCREngineConf();
-        if(selectedOCREngineConf == null) {
-            //dialog canceled
-            return;
+        try {
+            OCREngineSelectDialog oCREngineSelectDialog = new OCREngineSelectDialog(this,
+                    this.documentScannerConf,
+                    this.messageHandler);
+            oCREngineSelectDialog.setLocationRelativeTo(this);
+            oCREngineSelectDialog.setVisible(true);
+            OCREngineConf selectedOCREngineConf = oCREngineSelectDialog.getSelectedOCREngineConf();
+            if(selectedOCREngineConf == null) {
+                //dialog canceled
+                return;
+            }
+            this.documentScannerConf.setoCREngineConf(selectedOCREngineConf);
+            this.oCREngine = oCREngineFactory.create(selectedOCREngineConf);
+            mainPanel.setoCREngine(oCREngine);
+        }catch(Exception ex) {
+            issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
         }
-        this.documentScannerConf.setoCREngineConf(selectedOCREngineConf);
-        this.oCREngine = oCREngineFactory.create(selectedOCREngineConf);
-        mainPanel.setoCREngine(oCREngine);
     }//GEN-LAST:event_oCRMenuItemActionPerformed
 
     private void openMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openMenuItemActionPerformed
