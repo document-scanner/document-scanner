@@ -564,13 +564,18 @@ public class DefaultMainPanel extends MainPanel {
                             documentScannerConf.getPreferredOCRSelectPanelWidth()) {
                         @Override
                         public void mouseReleased(MouseEvent evt) {
-                            super.mouseReleased(evt);
-                            if (this.getDragStart() != null && !this.getDragStart().equals(this.getDragEnd())) {
-                                try {
-                                    DefaultMainPanel.this.handleOCRSelection();
-                                } catch (IOException ex) {
-                                    throw new RuntimeException(ex);
+                            try {
+                                super.mouseReleased(evt);
+                                if (this.getDragStart() != null && !this.getDragStart().equals(this.getDragEnd())) {
+                                    try {
+                                        DefaultMainPanel.this.handleOCRSelection();
+                                    } catch (IOException ex) {
+                                        issueHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+                                    }
                                 }
+                            }catch(RuntimeException ex) {
+                                LOGGER.error("an unexpected exception occured during mouse release", ex);
+                                issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                             }
                         }
                     };
