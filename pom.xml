@@ -27,6 +27,7 @@
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
             <snapshots>
                 <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
             </snapshots>
             <releases>
                 <enabled>true</enabled>
@@ -42,6 +43,9 @@
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
             <snapshots>
                 <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+                    <!-- only need changes of https://github.com/izpack/izpack/pull/562,
+                    #561 and #560 -->
             </snapshots>
             <releases>
                 <enabled>true</enabled>
