@@ -14,6 +14,7 @@
  */
 package richtercloud.document.scanner.ocr;
 
+import java.util.Objects;
 import richtercloud.document.scanner.ifaces.OCREngineConfValidationException;
 
 /**
@@ -41,5 +42,37 @@ public class PdfsandwichOCREngineConf extends ProcessOCREngineConf {
     @Override
     public void validate() throws OCREngineConfValidationException {
         throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = super.hashCode();
+        hash = 17 * hash + Objects.hashCode(this.inputTempFilePrefix);
+        return hash;
+    }
+
+    protected boolean equalsTransitive(PdfsandwichOCREngineConf other) {
+        if(!super.equalsTransitive(other)) {
+            return false;
+        }
+        if (!Objects.equals(this.inputTempFilePrefix, other.inputTempFilePrefix)) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final PdfsandwichOCREngineConf other = (PdfsandwichOCREngineConf) obj;
+        return equalsTransitive(other);
     }
 }

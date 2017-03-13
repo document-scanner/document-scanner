@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.swing.DefaultListModel;
 import javax.swing.JOptionPane;
-import richtercloud.document.scanner.ifaces.OCREngineConfValidationException;
 import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
 
@@ -58,10 +57,9 @@ public class TesseractOCREngineConfPanel extends OCREngineConfPanel<TesseractOCR
      * invoked with {@code --list-langs} returns a code {@code != 0}
      * @throws IOException
      * @throws InterruptedException
-     * @throws BinaryNotFoundException
      */
     public TesseractOCREngineConfPanel(TesseractOCREngineConf conf,
-            MessageHandler messageHandler) throws IOException, InterruptedException, BinaryNotFoundException {
+            MessageHandler messageHandler) throws IOException, InterruptedException {
         this.initComponents();
         this.messageHandler = messageHandler;
         this.conf = conf;
@@ -72,42 +70,45 @@ public class TesseractOCREngineConfPanel extends OCREngineConfPanel<TesseractOCR
             public void focusLost(FocusEvent e) {
                 try {
                     onBinaryChanged();
-                } catch (IOException | InterruptedException ex) {
-                    throw new RuntimeException(ex);
+                }catch (IOException | InterruptedException ex) {
+                    messageHandler.handle(new Message(ex, JOptionPane.WARNING_MESSAGE));
                 }
             }
         });
         this.binaryTextField.setText(conf.getBinary());
-        onBinaryChanged();
+        //don't call onBinaryChanged here, but on validation only
     }
 
+    /**
+     * Callback after the focus of the binary text field has been lost. Does not
+     * run validation on the binary because that should be done when the save
+     * button is pressed.
+     *
+     * @throws IOException
+     * @throws InterruptedException
+     */
     private void onBinaryChanged() throws IOException, InterruptedException {
         TesseractOCREngineConf confToValidate = new TesseractOCREngineConf(this.conf);
         confToValidate.setBinary(binaryTextField.getText());
-        try {
-            confToValidate.validate();
 
-            //update model if validation succeeded (need to be able to handle
-            //invalid configuration at initialization and after change)
-            languageListModel.clear();
-            List<String> availableLanguages = confToValidate.getAvailableLanguages();
-            for(String lang : availableLanguages) {
-                this.languageListModel.addElement(lang);
-            }
-            List<Integer> selectedLanguageIndices = new ArrayList<>();
-            for(String selectedLanguage : confToValidate.getSelectedLanguages()) {
-                int index = this.languageListModel.indexOf(selectedLanguage);
-                selectedLanguageIndices.add(index);
-            }
-            int[] selectedLanguageIndicesArray = new int[selectedLanguageIndices.size()];
-            for(int i =0; i<selectedLanguageIndices.size(); i++) {
-                selectedLanguageIndicesArray[i] = selectedLanguageIndices.get(i);
-            }
-            this.languageList.setSelectedIndices(selectedLanguageIndicesArray);
-            this.conf = confToValidate;
-        } catch (OCREngineConfValidationException ex) {
-            this.messageHandler.handle(new Message(ex, JOptionPane.WARNING_MESSAGE));
+        //update model if validation succeeded (need to be able to handle
+        //invalid configuration at initialization and after change)
+        languageListModel.clear();
+        List<String> availableLanguages = confToValidate.getAvailableLanguages();
+        for(String lang : availableLanguages) {
+            this.languageListModel.addElement(lang);
         }
+        List<Integer> selectedLanguageIndices = new ArrayList<>();
+        for(String selectedLanguage : confToValidate.getSelectedLanguages()) {
+            int index = this.languageListModel.indexOf(selectedLanguage);
+            selectedLanguageIndices.add(index);
+        }
+        int[] selectedLanguageIndicesArray = new int[selectedLanguageIndices.size()];
+        for(int i =0; i<selectedLanguageIndices.size(); i++) {
+            selectedLanguageIndicesArray[i] = selectedLanguageIndices.get(i);
+        }
+        this.languageList.setSelectedIndices(selectedLanguageIndicesArray);
+        this.conf = confToValidate;
     }
 
     @Override

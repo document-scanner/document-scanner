@@ -14,13 +14,14 @@
  */
 package richtercloud.document.scanner.ocr;
 
-import richtercloud.document.scanner.ifaces.OCREngineConf;
-
 /**
  *
  * @author richter
  */
-public interface OCREngineConfPanelFactory<C extends OCREngineConf> {
+public class OCREngineConfCreationException extends Exception {
+    private static final long serialVersionUID = 1L;
 
-    OCREngineConfPanel<C> create(C oCREngineConf) throws OCREngineConfCreationException;
+    public OCREngineConfCreationException(Exception ex) {
+        super(ex);
+    }
 }

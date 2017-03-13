@@ -14,6 +14,7 @@
  */
 package richtercloud.document.scanner.ocr;
 
+import java.util.Objects;
 import org.apache.commons.lang3.builder.RecursiveToStringStyle;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -45,5 +46,34 @@ public abstract class ProcessOCREngineConf implements OCREngineConf {
                 new RecursiveToStringStyle());
         String retValue = toStringBuilder.toString();
         return retValue;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 3;
+        hash = 79 * hash + Objects.hashCode(this.binary);
+        return hash;
+    }
+
+    protected boolean equalsTransitive(ProcessOCREngineConf other) {
+        if (!Objects.equals(this.binary, other.binary)) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final ProcessOCREngineConf other = (ProcessOCREngineConf) obj;
+        return equalsTransitive(other);
     }
 }

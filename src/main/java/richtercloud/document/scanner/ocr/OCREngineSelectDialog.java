@@ -14,7 +14,6 @@
  */
 package richtercloud.document.scanner.ocr;
 
-import richtercloud.document.scanner.ifaces.OCREngineConf;
 import java.awt.Component;
 import java.awt.Frame;
 import java.awt.event.ItemEvent;
@@ -28,6 +27,7 @@ import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 import javax.swing.MutableComboBoxModel;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
+import richtercloud.document.scanner.ifaces.OCREngineConf;
 import richtercloud.document.scanner.ifaces.OCREngineConfValidationException;
 import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
@@ -38,25 +38,24 @@ import richtercloud.message.handler.MessageHandler;
  */
 public class OCREngineSelectDialog extends javax.swing.JDialog {
     private static final long serialVersionUID = 1L;
-    private final Map<Class<? extends OCREngineConf>, OCREngineConfPanel<?>> oCREngineConfPanelMap = new HashMap<>();
-    private final MutableComboBoxModel<Class<? extends OCREngineConf>> oCREngineComboBoxModel = new DefaultComboBoxModel<>();
-    private OCREngineConfPanel<?> currentOCREngineConfPanel;
+    private final Map<OCREngineConfPanel<?>, OCREngineConf> originalEngineConfs = new HashMap<>();
+    private final Map<OCREngineConf, OCREngineConfPanel<?>> oCREngineConfPanelMap = new HashMap<>();
+    private final MutableComboBoxModel<OCREngineConf> oCREngineComboBoxModel = new DefaultComboBoxModel<>();
     //@TODO: implement class path discovery of associated conf panel with annotations
-    private OCREngineConf selectedOCREngineConf = null;
     private final MessageHandler messageHandler;
-    private final DocumentScannerConf documentScannerConf;
+    private DocumentScannerConf documentScannerConf;
     private ListCellRenderer<Object> oCRDialogEngineComboBoxRenderer = new DefaultListCellRenderer() {
         private static final long serialVersionUID = 1L;
 
         @Override
         public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-            Class<?> valueCast = (Class<?>) value;
-            OCREngineConfInfo oCREngineInfo = valueCast.getAnnotation(OCREngineConfInfo.class);
+            OCREngineConf valueCast = (OCREngineConf) value;
+            OCREngineConfInfo oCREngineInfo = valueCast.getClass().getAnnotation(OCREngineConfInfo.class);
             String value0;
             if (oCREngineInfo != null) {
                 value0 = oCREngineInfo.name();
             } else {
-                value0 = valueCast.getSimpleName();
+                value0 = valueCast.getClass().getSimpleName();
             }
             return super.getListCellRendererComponent(list, value0, index, isSelected, cellHasFocus);
         }
@@ -78,29 +77,38 @@ public class OCREngineSelectDialog extends javax.swing.JDialog {
 
         OCREngineConfPanelFactory oCREngineConfPanelFactory = new DefaultOCREngineConfPanelFactory(messageHandler);
         for(OCREngineConf availableOCREngineConf : this.documentScannerConf.getAvailableOCREngineConfs()) {
-            this.oCREngineComboBoxModel.addElement(availableOCREngineConf.getClass());
-            OCREngineConfPanel oCREngineConfPanel = oCREngineConfPanelFactory.create(availableOCREngineConf);
-            this.oCREngineConfPanelMap.put(availableOCREngineConf.getClass(),
+            OCREngineConf oCREngineConf = DelegatingOCREngineConfCopyFactory.getInstance().copy(availableOCREngineConf);
+            this.oCREngineComboBoxModel.addElement(oCREngineConf);
+            OCREngineConfPanel oCREngineConfPanel;
+            try {
+                oCREngineConfPanel = oCREngineConfPanelFactory.create(oCREngineConf);
+            } catch (OCREngineConfCreationException ex) {
+                messageHandler.handle(new Message(ex));
+                continue;
+            }
+            this.originalEngineConfs.put(oCREngineConfPanel,
+                    availableOCREngineConf);
+            this.oCREngineConfPanelMap.put(oCREngineConf,
                     oCREngineConfPanel);
         }
         this.oCRDialogEngineComboBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
-                Class<? extends OCREngineConf> clazz = (Class<? extends OCREngineConf>) e.getItem();
-                oCREngineComboBoxStateChanged(clazz);
+                OCREngineConf oCREngineConf = (OCREngineConf) e.getItem();
+                oCREngineComboBoxStateChanged(oCREngineConf);
             }
         });
         this.oCRDialogPanel.setLayout(new BoxLayout(this.oCRDialogPanel, BoxLayout.X_AXIS));
         //set initial panel state
         this.oCRDialogEngineComboBox.setSelectedItem(this.documentScannerConf.getoCREngineConf().getClass());
             //doesn't trigger ItemListener.itemStateChange above
-        oCREngineComboBoxStateChanged(this.documentScannerConf.getoCREngineConf().getClass());
+        oCREngineComboBoxStateChanged(this.documentScannerConf.getoCREngineConf());
         this.oCRDialogEngineComboBox.setRenderer(oCRDialogEngineComboBoxRenderer);
             //after oCRDialogEngineComboBox.setSelectedItem
     }
 
-    private void oCREngineComboBoxStateChanged(Class<? extends OCREngineConf> clazz) {
-        OCREngineConfPanel<?> cREngineConfPanel = OCREngineSelectDialog.this.oCREngineConfPanelMap.get(clazz);
+    private void oCREngineComboBoxStateChanged(OCREngineConf cREngineConf) {
+        OCREngineConfPanel<?> cREngineConfPanel = OCREngineSelectDialog.this.oCREngineConfPanelMap.get(cREngineConf);
         OCREngineSelectDialog.this.oCRDialogPanel.removeAll();
         OCREngineSelectDialog.this.oCRDialogPanel.add(cREngineConfPanel);
         OCREngineSelectDialog.this.oCRDialogPanel.revalidate();
@@ -108,8 +116,8 @@ public class OCREngineSelectDialog extends javax.swing.JDialog {
         OCREngineSelectDialog.this.oCRDialogPanel.repaint();
     }
 
-    public OCREngineConf getSelectedOCREngineConf() {
-        return selectedOCREngineConf;
+    public DocumentScannerConf getDocumentScannerConf() {
+        return documentScannerConf;
     }
 
     /**
@@ -201,28 +209,31 @@ public class OCREngineSelectDialog extends javax.swing.JDialog {
     }// </editor-fold>//GEN-END:initComponents
 
     private void oCRDialogCancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_oCRDialogCancelButtonActionPerformed
-        this.selectedOCREngineConf = null;
+        this.documentScannerConf = null;
         setVisible(false);
     }//GEN-LAST:event_oCRDialogCancelButtonActionPerformed
 
     private void oCRDialogSaveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_oCRDialogSaveButtonActionPerformed
-        Class<? extends OCREngineConf> oCREngineClass = this.oCRDialogEngineComboBox.getItemAt(this.oCRDialogEngineComboBox.getSelectedIndex());
-        this.currentOCREngineConfPanel = this.oCREngineConfPanelMap.get(oCREngineClass);
-        assert this.currentOCREngineConfPanel != null;
-        OCREngineConf selectedOCREngineConf0 = this.currentOCREngineConfPanel.getOCREngineConf();
+        OCREngineConf oCREngineConf = this.oCRDialogEngineComboBox.getItemAt(this.oCRDialogEngineComboBox.getSelectedIndex());
+        OCREngineConfPanel<?> currentOCREngineConfPanel = this.oCREngineConfPanelMap.get(oCREngineConf);
+        assert currentOCREngineConfPanel != null;
+        currentOCREngineConfPanel.save();
+        OCREngineConf selectedOCREngineConf0 = currentOCREngineConfPanel.getOCREngineConf();
         try {
             selectedOCREngineConf0.validate();
         }catch(OCREngineConfValidationException ex) {
             messageHandler.handle(new Message(ex));
             return;
         }
-        this.selectedOCREngineConf = selectedOCREngineConf0;
+        this.documentScannerConf.setoCREngineConf(selectedOCREngineConf0);
+        this.documentScannerConf.getAvailableOCREngineConfs().remove(originalEngineConfs.get(currentOCREngineConfPanel));
+        this.documentScannerConf.getAvailableOCREngineConfs().add(selectedOCREngineConf0);
         this.setVisible(false);
     }//GEN-LAST:event_oCRDialogSaveButtonActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton oCRDialogCancelButton;
-    private javax.swing.JComboBox<Class<? extends OCREngineConf>> oCRDialogEngineComboBox;
+    private javax.swing.JComboBox<OCREngineConf> oCRDialogEngineComboBox;
     private javax.swing.JLabel oCRDialogEngineLabel;
     private javax.swing.JPanel oCRDialogPanel;
     private javax.swing.JButton oCRDialogSaveButton;

@@ -14,10 +14,8 @@
  */
 package richtercloud.document.scanner.ocr;
 
-import richtercloud.document.scanner.ifaces.OCREngineConf;
 import java.io.IOException;
-import javax.swing.JOptionPane;
-import richtercloud.message.handler.Message;
+import richtercloud.document.scanner.ifaces.OCREngineConf;
 import richtercloud.message.handler.MessageHandler;
 
 /**
@@ -32,13 +30,13 @@ public class DefaultOCREngineConfPanelFactory implements OCREngineConfPanelFacto
     }
 
     @Override
-    public OCREngineConfPanel<?> create(OCREngineConf engineConf) {
+    public OCREngineConfPanel<?> create(OCREngineConf engineConf) throws OCREngineConfCreationException {
         if(engineConf instanceof TesseractOCREngineConf) {
             try {
                 TesseractOCREngineConfPanel retValue = new TesseractOCREngineConfPanel((TesseractOCREngineConf) engineConf, messageHandler);
                 return retValue;
-            } catch (IOException | InterruptedException | BinaryNotFoundException ex) {
-                messageHandler.handle(new Message(ex, JOptionPane.WARNING_MESSAGE));
+            } catch (IOException | InterruptedException ex) {
+                throw new OCREngineConfCreationException(ex);
             }
         }
         throw new IllegalArgumentException(String.format("OCR engine configuration of type %s not supported", engineConf.getClass()));

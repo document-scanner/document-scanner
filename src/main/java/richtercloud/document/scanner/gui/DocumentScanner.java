@@ -993,20 +993,22 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
 
     private void oCRMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_oCRMenuItemActionPerformed
         try {
+            DocumentScannerConf documentScannerConf0 = new DocumentScannerConf(documentScannerConf);
             OCREngineSelectDialog oCREngineSelectDialog = new OCREngineSelectDialog(this,
-                    this.documentScannerConf,
+                    documentScannerConf0,
                     this.messageHandler);
             oCREngineSelectDialog.setLocationRelativeTo(this);
             oCREngineSelectDialog.setVisible(true);
-            OCREngineConf selectedOCREngineConf = oCREngineSelectDialog.getSelectedOCREngineConf();
-            if(selectedOCREngineConf == null) {
+            DocumentScannerConf documentScannerConf1 = oCREngineSelectDialog.getDocumentScannerConf();
+            if(documentScannerConf1 == null) {
                 //dialog canceled
                 return;
             }
-            this.documentScannerConf.setoCREngineConf(selectedOCREngineConf);
-            this.oCREngine = oCREngineFactory.create(selectedOCREngineConf);
+            this.documentScannerConf = documentScannerConf1;
+            this.oCREngine = oCREngineFactory.create(documentScannerConf.getoCREngineConf());
             mainPanel.setoCREngine(oCREngine);
         }catch(Exception ex) {
+            LOGGER.error("unexpected exception during OCR engine configuration", ex);
             issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
         }
     }//GEN-LAST:event_oCRMenuItemActionPerformed

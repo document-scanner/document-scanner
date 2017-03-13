@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import org.apache.commons.io.IOUtils;
 import richtercloud.document.scanner.ifaces.OCREngineConfValidationException;
 
@@ -87,7 +88,23 @@ public class TesseractOCREngineConf extends ProcessOCREngineConf {
         }
         //tesseract --list-langs prints to stderr, reported as https://bugs.launchpad.net/ubuntu/+source/tesseract/+bug/1481015
         List<String> langs = new LinkedList<>();
-        for(String lang : tesseractProcessStderr.split("\n")) {
+        String relevantOutput;
+            //Some version print result of --list-langs to stderr, some to
+            //stderr (see https://bugs.launchpad.net/ubuntu/+source/tesseract/+bug/1481015
+            //for details and issue state). Since tesseract also has a useless output when invoked
+            //with --version, do the following naive test
+        if(tesseractProcessStdout.isEmpty() && tesseractProcessStderr.isEmpty()) {
+            throw new IllegalStateException("both stdout and stderr output is empty");
+        }
+        if(!tesseractProcessStdout.isEmpty() && !tesseractProcessStderr.isEmpty()) {
+            throw new IllegalStateException("both stdout and stderr contain output");
+        }
+        if(!tesseractProcessStdout.isEmpty()) {
+            relevantOutput = tesseractProcessStdout;
+        }else {
+            relevantOutput = tesseractProcessStderr;
+        }
+        for(String lang : relevantOutput.split("\n")) {
             if(!lang.startsWith("List of available languages")) {
                 langs.add(lang);
             }
@@ -105,8 +122,46 @@ public class TesseractOCREngineConf extends ProcessOCREngineConf {
         }
         try {
             getAvailableLanguages();
+            if(getAvailableLanguages().isEmpty()) {
+                throw new OCREngineConfValidationException("list of available languages mustn't be empty");
+            }
         } catch (IOException | InterruptedException | IllegalStateException ex) {
-            throw new OCREngineConfValidationException(ex);
+            throw new OCREngineConfValidationException(String.format("retrieval of available languages of tesseract binary '%s' failed (see nested exception for details)", getBinary()), ex);
         }
+        if(getSelectedLanguages().isEmpty()) {
+            throw new OCREngineConfValidationException("list of selected languages mustn't be empty");
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = super.hashCode();
+        hash = 17 * hash + Objects.hashCode(this.selectedLanguages);
+        return hash;
+    }
+
+    protected boolean equalsTransitive(TesseractOCREngineConf other) {
+        if(!super.equalsTransitive(other)) {
+            return false;
+        }
+        if (!Objects.equals(this.selectedLanguages, other.selectedLanguages)) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final TesseractOCREngineConf other = (TesseractOCREngineConf) obj;
+        return equalsTransitive(other);
     }
 }

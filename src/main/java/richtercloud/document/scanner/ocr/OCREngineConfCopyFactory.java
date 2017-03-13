@@ -20,7 +20,7 @@ import richtercloud.document.scanner.ifaces.OCREngineConf;
  *
  * @author richter
  */
-public interface OCREngineConfPanelFactory<C extends OCREngineConf> {
+public interface OCREngineConfCopyFactory<C extends OCREngineConf> {
 
-    OCREngineConfPanel<C> create(C oCREngineConf) throws OCREngineConfCreationException;
+    C copy(C oCREngineConf);
 }
