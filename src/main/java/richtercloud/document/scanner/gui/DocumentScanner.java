@@ -711,6 +711,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         } catch (InterruptedException ex) {
             LOGGER.error("an exception during shutdown of threads occured, see nested exception for details", ex);
         }
+        this.entryStorage.shutdown();
     }
 
     /**
