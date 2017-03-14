@@ -240,6 +240,7 @@ public class DefaultOCRSelectPanelPanel extends OCRSelectPanelPanel implements S
      */
     @Override
     public void setZoomLevels(float zoomLevel) throws IOException {
+        LOGGER.trace(String.format("changing zoom level to %f", zoomLevel));
         this.zoomLevel = zoomLevel; //before updatePreferredSize
         for(OCRSelectPanel oCRSelectPanel : this.oCRSelectPanels) {
             oCRSelectPanel.setZoomLevel(zoomLevel);
