@@ -1177,21 +1177,25 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     }//GEN-LAST:event_exportMenuItemActionPerformed
 
     private void valueDetectionMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_valueDetectionMenuItemActionPerformed
-        ValueDetectionServiceConfDialog serviceConfDialog = new ValueDetectionServiceConfDialog(this,
-                documentScannerConf.getAvailableValueDetectionServiceConfs(),
-                documentScannerConf.getSelectedValueDetectionServiceConfs(),
-                issueHandler);
-        serviceConfDialog.setLocationRelativeTo(this);
-        serviceConfDialog.setVisible(true);
-        List<ValueDetectionServiceConf> availalbleValueDetectionServiceConfs = serviceConfDialog.getAvailableValueDetectionServiceConfs();
-        if(availalbleValueDetectionServiceConfs == null) {
-            //dialog canceled
-            return;
+        try {
+            ValueDetectionServiceConfDialog serviceConfDialog = new ValueDetectionServiceConfDialog(this,
+                    documentScannerConf.getAvailableValueDetectionServiceConfs(),
+                    documentScannerConf.getSelectedValueDetectionServiceConfs(),
+                    issueHandler);
+            serviceConfDialog.setLocationRelativeTo(this);
+            serviceConfDialog.setVisible(true);
+            List<ValueDetectionServiceConf> availalbleValueDetectionServiceConfs = serviceConfDialog.getAvailableValueDetectionServiceConfs();
+            if(availalbleValueDetectionServiceConfs == null) {
+                //dialog canceled
+                return;
+            }
+            this.documentScannerConf.setAvailableValueDetectionServiceConfs(availalbleValueDetectionServiceConfs);
+            this.documentScannerConf.setSelectedValueDetectionServiceConfs(serviceConfDialog.getSelectedValueDetectionServiceConfs());
+            this.documentScannerConf.setValueDetectionServiceJARPaths(serviceConfDialog.getValueDetectionServiceJARPaths());
+            this.mainPanel.applyValueDetectionServiceSelection();
+        }catch(Throwable ex) {
+            issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
         }
-        this.documentScannerConf.setAvailableValueDetectionServiceConfs(availalbleValueDetectionServiceConfs);
-        this.documentScannerConf.setSelectedValueDetectionServiceConfs(serviceConfDialog.getSelectedValueDetectionServiceConfs());
-        this.documentScannerConf.setValueDetectionServiceJARPaths(serviceConfDialog.getValueDetectionServiceJARPaths());
-        this.mainPanel.applyValueDetectionServiceSelection();
     }//GEN-LAST:event_valueDetectionMenuItemActionPerformed
 
     private void addDocument(List<ImageWrapper> images,
