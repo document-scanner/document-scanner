@@ -47,6 +47,7 @@ public class DefaultOCRSelectPanel extends OCRSelectPanel implements MouseListen
     private final Set<OCRSelectPanelSelectionListener> selectionListeners = new HashSet<>();
     private float zoomLevel = 1;
     private final int preferredWidth;
+    private boolean debugGraphics = false;
 
     /**
      * Creates a {@code DefaultOCRSelectPanel} from the {@code image} with the
@@ -170,6 +171,14 @@ public class DefaultOCRSelectPanel extends OCRSelectPanel implements MouseListen
                         this.dragSelectionWidth(), //width
                         this.dragSeletionHeight() //height
                 );
+            }
+            if(debugGraphics) {
+                for(int i=0; i<=getPreferredSize().width/100; i++) {
+                    g.drawLine(i*100, 0, i*100, getPreferredSize().height);
+                }
+                for(int j=0; j<=getPreferredSize().height/100; j++) {
+                    g.drawLine(0, j*100, getPreferredSize().width, j*100);
+                }
             }
         } catch (IOException ex) {
             throw new RuntimeException(ex);
