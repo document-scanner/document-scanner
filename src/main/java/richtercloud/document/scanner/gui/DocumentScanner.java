@@ -339,6 +339,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         //configure debug level of root logger
         if (this.documentScannerConf.isDebug()) {
             rootLogger.setLevel(Level.DEBUG);
+            Thread.currentThread().getContextClassLoader().setDefaultAssertionStatus(true);
         }
         //configure logging to file (from http://stackoverflow.com/questions/16910955/programmatically-configure-logback-appender)
         PatternLayoutEncoder patternLayoutEncoder = new PatternLayoutEncoder();
