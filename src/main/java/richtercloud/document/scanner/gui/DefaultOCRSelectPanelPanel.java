@@ -16,7 +16,6 @@ package richtercloud.document.scanner.gui;
 
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -162,23 +161,27 @@ public class DefaultOCRSelectPanelPanel extends OCRSelectPanelPanel implements S
                     LOGGER.debug(String.format("skipping selection with height %d <= 0", height));
                     continue;
                 }
-                BufferedImage imageSelection = panel.getImage().getImagePreview(this.documentScannerConf.getPreferredScanResultPanelWidth()).getSubimage((int)(panel.dragSelectionX()/this.zoomLevel), //x
-                        (int)(panel.dragSelectionY()/this.zoomLevel), //y
-                        (int)(width/this.zoomLevel), //width
-                        (int)(height/this.zoomLevel) //height
+                //zoomLevel doesn't need to be a factor or divisor because it's
+                //included in the preferred size of panels
+                int subimageX = (int)(panel.dragSelectionX()*((double)panel.getImage().getInitialWidth()/panel.getPreferredSize().width));
+                    //dragSelectionX already handles offset caused by
+                    //JScrollPane
+                assert subimageX >= 0;
+                int subimageY = (int)(panel.dragSelectionY()*((double)panel.getImage().getInitialHeight()/panel.getPreferredSize().height));
+                    //dragSelectionY already handles offset caused by
+                    //JScrollPane
+                assert subimageY >= 0;
+                int subimageWidth = width*panel.getImage().getInitialWidth()/panel.getPreferredSize().width;
+                assert subimageWidth > 0;
+                int subimageHeight = height*panel.getImage().getInitialHeight()/panel.getPreferredSize().height;
+                assert subimageHeight > 0;
+                BufferedImage preview = panel.getImage().getImagePreview(panel.getImage().getInitialWidth());
+                BufferedImage imageSelection = preview.getSubimage(subimageX, //x
+                        subimageY, //y
+                        subimageWidth, //width
+                        subimageHeight //height
                 );
-                //The scaled image causes horrible OCR results, but apparently
-                //scaling the image back up is sufficient for good OCR quality
-                //(same result as when working without ImageWrapper)
-                double scale = documentScannerConf.getPreferredScanResultPanelWidth()*zoomLevel/panel.getImage().getInitialWidth();
-                int width0 = (int) (width/scale);
-                int height0 = (int) (height/scale);
-                BufferedImage imageSelectionScaled = new BufferedImage(width0,
-                        height0,
-                        imageSelection.getType());
-                Graphics2D gr2 = imageSelectionScaled.createGraphics();
-                gr2.drawImage(imageSelection, 0, 0, width0, height0, null);
-                return imageSelectionScaled;
+                return imageSelection;
             }
         }
         return null;
