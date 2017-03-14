@@ -51,7 +51,7 @@ public class ValueDetectionServiceConfDialog extends javax.swing.JDialog {
                 int index,
                 boolean isSelected,
                 boolean cellHasFocus) {
-            assert value instanceof ValueDetectionService;
+            assert value instanceof ValueDetectionServiceConf;
             ValueDetectionServiceConf valueCast = (ValueDetectionServiceConf) value;
             return super.getListCellRendererComponent(list,
                     valueCast.getDescription(),
