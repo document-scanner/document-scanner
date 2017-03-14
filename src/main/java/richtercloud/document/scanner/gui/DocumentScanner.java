@@ -1194,6 +1194,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             this.documentScannerConf.setValueDetectionServiceJARPaths(serviceConfDialog.getValueDetectionServiceJARPaths());
             this.mainPanel.applyValueDetectionServiceSelection();
         }catch(Throwable ex) {
+            LOGGER.error("an unexpected exception during value detection configuration occured", ex);
             issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
         }
     }//GEN-LAST:event_valueDetectionMenuItemActionPerformed
