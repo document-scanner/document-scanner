@@ -71,7 +71,7 @@ public abstract class ParallelOCREngine<C extends OCREngineConf> implements OCRE
             //the Queue preserves the order to workers
         ExecutorService executor = Executors.newCachedThreadPool();
         for(FutureTask<String> task : tasks) {
-            executor.execute(task);
+            executor.submit(task);
             threadQueue.add(task);
         }
         executor.shutdown();
