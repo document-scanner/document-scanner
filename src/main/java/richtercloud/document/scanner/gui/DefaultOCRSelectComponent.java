@@ -246,6 +246,7 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
         });
         entityPanel.addAutoOCRValueDetectionListener(() -> {
             DefaultOCRSelectComponent.this.autoOCRValueDetectionButton.setEnabled(true);
+            DefaultOCRSelectComponent.this.entityPanel.setEnabled(true);
         });
         autoOCRValueDetectionResultsButton.addActionListener(new ActionListener() {
             @Override
@@ -262,6 +263,7 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
         autoOCRValueDetectionButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                DefaultOCRSelectComponent.this.autoOCRValueDetectionButton.setEnabled(false);
                 DefaultOCRSelectComponent.this.entityPanel.autoOCRValueDetection(new DefaultOCRSelectPanelPanelFetcher(DefaultOCRSelectComponent.this.getoCRSelectPanelPanel(),
                         DefaultOCRSelectComponent.this.oCREngine,
                         documentScannerConf),
