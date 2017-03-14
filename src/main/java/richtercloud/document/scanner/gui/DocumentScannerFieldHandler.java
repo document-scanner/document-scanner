@@ -48,6 +48,7 @@ import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.ifaces.MainPanel;
 import richtercloud.document.scanner.model.WorkflowItem;
 import richtercloud.message.handler.ConfirmMessageHandler;
+import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.ComponentHandler;
 import richtercloud.reflection.form.builder.FieldRetriever;
@@ -127,7 +128,7 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
      * @param amountMoneyUsageStatisticsStorage
      * @param amountMoneyCurrencyStorage
      * @param amountMoneyExchangeRateRetriever
-     * @param messageHandler
+     * @param issueHandler
      * @param confirmMessageHandler
      * @param typeHandlerMapping
      * @param entityManager
@@ -149,7 +150,7 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
     public static DocumentScannerFieldHandler create(AmountMoneyUsageStatisticsStorage amountMoneyUsageStatisticsStorage,
             AmountMoneyCurrencyStorage amountMoneyCurrencyStorage,
             AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever,
-            MessageHandler messageHandler,
+            IssueHandler issueHandler,
             ConfirmMessageHandler confirmMessageHandler,
             Map<java.lang.reflect.Type, TypeHandler<?, ?,?, ?>> typeHandlerMapping,
             PersistenceStorage storage,
@@ -172,24 +173,24 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
         AmountMoneyMappingFieldHandlerFactory embeddableFieldHandlerFactory = new AmountMoneyMappingFieldHandlerFactory(amountMoneyUsageStatisticsStorage,
                 amountMoneyCurrencyStorage,
                 amountMoneyExchangeRateRetriever,
-                messageHandler);
+                issueHandler);
         FieldHandler embeddableFieldHandler = new MappingFieldHandler(embeddableFieldHandlerFactory.generateClassMapping(),
                 embeddableFieldHandlerFactory.generatePrimitiveMapping());
         ElementCollectionTypeHandler elementCollectionTypeHandler = new ElementCollectionTypeHandler(typeHandlerMapping,
                 typeHandlerMapping,
-                messageHandler,
+                issueHandler,
                 embeddableFieldHandler,
                 readOnlyFieldRetriever);
         JPAAmountMoneyMappingFieldHandlerFactory jPAAmountMoneyMappingFieldHandlerFactory = JPAAmountMoneyMappingFieldHandlerFactory.create(storage,
                 initialQueryLimit,
-                messageHandler,
+                issueHandler,
                 amountMoneyUsageStatisticsStorage,
                 amountMoneyCurrencyStorage,
                 amountMoneyExchangeRateRetriever,
                 bidirectionalHelpDialogTitle,
                 readOnlyFieldRetriever);
         ToManyTypeHandler toManyTypeHandler = new ToManyTypeHandler(storage,
-                messageHandler,
+                issueHandler,
                 typeHandlerMapping,
                 typeHandlerMapping,
                 bidirectionalHelpDialogTitle,
@@ -197,7 +198,7 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
                 entryStorage,
                 readOnlyFieldRetriever);
         ToOneTypeHandler toOneTypeHandler = new ToOneTypeHandler(storage,
-                messageHandler,
+                issueHandler,
                 bidirectionalHelpDialogTitle,
                 fieldInitializer,
                 entryStorage,
@@ -208,7 +209,7 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
                 elementCollectionTypeHandler,
                 toManyTypeHandler,
                 toOneTypeHandler,
-                messageHandler,
+                issueHandler,
                 confirmMessageHandler,
                 fieldRetriever,
                 oCRResultPanelFetcher,
@@ -234,7 +235,7 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
             ElementCollectionTypeHandler elementCollectionTypeHandler,
             ToManyTypeHandler toManyTypeHandler,
             ToOneTypeHandler toOneTypeHandler,
-            MessageHandler messageHandler,
+            IssueHandler issueHandler,
             ConfirmMessageHandler confirmMessageHandler,
             FieldRetriever fieldRetriever,
             OCRResultPanelFetcher oCRResultPanelFetcher,
@@ -257,7 +258,7 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
                 elementCollectionTypeHandler,
                 toManyTypeHandler,
                 toOneTypeHandler,
-                messageHandler,
+                issueHandler,
                 fieldRetriever,
                 idApplier);
         this.oCRResultPanelFetcher = oCRResultPanelFetcher;
@@ -275,7 +276,7 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
         this.confirmMessageHandler = confirmMessageHandler;
         this.warningHandlers = warningHandlers;
         this.fieldInitializer = fieldInitializer;
-        this.messageHandler = messageHandler;
+        this.messageHandler = issueHandler;
         this.entryStorage = entryStorage;
         this.readOnlyFieldRetriever = readOnlyFieldRetriever;
     }
@@ -297,7 +298,7 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
             String fieldValue = (String) field.get(instance);
             OCRResultPanel retValue = new OCRResultPanel(oCRResultPanelFetcher,
                     fieldValue,
-                    getMessageHandler());
+                    getIssueHandler());
             retValue.addUpdateListener(new OCRResultPanelUpdateListener() {
                 @Override
                 public void onUpdate(OCRResultPanelUpdateEvent event) {
@@ -344,7 +345,7 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
             List<WorkflowItem> fieldValue = (List<WorkflowItem>) field.get(instance);
             WorkflowItemTreePanel retValue = new WorkflowItemTreePanel(storage,
                     fieldValue,
-                    getMessageHandler(),
+                    getIssueHandler(),
                     confirmMessageHandler,
                     readOnlyFieldRetriever,
                     entityClasses,

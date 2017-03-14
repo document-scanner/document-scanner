@@ -46,8 +46,8 @@ import richtercloud.document.scanner.model.WorkflowItem;
 import richtercloud.document.scanner.model.validator.WorkflowItemValidationException;
 import richtercloud.document.scanner.model.validator.WorkflowItemValidator;
 import richtercloud.message.handler.ConfirmMessageHandler;
+import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.Message;
-import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.FieldRetriever;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
@@ -95,7 +95,7 @@ public class WorkflowItemTreePanel extends JPanel {
     private final JScrollPane communicationTreeScrollPane;
     private final JScrollPane queryListPanelScrollPane;
     private final PersistenceStorage storage;
-    private final MessageHandler messageHandler;
+    private final IssueHandler issueHandler;
     private final ConfirmMessageHandler confirmMessageHandler;
     private final Set<Class<?>> entityClasses;
     private final Class<?> primaryClassSelection;
@@ -110,7 +110,7 @@ public class WorkflowItemTreePanel extends JPanel {
      *
      * @param entityManager
      * @param initialValue
-     * @param messageHandler
+     * @param issueHandler
      * @param reflectionFormBuilder
      * @param entityClasses
      * @param primaryClassSelection
@@ -121,7 +121,7 @@ public class WorkflowItemTreePanel extends JPanel {
      */
     public WorkflowItemTreePanel(PersistenceStorage storage,
             List<WorkflowItem> initialValue,
-            MessageHandler messageHandler,
+            IssueHandler issueHandler,
             ConfirmMessageHandler confirmMessageHandler,
             FieldRetriever fieldRetriever,
             Set<Class<?>> entityClasses,
@@ -134,7 +134,7 @@ public class WorkflowItemTreePanel extends JPanel {
         this.entityClasses = entityClasses;
         this.primaryClassSelection = primaryClassSelection;
         this.storage = storage;
-        this.messageHandler = messageHandler;
+        this.issueHandler = issueHandler;
         this.confirmMessageHandler = confirmMessageHandler;
         this.mainPanel = mainPanel;
         if(idApplier == null) {
@@ -148,7 +148,7 @@ public class WorkflowItemTreePanel extends JPanel {
         this.queryListPanel = new QueryListPanel<>(storage,
                 fieldRetriever,
                 WorkflowItem.class,
-                messageHandler,
+                issueHandler,
                 initialValue,
                 DocumentScanner.generateApplicationWindowTitle("Bidirectional relation help",
                         Constants.APP_NAME,
@@ -169,7 +169,7 @@ public class WorkflowItemTreePanel extends JPanel {
                                     WorkflowItemTreePanel.this.entityClasses,
                                     WorkflowItemTreePanel.this.primaryClassSelection,
                                     WorkflowItemTreePanel.this.storage,
-                                    WorkflowItemTreePanel.this.messageHandler,
+                                    WorkflowItemTreePanel.this.issueHandler,
                                     WorkflowItemTreePanel.this.confirmMessageHandler,
                                     WorkflowItemTreePanel.this.idApplier,
                                     WorkflowItemTreePanel.this.warningHandlers,
@@ -183,7 +183,7 @@ public class WorkflowItemTreePanel extends JPanel {
                                 try {
                                     WorkflowItemTreePanel.this.mainPanel.addDocument(selectedEntity);
                                 } catch (DocumentAddException | IOException ex) {
-                                    WorkflowItemTreePanel.this.messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+                                    WorkflowItemTreePanel.this.issueHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
                                 }
                             }
                         }

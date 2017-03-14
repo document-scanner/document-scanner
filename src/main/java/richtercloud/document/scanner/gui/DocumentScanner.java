@@ -459,7 +459,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         this.tagStorage = new FileTagStorage(documentScannerConf.getTagStorageFile());
         JPAAmountMoneyMappingTypeHandlerFactory fieldHandlerFactory = new JPAAmountMoneyMappingTypeHandlerFactory(storage,
                 Constants.INITIAL_QUERY_LIMIT_DEFAULT,
-                messageHandler,
+                issueHandler,
                 Constants.BIDIRECTIONAL_HELP_DIALOG_TITLE,
                 readOnlyFieldRetriever);
         this.typeHandlerMapping = fieldHandlerFactory.generateTypeHandlerMapping();
@@ -484,7 +484,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         //after entity manager creation
         this.typeHandlerMapping.put(new TypeToken<List<AnyType>>() {
             }.getType(), new JPAEntityListTypeHandler(storage,
-                    messageHandler,
+                    issueHandler,
                     Constants.BIDIRECTIONAL_HELP_DIALOG_TITLE,
                     queryComponentFieldInitializer,
                     entryStorage,
@@ -1051,7 +1051,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 Constants.ENTITY_CLASSES,
                 Constants.PRIMARY_CLASS_SELECTION,
                 storage,
-                messageHandler,
+                issueHandler,
                 confirmMessageHandler,
                 idApplier,
                 warningHandlers,

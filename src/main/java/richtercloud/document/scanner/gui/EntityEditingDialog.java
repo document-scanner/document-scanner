@@ -31,8 +31,8 @@ import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
 import richtercloud.document.scanner.ifaces.Constants;
 import richtercloud.message.handler.ConfirmMessageHandler;
+import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.Message;
-import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.reflection.form.builder.FieldRetriever;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
@@ -93,7 +93,7 @@ public class EntityEditingDialog extends javax.swing.JDialog {
     - for necessity for instance creation see class comment
     */
     private final Map<Class<?>, QueryPanel<Object>> entityEditingQueryPanelCache = new HashMap<>();
-    private final MessageHandler messageHandler;
+    private final IssueHandler issueHandler;
     private final ConfirmMessageHandler confirmMessageHandler;
     private final FieldInitializer fieldInitializer;
     private final QueryHistoryEntryStorage entryStorage;
@@ -102,7 +102,7 @@ public class EntityEditingDialog extends javax.swing.JDialog {
             Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
             PersistenceStorage storage,
-            MessageHandler messageHandler,
+            IssueHandler issueHandler,
             ConfirmMessageHandler confirmMessageHandler,
             IdApplier<?> idApplier,
             Map<Class<?>, WarningHandler<?>> warningHandlers,
@@ -111,7 +111,7 @@ public class EntityEditingDialog extends javax.swing.JDialog {
             FieldRetriever fieldRetriever) {
         super(parent,
                 ModalityType.APPLICATION_MODAL);
-        this.messageHandler = messageHandler;
+        this.issueHandler = issueHandler;
         this.confirmMessageHandler = confirmMessageHandler;
         this.storage = storage;
         this.fieldInitializer = fieldInitializer;
@@ -125,7 +125,7 @@ public class EntityEditingDialog extends javax.swing.JDialog {
             Class<?> primaryClassSelection,
             PersistenceStorage storage) {
         initComponents();
-        if(messageHandler == null) {
+        if(issueHandler == null) {
             throw new IllegalArgumentException("messageHandler mustn't be null");
         }
         if(storage == null) {
@@ -168,7 +168,7 @@ public class EntityEditingDialog extends javax.swing.JDialog {
             try {
                 this.entityEditingQueryPanel = new QueryPanel(storage,
                         selectedEntityClass,
-                        messageHandler,
+                        issueHandler,
                         fieldRetriever,
                         null, //initialValue
                         null, //bidirectionalControlPanel (doesn't make sense)
@@ -318,7 +318,7 @@ public class EntityEditingDialog extends javax.swing.JDialog {
                 try {
                     this.storage.delete(selectedEntity);
                 } catch (StorageException ex) {
-                    messageHandler.handle(new Message(ex,
+                    issueHandler.handle(new Message(ex,
                             JOptionPane.ERROR_MESSAGE));
                 }
             }
