@@ -160,7 +160,6 @@ public class DefaultMainPanel extends MainPanel {
     private PersistenceStorage storage;
     private final IssueHandler issueHandler;
     private final ConfirmMessageHandler confirmMessageHandler;
-    private final AutoOCRValueDetectionReflectionFormBuilder reflectionFormBuilder;
     private final AmountMoneyUsageStatisticsStorage amountMoneyUsageStatisticsStorage;
     private final AmountMoneyCurrencyStorage amountMoneyCurrencyStorage;
     private final AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever;
@@ -187,6 +186,7 @@ public class DefaultMainPanel extends MainPanel {
     private final QueryHistoryEntryStorage entryStorage;
     private final JPAFieldRetriever reflectionFormBuilderFieldRetriever;
     private final FieldRetriever readOnlyFieldRetriever;
+    private final IdGenerator idGenerator;
 
     public DefaultMainPanel(Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
@@ -280,16 +280,7 @@ public class DefaultMainPanel extends MainPanel {
         this.queryComponentFieldInitializer = queryComponentFieldInitializer;
         this.reflectionFormBuilderFieldRetriever = reflectionFormBuilderFieldRetriever;
         this.readOnlyFieldRetriever = readOnlyFieldRetriever;
-        this.reflectionFormBuilder = new AutoOCRValueDetectionReflectionFormBuilder(storage,
-                "Field description",
-                issueHandler,
-                confirmMessageHandler,
-                reflectionFormBuilderFieldRetriever,
-                idApplier,
-                idGenerator,
-                warningHandlers,
-                valueSetterMapping,
-                documentScannerConf);
+        this.idGenerator = idGenerator;
         this.entryStorage = entryStorage;
         this.layout = new GroupLayout(this);
         setLayout(layout);
@@ -659,6 +650,19 @@ public class DefaultMainPanel extends MainPanel {
                 entityClasses0 = new HashSet<>(Arrays.asList(entityToEdit.getClass()));
                 primaryClassSelection0 = entityToEdit.getClass();
             }
+            AutoOCRValueDetectionReflectionFormBuilder reflectionFormBuilder = new AutoOCRValueDetectionReflectionFormBuilder(storage,
+                    "Field description",
+                    issueHandler,
+                    confirmMessageHandler,
+                    reflectionFormBuilderFieldRetriever,
+                    idApplier,
+                    idGenerator,
+                    warningHandlers,
+                    valueSetterMapping,
+                    documentScannerConf);
+                //we need one reflection form builder per document in order to
+                //allow the auto-value-detection values to be stored separately
+                //(and not change ReflectionFormBuilder's interface)
             ReflectionFormPanelTabbedPane reflectionFormPanelTabbedPane = reflectionFormPanelTabbedPane = new ReflectionFormPanelTabbedPane(entityClasses0,
                     primaryClassSelection0,
                     entityToEdit,
@@ -690,7 +694,7 @@ public class DefaultMainPanel extends MainPanel {
                     entityPanel,
                     oCREngine,
                     documentScannerConf,
-                    this.reflectionFormBuilder.getAutoOCRValueDetectionPanels(),
+                    reflectionFormBuilder.getAutoOCRValueDetectionPanels(),
                     documentFile);
             reflectionFormPanelTabbedPane.addReflectionFormPanelTabbedPaneListener((reflectionFormPanel) -> {
                 entityPanel.autoOCRValueDetectionGUI();
