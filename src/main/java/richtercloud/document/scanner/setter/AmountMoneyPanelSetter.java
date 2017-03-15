@@ -59,7 +59,7 @@ public class AmountMoneyPanelSetter implements ValueSetter<Amount<Money>, Amount
                     }
                 }
                 if(amountMoney == null) {
-                    throw new IllegalArgumentException("No number format of any locale succeeds to parse the OCR selection");
+                    throw new IllegalArgumentException(String.format("No number format of any locale succeeds to parse the OCR selection '%s'", formatOCRResult.getoCRResult()));
                 }
             }else {
                 try {
