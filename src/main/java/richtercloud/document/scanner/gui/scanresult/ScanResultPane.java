@@ -36,9 +36,17 @@ public class ScanResultPane extends FlowPane {
         scanResultPanes.add(scanResultPane);
     }
 
+    /**
+     * Removes all panes in {@code scanResultPanes} from the list of contained
+     * panes and form the list of selected panes if they were selected before
+     * their removal.
+     *
+     * @param scanResultPanes the panes to remove
+     */
     public void removeScanResultPanes(List<ScanResultViewPane> scanResultPanes) {
         getChildren().removeAll(scanResultPanes);
         this.scanResultPanes.removeAll(scanResultPanes);
+        this.selectedScanResults.removeAll(scanResultPanes);
     }
 
     public List<ScanResultViewPane> getScanResultPanes() {

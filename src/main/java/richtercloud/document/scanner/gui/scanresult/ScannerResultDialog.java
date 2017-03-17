@@ -463,6 +463,11 @@ public class ScannerResultDialog extends JDialog {
                 @Override
                 public void handle(MouseEvent event) {
                     scanResultPane.removeScanResultPanes(scanResultPane.getSelectedScanResults());
+                    if(scanResultPane.getSelectedScanResults().isEmpty()) {
+                        //is most likely always empty, but adding this simple
+                        //check might avoid trouble in the future
+                        addImagesButton.setDisable(true);
+                    }
                 }
             });
             selectAllButton.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
