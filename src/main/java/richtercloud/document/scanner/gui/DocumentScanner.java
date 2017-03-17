@@ -916,7 +916,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private void scanMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_scanMenuItemActionPerformed
         try {
             this.scan();
-        }catch(Exception ex) {
+        }catch(Throwable ex) {
             handleUnexpectedException(ex, "Unexpected exception occured during scan");
         }
     }//GEN-LAST:event_scanMenuItemActionPerformed
