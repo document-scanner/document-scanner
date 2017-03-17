@@ -1423,9 +1423,11 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private void handleUnexpectedException(Throwable ex, String title) {
         handleException(ex, title);
         this.issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
-        this.shutdownHook();
-            //there's few sense to leave the application running after an
+        this.dispose();
+            //- there's few sense to leave the application running after an
             //unexpected exception which the user has been informed about
+            //- doesn't run shutdown hooks
+        this.shutdownHook();
     }
 
     /**
