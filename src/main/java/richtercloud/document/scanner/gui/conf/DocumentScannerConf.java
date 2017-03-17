@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.jscience.economics.money.Currency;
 import richtercloud.document.scanner.components.DateOCRResultFormatter;
@@ -120,6 +121,8 @@ public class DocumentScannerConf implements Serializable {
         AUTO_OCR_VALUE_DETECTION_FORMATTER_MAP.put(Date.class,
                 new DateOCRResultFormatter());
     }
+    private final static long SCANNER_OPEN_WAIT_TIME_DEFAULT = 15;
+    private final static TimeUnit SCANNER_OPEN_WAIT_TIME_UNIT_DEFAULT = TimeUnit.SECONDS;
     /**
      * The file the this configuration has been loaded from. Might be
      * {@code null} if no initial configuration file has been specified.
@@ -252,6 +255,8 @@ public class DocumentScannerConf implements Serializable {
     date format to use) can be configured
     */
     private Map<Class<?>, OCRResultFormatter<?>> autoOCRValueDetectionFormatterMap = AUTO_OCR_VALUE_DETECTION_FORMATTER_MAP;
+    private long scannerOpenWaitTime = SCANNER_OPEN_WAIT_TIME_DEFAULT;
+    private TimeUnit scannerOpenWaitTimeUnit = SCANNER_OPEN_WAIT_TIME_UNIT_DEFAULT;
 
     private static Set<StorageConf> generateAvailableStorageConfsDefault(Set<Class<?>> entityClasses,
             File xMLStorageFile) throws IOException {
@@ -354,7 +359,9 @@ public class DocumentScannerConf implements Serializable {
             boolean userAllowedAutoBugTracking,
             boolean skipUserAllowedAutoBugTrackingQuestion,
             File credentialsStoreFile,
-            Map<Class<?>, OCRResultFormatter<?>> autoOCRValueDetectionFormatterMap
+            Map<Class<?>, OCRResultFormatter<?>> autoOCRValueDetectionFormatterMap,
+            long scannerOpenWaitTime,
+            TimeUnit scannerOpenWaitTimeUnit
     ) {
         this.configFile = configFile;
         this.scannerName = scannerName;
@@ -395,6 +402,8 @@ public class DocumentScannerConf implements Serializable {
         this.userAllowedAutoBugTracking = userAllowedAutoBugTracking;
         this.skipUserAllowedAutoBugTrackingQuestion = this.skipUserAllowedAutoBugTrackingQuestion;
         this.autoOCRValueDetectionFormatterMap = autoOCRValueDetectionFormatterMap;
+        this.scannerOpenWaitTime = scannerOpenWaitTime;
+        this.scannerOpenWaitTimeUnit = scannerOpenWaitTimeUnit;
     }
 
     /**
@@ -441,8 +450,26 @@ public class DocumentScannerConf implements Serializable {
                 documentScannerConf.isUserAllowedAutoBugTracking(),
                 documentScannerConf.isSkipUserAllowedAutoBugTrackingQuestion(),
                 documentScannerConf.getCredentialsStoreFile(),
-                documentScannerConf.getAutoOCRValueDetectionFormatterMap()
+                documentScannerConf.getAutoOCRValueDetectionFormatterMap(),
+                documentScannerConf.getScannerOpenWaitTime(),
+                documentScannerConf.getScannerOpenWaitTimeUnit()
         );
+    }
+
+    public long getScannerOpenWaitTime() {
+        return scannerOpenWaitTime;
+    }
+
+    public void setScannerOpenWaitTime(long scannerOpenWaitTime) {
+        this.scannerOpenWaitTime = scannerOpenWaitTime;
+    }
+
+    public TimeUnit getScannerOpenWaitTimeUnit() {
+        return scannerOpenWaitTimeUnit;
+    }
+
+    public void setScannerOpenWaitTimeUnit(TimeUnit scannerOpenWaitTimeUnit) {
+        this.scannerOpenWaitTimeUnit = scannerOpenWaitTimeUnit;
     }
 
     public Map<Class<?>, OCRResultFormatter<?>> getAutoOCRValueDetectionFormatterMap() {

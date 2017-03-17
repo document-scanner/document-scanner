@@ -47,6 +47,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeoutException;
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javax.cache.Caching;
@@ -321,6 +324,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     },
             "caching-image-wrapper-init-thread"
     );
+    private Map<SaneDevice, Future<Void>> deviceOpeningFutureMap = new HashMap<>();
 
     /**
      * Creates new DocumentScanner which does nothing unless
@@ -1367,7 +1371,60 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         assert this.scannerDevice != null;
         try {
             if(!this.scannerDevice.isOpen()) {
-                this.scannerDevice.open();
+                if(deviceOpeningFutureMap.get(scannerDevice) != null) {
+                    messageHandler.handle(new Message(String.format("The "
+                            + "opening of device '%s' is already in progress. "
+                            + "The opening might be in a loop/deadlock state "
+                            + "which could be fixed by de- and reconnecting "
+                            + "the device from your computer, restarting the "
+                            + "device, restarting %s or rebooting your "
+                            + "computer",
+                                    scannerDevice,
+                                    Constants.APP_NAME),
+                            JOptionPane.ERROR_MESSAGE,
+                            "Opening of scanner device already in progress"));
+                    return;
+                }else {
+                    LOGGER.debug(String.format("opening closed device '%s'",
+                            this.scannerDevice));
+                    Future<Void> deviceOpeningFuture = Executors.newSingleThreadExecutor().submit(() -> {
+                        scannerDevice.open();
+                        return null;
+                            //only Callables allow throwing of exceptions
+                    });
+                    deviceOpeningFutureMap.put(scannerDevice, deviceOpeningFuture);
+                    try {
+                        deviceOpeningFuture.get(documentScannerConf.getScannerOpenWaitTime(),
+                               documentScannerConf.getScannerOpenWaitTimeUnit());
+                    }catch(ExecutionException ex) {
+                        if(ex.getCause() instanceof SaneException) {
+                            throw (SaneException)ex.getCause();
+                        }else if(ex.getCause() instanceof IOException) {
+                            throw (IOException)ex.getCause();
+                        }else if(ex.getCause() instanceof IllegalArgumentException) {
+                            throw (IllegalArgumentException)ex.getCause();
+                        }else if(ex.getCause() instanceof IllegalStateException) {
+                            throw (IllegalStateException)ex.getCause();
+                        }else if(ex.getCause() instanceof DocumentAddException) {
+                            throw (DocumentAddException)ex.getCause();
+                        }
+                        throw new RuntimeException(ex);
+                    }catch(InterruptedException ex) {
+                        handleUnexpectedException(ex, "Exception during scanning");
+                    }catch(TimeoutException ex) {
+                        messageHandler.handle(new Message(String.format("Opening "
+                                + "the scanner device '%s' timed out after %d %s, "
+                                + "can't proceed. Consider increasing the timeout "
+                                + "value in options",
+                                        scannerDevice,
+                                        documentScannerConf.getScannerOpenWaitTime(),
+                                        documentScannerConf.getScannerOpenWaitTimeUnit()),
+                                JOptionPane.ERROR_MESSAGE,
+                                "Opening scanner device timed out"));
+                        return;
+                    }
+                    this.deviceOpeningFutureMap.remove(scannerDevice);
+                }
             }
             List<ImageWrapper> scannedImages = retrieveImages(scannerDevice,
                     this,
@@ -1407,7 +1464,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 }
                 this.validate();
             }
-        } catch (SaneException | IOException | IllegalArgumentException | IllegalStateException | DocumentAddException ex) {
+        } catch (SaneException | IOException | IllegalArgumentException | DocumentAddException ex) {
             this.handleException(ex, "Exception during scanning");
         }
         //Don't call device.close because it resets all options
