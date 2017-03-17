@@ -234,66 +234,71 @@ public class ScannerResultDialog extends JDialog {
                 }
             });
             addImagesButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent event) -> {
-                if(documentPane.getChildrenUnmodifiable().isEmpty()) {
-                    DocumentViewPane addedDocument = addNewDocument(documentPane,
-                            panelWidth,
-                            panelHeight);
-                    documentPane.setSelectedDocument(addedDocument);
-                    addedDocument.setSelected(true);
-                }
-                assert documentPane.getSelectedDocument() != null;
-                assert documentPane.containsDocumentNode(documentPane.getSelectedDocument());
-                List<ScanResultViewPane> selectedScanResults;
-                assert scanResultAddMode == SCAN_RESULT_ADD_MODE_SCAN_ORDER
-                        || scanResultAddMode == SCAN_RESULT_ADD_MODE_SELECTION_ORDER;
-                if(scanResultAddMode == SCAN_RESULT_ADD_MODE_SELECTION_ORDER) {
-                    selectedScanResults = scanResultPane.getSelectedScanResults();
-                }else if(scanResultAddMode == SCAN_RESULT_ADD_MODE_SCAN_ORDER) {
-                    selectedScanResults = new LinkedList<>();
-                    for(Node scanResultPaneChild : scanResultPane.getChildrenUnmodifiable()) {
-                        if(scanResultPane.getSelectedScanResults().contains(scanResultPaneChild)) {
-                            selectedScanResults.add((ScanResultViewPane) scanResultPaneChild);
+                try {
+                    if(documentPane.getChildrenUnmodifiable().isEmpty()) {
+                        DocumentViewPane addedDocument = addNewDocument(documentPane,
+                                panelWidth,
+                                panelHeight);
+                        documentPane.setSelectedDocument(addedDocument);
+                        addedDocument.setSelected(true);
+                    }
+                    assert documentPane.getSelectedDocument() != null;
+                    assert documentPane.containsDocumentNode(documentPane.getSelectedDocument());
+                    List<ScanResultViewPane> selectedScanResults;
+                    assert scanResultAddMode == SCAN_RESULT_ADD_MODE_SCAN_ORDER
+                            || scanResultAddMode == SCAN_RESULT_ADD_MODE_SELECTION_ORDER;
+                    if(scanResultAddMode == SCAN_RESULT_ADD_MODE_SELECTION_ORDER) {
+                        selectedScanResults = scanResultPane.getSelectedScanResults();
+                    }else if(scanResultAddMode == SCAN_RESULT_ADD_MODE_SCAN_ORDER) {
+                        selectedScanResults = new LinkedList<>();
+                        for(Node scanResultPaneChild : scanResultPane.getChildrenUnmodifiable()) {
+                            if(scanResultPane.getSelectedScanResults().contains(scanResultPaneChild)) {
+                                selectedScanResults.add((ScanResultViewPane) scanResultPaneChild);
+                            }
+                        }
+                    }else {
+                        throw new IllegalStateException(String.format(
+                                "scanResultAddMode has to be %d or %d",
+                                SCAN_RESULT_ADD_MODE_SCAN_ORDER,
+                                SCAN_RESULT_ADD_MODE_SELECTION_ORDER));
+                    }
+                    assert !selectedScanResults.isEmpty();
+                        //should be avoided by dis- and enabling of addImagesButton
+                    for(ScanResultViewPane selectedScanResult : selectedScanResults) {
+                        //...and add to selected document in document pane
+                        try {
+                            //ImageViewPanes in the scan result pane only have one
+                            //ScanResult
+                            documentPane.getSelectedDocument().addScanResult(selectedScanResult.getImageWrapper(),
+                                    panelWidth);
+                        } catch (IOException ex) {
+                            throw new RuntimeException(ex);
                         }
                     }
-                }else {
-                    throw new IllegalStateException(String.format(
-                            "scanResultAddMode has to be %d or %d",
-                            SCAN_RESULT_ADD_MODE_SCAN_ORDER,
-                            SCAN_RESULT_ADD_MODE_SELECTION_ORDER));
-                }
-                assert !selectedScanResults.isEmpty();
-                    //should be avoided by dis- and enabling of addImagesButton
-                for(ScanResultViewPane selectedScanResult : selectedScanResults) {
-                    //...and add to selected document in document pane
-                    try {
-                        //ImageViewPanes in the scan result pane only have one
-                        //ScanResult
-                        documentPane.getSelectedDocument().addScanResult(selectedScanResult.getImageWrapper(),
-                                panelWidth);
-                    } catch (IOException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                }
-                int selectedScanResultOffsetX = scanResultPane.getSelectedScanResults().stream().mapToInt((value) -> (int)value.getLayoutX()).min().getAsInt();
-                int selectedScanResultOffsetY = scanResultPane.getSelectedScanResults().stream().mapToInt((value) -> (int)value.getLayoutY()).min().getAsInt();
-                scanResultPane.removeScanResultPanes(scanResultPane.getSelectedScanResults());
-                scanResultPane.getSelectedScanResults().clear();
-                scanResultPaneScrollPane.layout();
-                //the following assertions make the life easier and there's no
-                //assumption that they will change
-                assert scanResultPaneScrollPane.getHmax() == 1.0;
-                assert scanResultPaneScrollPane.getHmin() == 0.0;
-                assert scanResultPaneScrollPane.getVmax() == 1.0;
-                assert scanResultPaneScrollPane.getVmin() == 0.0;
-                double scanResultPaneScrollPaneHValue = selectedScanResultOffsetX/scanResultPane.getWidth();
-                double scanResultPaneScrollPaneVValue = selectedScanResultOffsetY/scanResultPane.getHeight();
-                scanResultPaneScrollPane.setHvalue(scanResultPaneScrollPaneHValue);
-                scanResultPaneScrollPane.setVvalue(scanResultPaneScrollPaneVValue);
-                    //scroll to the beginning of the first added document
-                scanResultPaneScrollPane.layout();
+                    int selectedScanResultOffsetX = scanResultPane.getSelectedScanResults().stream().mapToInt((value) -> (int)value.getLayoutX()).min().getAsInt();
+                    int selectedScanResultOffsetY = scanResultPane.getSelectedScanResults().stream().mapToInt((value) -> (int)value.getLayoutY()).min().getAsInt();
+                    scanResultPane.removeScanResultPanes(scanResultPane.getSelectedScanResults());
+                    scanResultPane.getSelectedScanResults().clear();
+                    scanResultPaneScrollPane.layout();
+                    //the following assertions make the life easier and there's no
+                    //assumption that they will change
+                    assert scanResultPaneScrollPane.getHmax() == 1.0;
+                    assert scanResultPaneScrollPane.getHmin() == 0.0;
+                    assert scanResultPaneScrollPane.getVmax() == 1.0;
+                    assert scanResultPaneScrollPane.getVmin() == 0.0;
+                    double scanResultPaneScrollPaneHValue = selectedScanResultOffsetX/scanResultPane.getWidth();
+                    double scanResultPaneScrollPaneVValue = selectedScanResultOffsetY/scanResultPane.getHeight();
+                    scanResultPaneScrollPane.setHvalue(scanResultPaneScrollPaneHValue);
+                    scanResultPaneScrollPane.setVvalue(scanResultPaneScrollPaneVValue);
+                        //scroll to the beginning of the first added document
+                    scanResultPaneScrollPane.layout();
 
-                //scanResultPane.getSelectedScanResults() is empty now
-                addImagesButton.setDisable(true);
+                    //scanResultPane.getSelectedScanResults() is empty now
+                    addImagesButton.setDisable(true);
+                }catch(Throwable ex) {
+                    LOGGER.error("an unexpected exception during adding of images occured", ex);
+                    bugHandler.handleUnexpectedException(new ExceptionMessage(ex));
+                }
             });
 
             for(ImageWrapper scanResultImage : initialScanResultImages) {
