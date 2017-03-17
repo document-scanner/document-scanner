@@ -36,11 +36,11 @@ public class DelegatingValueDetectionService extends AbstractValueDetectionServi
     public LinkedHashSet<ValueDetectionResult<?>> fetchResults0(final String input) {
         final LinkedHashSet<ValueDetectionResult<?>> retValue = new LinkedHashSet<>();
         ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-        for(final ValueDetectionService autoOCRValueDetectionService : valueDetectionServices) {
+        for(final ValueDetectionService valueDetectionService : valueDetectionServices) {
             Runnable runnable = new Runnable() {
                 @Override
                 public void run() {
-                    List<ValueDetectionResult<?>> serviceResults = autoOCRValueDetectionService.fetchResults(input);
+                    List<ValueDetectionResult<?>> serviceResults = valueDetectionService.fetchResults(input);
                     //not necessary to prevent values to get added to retValue because
                     //retValue after cancelation isn't specified
                     synchronized(retValue) {
@@ -62,8 +62,8 @@ public class DelegatingValueDetectionService extends AbstractValueDetectionServi
     @Override
     public void cancelFetch() {
         super.cancelFetch();
-        for(ValueDetectionService<?> autoOCRValueDetectionService : valueDetectionServices) {
-            autoOCRValueDetectionService.cancelFetch();
+        for(ValueDetectionService<?> valueDetectionService : valueDetectionServices) {
+            valueDetectionService.cancelFetch();
         }
     }
 }

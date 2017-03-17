@@ -115,15 +115,15 @@ public class CurrencyFormatValueDetectionService extends AbstractFormatValueDete
                 }catch(ConversionException ex) {
                     this.amountMoneyExchangeRateRetriever.retrieveExchangeRate(currency);
                 }
-                ValueDetectionResult<Amount<Money>> autoOCRValueDetectionResult = new ValueDetectionResult<>(inputSub,
+                ValueDetectionResult<Amount<Money>> valueDetectionResult = new ValueDetectionResult<>(inputSub,
                         Amount.<Money>valueOf(currencyValue.doubleValue(), currency)
                 );
                 //not sufficient to check whether result
                 //is already contained because the same date
                 //might be retrieved from a longer and a
                 //shorter substring of a substring
-                retValue.add(autoOCRValueDetectionResult);
-                for(ValueDetectionServiceUpdateListener<Amount<Money>> listener : getListeners()) {
+                retValue.add(valueDetectionResult);
+                for(ValueDetectionServiceListener<Amount<Money>> listener : getListeners()) {
                     listener.onUpdate(new ValueDetectionServiceUpdateEvent<>(new LinkedList<>(retValue),
                             inputSplits.size(),
                             i));

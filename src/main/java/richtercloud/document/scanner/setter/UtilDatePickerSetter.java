@@ -120,7 +120,7 @@ public class UtilDatePickerSetter implements ValueSetter<Date, UtilDatePicker> {
             comp.setValue(date); //correctly updates the displayed value
         }else {
             //Can't check for concrete type here because a BaseOCRResult might
-            //have been passed from AutoOCRValueDetectionDialog
+            //have been passed from ValueDetectionDialog
             //@TODO
         }
     }

@@ -32,8 +32,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author richter
  */
-public class DateFormatAutoOCRValueDetectionServiceTest {
-    private final static Logger LOGGER = LoggerFactory.getLogger(DateFormatAutoOCRValueDetectionServiceTest.class);
+public class DateFormatValueDetectionServiceTest {
+    private final static Logger LOGGER = LoggerFactory.getLogger(DateFormatValueDetectionServiceTest.class);
     private final static Random RANDOM;
     static {
         long randomSeed = System.currentTimeMillis();

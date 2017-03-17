@@ -67,7 +67,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.credential.store.EncryptedCredentialStore;
 import richtercloud.credential.store.EncryptedFileCredentialStore;
-import richtercloud.document.scanner.components.AutoOCRValueDetectionPanel;
+import richtercloud.document.scanner.components.ValueDetectionPanel;
 import richtercloud.document.scanner.components.tag.FileTagStorage;
 import richtercloud.document.scanner.components.tag.TagStorage;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
@@ -267,7 +267,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
      * The default non-zero exit code.
      */
     private final static int SYSTEM_EXIT_ERROR_GENERAL = 1;
-    private final IdApplier<AutoOCRValueDetectionPanel> idApplier;
+    private final IdApplier<ValueDetectionPanel> idApplier;
     private final IdGenerator<Long> idGenerator;
     /**
      * If multiple entities are selected in a {@link EntityEditingDialog} it
@@ -436,7 +436,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         this.storage = (PersistenceStorage) delegatingStorageFactory.create(storageConf);
 
         this.idGenerator = new SequentialIdGenerator(storage);
-        this.idApplier = new AutoOCRValueDetectionPanelIdApplier(idGenerator);
+        this.idApplier = new ValueDetectionPanelIdApplier(idGenerator);
 
         OCREngineConf oCREngineConf = documentScannerConf.getoCREngineConf();
         this.oCREngine = oCREngineFactory.create(oCREngineConf);

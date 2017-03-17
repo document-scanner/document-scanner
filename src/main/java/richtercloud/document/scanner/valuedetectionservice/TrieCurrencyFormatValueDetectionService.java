@@ -47,7 +47,7 @@ import richtercloud.reflection.form.builder.components.money.AmountMoneyExchange
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetrieverException;
 
 /**
- * An {@link AutoOCRValueDetectionService} for currencies in form of a
+ * An {@link ValueDetectionService} for currencies in form of a
  * {@link Amount} which splits input on whitespace into tokens and searches for
  * currency symbols. On occurance of currency symbols tried to parse all
  * combinations {@link CurrencyFormatValueDetectionService#MAX_FORMAT_WORDS}
@@ -183,18 +183,18 @@ public class TrieCurrencyFormatValueDetectionService extends AbstractValueDetect
                                         TrieCurrencyFormatValueDetectionService.this.amountMoneyExchangeRateRetriever.retrieveExchangeRate(currency);
                                     }
                                     Amount<Money> value = Amount.<Money>valueOf(currencyValue.doubleValue(), currency);
-                                    ValueDetectionResult<Amount<Money>> autoOCRValueDetectionResult = new ValueDetectionResult<>(subListString,
+                                    ValueDetectionResult<Amount<Money>> valueDetectionResult = new ValueDetectionResult<>(subListString,
                                             value
                                     );
-                                    LOGGER.trace(String.format("detection result: %s", autoOCRValueDetectionResult));
+                                    LOGGER.trace(String.format("detection result: %s", valueDetectionResult));
                                     //not sufficient to check whether result
                                     //is already contained because the same date
                                     //might be retrieved from a longer and a
                                     //shorter substring of a substring
                                     synchronized(retValue) {
-                                        retValue.add(autoOCRValueDetectionResult);
+                                        retValue.add(valueDetectionResult);
                                     }
-                                    for(ValueDetectionServiceUpdateListener<Amount<Money>> listener : getListeners()) {
+                                    for(ValueDetectionServiceListener<Amount<Money>> listener : getListeners()) {
                                         listener.onUpdate(new ValueDetectionServiceUpdateEvent<>(new LinkedList<>(retValue),
                                                 tokens.size(),
                                                 index //lastIndex is closest to current progress

@@ -29,7 +29,7 @@ import javax.swing.JTextArea;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import richtercloud.document.scanner.components.AutoOCRValueDetectionPanel;
+import richtercloud.document.scanner.components.ValueDetectionPanel;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
@@ -147,9 +147,9 @@ public class FormatOCRFieldActionListener extends OCRFieldActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        AutoOCRValueDetectionPanel comp = (AutoOCRValueDetectionPanel) retrieveComponent();
+        ValueDetectionPanel comp = (ValueDetectionPanel) retrieveComponent();
             //in document-scanner we can assume that all field components are
-            //AutoOCRValueDetectionPanel
+            //ValueDetectionPanel
         FormatOCRResult oCRSelection = retrieveValue();
         ValueSetter valueSetter = retrieveValueSetter(comp);
 

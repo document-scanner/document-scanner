@@ -15,7 +15,7 @@
 package richtercloud.document.scanner.gui;
 
 import java.util.Set;
-import richtercloud.document.scanner.components.AutoOCRValueDetectionPanel;
+import richtercloud.document.scanner.components.ValueDetectionPanel;
 import richtercloud.reflection.form.builder.jpa.IdGenerationException;
 import richtercloud.reflection.form.builder.jpa.IdGenerator;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplicationException;
@@ -26,20 +26,20 @@ import richtercloud.reflection.form.builder.jpa.panels.LongIdPanel;
  *
  * @author richter
  */
-public class AutoOCRValueDetectionPanelIdApplier implements IdApplier<AutoOCRValueDetectionPanel> {
+public class ValueDetectionPanelIdApplier implements IdApplier<ValueDetectionPanel> {
     private final IdGenerator<Long> idGenerator;
 
-    public AutoOCRValueDetectionPanelIdApplier(IdGenerator<Long> idGenerator) {
+    public ValueDetectionPanelIdApplier(IdGenerator<Long> idGenerator) {
         this.idGenerator = idGenerator;
     }
 
     @Override
-    public void applyId(Object entity, Set<AutoOCRValueDetectionPanel> idFieldComponents) throws IdApplicationException {
+    public void applyId(Object entity, Set<ValueDetectionPanel> idFieldComponents) throws IdApplicationException {
         if(idFieldComponents.size() != 1) {
             throw new IllegalArgumentException("more than one item in idFieldComponents not supported yet");
         }
-        AutoOCRValueDetectionPanel autoOCRValueDetectionPanel = idFieldComponents.iterator().next();
-        LongIdPanel longIdPanel = (LongIdPanel) autoOCRValueDetectionPanel.getClassComponent();
+        ValueDetectionPanel valueDetectionPanel = idFieldComponents.iterator().next();
+        LongIdPanel longIdPanel = (LongIdPanel) valueDetectionPanel.getClassComponent();
         if(longIdPanel.getValue() != null) {
             //ID already set
             return;

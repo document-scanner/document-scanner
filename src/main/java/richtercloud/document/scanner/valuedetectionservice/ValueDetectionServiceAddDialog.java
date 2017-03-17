@@ -105,7 +105,7 @@ public class ValueDetectionServiceAddDialog extends JDialog {
     private ValueDetectionServiceConfPanel serviceConfPanel;
 
     /**
-     * Creates new form AutoOCRValueDetectionServiceAddDialog
+     * Creates new form ValueDetectionServiceAddDialog
      */
     public ValueDetectionServiceAddDialog(Window parent,
             IssueHandler issueHandler) {

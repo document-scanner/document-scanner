@@ -22,22 +22,22 @@ import javax.swing.JPanel;
  *
  * @author richter
  */
-public class AutoOCRValueDetectionPanel extends JPanel {
+public class ValueDetectionPanel extends JPanel {
     private static final long serialVersionUID = 1L;
     private JComponent classComponent;
 
-    public AutoOCRValueDetectionPanel(JComponent classComponent,
-            JPanel autoOCRValueDetectionPanel) {
+    public ValueDetectionPanel(JComponent classComponent,
+            JPanel valueDetectionPanel) {
         this.classComponent = classComponent;
         GroupLayout layout = new GroupLayout(this);
         setLayout(layout);
         layout.setAutoCreateContainerGaps(true);
         layout.setAutoCreateGaps(true);
         layout.setVerticalGroup(layout.createSequentialGroup()
-                .addComponent(autoOCRValueDetectionPanel)
+                .addComponent(valueDetectionPanel)
                 .addComponent(classComponent));
         layout.setHorizontalGroup(layout.createParallelGroup()
-                .addComponent(autoOCRValueDetectionPanel,
+                .addComponent(valueDetectionPanel,
                         0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(classComponent,
                         0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE));

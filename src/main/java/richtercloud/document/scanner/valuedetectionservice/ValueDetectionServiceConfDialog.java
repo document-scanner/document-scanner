@@ -62,7 +62,7 @@ public class ValueDetectionServiceConfDialog extends javax.swing.JDialog {
     };
 
     /**
-     * Creates new form AutoOCRValueDetectionConfDialog
+     * Creates new form ValueDetectionConfDialog
      */
     public ValueDetectionServiceConfDialog(Window parent,
             List<ValueDetectionServiceConf> availableValueDetectionServiceConfs,

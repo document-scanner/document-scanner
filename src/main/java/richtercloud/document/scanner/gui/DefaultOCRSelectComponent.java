@@ -32,6 +32,8 @@ import richtercloud.document.scanner.ifaces.EntityPanel;
 import richtercloud.document.scanner.ifaces.OCREngine;
 import richtercloud.document.scanner.ifaces.OCRSelectComponent;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanel;
+import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceListener;
+import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceUpdateEvent;
 
 /**
  * A container for a {@link OCRSelectPanelPanel} and a toolbar for navigation in
@@ -48,15 +50,15 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
     /*private ToolBar toolbar;
     private Button zoomInButton;
     private Button zoomOutButton;
-    private Button autoOCRValueDetectionResultsButton;
-    private Button autoOCRValueDetectionButton;
-    private CheckBox autoOCRValueDetectionCheckBox;*/
+    private Button valueDetectionResultsButton;
+    private Button valueDetectionButton;
+    private CheckBox valueDetectionCheckBox;*/
     private final JToolBar toolbar = new JToolBar(SwingConstants.VERTICAL);
     private final JButton zoomInButton = new JButton("+");
     private final JButton zoomOutButton = new JButton("-");
-    private final JButton autoOCRValueDetectionResultsButton = new JButton("Set auto detection results on form");
-    private final JButton autoOCRValueDetectionButton = new JButton("(Re-)Run auto detection");
-    private final JCheckBox autoOCRValueDetectionCheckBox = new JCheckBox("Show auto detection components on form");
+    private final JButton valueDetectionResultsButton = new JButton("Set auto detection results on form");
+    private final JButton valueDetectionButton = new JButton("(Re-)Run auto detection");
+    private final JCheckBox valueDetectionCheckBox = new JCheckBox("Show auto detection components on form");
     private float zoomLevel = 1;
     private final EntityPanel entityPanel;
     private final OCREngine oCREngine;
@@ -72,7 +74,7 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
             EntityPanel entityPanel,
             OCREngine oCREngine,
             DocumentScannerConf documentScannerConf,
-            final Set<JPanel> autoOCRValueDetectionPanels,
+            final Set<JPanel> valueDetectionPanels,
             File file) {
         this.oCRSelectPanelPanel = oCRSelectPanelPanel;
         this.entityPanel = entityPanel;
@@ -82,14 +84,14 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
 
         /*zoomInButton = new Button(" + ");
         zoomOutButton = new Button(" - ");
-        autoOCRValueDetectionResultsButton = new Button("Set auto detection results on form");
-        autoOCRValueDetectionButton = new Button("(Re-)Run auto detection");
-        autoOCRValueDetectionCheckBox = new CheckBox("Show auto detection components on form");
+        valueDetectionResultsButton = new Button("Set auto detection results on form");
+        valueDetectionButton = new Button("(Re-)Run auto detection");
+        valueDetectionCheckBox = new CheckBox("Show auto detection components on form");
         toolbar = new ToolBar(zoomInButton,
                 zoomOutButton,
-                autoOCRValueDetectionResultsButton,
-                autoOCRValueDetectionButton,
-                autoOCRValueDetectionCheckBox);
+                valueDetectionResultsButton,
+                valueDetectionButton,
+                valueDetectionCheckBox);
         toolbarPanel.setScene(new Scene(toolbar));
         zoomInButton.setOnAction(new EventHandler<ActionEvent>() {
             @Override
@@ -118,13 +120,13 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
                 });
             }
         });
-        autoOCRValueDetectionResultsButton.setOnAction(new EventHandler<ActionEvent>() {
+        valueDetectionResultsButton.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
-                        OCRSelectComponent.this.entityPanel.autoOCRValueDetectionNonGUI(new OCRSelectPanelPanelFetcher(OCRSelectComponent.this.getoCRSelectPanelPanel(),
+                        OCRSelectComponent.this.entityPanel.valueDetectionNonGUI(new OCRSelectPanelPanelFetcher(OCRSelectComponent.this.getoCRSelectPanelPanel(),
                                 OCRSelectComponent.this.oCREngineFactory,
                                 OCRSelectComponent.this.oCREngineConf),
                                 false //forceRenewal
@@ -133,13 +135,13 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
                 });
             }
         });
-        autoOCRValueDetectionButton.setOnAction(new EventHandler<ActionEvent>() {
+        valueDetectionButton.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
-                        OCRSelectComponent.this.entityPanel.autoOCRValueDetectionNonGUI(new OCRSelectPanelPanelFetcher(OCRSelectComponent.this.getoCRSelectPanelPanel(),
+                        OCRSelectComponent.this.entityPanel.valueDetectionNonGUI(new OCRSelectPanelPanelFetcher(OCRSelectComponent.this.getoCRSelectPanelPanel(),
                                 OCRSelectComponent.this.oCREngineFactory,
                                 OCRSelectComponent.this.oCREngineConf),
                                 true //forceRenewal
@@ -148,21 +150,21 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
                 });
             }
         });
-        autoOCRValueDetectionCheckBox.setOnAction(new EventHandler<ActionEvent>() {
+        valueDetectionCheckBox.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
-                        for(JPanel autoOCRValueDetectionPanel : autoOCRValueDetectionPanels) {
-                            boolean visible = autoOCRValueDetectionCheckBox.isSelected();
-                            autoOCRValueDetectionPanel.setVisible(visible);
+                        for(JPanel valueDetectionPanel : valueDetectionPanels) {
+                            boolean visible = valueDetectionCheckBox.isSelected();
+                            valueDetectionPanel.setVisible(visible);
                         }
                     }
                 });
             }
         });
-        autoOCRValueDetectionCheckBox.setSelected(true); //should trigger
+        valueDetectionCheckBox.setSelected(true); //should trigger
         //action listener above*/
 
         //Simulate a multiline toolbar rather than implement something that is
@@ -175,9 +177,9 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
         );
         toolbarPanel.add(zoomInButton);
         toolbarPanel.add(zoomOutButton);
-        toolbarPanel.add(autoOCRValueDetectionResultsButton);
-        toolbarPanel.add(autoOCRValueDetectionButton);
-        toolbarPanel.add(autoOCRValueDetectionCheckBox);
+        toolbarPanel.add(valueDetectionResultsButton);
+        toolbarPanel.add(valueDetectionButton);
+        toolbarPanel.add(valueDetectionCheckBox);
         JScrollPane toolbarPanelScrollPane = new JScrollPane(toolbarPanel);
         toolbarPanelScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         toolbarPanelScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
@@ -244,48 +246,55 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
                 }
             }
         });
-        entityPanel.addAutoOCRValueDetectionListener(() -> {
-            DefaultOCRSelectComponent.this.autoOCRValueDetectionButton.setEnabled(true);
-            DefaultOCRSelectComponent.this.entityPanel.setEnabled(true);
+        entityPanel.addValueDetectionListener(new ValueDetectionServiceListener() {
+            @Override
+            public void onUpdate(ValueDetectionServiceUpdateEvent updateEvent) {
+            }
+
+            @Override
+            public void onFinished() {
+                DefaultOCRSelectComponent.this.valueDetectionButton.setEnabled(true);
+                DefaultOCRSelectComponent.this.entityPanel.setEnabled(true);
+            }
         });
-        autoOCRValueDetectionResultsButton.addActionListener(new ActionListener() {
+        valueDetectionResultsButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 DefaultOCRSelectComponent.this.entityPanel.setEnabled(false);
-                    //will be re-enabled in AutoOCRValueDetectionListener
-                DefaultOCRSelectComponent.this.entityPanel.autoOCRValueDetection(new DefaultOCRSelectPanelPanelFetcher(DefaultOCRSelectComponent.this.getoCRSelectPanelPanel(),
+                    //will be re-enabled in ValueDetectionListener
+                DefaultOCRSelectComponent.this.entityPanel.valueDetection(new DefaultOCRSelectPanelPanelFetcher(DefaultOCRSelectComponent.this.getoCRSelectPanelPanel(),
                         DefaultOCRSelectComponent.this.oCREngine,
                         documentScannerConf),
                         false //forceRenewal
                 );
             }
         });
-        autoOCRValueDetectionButton.addActionListener(new ActionListener() {
+        valueDetectionButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                DefaultOCRSelectComponent.this.autoOCRValueDetectionButton.setEnabled(false);
-                DefaultOCRSelectComponent.this.entityPanel.autoOCRValueDetection(new DefaultOCRSelectPanelPanelFetcher(DefaultOCRSelectComponent.this.getoCRSelectPanelPanel(),
+                DefaultOCRSelectComponent.this.valueDetectionButton.setEnabled(false);
+                DefaultOCRSelectComponent.this.entityPanel.valueDetection(new DefaultOCRSelectPanelPanelFetcher(DefaultOCRSelectComponent.this.getoCRSelectPanelPanel(),
                         DefaultOCRSelectComponent.this.oCREngine,
                         documentScannerConf),
                         true //forceRenewal
                 );
             }
         });
-        autoOCRValueDetectionCheckBox.addActionListener(new ActionListener() {
+        valueDetectionCheckBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                for(JPanel autoOCRValueDetectionPanel : autoOCRValueDetectionPanels) {
-                    autoOCRValueDetectionPanel.setVisible(autoOCRValueDetectionCheckBox.isSelected());
+                for(JPanel valueDetectionPanel : valueDetectionPanels) {
+                    valueDetectionPanel.setVisible(valueDetectionCheckBox.isSelected());
                 }
             }
         });
-        autoOCRValueDetectionCheckBox.setSelected(true); //should trigger
+        valueDetectionCheckBox.setSelected(true); //should trigger
             //action listener above
     }
 
     @Override
-    public JButton getAutoOCRValueDetectionButton() {
-        return autoOCRValueDetectionButton;
+    public JButton getValueDetectionButton() {
+        return valueDetectionButton;
     }
 
     @Override

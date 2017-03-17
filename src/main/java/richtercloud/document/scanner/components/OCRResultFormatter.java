@@ -18,7 +18,7 @@ import java.io.Serializable;
 
 /**
  * Allows to specify how to format an auto-OCR-value-detection result when
- * displayed in {@link AutoOCRValueDetectionPanel}'s dropdown menu.
+ * displayed in {@link ValueDetectionPanel}'s dropdown menu.
  *
  * @author richter
  * @param <T> the type of objects to format

@@ -30,7 +30,7 @@ public class ValueDetectionFieldActionListener extends AbstractFieldActionListen
     private final Object value;
 
     /**
-     * Creates a new {@link AutoOCRValueDetectionFieldActionListener}.
+     * Creates a new {@link ValueDetectionFieldActionListener}.
      * @param value
      * @param field
      * @param reflectionFormPanel
@@ -39,8 +39,8 @@ public class ValueDetectionFieldActionListener extends AbstractFieldActionListen
      */
     /*
     internal implementation notes:
-    - it'd be nice to pass a AutoOCRValueDetectionResult, but that'd require a
-    cyclic reference during creation of AutoOCRValueDetectionResult (which
+    - it'd be nice to pass a ValueDetectionResult, but that'd require a
+    cyclic reference during creation of ValueDetectionResult (which
     requests a list of CallbackActions) which can be dealt with, but is ugly
     */
     public ValueDetectionFieldActionListener(Object value,

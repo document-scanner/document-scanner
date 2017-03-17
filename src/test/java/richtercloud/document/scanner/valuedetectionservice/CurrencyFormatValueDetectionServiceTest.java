@@ -35,7 +35,7 @@ import richtercloud.reflection.form.builder.components.money.MemoryAmountMoneyCu
  *
  * @author richter
  */
-public class CurrencyFormatAutoOCRValueDetectionServiceTest {
+public class CurrencyFormatValueDetectionServiceTest {
 
     /**
      * Test of getMaxWords method, of class CurrencyFormatValueDetectionService.

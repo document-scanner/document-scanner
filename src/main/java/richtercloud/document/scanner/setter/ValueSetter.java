@@ -22,7 +22,7 @@ import richtercloud.reflection.form.builder.TransformationException;
  * An interface to handle different setter methods of different
  * {@link JComponent} and pass the OCR result to them (always a {@code String})
  * (with {@link #setOCRResult(richtercloud.document.scanner.gui.ocrresult.OCRResult) })
- * as well as parsed values from {@link AutoOCRValueDetectionService}s (with
+ * as well as parsed values from {@link ValueDetectionService}s (with
  * {@link #setValue(java.lang.Object, javax.swing.JComponent) }).
  *
  * Implementations are expected to handle parsing of OCR results as well in

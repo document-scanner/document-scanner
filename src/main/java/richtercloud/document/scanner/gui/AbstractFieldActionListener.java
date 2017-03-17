@@ -23,7 +23,7 @@ import javax.swing.JOptionPane;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import richtercloud.document.scanner.components.AutoOCRValueDetectionPanel;
+import richtercloud.document.scanner.components.ValueDetectionPanel;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
@@ -77,8 +77,8 @@ public abstract class AbstractFieldActionListener<T> implements ActionListener {
     }
 
     protected ValueSetter retrieveValueSetter(JComponent comp) {
-        assert comp instanceof AutoOCRValueDetectionPanel;
-        AutoOCRValueDetectionPanel compCast = (AutoOCRValueDetectionPanel) comp;
+        assert comp instanceof ValueDetectionPanel;
+        ValueDetectionPanel compCast = (ValueDetectionPanel) comp;
         JComponent classComponent = compCast.getClassComponent();
         ValueSetter valueSetter = this.valueSetterMapping.get(classComponent.getClass());
         if (valueSetter == null) {

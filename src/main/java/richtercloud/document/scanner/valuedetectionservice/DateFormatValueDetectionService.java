@@ -29,7 +29,7 @@ import richtercloud.document.scanner.gui.FormatUtils;
 /**
  * A brute-force "getting-started" attempt of implementation which has quite
  * horrible performance and is easily superceeded by
- * {@link SUTimeAutoOCRValueDetectionService}.
+ * {@link SUTimeValueDetectionService}.
  *
  * @author richter
  */
@@ -70,7 +70,7 @@ public class DateFormatValueDetectionService extends AbstractFormatValueDetectio
         for(Entry<DateFormat, Set<Locale>> dateFormat : FormatUtils.getDisjointDateRelatedFormats().entrySet()) {
             try {
                 Date date = dateFormat.getKey().parse(inputSub);
-                ValueDetectionResult<Date> autoOCRValueDetectionResult = new ValueDetectionResult<>(inputSub,
+                ValueDetectionResult<Date> valueDetectionResult = new ValueDetectionResult<>(inputSub,
                         date
                 );
                 //not sufficient to check whether result
@@ -80,8 +80,8 @@ public class DateFormatValueDetectionService extends AbstractFormatValueDetectio
                 if(retValue == null) {
                     retValue = new LinkedList<>();
                 }
-                retValue.add(autoOCRValueDetectionResult);
-                for(ValueDetectionServiceUpdateListener<Date> listener : getListeners()) {
+                retValue.add(valueDetectionResult);
+                for(ValueDetectionServiceListener<Date> listener : getListeners()) {
                     listener.onUpdate(new ValueDetectionServiceUpdateEvent<>(new LinkedList<>(retValue),
                             inputSplits.size(),
                             i));

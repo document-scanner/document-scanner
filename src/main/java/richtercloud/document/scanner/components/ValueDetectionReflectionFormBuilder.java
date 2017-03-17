@@ -69,10 +69,10 @@ import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 /*
 internal implementation notes:
 - although more elegant, it's overkill to pass a reference to EntityPanel in
-order to be able to call EntityPanel.autoOCRValueDetectionGUI, so do that in the
+order to be able to call EntityPanel.valueDetectionGUI, so do that in the
 MainPanel implementation
 */
-public class AutoOCRValueDetectionReflectionFormBuilder extends JPAReflectionFormBuilder {
+public class ValueDetectionReflectionFormBuilder extends JPAReflectionFormBuilder {
     /**
      * The association of the field of each class (used in order to avoid
      * confusion between the same field used in (super) classes and subclasses)
@@ -87,10 +87,10 @@ public class AutoOCRValueDetectionReflectionFormBuilder extends JPAReflectionFor
     */
     private final Map<Pair<Class, Field>, JComboBox<ValueDetectionResult<?>>> comboBoxModelMap = new HashMap<>();
     private final Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping;
-    private final Set<JPanel> autoOCRValueDetectionPanels = new HashSet<>();
+    private final Set<JPanel> valueDetectionPanels = new HashSet<>();
     private final DocumentScannerConf documentScannerConf;
 
-    public AutoOCRValueDetectionReflectionFormBuilder(PersistenceStorage storage,
+    public ValueDetectionReflectionFormBuilder(PersistenceStorage storage,
             String fieldDescriptionDialogTitle,
             MessageHandler messageHandler,
             ConfirmMessageHandler confirmMessageHandler,
@@ -116,8 +116,8 @@ public class AutoOCRValueDetectionReflectionFormBuilder extends JPAReflectionFor
         return Collections.unmodifiableMap(comboBoxModelMap);
     }
 
-    public Set<JPanel> getAutoOCRValueDetectionPanels() {
-        return Collections.unmodifiableSet(autoOCRValueDetectionPanels);
+    public Set<JPanel> getValueDetectionPanels() {
+        return Collections.unmodifiableSet(valueDetectionPanels);
     }
 
     @Override
@@ -131,10 +131,10 @@ public class AutoOCRValueDetectionReflectionFormBuilder extends JPAReflectionFor
                 fieldHandler);
         //put label and combobox in a separate panel in order to be able to
         //trigger visibility
-        JPanel autoOCRValueDetectionPanel = new JPanel();
-        GroupLayout autoOCRValueDetectionPanelLayout = new GroupLayout(autoOCRValueDetectionPanel);
-        autoOCRValueDetectionPanel.setLayout(autoOCRValueDetectionPanelLayout);
-        autoOCRValueDetectionPanelLayout.setAutoCreateGaps(true);
+        JPanel valueDetectionPanel = new JPanel();
+        GroupLayout valueDetectionPanelLayout = new GroupLayout(valueDetectionPanel);
+        valueDetectionPanel.setLayout(valueDetectionPanelLayout);
+        valueDetectionPanelLayout.setAutoCreateGaps(true);
         JLabel label = new JLabel("Auto OCR detection values:");
         JComboBox<ValueDetectionResult<?>> comboBox = new JComboBox<>();
         final DefaultComboBoxModel<ValueDetectionResult<?>> comboBoxModel = new DefaultComboBoxModel<>();
@@ -215,18 +215,18 @@ public class AutoOCRValueDetectionReflectionFormBuilder extends JPAReflectionFor
                 }
             }
         });
-        autoOCRValueDetectionPanelLayout.setVerticalGroup(autoOCRValueDetectionPanelLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+        valueDetectionPanelLayout.setVerticalGroup(valueDetectionPanelLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
                 .addComponent(label)
                 .addComponent(comboBox));
-        autoOCRValueDetectionPanelLayout.setHorizontalGroup(autoOCRValueDetectionPanelLayout.createSequentialGroup()
+        valueDetectionPanelLayout.setHorizontalGroup(valueDetectionPanelLayout.createSequentialGroup()
                 .addComponent(label)
                 .addComponent(comboBox, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE));
-        AutoOCRValueDetectionPanel retValue = new AutoOCRValueDetectionPanel(classComponent,
-                autoOCRValueDetectionPanel);
+        ValueDetectionPanel retValue = new ValueDetectionPanel(classComponent,
+                valueDetectionPanel);
 
         Pair<Class, Field> pair = new ImmutablePair<>(entityClass, field);
         comboBoxModelMap.put(pair, comboBox);
-        autoOCRValueDetectionPanels.add(autoOCRValueDetectionPanel);
+        valueDetectionPanels.add(valueDetectionPanel);
         if(field.getAnnotation(Id.class) != null) {
             getIdFieldComponentMap().remove(instance);
                 //remove mapped LongIdPanel which is contained in retValue

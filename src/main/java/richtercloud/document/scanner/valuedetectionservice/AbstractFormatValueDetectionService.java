@@ -25,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A {@link AutoOCRValueDetectionService} which simply splits input at
+ * A {@link ValueDetectionService} which simply splits input at
  * whitespace, and iterates over a set of {@link DateFormat}s and assumes that
  * only a quite limited number of words {@code n} (e.g. 10) can make up a date.
  * This limits the complexity to {@code #words in input * n}. {@code n} is

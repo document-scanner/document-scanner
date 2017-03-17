@@ -118,10 +118,10 @@ public class ContactValueDetectionService extends AbstractValueDetectionService<
                                 new LinkedList<EmailAddress>(), //emails (can't set everything here because otherwise the service becomes too complicated)
                                 new LinkedList<TelephoneNumber>() //telephoneNumbers
                         );
-                        ValueDetectionResult<Company> autoOCRValueDetectionResult = new ValueDetectionResult<>(oCRSource,
+                        ValueDetectionResult<Company> valueDetectionResult = new ValueDetectionResult<>(oCRSource,
                                 company
                         );
-                        retValue.add(autoOCRValueDetectionResult);
+                        retValue.add(valueDetectionResult);
                     }
                     queue.remove(0); //remove no matter whether Matcher.find
                         //returned true or false
@@ -146,11 +146,11 @@ public class ContactValueDetectionService extends AbstractValueDetectionService<
 //            parser.parse(stream, handler, metadata);
 ////            return handler.toString();
 //        } catch (IOException ex) {
-//            Logger.getLogger(AddressAutoOCRValueDetectionService.class.getName()).log(Level.SEVERE, null, ex);
+//            Logger.getLogger(AddressValueDetectionService.class.getName()).log(Level.SEVERE, null, ex);
 //        } catch (SAXException ex) {
-//            Logger.getLogger(AddressAutoOCRValueDetectionService.class.getName()).log(Level.SEVERE, null, ex);
+//            Logger.getLogger(AddressValueDetectionService.class.getName()).log(Level.SEVERE, null, ex);
 //        } catch (TikaException ex) {
-//            Logger.getLogger(AddressAutoOCRValueDetectionService.class.getName()).log(Level.SEVERE, null, ex);
+//            Logger.getLogger(AddressValueDetectionService.class.getName()).log(Level.SEVERE, null, ex);
 //        }
 //        return null;
     }

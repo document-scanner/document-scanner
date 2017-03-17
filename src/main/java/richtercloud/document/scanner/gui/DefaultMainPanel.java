@@ -50,11 +50,11 @@ import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import richtercloud.document.scanner.components.AutoOCRValueDetectionReflectionFormBuilder;
 import richtercloud.document.scanner.components.MainPanelScanResultPanelFetcher;
 import richtercloud.document.scanner.components.OCRResultPanelFetcher;
 import richtercloud.document.scanner.components.OCRResultPanelFetcherProgressEvent;
 import richtercloud.document.scanner.components.OCRResultPanelFetcherProgressListener;
+import richtercloud.document.scanner.components.ValueDetectionReflectionFormBuilder;
 import richtercloud.document.scanner.components.annotations.ScanResult;
 import richtercloud.document.scanner.components.tag.TagStorage;
 import richtercloud.document.scanner.flexdock.MainPanelDockingManagerFlexdock;
@@ -74,6 +74,8 @@ import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcher;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcherProgressEvent;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcherProgressListener;
 import richtercloud.document.scanner.setter.ValueSetter;
+import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceListener;
+import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceUpdateEvent;
 import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.ExceptionMessage;
 import richtercloud.message.handler.IssueHandler;
@@ -509,11 +511,18 @@ public class DefaultMainPanel extends MainPanel {
             images.add(oCRSelectPanel.getImage());
         }
         if(this.documentScannerConf.isAutoOCRValueDetection()) {
-            oCRSelectComponent.getAutoOCRValueDetectionButton().setEnabled(false);
-            entityPanel.addAutoOCRValueDetectionListener(() -> {
-                oCRSelectComponent.getAutoOCRValueDetectionButton().setEnabled(true);
+            oCRSelectComponent.getValueDetectionButton().setEnabled(false);
+            entityPanel.addValueDetectionListener(new ValueDetectionServiceListener() {
+                @Override
+                public void onUpdate(ValueDetectionServiceUpdateEvent updateEvent) {
+                }
+
+                @Override
+                public void onFinished() {
+                    oCRSelectComponent.getValueDetectionButton().setEnabled(true);
+                }
             });
-            entityPanel.autoOCRValueDetection(new DefaultOCRSelectPanelPanelFetcher(oCRSelectComponent.getoCRSelectPanelPanel(),
+            entityPanel.valueDetection(new DefaultOCRSelectPanelPanelFetcher(oCRSelectComponent.getoCRSelectPanelPanel(),
                     oCREngine,
                     documentScannerConf),
                     false //forceRenewal (shouldn't matter here since the
@@ -650,7 +659,7 @@ public class DefaultMainPanel extends MainPanel {
                 entityClasses0 = new HashSet<>(Arrays.asList(entityToEdit.getClass()));
                 primaryClassSelection0 = entityToEdit.getClass();
             }
-            AutoOCRValueDetectionReflectionFormBuilder reflectionFormBuilder = new AutoOCRValueDetectionReflectionFormBuilder(storage,
+            ValueDetectionReflectionFormBuilder reflectionFormBuilder = new ValueDetectionReflectionFormBuilder(storage,
                     "Field description",
                     issueHandler,
                     confirmMessageHandler,
@@ -694,10 +703,10 @@ public class DefaultMainPanel extends MainPanel {
                     entityPanel,
                     oCREngine,
                     documentScannerConf,
-                    reflectionFormBuilder.getAutoOCRValueDetectionPanels(),
+                    reflectionFormBuilder.getValueDetectionPanels(),
                     documentFile);
             reflectionFormPanelTabbedPane.addReflectionFormPanelTabbedPaneListener((reflectionFormPanel) -> {
-                entityPanel.autoOCRValueDetectionGUI();
+                entityPanel.valueDetectionGUI();
             });
             retValue = new ImmutablePair<>(oCRSelectComponent, entityPanel);
             if(progressMonitor == null || !progressMonitor.isCanceled()) {

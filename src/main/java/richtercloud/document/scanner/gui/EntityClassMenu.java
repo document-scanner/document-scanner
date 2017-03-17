@@ -25,7 +25,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import richtercloud.document.scanner.components.AutoOCRValueDetectionPanel;
+import richtercloud.document.scanner.components.ValueDetectionPanel;
 import richtercloud.document.scanner.gui.ocrresult.OCRResult;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.message.handler.Message;
@@ -67,10 +67,10 @@ public class EntityClassMenu extends JMenu {
                 List<Field> relevantFields = fieldRetriever.retrieveRelevantFields(entityClass);
                 for(Field relevantField : relevantFields) {
                     JComponent relevantFieldComponent = reflectionFormPanel.getComponentByField(relevantField);
-                    assert relevantFieldComponent instanceof AutoOCRValueDetectionPanel;
-                    AutoOCRValueDetectionPanel autoOCRValueDetectionPanel = (AutoOCRValueDetectionPanel) relevantFieldComponent;
-                    JComponent autoOCRValueDetectionPanelComponent = autoOCRValueDetectionPanel.getClassComponent();
-                    ValueSetter relevantFieldValueSetter = valueSetterMapping.get(autoOCRValueDetectionPanelComponent.getClass());
+                    assert relevantFieldComponent instanceof ValueDetectionPanel;
+                    ValueDetectionPanel valueDetectionPanel = (ValueDetectionPanel) relevantFieldComponent;
+                    JComponent valueDetectionPanelComponent = valueDetectionPanel.getClassComponent();
+                    ValueSetter relevantFieldValueSetter = valueSetterMapping.get(valueDetectionPanelComponent.getClass());
                     if(relevantFieldValueSetter == null) {
                         LOGGER.debug(String.format("skipping field %s because it doesn't have a %s mapped",
                                 relevantField,
