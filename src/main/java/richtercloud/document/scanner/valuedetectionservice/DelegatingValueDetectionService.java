@@ -40,10 +40,10 @@ public class DelegatingValueDetectionService<T> extends AbstractValueDetectionSe
      * Used for mapping {@code wordCount} and {@code wordNumber} properties of
      * {@link ValueDetectionServiceUpdateEvent}.
      */
-    private final Map<ValueDetectionService<?>, Integer> wordCountMap = new HashMap<>();
-    private final Map<ValueDetectionService<?>, Integer> wordNumberMap = new HashMap<>();
-    private final List<ValueDetectionResult<T>> results = new LinkedList<>();
-    private final Map<ValueDetectionService<?>, Boolean> finishedMap = new HashMap<>();
+    private final Map<ValueDetectionService<?>, Integer> progressWordCountMap = new HashMap<>();
+    private final Map<ValueDetectionService<?>, Integer> progressWordNumberMap = new HashMap<>();
+    private final List<ValueDetectionResult<T>> progressResults = new LinkedList<>();
+    private final Map<ValueDetectionService<?>, Boolean> progressFinishedMap = new HashMap<>();
 
     public DelegatingValueDetectionService(Set<ValueDetectionService<T>> valueDetectionServices) {
         this.valueDetectionServices = valueDetectionServices;
@@ -53,17 +53,17 @@ public class DelegatingValueDetectionService<T> extends AbstractValueDetectionSe
             valueDetectionService.addListener(new ValueDetectionServiceListener<T>() {
                 @Override
                 public void onUpdate(ValueDetectionServiceUpdateEvent<T> event) {
-                    wordCountMap.put(valueDetectionService, event.getWordCount());
-                    wordNumberMap.put(valueDetectionService, event.getWordNumber());
-                    results.addAll(event.getIntermediateResult());
-                    final int wordCount = wordCountMap.values().stream().mapToInt(value -> {return value;}).sum();
-                    final int wordNumber = wordNumberMap.values().stream().mapToInt(value -> {return value;}).sum();
+                    progressWordCountMap.put(valueDetectionService, event.getWordCount());
+                    progressWordNumberMap.put(valueDetectionService, event.getWordNumber());
+                    progressResults.addAll(event.getIntermediateResult());
+                    final int wordCount = progressWordCountMap.values().stream().mapToInt(value -> {return value;}).sum();
+                    final int wordNumber = progressWordNumberMap.values().stream().mapToInt(value -> {return value;}).sum();
                     if(wordNumber > wordCount) {
                         LOGGER.error(String.format("wordNumber > wordCount for value detection service %s", valueDetectionService));
                         return;
                     }
                     getListeners().forEach(listener -> {
-                        listener.onUpdate(new ValueDetectionServiceUpdateEvent<>(results,
+                        listener.onUpdate(new ValueDetectionServiceUpdateEvent<>(progressResults,
                                 wordCount,
                                 wordNumber));
                     });
@@ -71,9 +71,9 @@ public class DelegatingValueDetectionService<T> extends AbstractValueDetectionSe
 
                 @Override
                 public void onFinished() {
-                    finishedMap.put(valueDetectionService, true);
+                    progressFinishedMap.put(valueDetectionService, true);
                     for(ValueDetectionService<?> valueDetectionService : DelegatingValueDetectionService.this.valueDetectionServices) {
-                        if(!finishedMap.containsKey(valueDetectionService)
+                        if(!progressFinishedMap.containsKey(valueDetectionService)
                             //check whether key is contained is sufficient
                             //because only true is ever put in the map
                         ) {
@@ -90,6 +90,10 @@ public class DelegatingValueDetectionService<T> extends AbstractValueDetectionSe
 
     @Override
     public LinkedHashSet<ValueDetectionResult<T>> fetchResults0(final String input) {
+        progressWordCountMap.clear();
+        progressWordNumberMap.clear();
+        progressFinishedMap.clear();
+        progressResults.clear();
         final LinkedHashSet<ValueDetectionResult<T>> retValue = new LinkedHashSet<>();
         ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         for(final ValueDetectionService<T> valueDetectionService : valueDetectionServices) {
