@@ -74,6 +74,7 @@ import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcher;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcherProgressEvent;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcherProgressListener;
 import richtercloud.document.scanner.setter.ValueSetter;
+import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceCreationException;
 import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.ExceptionMessage;
 import richtercloud.message.handler.IssueHandler;
@@ -297,7 +298,7 @@ public class DefaultMainPanel extends MainPanel {
     }
 
     @Override
-    public void applyValueDetectionServiceSelection() {
+    public void applyValueDetectionServiceSelection() throws ValueDetectionServiceCreationException {
         Collection<Pair<OCRPanel, EntityPanel>> pairs = documentSwitchingMap.values();
         for(Pair<OCRPanel, EntityPanel> pair : pairs) {
             EntityPanel entityPanel = pair.getValue();

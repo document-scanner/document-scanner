@@ -43,6 +43,7 @@ import richtercloud.document.scanner.valuedetectionservice.DelegatingValueDetect
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionResult;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionService;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceConf;
+import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceCreationException;
 import richtercloud.message.handler.ExceptionMessage;
 import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.Message;
@@ -95,7 +96,8 @@ public class DefaultEntityPanel extends EntityPanel {
             IllegalAccessException,
             IllegalArgumentException,
             InvocationTargetException,
-            NoSuchMethodException {
+            NoSuchMethodException,
+            ValueDetectionServiceCreationException {
         if(fieldHandler == null) {
             throw new IllegalArgumentException("fieldHandler mustn't be null");
         }
@@ -141,7 +143,7 @@ public class DefaultEntityPanel extends EntityPanel {
      * which resets all added {@link ValueDetectionServiceListener}s.
      */
     @Override
-    public void applyValueDetectionServiceSelection() {
+    public void applyValueDetectionServiceSelection() throws ValueDetectionServiceCreationException {
         ValueDetectionServiceFactory valueDetectionServiceConfFactory = new DelegatingValueDetectionServiceFactory(amountMoneyAdditionalCurrencyStorage,
                 amountMoneyExchangeRateRetriever);
         Set<ValueDetectionService<?>> valueDetectionServices = new HashSet<>();

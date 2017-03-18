@@ -41,7 +41,7 @@ public class DelegatingValueDetectionServiceFactory implements ValueDetectionSer
     }
 
     @Override
-    public ValueDetectionService<?> createService(ValueDetectionServiceConf serviceConf) {
+    public ValueDetectionService<?> createService(ValueDetectionServiceConf serviceConf) throws ValueDetectionServiceCreationException {
         ValueDetectionService<?> retValue;
         if(serviceConf instanceof ContactValueDetectionServiceConf) {
             retValue = contactValueDetectionServiceConfFactory.createService((ContactValueDetectionServiceConf) serviceConf);
