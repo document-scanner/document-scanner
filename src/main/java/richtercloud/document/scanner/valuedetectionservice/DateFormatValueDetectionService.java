@@ -65,8 +65,8 @@ public class DateFormatValueDetectionService extends AbstractFormatValueDetectio
     @Override
     protected List<ValueDetectionResult<Date>> checkResult(String inputSub,
             List<String> inputSplits,
-            int i) {
-        List<ValueDetectionResult<Date>> retValue = null;
+            int index) {
+        List<ValueDetectionResult<Date>> retValue = new LinkedList<>();
         for(Entry<DateFormat, Set<Locale>> dateFormat : FormatUtils.getDisjointDateRelatedFormats().entrySet()) {
             try {
                 Date date = dateFormat.getKey().parse(inputSub);
@@ -77,21 +77,18 @@ public class DateFormatValueDetectionService extends AbstractFormatValueDetectio
                 //is already contained because the same date
                 //might be retrieved from a longer and a
                 //shorter substring of a substring
-                if(retValue == null) {
-                    retValue = new LinkedList<>();
-                }
                 retValue.add(valueDetectionResult);
-                for(ValueDetectionServiceListener<Date> listener : getListeners()) {
-                    listener.onUpdate(new ValueDetectionServiceUpdateEvent<>(new LinkedList<>(retValue),
-                            inputSplits.size(),
-                            i));
-                }
                 //don't break, but add all date formats as
                 //result for the user to select
             }catch(ParseException ex) {
                 //skip to next format
             }
         }
+        getListeners().stream().forEach((listener) -> {
+            listener.onUpdate(new ValueDetectionServiceUpdateEvent<>(new LinkedList<>(retValue),
+                    inputSplits.size(),
+                    index));
+        });
         return retValue;
     }
 }

@@ -88,10 +88,12 @@ public class CurrencyFormatValueDetectionService extends AbstractFormatValueDete
      * {@code amountMoneyExchangeRateRetriever}.
      * @param inputSub
      * @param inputSplits
-     * @param i
+     * @param index
      */
     @Override
-    protected List<ValueDetectionResult<Amount<Money>>> checkResult(String inputSub, List<String> inputSplits, int i) {
+    protected List<ValueDetectionResult<Amount<Money>>> checkResult(String inputSub,
+            List<String> inputSplits,
+            int index) {
         List<ValueDetectionResult<Amount<Money>>> retValue = new LinkedList<>();
         for(Map.Entry<NumberFormat, Set<Locale>> currencyFormat : FormatUtils.getDisjointCurrencyFormatsEntySet()) {
             try {
@@ -123,11 +125,6 @@ public class CurrencyFormatValueDetectionService extends AbstractFormatValueDete
                 //might be retrieved from a longer and a
                 //shorter substring of a substring
                 retValue.add(valueDetectionResult);
-                for(ValueDetectionServiceListener<Amount<Money>> listener : getListeners()) {
-                    listener.onUpdate(new ValueDetectionServiceUpdateEvent<>(new LinkedList<>(retValue),
-                            inputSplits.size(),
-                            i));
-                }
                 //don't break, but add all date formats as
                 //result for the user to select
             }catch(ParseException ex) {
@@ -136,6 +133,11 @@ public class CurrencyFormatValueDetectionService extends AbstractFormatValueDete
                 throw new RuntimeException(ex);
             }
         }
+        getListeners().stream().forEach((listener) -> {
+            listener.onUpdate(new ValueDetectionServiceUpdateEvent<>(new LinkedList<>(retValue),
+                    inputSplits.size(),
+                    index));
+        });
         return retValue;
     }
 }

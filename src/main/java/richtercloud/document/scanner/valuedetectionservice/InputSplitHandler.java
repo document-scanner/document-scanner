@@ -38,6 +38,16 @@ public abstract class InputSplitHandler {
         }
     }
 
+    /**
+     * Invoked in {@link #handle(java.util.List) }.
+     *
+     * @param inputSplitsSubs the currently treated sublist of
+     * {@link inputSplits}
+     * @param inputSplits the complete list of input splits which has been
+     * passed to {@link #handle(java.util.List) }
+     * @param index the index of the outer loop representing the progress of the
+     * processing
+     */
     protected abstract void handle0(List<String> inputSplitsSubs, List<String> inputSplits, int index);
 
     protected abstract int getMaxWords();

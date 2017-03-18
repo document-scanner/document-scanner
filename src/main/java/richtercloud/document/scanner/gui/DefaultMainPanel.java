@@ -74,8 +74,6 @@ import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcher;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcherProgressEvent;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcherProgressListener;
 import richtercloud.document.scanner.setter.ValueSetter;
-import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceListener;
-import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceUpdateEvent;
 import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.ExceptionMessage;
 import richtercloud.message.handler.IssueHandler;
@@ -512,18 +510,6 @@ public class DefaultMainPanel extends MainPanel {
         }
         if(this.documentScannerConf.isAutoOCRValueDetection()) {
             oCRSelectComponent.getValueDetectionButton().setEnabled(false);
-            entityPanel.getValueDetectionService().addListener(new ValueDetectionServiceListener() {
-                @Override
-                public void onUpdate(ValueDetectionServiceUpdateEvent updateEvent) {
-                    float progress = updateEvent.getWordNumber()/(float)updateEvent.getWordCount();
-                    oCRSelectComponent.getValueDetectionButton().setProgress(progress);
-                }
-
-                @Override
-                public void onFinished() {
-                    oCRSelectComponent.getValueDetectionButton().setEnabled(true);
-                }
-            });
             entityPanel.valueDetection(new DefaultOCRSelectPanelPanelFetcher(oCRSelectComponent.getoCRSelectPanelPanel(),
                     oCREngine,
                     documentScannerConf),

@@ -52,20 +52,23 @@ public abstract class AbstractFormatValueDetectionService<T> extends AbstractVal
     /**
      * Check whether it's possible to create one or more
      * {@link ValueDetectionResult} from {@code inputSub}.
-     * @param inputSub
-     * @param inputSplits
-     * @param i
-     * @return a list of created {@link ValueDetectionResult}s or
-     * {@code null} if no result could be created
+     * @param inputSub the currently treated sublist of {@link inputSplits} as a
+     * joined string
+     * @param inputSplits the complete list of input splits which has been
+     * passed to {@link #handle(java.util.List) }
+     * @param index the index of the outer loop representing the progress of the
+     * processing
+     * @return a list of created {@link ValueDetectionResult}s, eventually empty
      */
     /*
     internal implementation notes:
     - allowing return value of null avoids creation of a lot of empty lists
-    which waste resources
+    which waste resources, but makes the code more difficult to maintain ->
+    create list unless serious performance impacts are faced
     */
     protected abstract List<ValueDetectionResult<T>> checkResult(String inputSub,
             List<String> inputSplits,
-            int i);
+            int index);
 
     /**
      * Might return different {@link ValueDetectionResult}s with
@@ -83,7 +86,7 @@ public abstract class AbstractFormatValueDetectionService<T> extends AbstractVal
         final List<String> inputSplits = new ArrayList<>(Arrays.asList(input.split("[\\s]+")));
         InputSplitHandler inputSplitHandler = new InputSplitHandler() {
             @Override
-            protected void handle0(List<String> inputSplitsSubs,
+            protected void handle0(final List<String> inputSplitsSubs,
                     final List<String> inputSplits,
                     final int index) {
                 final String inputSub = String.join(" ", inputSplitsSubs);
@@ -99,7 +102,7 @@ public abstract class AbstractFormatValueDetectionService<T> extends AbstractVal
                         }
                         LOGGER.trace(String.format("working on input substring '%s'", inputSub));
                         List<ValueDetectionResult<T>> results = checkResult(inputSub, inputSplits, index);
-                        if(results != null) {
+                        if(!results.isEmpty()) {
                             synchronized(retValues) {
                                 retValues.addAll(results);
                             }

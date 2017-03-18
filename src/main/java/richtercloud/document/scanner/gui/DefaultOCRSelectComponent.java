@@ -256,6 +256,9 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
 
             @Override
             public void onFinished() {
+                DefaultOCRSelectComponent.this.valueDetectionButton.setProgress(0.0f);
+                    //reset progress in case the last update event has a
+                    //progress < 1.0f
                 DefaultOCRSelectComponent.this.valueDetectionButton.setEnabled(true);
                 DefaultOCRSelectComponent.this.entityPanel.setEnabled(true);
             }
