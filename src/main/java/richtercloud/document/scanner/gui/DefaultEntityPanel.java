@@ -39,11 +39,10 @@ import richtercloud.document.scanner.ifaces.OCREngineRecognitionException;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcher;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.document.scanner.valuedetectionservice.DelegatingValueDetectionService;
-import richtercloud.document.scanner.valuedetectionservice.DelegatingValueDetectionServiceConfFactory;
+import richtercloud.document.scanner.valuedetectionservice.DelegatingValueDetectionServiceFactory;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionResult;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionService;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceConf;
-import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceConfFactory;
 import richtercloud.message.handler.ExceptionMessage;
 import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.Message;
@@ -51,6 +50,7 @@ import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrency
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyUsageStatisticsStorage;
 import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
+import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceFactory;
 
 /**
  *
@@ -142,7 +142,7 @@ public class DefaultEntityPanel extends EntityPanel {
      */
     @Override
     public void applyValueDetectionServiceSelection() {
-        ValueDetectionServiceConfFactory valueDetectionServiceConfFactory = new DelegatingValueDetectionServiceConfFactory(amountMoneyAdditionalCurrencyStorage,
+        ValueDetectionServiceFactory valueDetectionServiceConfFactory = new DelegatingValueDetectionServiceFactory(amountMoneyAdditionalCurrencyStorage,
                 amountMoneyExchangeRateRetriever);
         Set<ValueDetectionService<?>> valueDetectionServices = new HashSet<>();
         for(ValueDetectionServiceConf serviceConf : documentScannerConf.getSelectedValueDetectionServiceConfs()) {

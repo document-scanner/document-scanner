@@ -16,28 +16,28 @@ package richtercloud.document.scanner.valuedetectionservice;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import richtercloud.document.scanner.valuedetectionservice.annotations.ConfFactory;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
+import richtercloud.document.scanner.valuedetectionservice.annotations.Factory;
 
 /**
  *
  * @author richter
  */
-public class DelegatingValueDetectionServiceConfFactory implements ValueDetectionServiceConfFactory<ValueDetectionService<?>, ValueDetectionServiceConf> {
-    private final ContactValueDetectionServiceConfFactory contactValueDetectionServiceConfFactory;
-    private final CurrencyFormatValueDetectionServiceConfFactory currencyFormatValueDetectionServiceConfFactory;
-    private final TrieCurrencyFormatValueDetectionServiceConfFactory trieCurrencyFormatValueDetectionServiceConfFactory;
-    private final DateFormatValueDetectionServiceConfFactory dateFormatValueDetectionServiceConfFactory;
+public class DelegatingValueDetectionServiceFactory implements ValueDetectionServiceFactory<ValueDetectionService<?>, ValueDetectionServiceConf> {
+    private final ContactValueDetectionServiceFactory contactValueDetectionServiceConfFactory;
+    private final CurrencyFormatValueDetectionServiceFactory currencyFormatValueDetectionServiceConfFactory;
+    private final TrieCurrencyFormatValueDetectionServiceFactory trieCurrencyFormatValueDetectionServiceConfFactory;
+    private final DateFormatValueDetectionServiceFactory dateFormatValueDetectionServiceConfFactory;
 
-    public DelegatingValueDetectionServiceConfFactory(AmountMoneyCurrencyStorage amountMoneyCurrencyStorage,
+    public DelegatingValueDetectionServiceFactory(AmountMoneyCurrencyStorage amountMoneyCurrencyStorage,
             AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever) {
-        this.contactValueDetectionServiceConfFactory = new ContactValueDetectionServiceConfFactory();
-        this.currencyFormatValueDetectionServiceConfFactory = new CurrencyFormatValueDetectionServiceConfFactory(amountMoneyCurrencyStorage,
+        this.contactValueDetectionServiceConfFactory = new ContactValueDetectionServiceFactory();
+        this.currencyFormatValueDetectionServiceConfFactory = new CurrencyFormatValueDetectionServiceFactory(amountMoneyCurrencyStorage,
                 amountMoneyExchangeRateRetriever);
-        this.trieCurrencyFormatValueDetectionServiceConfFactory = new TrieCurrencyFormatValueDetectionServiceConfFactory(amountMoneyCurrencyStorage,
+        this.trieCurrencyFormatValueDetectionServiceConfFactory = new TrieCurrencyFormatValueDetectionServiceFactory(amountMoneyCurrencyStorage,
                 amountMoneyExchangeRateRetriever);
-        this.dateFormatValueDetectionServiceConfFactory = new DateFormatValueDetectionServiceConfFactory();
+        this.dateFormatValueDetectionServiceConfFactory = new DateFormatValueDetectionServiceFactory();
     }
 
     @Override
@@ -52,13 +52,13 @@ public class DelegatingValueDetectionServiceConfFactory implements ValueDetectio
         }else if(serviceConf instanceof DateFormatValueDetectionServiceConf) {
             retValue = dateFormatValueDetectionServiceConfFactory.createService((DateFormatValueDetectionServiceConf) serviceConf);
         }else {
-            ConfFactory confFactory = serviceConf.getClass().getAnnotation(ConfFactory.class);
+            Factory confFactory = serviceConf.getClass().getAnnotation(Factory.class);
             if(confFactory != null) {
-                Class<? extends ValueDetectionServiceConfFactory> serviceConfFactoryClass = confFactory.confFactoryClass();
+                Class<? extends ValueDetectionServiceFactory> serviceConfFactoryClass = confFactory.confFactoryClass();
                 try {
-                    Constructor<? extends ValueDetectionServiceConfFactory> serviceConfFactoryClassConstructor = serviceConfFactoryClass.getConstructor();
+                    Constructor<? extends ValueDetectionServiceFactory> serviceConfFactoryClassConstructor = serviceConfFactoryClass.getConstructor();
                     try {
-                        ValueDetectionServiceConfFactory serviceConfFactory = serviceConfFactoryClassConstructor.newInstance();
+                        ValueDetectionServiceFactory serviceConfFactory = serviceConfFactoryClassConstructor.newInstance();
                         retValue = serviceConfFactory.createService(serviceConf);
                     } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
                         throw new RuntimeException(ex);

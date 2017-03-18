@@ -21,11 +21,11 @@ import richtercloud.reflection.form.builder.components.money.AmountMoneyExchange
  *
  * @author richter
  */
-public class CurrencyFormatValueDetectionServiceConfFactory implements ValueDetectionServiceConfFactory<CurrencyFormatValueDetectionService, CurrencyFormatValueDetectionServiceConf> {
+public class CurrencyFormatValueDetectionServiceFactory implements ValueDetectionServiceFactory<CurrencyFormatValueDetectionService, CurrencyFormatValueDetectionServiceConf> {
     private final AmountMoneyCurrencyStorage amountMoneyCurrencyStorage;
     private final AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever;
 
-    public CurrencyFormatValueDetectionServiceConfFactory(AmountMoneyCurrencyStorage amountMoneyCurrencyStorage,
+    public CurrencyFormatValueDetectionServiceFactory(AmountMoneyCurrencyStorage amountMoneyCurrencyStorage,
             AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever) {
         this.amountMoneyCurrencyStorage = amountMoneyCurrencyStorage;
         this.amountMoneyExchangeRateRetriever = amountMoneyExchangeRateRetriever;

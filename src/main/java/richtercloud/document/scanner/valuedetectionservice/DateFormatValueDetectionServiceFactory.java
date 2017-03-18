@@ -18,11 +18,11 @@ package richtercloud.document.scanner.valuedetectionservice;
  *
  * @author richter
  */
-public class ContactValueDetectionServiceConfFactory implements ValueDetectionServiceConfFactory<ContactValueDetectionService, ContactValueDetectionServiceConf> {
+public class DateFormatValueDetectionServiceFactory implements ValueDetectionServiceFactory<DateFormatValueDetectionService, DateFormatValueDetectionServiceConf> {
 
     @Override
-    public ContactValueDetectionService createService(ContactValueDetectionServiceConf serviceConf) {
-        ContactValueDetectionService retValue = new ContactValueDetectionService();
+    public DateFormatValueDetectionService createService(DateFormatValueDetectionServiceConf serviceConf) {
+        DateFormatValueDetectionService retValue = new DateFormatValueDetectionService();
         return retValue;
     }
 }
