@@ -44,7 +44,6 @@ import richtercloud.document.scanner.valuedetectionservice.ValueDetectionResult;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionService;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceConf;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceConfFactory;
-import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceListener;
 import richtercloud.message.handler.ExceptionMessage;
 import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.Message;
@@ -69,7 +68,13 @@ public class DefaultEntityPanel extends EntityPanel {
     private ReflectionFormPanelTabbedPane entityCreationTabbedPane;
     private final AmountMoneyCurrencyStorage amountMoneyAdditionalCurrencyStorage;
     private final AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever;
-    private final Set<ValueDetectionServiceListener> listeners = new HashSet<>();
+    /**
+     * Store for the last results of
+     * {@link #valueDetectionNonGUI(richtercloud.document.scanner.gui.OCRSelectPanelPanelFetcher, boolean) }
+     * which one might display without retrieving them again from the OCR
+     * result.
+     */
+    private List<ValueDetectionResult<?>> detectionResults;
 
     /**
      * Creates new form EntityPanel
@@ -131,6 +136,10 @@ public class DefaultEntityPanel extends EntityPanel {
         return entityCreationTabbedPane;
     }
 
+    /**
+     * Re-creates value detection services from {@code documentScannerConf}
+     * which resets all added {@link ValueDetectionServiceListener}s.
+     */
     @Override
     public void applyValueDetectionServiceSelection() {
         ValueDetectionServiceConfFactory valueDetectionServiceConfFactory = new DelegatingValueDetectionServiceConfFactory(amountMoneyAdditionalCurrencyStorage,
@@ -143,13 +152,9 @@ public class DefaultEntityPanel extends EntityPanel {
         this.valueDetectionService = new DelegatingValueDetectionService(valueDetectionServices);
     }
 
-    /**
-     * Store for the last results of
-     * {@link #valueDetectionNonGUI(richtercloud.document.scanner.gui.OCRSelectPanelPanelFetcher, boolean) }
-     * which one might display without retrieving them again from the OCR
-     * result.
-     */
-    private List<ValueDetectionResult<?>> detectionResults;
+    public ValueDetectionService<?> getValueDetectionService() {
+        return valueDetectionService;
+    }
 
     @Override
     public List<ValueDetectionResult<?>> getDetectionResults() {
@@ -174,9 +179,6 @@ public class DefaultEntityPanel extends EntityPanel {
                     issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             });
-            for(ValueDetectionServiceListener listener : listeners) {
-                listener.onFinished();
-            }
         },
                 "auto-ocr-value-detection-thread");
         valueDetectionThread.start();
@@ -235,15 +237,5 @@ public class DefaultEntityPanel extends EntityPanel {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(entityCreationTabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 347, Short.MAX_VALUE)
         );
-    }
-
-    @Override
-    public void addValueDetectionListener(ValueDetectionServiceListener listener) {
-        this.listeners.add(listener);
-    }
-
-    @Override
-    public void removeValueDetectionListener(ValueDetectionServiceListener listener) {
-        this.listeners.remove(listener);
     }
 }

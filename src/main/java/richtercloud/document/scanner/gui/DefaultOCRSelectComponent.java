@@ -32,6 +32,7 @@ import richtercloud.document.scanner.ifaces.EntityPanel;
 import richtercloud.document.scanner.ifaces.OCREngine;
 import richtercloud.document.scanner.ifaces.OCRSelectComponent;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanel;
+import richtercloud.document.scanner.ifaces.ProgressButton;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceListener;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceUpdateEvent;
 
@@ -57,7 +58,7 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
     private final JButton zoomInButton = new JButton("+");
     private final JButton zoomOutButton = new JButton("-");
     private final JButton valueDetectionResultsButton = new JButton("Set auto detection results on form");
-    private final JButton valueDetectionButton = new JButton("(Re-)Run auto detection");
+    private final ProgressButton valueDetectionButton = new DefaultProgressButton("(Re-)Run auto detection");
     private final JCheckBox valueDetectionCheckBox = new JCheckBox("Show auto detection components on form");
     private float zoomLevel = 1;
     private final EntityPanel entityPanel;
@@ -246,9 +247,11 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
                 }
             }
         });
-        entityPanel.addValueDetectionListener(new ValueDetectionServiceListener() {
+        entityPanel.getValueDetectionService().addListener(new ValueDetectionServiceListener() {
             @Override
             public void onUpdate(ValueDetectionServiceUpdateEvent updateEvent) {
+                float progress = updateEvent.getWordNumber()/(float)updateEvent.getWordCount();
+                DefaultOCRSelectComponent.this.getValueDetectionButton().setProgress(progress);
             }
 
             @Override
@@ -293,7 +296,7 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
     }
 
     @Override
-    public JButton getValueDetectionButton() {
+    public ProgressButton getValueDetectionButton() {
         return valueDetectionButton;
     }
 

@@ -512,9 +512,11 @@ public class DefaultMainPanel extends MainPanel {
         }
         if(this.documentScannerConf.isAutoOCRValueDetection()) {
             oCRSelectComponent.getValueDetectionButton().setEnabled(false);
-            entityPanel.addValueDetectionListener(new ValueDetectionServiceListener() {
+            entityPanel.getValueDetectionService().addListener(new ValueDetectionServiceListener() {
                 @Override
                 public void onUpdate(ValueDetectionServiceUpdateEvent updateEvent) {
+                    float progress = updateEvent.getWordNumber()/(float)updateEvent.getWordCount();
+                    oCRSelectComponent.getValueDetectionButton().setProgress(progress);
                 }
 
                 @Override
