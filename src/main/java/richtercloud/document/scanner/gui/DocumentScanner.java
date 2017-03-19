@@ -1051,36 +1051,41 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     }//GEN-LAST:event_optionsMenuItemActionPerformed
 
     private void editEntryMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_editEntryMenuItemActionPerformed
-        EntityEditingDialog entityEditingDialog = new EntityEditingDialog(this,
-                Constants.ENTITY_CLASSES,
-                Constants.PRIMARY_CLASS_SELECTION,
-                storage,
-                issueHandler,
-                confirmMessageHandler,
-                idApplier,
-                warningHandlers,
-                queryComponentFieldInitializer,
-                entryStorage,
-                readOnlyFieldRetriever);
-        entityEditingDialog.setVisible(true); //blocks
-        List<Object> selectedEntities = entityEditingDialog.getSelectedEntities();
-        if(selectedEntities.size() > Constants.SELECTED_ENTITIES_EDIT_WARNING) {
-            String answer = confirmMessageHandler.confirm(new Message(
-                    String.format("More than %d entities are supposed to be opened for editing. This might take a long time. Continue?",
-                            Constants.SELECTED_ENTITIES_EDIT_WARNING),
-                    JOptionPane.QUESTION_MESSAGE,
-                    "Open documents?"),
-                    "Yes", "No");
-            if(!answer.equals("Yes")) {
-                return;
+        try {
+            EntityEditingDialog entityEditingDialog = new EntityEditingDialog(this,
+                    Constants.ENTITY_CLASSES,
+                    Constants.PRIMARY_CLASS_SELECTION,
+                    storage,
+                    issueHandler,
+                    confirmMessageHandler,
+                    idApplier,
+                    warningHandlers,
+                    queryComponentFieldInitializer,
+                    entryStorage,
+                    readOnlyFieldRetriever);
+            entityEditingDialog.setVisible(true); //blocks
+            List<Object> selectedEntities = entityEditingDialog.getSelectedEntities();
+            if(selectedEntities.size() > Constants.SELECTED_ENTITIES_EDIT_WARNING) {
+                String answer = confirmMessageHandler.confirm(new Message(
+                        String.format("More than %d entities are supposed to be opened for editing. This might take a long time. Continue?",
+                                Constants.SELECTED_ENTITIES_EDIT_WARNING),
+                        JOptionPane.QUESTION_MESSAGE,
+                        "Open documents?"),
+                        "Yes", "No");
+                if(!answer.equals("Yes")) {
+                    return;
+                }
             }
-        }
-        for(Object selectedEntity : selectedEntities) {
-            try {
-                addDocument(selectedEntity);
-            } catch (DocumentAddException | IOException ex) {
-                handleException(ex, "Exception during adding new document");
+            for(Object selectedEntity : selectedEntities) {
+                try {
+                    addDocument(selectedEntity);
+                } catch (DocumentAddException | IOException ex) {
+                    handleException(ex, "Exception during adding new document");
+                }
             }
+        }catch(Throwable ex) {
+            LOGGER.error("an unexpected exception occured during editing entry", ex);
+            issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
         }
     }//GEN-LAST:event_editEntryMenuItemActionPerformed
 
