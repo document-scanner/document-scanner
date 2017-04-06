@@ -48,7 +48,6 @@ import richtercloud.document.scanner.model.validator.WorkflowItemValidator;
 import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.Message;
-import richtercloud.reflection.form.builder.FieldRetriever;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
 import richtercloud.reflection.form.builder.jpa.panels.QueryHistoryEntryStorage;
@@ -58,6 +57,7 @@ import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 import richtercloud.reflection.form.builder.panels.ListPanelItemEvent;
 import richtercloud.reflection.form.builder.panels.ListPanelItemEventVetoException;
 import richtercloud.reflection.form.builder.panels.ListPanelItemListener;
+import richtercloud.validation.tools.FieldRetriever;
 
 /**
  * Allows to set in-reply-to relationship of {@link CommunicationItem} with

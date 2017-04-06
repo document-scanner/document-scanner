@@ -34,7 +34,6 @@ import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.Message;
 import richtercloud.reflection.form.builder.ClassInfo;
-import richtercloud.reflection.form.builder.FieldRetriever;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
 import richtercloud.reflection.form.builder.jpa.panels.QueryHistoryEntryStorage;
@@ -42,6 +41,7 @@ import richtercloud.reflection.form.builder.jpa.panels.QueryPanel;
 import richtercloud.reflection.form.builder.jpa.storage.FieldInitializer;
 import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 import richtercloud.reflection.form.builder.storage.StorageException;
+import richtercloud.validation.tools.FieldRetriever;
 
 /**
  * A dialog to select the class and the concrete entity to edit or delete it.

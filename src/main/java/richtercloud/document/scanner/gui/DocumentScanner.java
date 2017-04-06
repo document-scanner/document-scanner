@@ -117,7 +117,6 @@ import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
 import richtercloud.message.handler.raven.bug.handler.RavenBugHandler;
 import richtercloud.reflection.form.builder.AnyType;
-import richtercloud.reflection.form.builder.FieldRetriever;
 import richtercloud.reflection.form.builder.components.date.UtilDatePicker;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
@@ -156,6 +155,7 @@ import richtercloud.reflection.form.builder.storage.copy.StorageConfCopyFactory;
 import richtercloud.reflection.form.builder.typehandler.TypeHandler;
 import richtercloud.swing.worker.get.wait.dialog.SwingWorkerCompletionWaiter;
 import richtercloud.swing.worker.get.wait.dialog.SwingWorkerGetWaitDialog;
+import richtercloud.validation.tools.FieldRetriever;
 
 /**
  * <h2>Status bar</h2>

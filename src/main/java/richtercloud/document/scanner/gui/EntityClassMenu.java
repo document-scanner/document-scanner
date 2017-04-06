@@ -32,9 +32,9 @@ import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.reflection.form.builder.FieldInfo;
-import richtercloud.reflection.form.builder.FieldRetriever;
 import richtercloud.reflection.form.builder.ReflectionFormPanel;
 import richtercloud.reflection.form.builder.TransformationException;
+import richtercloud.validation.tools.FieldRetriever;
 
 /**
  * A {@link JMenu} which permits lazy loading of contained items representing

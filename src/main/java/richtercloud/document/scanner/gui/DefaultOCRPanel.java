@@ -39,8 +39,8 @@ import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.ifaces.OCRPanel;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.message.handler.MessageHandler;
-import richtercloud.reflection.form.builder.FieldRetriever;
 import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
+import richtercloud.validation.tools.FieldRetriever;
 
 /**
  * The counterpart of every {@link OCRSelectPanel} which contains a text field

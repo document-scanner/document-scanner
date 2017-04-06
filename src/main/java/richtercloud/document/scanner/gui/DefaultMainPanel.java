@@ -79,7 +79,6 @@ import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.ExceptionMessage;
 import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.Message;
-import richtercloud.reflection.form.builder.FieldRetriever;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyUsageStatisticsStorage;
@@ -99,6 +98,7 @@ import richtercloud.reflection.form.builder.jpa.typehandler.ElementCollectionTyp
 import richtercloud.reflection.form.builder.jpa.typehandler.ToManyTypeHandler;
 import richtercloud.reflection.form.builder.jpa.typehandler.ToOneTypeHandler;
 import richtercloud.reflection.form.builder.typehandler.TypeHandler;
+import richtercloud.validation.tools.FieldRetriever;
 
 /**
  * Manages all central windows (see {@link DocumentScanner} for details and

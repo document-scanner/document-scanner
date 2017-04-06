@@ -25,8 +25,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.message.handler.MessageHandler;
-import richtercloud.reflection.form.builder.FieldRetriever;
 import richtercloud.reflection.form.builder.ReflectionFormPanel;
+import richtercloud.validation.tools.FieldRetriever;
 
 /**
  * Creates {@link JMenuItem}s to be added to {@link JPopupMenu}s or
