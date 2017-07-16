@@ -15,7 +15,7 @@
         <richtercloud.document.scanner.openjpa.version>2.2.0</richtercloud.document.scanner.openjpa.version>
         <richtercloud.document.scanner.hibernate.version>5.0.11.Final</richtercloud.document.scanner.hibernate.version>
         <richtercloud.document.scanner.eclipselink.version>2.6.4</richtercloud.document.scanner.eclipselink.version>
-        <izpack.version>5.0.11-SNAPSHOT</izpack.version>
+        <izpack.version>5.1.1</izpack.version>
         <izpack.staging>${project.build.directory}/staging</izpack.staging>
         <richtercloud.document.scanner.version>1.0-beta4</richtercloud.document.scanner.version>
             <!-- for izpack plugin below (property for better visibility) -->
