@@ -25,15 +25,19 @@
                   <Component id="usernameLabel" alignment="0" min="-2" max="-2" attributes="0"/>
                   <Component id="passwordLabel" alignment="0" min="-2" max="-2" attributes="0"/>
                   <Component id="databaseDirTextFieldLabel" alignment="0" min="-2" max="-2" attributes="0"/>
+                  <Component id="initdbBinaryPathTextFieldLabel" alignment="0" min="-2" max="-2" attributes="0"/>
+                  <Component id="postgresBinaryPathTextFieldLabel" alignment="0" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace type="separate" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
                   <Component id="databaseDirTextField" max="32767" attributes="0"/>
-                  <Component id="passwordPasswordField" pref="584" max="32767" attributes="0"/>
+                  <Component id="passwordPasswordField" pref="576" max="32767" attributes="0"/>
                   <Component id="usernameTextField" max="32767" attributes="0"/>
                   <Component id="portSpinner" max="32767" attributes="0"/>
                   <Component id="hostnameTextField" max="32767" attributes="0"/>
                   <Component id="databaseNameTextField" max="32767" attributes="0"/>
+                  <Component id="initdbBinaryPathTextField" max="32767" attributes="0"/>
+                  <Component id="postgresBinaryPathTextField" alignment="0" max="32767" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
           </Group>
@@ -71,6 +75,16 @@
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="passwordPasswordField" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="passwordLabel" alignment="3" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="3" attributes="0">
+                  <Component id="initdbBinaryPathTextField" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="initdbBinaryPathTextFieldLabel" alignment="3" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="3" attributes="0">
+                  <Component id="postgresBinaryPathTextField" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="postgresBinaryPathTextFieldLabel" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace max="32767" attributes="0"/>
           </Group>
@@ -121,6 +135,20 @@
     <Component class="javax.swing.JLabel" name="databaseDirTextFieldLabel">
       <Properties>
         <Property name="text" type="java.lang.String" value="Database directory"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JTextField" name="initdbBinaryPathTextField">
+    </Component>
+    <Component class="javax.swing.JTextField" name="postgresBinaryPathTextField">
+    </Component>
+    <Component class="javax.swing.JLabel" name="initdbBinaryPathTextFieldLabel">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="initdb binary path"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JLabel" name="postgresBinaryPathTextFieldLabel">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="postgres binary path"/>
       </Properties>
     </Component>
   </SubComponents>

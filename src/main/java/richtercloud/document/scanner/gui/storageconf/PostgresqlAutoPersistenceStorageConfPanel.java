@@ -35,6 +35,8 @@ public class PostgresqlAutoPersistenceStorageConfPanel extends StorageConfPanel<
         this.hostnameTextField.setText(storageConf.getHostname());
         this.portSpinner.setValue(storageConf.getPort());
         this.usernameTextField.setText(storageConf.getUsername());
+        this.initdbBinaryPathTextField.setText(storageConf.getInitdbBinaryPath());
+        this.postgresBinaryPathTextField.setText(storageConf.getPostgresBinaryPath());
     }
 
     @Override
@@ -52,6 +54,8 @@ public class PostgresqlAutoPersistenceStorageConfPanel extends StorageConfPanel<
         this.storageConf.setUsername(username);
         String password = new String(this.passwordPasswordField.getPassword());
         this.storageConf.setPassword(password);
+        this.storageConf.setInitdbBinaryPath(this.initdbBinaryPathTextField.getText());
+        this.storageConf.setPostgresBinaryPath(this.postgresBinaryPathTextField.getText());
     }
 
     @Override
@@ -80,6 +84,10 @@ public class PostgresqlAutoPersistenceStorageConfPanel extends StorageConfPanel<
         jLabel1 = new javax.swing.JLabel();
         databaseDirTextField = new javax.swing.JTextField();
         databaseDirTextFieldLabel = new javax.swing.JLabel();
+        initdbBinaryPathTextField = new javax.swing.JTextField();
+        postgresBinaryPathTextField = new javax.swing.JTextField();
+        initdbBinaryPathTextFieldLabel = new javax.swing.JLabel();
+        postgresBinaryPathTextFieldLabel = new javax.swing.JLabel();
 
         databaseNameTextFieldLabel.setText("Database name");
 
@@ -95,6 +103,10 @@ public class PostgresqlAutoPersistenceStorageConfPanel extends StorageConfPanel<
 
         databaseDirTextFieldLabel.setText("Database directory");
 
+        initdbBinaryPathTextFieldLabel.setText("initdb binary path");
+
+        postgresBinaryPathTextFieldLabel.setText("postgres binary path");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -107,15 +119,19 @@ public class PostgresqlAutoPersistenceStorageConfPanel extends StorageConfPanel<
                     .addComponent(jLabel1)
                     .addComponent(usernameLabel)
                     .addComponent(passwordLabel)
-                    .addComponent(databaseDirTextFieldLabel))
+                    .addComponent(databaseDirTextFieldLabel)
+                    .addComponent(initdbBinaryPathTextFieldLabel)
+                    .addComponent(postgresBinaryPathTextFieldLabel))
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(databaseDirTextField)
-                    .addComponent(passwordPasswordField, javax.swing.GroupLayout.DEFAULT_SIZE, 584, Short.MAX_VALUE)
+                    .addComponent(passwordPasswordField, javax.swing.GroupLayout.DEFAULT_SIZE, 576, Short.MAX_VALUE)
                     .addComponent(usernameTextField)
                     .addComponent(portSpinner)
                     .addComponent(hostnameTextField)
-                    .addComponent(databaseNameTextField))
+                    .addComponent(databaseNameTextField)
+                    .addComponent(initdbBinaryPathTextField)
+                    .addComponent(postgresBinaryPathTextField))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -145,6 +161,14 @@ public class PostgresqlAutoPersistenceStorageConfPanel extends StorageConfPanel<
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(passwordPasswordField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(passwordLabel))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(initdbBinaryPathTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(initdbBinaryPathTextFieldLabel))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(postgresBinaryPathTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(postgresBinaryPathTextFieldLabel))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
@@ -157,10 +181,14 @@ public class PostgresqlAutoPersistenceStorageConfPanel extends StorageConfPanel<
     private javax.swing.JLabel databaseNameTextFieldLabel;
     private javax.swing.JTextField hostnameTextField;
     private javax.swing.JLabel hostnameTextFieldLabel;
+    private javax.swing.JTextField initdbBinaryPathTextField;
+    private javax.swing.JLabel initdbBinaryPathTextFieldLabel;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel passwordLabel;
     private javax.swing.JPasswordField passwordPasswordField;
     private javax.swing.JSpinner portSpinner;
+    private javax.swing.JTextField postgresBinaryPathTextField;
+    private javax.swing.JLabel postgresBinaryPathTextFieldLabel;
     private javax.swing.JLabel usernameLabel;
     private javax.swing.JTextField usernameTextField;
     // End of variables declaration//GEN-END:variables

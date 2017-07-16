@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jscience.economics.money.Currency;
 import richtercloud.document.scanner.components.DateOCRResultFormatter;
 import richtercloud.document.scanner.components.OCRResultFormatter;
@@ -279,10 +280,13 @@ public class DocumentScannerConf implements Serializable {
         this.availableStorageConfs.add(new DerbyNetworkPersistenceStorageConf(Constants.ENTITY_CLASSES,
                 HOSTNAME_DEFAULT,
                 SCHEME_CHECKSUM_FILE_DEFAULT));
+        Pair<String, String> bestInitialPostgresqlBasePathPair = PostgresqlAutoPersistenceStorageConf.findBestInitialPostgresqlBasePath();
         this.availableStorageConfs.add(new PostgresqlAutoPersistenceStorageConf(Constants.ENTITY_CLASSES,
                 "document-scanner",
                 SCHEME_CHECKSUM_FILE_DEFAULT,
-                POSTGRESQL_DATABASE_DIR_DEFAULT));
+                POSTGRESQL_DATABASE_DIR_DEFAULT,
+                bestInitialPostgresqlBasePathPair.getKey(),
+                bestInitialPostgresqlBasePathPair.getValue()));
         this.availableStorageConfs.add(new MySQLAutoPersistenceStorageConf(Constants.ENTITY_CLASSES,
                 "document-scanner",
                 MYSQL_DATABASE_DIR_DEFAULT,
