@@ -74,17 +74,19 @@ public class TesseractOCREngineConf extends ProcessOCREngineConf {
     /**
      *
      * @return
-     * @throws IllegalStateException if {@code tesseract} binary invoked with
-     * {@code --list-langs} returns a code {@code != 0}
+     * @throws TesseractOCREngineAvailableLanguageRetrievalException if
+     * {@code tesseract} binary invoked with {@code --list-langs} returns a code
+     * {@code != 0} or empty output of both {@code stdout} and {@code stderr} or
+     * output on both {@code stdout} and {@code stderr}
      */
-    public List<String> getAvailableLanguages() throws IllegalStateException, IOException, InterruptedException {
+    public List<String> getAvailableLanguages() throws TesseractOCREngineAvailableLanguageRetrievalException, IOException, InterruptedException {
         ProcessBuilder tesseractProcessBuilder = new ProcessBuilder(this.getBinary(), "--list-langs");
         Process tesseractProcess = tesseractProcessBuilder.redirectOutput(ProcessBuilder.Redirect.PIPE).start();
         int tesseractProcessReturnCode = tesseractProcess.waitFor();
         String tesseractProcessStdout = IOUtils.toString(tesseractProcess.getInputStream());
         String tesseractProcessStderr = IOUtils.toString(tesseractProcess.getErrorStream());
         if(tesseractProcessReturnCode != 0) {
-            throw new IllegalStateException(String.format("The tesseract process '%s' unexpectedly returned with non-zero return code %d and output '%s' (stdout) and '%s' (stderr).", this.getBinary(), tesseractProcessReturnCode, tesseractProcessStdout, tesseractProcessStderr));
+            throw new TesseractOCREngineAvailableLanguageRetrievalException(String.format("The tesseract process '%s' unexpectedly returned with non-zero return code %d and output '%s' (stdout) and '%s' (stderr).", this.getBinary(), tesseractProcessReturnCode, tesseractProcessStdout, tesseractProcessStderr));
         }
         //tesseract --list-langs prints to stderr, reported as https://bugs.launchpad.net/ubuntu/+source/tesseract/+bug/1481015
         List<String> langs = new LinkedList<>();
@@ -94,10 +96,10 @@ public class TesseractOCREngineConf extends ProcessOCREngineConf {
             //for details and issue state). Since tesseract also has a useless output when invoked
             //with --version, do the following naive test
         if(tesseractProcessStdout.isEmpty() && tesseractProcessStderr.isEmpty()) {
-            throw new IllegalStateException("both stdout and stderr output is empty");
+            throw new TesseractOCREngineAvailableLanguageRetrievalException("both stdout and stderr output is empty");
         }
         if(!tesseractProcessStdout.isEmpty() && !tesseractProcessStderr.isEmpty()) {
-            throw new IllegalStateException("both stdout and stderr contain output");
+            throw new TesseractOCREngineAvailableLanguageRetrievalException("both stdout and stderr contain output");
         }
         if(!tesseractProcessStdout.isEmpty()) {
             relevantOutput = tesseractProcessStdout;
@@ -125,7 +127,7 @@ public class TesseractOCREngineConf extends ProcessOCREngineConf {
             if(getAvailableLanguages().isEmpty()) {
                 throw new OCREngineConfValidationException("list of available languages mustn't be empty");
             }
-        } catch (IOException | InterruptedException | IllegalStateException ex) {
+        } catch (IOException | InterruptedException | IllegalStateException | TesseractOCREngineAvailableLanguageRetrievalException ex) {
             throw new OCREngineConfValidationException(String.format("retrieval of available languages of tesseract binary '%s' failed (see nested exception for details)", getBinary()), ex);
         }
         if(getSelectedLanguages().isEmpty()) {

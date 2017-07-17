@@ -70,7 +70,7 @@ public class TesseractOCREngineConfPanel extends OCREngineConfPanel<TesseractOCR
             public void focusLost(FocusEvent e) {
                 try {
                     onBinaryChanged();
-                }catch (IOException | InterruptedException ex) {
+                }catch (IOException | InterruptedException | TesseractOCREngineAvailableLanguageRetrievalException ex) {
                     messageHandler.handle(new Message(ex, JOptionPane.WARNING_MESSAGE));
                 }
             }
@@ -86,8 +86,14 @@ public class TesseractOCREngineConfPanel extends OCREngineConfPanel<TesseractOCR
      *
      * @throws IOException
      * @throws InterruptedException
+     * @throws TesseractOCREngineAvailableLanguageRetrievalException if the
+     * execution of the {@code tesseract} binary for information about supported
+     * languages fails (see
+     * {@link TesseractOCREngineConf#getAvailableLanguages() } for details)
      */
-    private void onBinaryChanged() throws IOException, InterruptedException {
+    private void onBinaryChanged() throws IOException,
+            InterruptedException,
+            TesseractOCREngineAvailableLanguageRetrievalException {
         TesseractOCREngineConf confToValidate = new TesseractOCREngineConf(this.conf);
         confToValidate.setBinary(binaryTextField.getText());
 

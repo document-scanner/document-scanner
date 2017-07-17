@@ -1002,7 +1002,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             DocumentScannerConf documentScannerConf0 = new DocumentScannerConf(documentScannerConf);
             OCREngineSelectDialog oCREngineSelectDialog = new OCREngineSelectDialog(this,
                     documentScannerConf0,
-                    this.messageHandler);
+                    this.issueHandler);
             oCREngineSelectDialog.setLocationRelativeTo(this);
             oCREngineSelectDialog.setVisible(true);
             DocumentScannerConf documentScannerConf1 = oCREngineSelectDialog.getDocumentScannerConf();
