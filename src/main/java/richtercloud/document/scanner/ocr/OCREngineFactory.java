@@ -14,8 +14,8 @@
  */
 package richtercloud.document.scanner.ocr;
 
-import richtercloud.document.scanner.ifaces.OCREngineConf;
 import richtercloud.document.scanner.ifaces.OCREngine;
+import richtercloud.document.scanner.ifaces.OCREngineConf;
 
 /**
  *

@@ -16,9 +16,9 @@ package richtercloud.document.scanner.valuedetectionservice;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import richtercloud.document.scanner.valuedetectionservice.annotations.Factory;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
-import richtercloud.document.scanner.valuedetectionservice.annotations.Factory;
 
 /**
  *

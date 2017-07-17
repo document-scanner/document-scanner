@@ -14,7 +14,6 @@
  */
 package richtercloud.document.scanner.gui;
 
-import richtercloud.document.scanner.gui.ocrresult.FormatOCRResult;
 import java.awt.event.ActionEvent;
 import java.lang.reflect.Field;
 import java.text.DateFormat;
@@ -30,6 +29,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.components.ValueDetectionPanel;
+import richtercloud.document.scanner.gui.ocrresult.FormatOCRResult;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;

@@ -14,8 +14,8 @@
  */
 package richtercloud.document.scanner.ocr;
 
-import richtercloud.document.scanner.ifaces.OCREngineConf;
 import javax.swing.JPanel;
+import richtercloud.document.scanner.ifaces.OCREngineConf;
 
 /**
  * allows management of (eventually completely) different configuration

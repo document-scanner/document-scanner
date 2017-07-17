@@ -44,6 +44,7 @@ import richtercloud.document.scanner.valuedetectionservice.ValueDetectionResult;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionService;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceConf;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceCreationException;
+import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceFactory;
 import richtercloud.message.handler.ExceptionMessage;
 import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.Message;
@@ -51,7 +52,6 @@ import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrency
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyUsageStatisticsStorage;
 import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
-import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceFactory;
 
 /**
  *

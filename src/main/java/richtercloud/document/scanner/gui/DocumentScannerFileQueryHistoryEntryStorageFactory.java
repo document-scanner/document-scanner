@@ -20,8 +20,8 @@ import java.util.List;
 import java.util.Set;
 import richtercloud.document.scanner.model.Identifiable;
 import richtercloud.message.handler.MessageHandler;
-import richtercloud.reflection.form.builder.jpa.panels.XMLFileQueryHistoryEntryStorageFactory;
 import richtercloud.reflection.form.builder.jpa.panels.QueryHistoryEntryStorageFactory;
+import richtercloud.reflection.form.builder.jpa.panels.XMLFileQueryHistoryEntryStorageFactory;
 
 /**
  *
