@@ -28,12 +28,14 @@ import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.components.ValueDetectionPanel;
 import richtercloud.document.scanner.gui.ocrresult.OCRResult;
 import richtercloud.document.scanner.setter.ValueSetter;
+import richtercloud.message.handler.ExceptionMessage;
+import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.Message;
-import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.reflection.form.builder.FieldInfo;
 import richtercloud.reflection.form.builder.ReflectionFormPanel;
 import richtercloud.reflection.form.builder.TransformationException;
+import richtercloud.validation.tools.FieldRetrievalException;
 import richtercloud.validation.tools.FieldRetriever;
 
 /**
@@ -44,27 +46,35 @@ import richtercloud.validation.tools.FieldRetriever;
 public class EntityClassMenu extends JMenu {
     private static final long serialVersionUID = 1L;
     private final static Logger LOGGER = LoggerFactory.getLogger(EntityClassMenu.class);
-    private final MessageHandler messageHandler;
+    private final IssueHandler issueHandler;
 
     public EntityClassMenu(Class<?> entityClass,
             FieldRetriever fieldRetriever,
             ReflectionFormPanelTabbedPane reflectionFormPanelTabbedPane,
             Map<Class<? extends JComponent>, ValueSetter<?, ?>> valueSetterMapping,
             AbstractFieldPopupMenuFactory fieldPopupMenuFactory,
-            MessageHandler messageHandler) {
+            IssueHandler issueHandler) {
         super(findClassName(entityClass));
-        this.messageHandler = messageHandler;
+        this.issueHandler = issueHandler;
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
                 ReflectionFormPanel reflectionFormPanel;
                 try {
                     reflectionFormPanel = reflectionFormPanelTabbedPane.getReflectionFormPanel(entityClass);
-                } catch (TransformationException ex) {
-                    EntityClassMenu.this.messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+                } catch (TransformationException | FieldRetrievalException ex) {
+                    EntityClassMenu.this.issueHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
                     return;
                 }
-                List<Field> relevantFields = fieldRetriever.retrieveRelevantFields(entityClass);
+                List<Field> relevantFields;
+                try {
+                    relevantFields = fieldRetriever.retrieveRelevantFields(entityClass);
+                } catch (FieldRetrievalException ex) {
+                    LOGGER.error("unexpected exception during retrieval of fields",
+                            ex);
+                    issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+                    return;
+                }
                 for(Field relevantField : relevantFields) {
                     JComponent relevantFieldComponent = reflectionFormPanel.getComponentByField(relevantField);
                     assert relevantFieldComponent instanceof ValueDetectionPanel;

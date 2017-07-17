@@ -19,6 +19,7 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JTextArea;
 import richtercloud.document.scanner.setter.ValueSetter;
+import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.ReflectionFormPanel;
 
@@ -28,15 +29,15 @@ import richtercloud.reflection.form.builder.ReflectionFormPanel;
  */
 public class OCRFieldPopupMenuFactory extends AbstractFieldPopupMenuFactory {
     private final JTextArea oCRResultTextArea;
-    private final MessageHandler messageHandler;
+    private final IssueHandler issueHandler;
 
     public OCRFieldPopupMenuFactory(JTextArea oCRResultTextArea,
-            MessageHandler messageHandler,
+            IssueHandler issueHandler,
             Map<Class<? extends JComponent>, ValueSetter<?, ?>> valueSetterMapping) {
         super(valueSetterMapping,
-                messageHandler);
+                issueHandler);
         this.oCRResultTextArea = oCRResultTextArea;
-        this.messageHandler = messageHandler;
+        this.issueHandler = issueHandler;
     }
 
     public JTextArea getoCRResultTextArea() {
@@ -44,7 +45,7 @@ public class OCRFieldPopupMenuFactory extends AbstractFieldPopupMenuFactory {
     }
 
     public MessageHandler getMessageHandler() {
-        return messageHandler;
+        return issueHandler;
     }
 
     @Override
@@ -53,6 +54,6 @@ public class OCRFieldPopupMenuFactory extends AbstractFieldPopupMenuFactory {
                 field,
                 reflectionFormPanel,
                 getValueSetterMapping(),
-                messageHandler);
+                issueHandler);
     }
 }

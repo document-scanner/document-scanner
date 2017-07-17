@@ -20,7 +20,7 @@ import javax.swing.ButtonGroup;
 import javax.swing.JComponent;
 import javax.swing.JTextArea;
 import richtercloud.document.scanner.setter.ValueSetter;
-import richtercloud.message.handler.MessageHandler;
+import richtercloud.message.handler.IssueHandler;
 import richtercloud.reflection.form.builder.ReflectionFormPanel;
 
 /**
@@ -42,10 +42,10 @@ public class FormatOCRFieldMenuPopupFactory extends OCRFieldPopupMenuFactory {
             ButtonGroup timeFormatPopupButtonGroup,
             ButtonGroup dateTimeFormatPopupButtonGroup,
             JTextArea oCRResultTextArea,
-            MessageHandler messageHandler,
+            IssueHandler issueHandler,
             Map<Class<? extends JComponent>, ValueSetter<?, ?>> valueSetterMapping) {
         super(oCRResultTextArea,
-                messageHandler,
+                issueHandler,
                 valueSetterMapping);
         this.numberFormatPopupButtonGroup = numberFormatPopupButtonGroup;
         this.percentFormatPopupButtonGroup = percentFormatPopupButtonGroup;

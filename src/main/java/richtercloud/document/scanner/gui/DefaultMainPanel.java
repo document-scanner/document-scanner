@@ -98,6 +98,7 @@ import richtercloud.reflection.form.builder.jpa.typehandler.ElementCollectionTyp
 import richtercloud.reflection.form.builder.jpa.typehandler.ToManyTypeHandler;
 import richtercloud.reflection.form.builder.jpa.typehandler.ToOneTypeHandler;
 import richtercloud.reflection.form.builder.typehandler.TypeHandler;
+import richtercloud.validation.tools.FieldRetrievalException;
 import richtercloud.validation.tools.FieldRetriever;
 
 /**
@@ -386,7 +387,15 @@ public class DefaultMainPanel extends MainPanel {
      */
     @Override
     public void addDocument(Object entityToEdit) throws DocumentAddException, IOException {
-        List<Field> entityClassFields = reflectionFormBuilderFieldRetriever.retrieveRelevantFields(entityToEdit.getClass());
+        List<Field> entityClassFields;
+        try {
+            entityClassFields = reflectionFormBuilderFieldRetriever.retrieveRelevantFields(entityToEdit.getClass());
+        } catch (FieldRetrievalException ex) {
+            LOGGER.error("unexpected exception during retrieval of fields",
+                    ex);
+            this.issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+            return;
+        }
         Field entityToEditScanResultField = null;
         for(Field entityClassField : entityClassFields) {
             ScanResult scanResult = entityClassField.getAnnotation(ScanResult.class);

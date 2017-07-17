@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.ListIterator;
 import richtercloud.document.scanner.components.annotations.Invisible;
 import richtercloud.reflection.form.builder.jpa.JPACachedFieldRetriever;
+import richtercloud.validation.tools.FieldRetrievalException;
 
 /**
  *
@@ -27,7 +28,7 @@ import richtercloud.reflection.form.builder.jpa.JPACachedFieldRetriever;
 public class DocumentScannerFieldRetriever extends JPACachedFieldRetriever {
 
     @Override
-    public List<Field> retrieveRelevantFields(Class<?> entityClass) {
+    public List<Field> retrieveRelevantFields(Class<?> entityClass) throws FieldRetrievalException {
         List<Field> retValue = super.retrieveRelevantFields(entityClass);
         ListIterator<Field> retValueItr = retValue.listIterator();
         while(retValueItr.hasNext()) {

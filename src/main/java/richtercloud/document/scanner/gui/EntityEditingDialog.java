@@ -41,6 +41,7 @@ import richtercloud.reflection.form.builder.jpa.panels.QueryPanel;
 import richtercloud.reflection.form.builder.jpa.storage.FieldInitializer;
 import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 import richtercloud.reflection.form.builder.storage.StorageException;
+import richtercloud.validation.tools.FieldRetrievalException;
 import richtercloud.validation.tools.FieldRetriever;
 
 /**
@@ -176,7 +177,7 @@ public class EntityEditingDialog extends javax.swing.JDialog {
                         fieldInitializer,
                         entryStorage
                 );
-            } catch (IllegalArgumentException | IllegalAccessException ex) {
+            } catch (IllegalArgumentException | IllegalAccessException | FieldRetrievalException ex) {
                 throw new RuntimeException(ex);
             }
             entityEditingQueryPanelCache.put(selectedEntityClass, entityEditingQueryPanel);

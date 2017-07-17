@@ -37,6 +37,7 @@ import richtercloud.reflection.form.builder.ReflectionFormPanel;
 import richtercloud.reflection.form.builder.TransformationException;
 import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
 import richtercloud.reflection.form.builder.jpa.JPAReflectionFormBuilder;
+import richtercloud.validation.tools.FieldRetrievalException;
 
 /**
  * Used as {@code JTabbedPane} and factory for all {@link ReflectionFormPanel}s
@@ -83,7 +84,7 @@ public class ReflectionFormPanelTabbedPane extends JTabbedPane {
             Object entityToEdit,
             JPAReflectionFormBuilder reflectionFormBuilder,
             FieldHandler fieldHandler,
-            MessageHandler messageHandler) throws TransformationException {
+            MessageHandler messageHandler) throws TransformationException, FieldRetrievalException {
         this.entityClasses = entityClasses;
         this.primaryClassSelection = primaryClassSelection;
         this.reflectionFormBuilder = reflectionFormBuilder;
@@ -131,7 +132,7 @@ public class ReflectionFormPanelTabbedPane extends JTabbedPane {
             ReflectionFormPanel selectedTabPanel = classPanelMap.get(entityClass);
             try {
                 selectedTabPanel = getReflectionFormPanel(entityClass);
-            } catch (TransformationException ex) {
+            } catch (TransformationException | FieldRetrievalException ex) {
                 String message = String.format("An exception during creation of components occured (details: %s)",
                         ex.getMessage());
                 LOGGER.error(message, ex);
@@ -167,7 +168,7 @@ public class ReflectionFormPanelTabbedPane extends JTabbedPane {
         return retValue;
     }
 
-    public ReflectionFormPanel getReflectionFormPanel(Class<?> entityClass) throws TransformationException {
+    public ReflectionFormPanel getReflectionFormPanel(Class<?> entityClass) throws TransformationException, FieldRetrievalException {
         ReflectionFormPanel reflectionFormPanel = classPanelMap.get(entityClass);
         if(reflectionFormPanel == null) {
             reflectionFormPanel = reflectionFormBuilder.transformEntityClass(entityClass,

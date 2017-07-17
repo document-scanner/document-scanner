@@ -57,6 +57,7 @@ import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 import richtercloud.reflection.form.builder.panels.ListPanelItemEvent;
 import richtercloud.reflection.form.builder.panels.ListPanelItemEventVetoException;
 import richtercloud.reflection.form.builder.panels.ListPanelItemListener;
+import richtercloud.validation.tools.FieldRetrievalException;
 import richtercloud.validation.tools.FieldRetriever;
 
 /**
@@ -130,7 +131,7 @@ public class WorkflowItemTreePanel extends JPanel {
             IdApplier idApplier,
             Map<Class<?>, WarningHandler<?>> warningHandlers,
             FieldInitializer fieldInitializer,
-            QueryHistoryEntryStorage entryStorage) throws IllegalArgumentException, IllegalAccessException {
+            QueryHistoryEntryStorage entryStorage) throws IllegalArgumentException, IllegalAccessException, FieldRetrievalException {
         this.entityClasses = entityClasses;
         this.primaryClassSelection = primaryClassSelection;
         this.storage = storage;
@@ -257,7 +258,7 @@ public class WorkflowItemTreePanel extends JPanel {
         this.updateListeners.remove(updateListener);
     }
 
-    public void reset() {
+    public void reset() throws FieldRetrievalException {
         this.queryListPanel.reset();
     }
 

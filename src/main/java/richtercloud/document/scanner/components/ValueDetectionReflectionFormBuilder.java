@@ -43,8 +43,8 @@ import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionResult;
 import richtercloud.message.handler.ConfirmMessageHandler;
+import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.Message;
-import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.Tools;
 import richtercloud.reflection.form.builder.TransformationException;
 import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
@@ -55,6 +55,7 @@ import richtercloud.reflection.form.builder.jpa.JPAReflectionFormBuilder;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
 import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
+import richtercloud.validation.tools.FieldRetrievalException;
 
 /**
  * The value of the Auto OCR value detection could be set on the field, but then
@@ -92,7 +93,7 @@ public class ValueDetectionReflectionFormBuilder extends JPAReflectionFormBuilde
 
     public ValueDetectionReflectionFormBuilder(PersistenceStorage storage,
             String fieldDescriptionDialogTitle,
-            MessageHandler messageHandler,
+            IssueHandler issueHandler,
             ConfirmMessageHandler confirmMessageHandler,
             JPAFieldRetriever fieldRetriever,
             IdApplier idApplier,
@@ -102,7 +103,7 @@ public class ValueDetectionReflectionFormBuilder extends JPAReflectionFormBuilde
             DocumentScannerConf documentScannerConf) {
         super(storage,
                 fieldDescriptionDialogTitle,
-                messageHandler,
+                issueHandler,
                 confirmMessageHandler,
                 fieldRetriever,
                 idApplier,
@@ -124,7 +125,7 @@ public class ValueDetectionReflectionFormBuilder extends JPAReflectionFormBuilde
     protected JComponent getClassComponent(final Field field,
             Class<?> entityClass,
             final Object instance,
-            FieldHandler fieldHandler) throws IllegalAccessException, FieldHandlingException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, InstantiationException {
+            FieldHandler fieldHandler) throws IllegalAccessException, FieldHandlingException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, InstantiationException, FieldRetrievalException {
         final JComponent classComponent = super.getClassComponent(field,
                 entityClass,
                 instance,
@@ -203,8 +204,8 @@ public class ValueDetectionReflectionFormBuilder extends JPAReflectionFormBuilde
                     }
                     try {
                         valueSetter.setValue(detectionResult.getValue(), classComponent);
-                    } catch (TransformationException ex) {
-                        getMessageHandler().handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+                    } catch (TransformationException | FieldRetrievalException ex) {
+                        getIssueHandler().handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
                     }
 
                     //set the combobox back to null in order to avoid the

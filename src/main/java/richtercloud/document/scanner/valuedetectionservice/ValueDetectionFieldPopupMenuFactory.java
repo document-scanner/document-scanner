@@ -20,6 +20,7 @@ import javax.swing.JComponent;
 import richtercloud.document.scanner.gui.AbstractFieldActionListener;
 import richtercloud.document.scanner.gui.AbstractFieldPopupMenuFactory;
 import richtercloud.document.scanner.setter.ValueSetter;
+import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.ReflectionFormPanel;
 
@@ -32,12 +33,12 @@ public class ValueDetectionFieldPopupMenuFactory extends AbstractFieldPopupMenuF
     private final MessageHandler messageHandler;
 
     public ValueDetectionFieldPopupMenuFactory(Object value,
-            MessageHandler messageHandler,
+            IssueHandler issueHandler,
             Map<Class<? extends JComponent>, ValueSetter<?, ?>> valueSetterMapping) {
         super(valueSetterMapping,
-                messageHandler);
+                issueHandler);
         this.value = value;
-        this.messageHandler = messageHandler;
+        this.messageHandler = issueHandler;
     }
 
     @Override

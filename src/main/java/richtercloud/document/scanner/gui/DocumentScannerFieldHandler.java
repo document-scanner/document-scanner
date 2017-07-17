@@ -73,6 +73,7 @@ import richtercloud.reflection.form.builder.jpa.typehandler.ElementCollectionTyp
 import richtercloud.reflection.form.builder.jpa.typehandler.ToManyTypeHandler;
 import richtercloud.reflection.form.builder.jpa.typehandler.ToOneTypeHandler;
 import richtercloud.reflection.form.builder.typehandler.TypeHandler;
+import richtercloud.validation.tools.FieldRetrievalException;
 import richtercloud.validation.tools.FieldRetriever;
 
 /**
@@ -94,7 +95,7 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
     };
     private final static ComponentHandler<WorkflowItemTreePanel> COMMUNICATION_TREE_PANEL_COMPONENT_HANDLER = new ComponentHandler<WorkflowItemTreePanel>() {
         @Override
-        public void reset(WorkflowItemTreePanel component) {
+        public void reset(WorkflowItemTreePanel component) throws FieldRetrievalException {
             component.reset();
         }
     };
@@ -290,7 +291,8 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
             FieldHandlingException,
             InvocationTargetException,
             NoSuchMethodException,
-            InstantiationException {
+            InstantiationException,
+            FieldRetrievalException {
         if(field == null) {
             throw new IllegalArgumentException("field mustn't be null");
         }

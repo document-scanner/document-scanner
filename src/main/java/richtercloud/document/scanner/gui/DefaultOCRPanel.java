@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.ifaces.OCRPanel;
 import richtercloud.document.scanner.setter.ValueSetter;
-import richtercloud.message.handler.MessageHandler;
+import richtercloud.message.handler.IssueHandler;
 import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 import richtercloud.validation.tools.FieldRetriever;
 
@@ -73,7 +73,7 @@ overkill and strangely results in > 20 identical format results of "-12345,987"
 public class DefaultOCRPanel extends OCRPanel {
     private static final long serialVersionUID = 1L;
     private final static Logger LOGGER = LoggerFactory.getLogger(DefaultOCRPanel.class);
-    private final MessageHandler messageHandler;
+    private final IssueHandler issueHandler;
     private final DocumentScannerConf documentScannerConf;
     private final JScrollPopupMenu currencyFormatPopup = new JScrollPopupMenu("Currency");
     private final JScrollPopupMenu dateFormatPopup = new JScrollPopupMenu("Date");
@@ -92,14 +92,14 @@ public class DefaultOCRPanel extends OCRPanel {
             ReflectionFormPanelTabbedPane reflectionFormPanelTabbedPane,
             Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping,
             PersistenceStorage storage,
-            MessageHandler messageHandler,
+            IssueHandler issueHandler,
             FieldRetriever fieldRetriever,
             DocumentScannerConf documentScannerConf) {
         this.initComponents();
-        if(messageHandler == null) {
+        if(issueHandler == null) {
             throw new IllegalArgumentException("messageHandler mustn't be null");
         }
-        this.messageHandler = messageHandler;
+        this.issueHandler = issueHandler;
         if(documentScannerConf == null) {
             throw new IllegalArgumentException("documentScannerConf mustn't be "
                     + "null");
@@ -113,7 +113,7 @@ public class DefaultOCRPanel extends OCRPanel {
                 timeFormatPopupButtonGroup,
                 dateTimeFormatPopupButtonGroup,
                 oCRResultTextArea,
-                messageHandler,
+                issueHandler,
                 valueSetterMapping);
         List<JMenuItem> oCRResultPopupPasteIntoMenuItems = oCRFieldMenuPopupFactory.createFieldPopupMenuItems(entityClassesSort,
                 reflectionFormPanelTabbedPane,
