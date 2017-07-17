@@ -132,6 +132,21 @@ public class ScannerResultDialog extends JDialog {
     private final BugHandler bugHandler;
     private final Window openDocumentWaitDialogParent;
 
+    /**
+     *
+     * @param owner
+     * @param initialScanResultImages
+     * @param preferredScanResultPanelWidth
+     * @param scannerDevice the scanner device used in the "Scan more" function
+     * (can be {@code null} initially, because a scanner might not be set up and
+     * only PDFs be opened, which then causes a warning to be displayed when the
+     * "Scan more" button is pressed)
+     * @param imageWrapperStorageDir
+     * @param messageHandler
+     * @param bugHandler
+     * @param openDocumentWaitDialogParent
+     * @throws IOException
+     */
     public ScannerResultDialog(Window owner,
             List<ImageWrapper> initialScanResultImages,
             int preferredScanResultPanelWidth,
@@ -145,9 +160,6 @@ public class ScannerResultDialog extends JDialog {
         this.openDocumentWaitDialogParent = openDocumentWaitDialogParent;
         this.panelWidth = preferredScanResultPanelWidth;
         this.panelHeight = panelWidth * 297 / 210;
-        if(scannerDevice == null) {
-            throw new IllegalArgumentException("scannerDevice mustn't be null");
-        }
         this.scannerDevice = scannerDevice;
         if(imageWrapperStorageDir == null) {
             throw new IllegalArgumentException("imageWrapperStorageDir mustn't be null");
@@ -297,7 +309,7 @@ public class ScannerResultDialog extends JDialog {
                     addImagesButton.setDisable(true);
                 }catch(Throwable ex) {
                     LOGGER.error("an unexpected exception during adding of images occured", ex);
-                    bugHandler.handleUnexpectedException(new ExceptionMessage(ex));
+                    this.bugHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             });
 
@@ -399,10 +411,18 @@ public class ScannerResultDialog extends JDialog {
             });
             scanMoreButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (event) -> {
                 try {
-                    List<ImageWrapper> newImages = DocumentScanner.retrieveImages(scannerDevice,
+                    if(this.scannerDevice == null) {
+                        //this is allowed since the dialog ought to be usable to
+                        //display opened PDFs without a set up scanner
+                        this.messageHandler.handle(new Message("No scanner has been selected and configured yet",
+                                JOptionPane.ERROR_MESSAGE,
+                                "No scanner selected and configured"));
+                        return;
+                    }
+                    List<ImageWrapper> newImages = DocumentScanner.retrieveImages(this.scannerDevice,
                             this,
-                            imageWrapperStorageDir,
-                            messageHandler);
+                            this.imageWrapperStorageDir,
+                            this.messageHandler);
                     if(newImages == null) {
                         //dialog has been canceled
                         return;
@@ -419,7 +439,7 @@ public class ScannerResultDialog extends JDialog {
                 } catch (SaneException | IOException ex) {
                     messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
                 } catch(DocumentSourceOptionMissingException ex) {
-                    bugHandler.handleUnexpectedException(new ExceptionMessage(ex));
+                    this.bugHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             });
             openDocumentButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (event) -> {
@@ -435,7 +455,8 @@ public class ScannerResultDialog extends JDialog {
                 List<ImageWrapper> newImages;
                 FutureTask<List<ImageWrapper>> swingTask = new FutureTask<>(() -> {
                     List<ImageWrapper> images0 = Tools.retrieveImages(selectedFile,
-                            openDocumentWaitDialogParent, imageWrapperStorageDir);
+                            this.openDocumentWaitDialogParent,
+                            this.imageWrapperStorageDir);
                     return images0;
                 });
                 SwingUtilities.invokeLater(swingTask);

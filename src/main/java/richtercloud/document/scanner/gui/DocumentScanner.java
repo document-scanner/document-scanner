@@ -1090,54 +1090,60 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     }//GEN-LAST:event_editEntryMenuItemActionPerformed
 
     private void openSelectionMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openSelectionMenuItemActionPerformed
-        JFileChooser chooser = new JFileChooser();
-        FileNameExtensionFilter filter = new FileNameExtensionFilter(
-                "PDF files", "pdf");
-        chooser.setFileFilter(filter);
-        int returnVal = chooser.showOpenDialog(this);
-        final File selectedFile = chooser.getSelectedFile();
-        if (returnVal != JFileChooser.APPROVE_OPTION) {
-            return;
-        }
         try {
-            List<ImageWrapper> images = Tools.retrieveImages(selectedFile,
-                    this,
-                    documentScannerConf.getImageWrapperStorageDir());
-            if(images == null) {
-                LOGGER.debug("image retrieval has been canceled, discontinuing adding document");
+            JFileChooser chooser = new JFileChooser();
+            FileNameExtensionFilter filter = new FileNameExtensionFilter(
+                    "PDF files", "pdf");
+            chooser.setFileFilter(filter);
+            int returnVal = chooser.showOpenDialog(this);
+            final File selectedFile = chooser.getSelectedFile();
+            if (returnVal != JFileChooser.APPROVE_OPTION) {
                 return;
             }
-            if(!images.isEmpty()) {
-                final List<List<ImageWrapper>> scannerResults = new LinkedList<>();
-                ScannerResultDialog scannerResultDialog = new ScannerResultDialog(this,
-                        images,
-                        this.documentScannerConf.getPreferredScanResultPanelWidth(),
-                        scannerDevice,
-                        documentScannerConf.getImageWrapperStorageDir(),
-                        javaFXDialogMessageHandler,
-                        issueHandler,
-                        this //openDocumentWaitDialogParent
-                );
-                scannerResultDialog.setLocationRelativeTo(this);
-                scannerResultDialog.setVisible(true);
-                if(this.documentScannerConf.isRememberPreferredScanResultPanelWidth()) {
-                    this.documentScannerConf.setPreferredScanResultPanelWidth(scannerResultDialog.getPanelWidth());
-                }
-                List<List<ImageWrapper>> dialogResult = scannerResultDialog.getSortedDocuments();
-                if(dialogResult == null) {
-                    //dialog canceled
+            try {
+                List<ImageWrapper> images = Tools.retrieveImages(selectedFile,
+                        this,
+                        documentScannerConf.getImageWrapperStorageDir());
+                if(images == null) {
+                    LOGGER.debug("image retrieval has been canceled, discontinuing adding document");
                     return;
                 }
-                scannerResults.addAll(scannerResultDialog.getSortedDocuments());
-                for(List<ImageWrapper> scannerResult : scannerResults) {
-                    addDocument(scannerResult,
-                            null //selectedFile
+                if(!images.isEmpty()) {
+                    final List<List<ImageWrapper>> scannerResults = new LinkedList<>();
+                    ScannerResultDialog scannerResultDialog = new ScannerResultDialog(this,
+                            images,
+                            this.documentScannerConf.getPreferredScanResultPanelWidth(),
+                            scannerDevice,
+                            documentScannerConf.getImageWrapperStorageDir(),
+                            javaFXDialogMessageHandler,
+                            issueHandler,
+                            this //openDocumentWaitDialogParent
                     );
+                    scannerResultDialog.setLocationRelativeTo(this);
+                    scannerResultDialog.setVisible(true);
+                    if(this.documentScannerConf.isRememberPreferredScanResultPanelWidth()) {
+                        this.documentScannerConf.setPreferredScanResultPanelWidth(scannerResultDialog.getPanelWidth());
+                    }
+                    List<List<ImageWrapper>> dialogResult = scannerResultDialog.getSortedDocuments();
+                    if(dialogResult == null) {
+                        //dialog canceled
+                        return;
+                    }
+                    scannerResults.addAll(scannerResultDialog.getSortedDocuments());
+                    for(List<ImageWrapper> scannerResult : scannerResults) {
+                        addDocument(scannerResult,
+                                null //selectedFile
+                        );
+                    }
+                    //this.validate(); //not necessary
                 }
-                //this.validate(); //not necessary
+            } catch (DocumentAddException | InterruptedException | ExecutionException | IOException ex) {
+                handleException(ex, "Exception during adding new document");
             }
-        } catch (DocumentAddException | InterruptedException | ExecutionException | IOException ex) {
-            handleException(ex, "Exception during adding new document");
+        }catch(Throwable ex) {
+            LOGGER.error("unexpected exception during opening of scan for selection occured",
+                    ex);
+            this.issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
         }
     }//GEN-LAST:event_openSelectionMenuItemActionPerformed
 
