@@ -88,6 +88,12 @@ public class ValueDetectionServiceConfDialog extends javax.swing.JDialog {
         }
         this.availableList.setCellRenderer(valueDetectionServiceListCellRenderer);
         this.selectedList.setCellRenderer(valueDetectionServiceListCellRenderer);
+        this.availableList.addListSelectionListener((listSelectionEvent) -> {
+            this.selectButton.setEnabled(this.availableList.getSelectedIndex() != -1);
+        });
+        this.selectedList.addListSelectionListener((listSelectionEvent) -> {
+            this.deselectButton.setEnabled(this.selectedList.getSelectedIndex() != -1);
+        });
     }
 
     public List<ValueDetectionServiceConf> getAvailableValueDetectionServiceConfs() {
@@ -142,6 +148,7 @@ public class ValueDetectionServiceConfDialog extends javax.swing.JDialog {
         });
 
         selectButton.setText("Select");
+        selectButton.setEnabled(false);
         selectButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 selectButtonActionPerformed(evt);
@@ -192,6 +199,7 @@ public class ValueDetectionServiceConfDialog extends javax.swing.JDialog {
         selectedListLabel.setText("Selected auto OCR value detection services:");
 
         deselectButton.setText("Deselect");
+        deselectButton.setEnabled(false);
         deselectButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 deselectButtonActionPerformed(evt);

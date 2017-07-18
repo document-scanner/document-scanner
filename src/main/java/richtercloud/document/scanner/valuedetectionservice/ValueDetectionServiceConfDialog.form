@@ -136,6 +136,7 @@
             <Component class="javax.swing.JButton" name="selectButton">
               <Properties>
                 <Property name="text" type="java.lang.String" value="Select"/>
+                <Property name="enabled" type="boolean" value="false"/>
               </Properties>
               <Events>
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="selectButtonActionPerformed"/>
@@ -216,6 +217,7 @@
             <Component class="javax.swing.JButton" name="deselectButton">
               <Properties>
                 <Property name="text" type="java.lang.String" value="Deselect"/>
+                <Property name="enabled" type="boolean" value="false"/>
               </Properties>
               <Events>
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="deselectButtonActionPerformed"/>
