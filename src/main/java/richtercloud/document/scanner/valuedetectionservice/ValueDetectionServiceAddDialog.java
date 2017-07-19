@@ -21,16 +21,12 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JDialog;
@@ -39,14 +35,11 @@ import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.ListCellRenderer;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.reflections.Reflections;
-import org.reflections.util.ClasspathHelper;
-import org.reflections.util.ConfigurationBuilder;
-import org.reflections.util.FilterBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.valuedetectionservice.annotations.ConfPanel;
 import richtercloud.message.handler.ExceptionMessage;
 import richtercloud.message.handler.IssueHandler;
@@ -67,6 +60,7 @@ import richtercloud.message.handler.Message;
  */
 public class ValueDetectionServiceAddDialog extends JDialog {
     private static final long serialVersionUID = 1L;
+    private static final Logger LOGGER = LoggerFactory.getLogger(ValueDetectionServiceAddDialog.class);
     private final IssueHandler issueHandler;
     private final DefaultComboBoxModel<Pair<String, ValueDetectionServiceConfPanel>> servicesComboBoxModel = new DefaultComboBoxModel<>();
     private final ListCellRenderer servicesComboBoxCellRenderer = new DefaultListCellRenderer() {
@@ -126,67 +120,6 @@ public class ValueDetectionServiceAddDialog extends JDialog {
 
     public Pair<String, ValueDetectionServiceConf> getCreatedConf() {
         return createdConf;
-    }
-
-    public static Set<Class<? extends ValueDetectionService>> loadValueDetectionServices(File valueDetectionServiceJARPath,
-            ClassLoader classLoader) throws IOException {
-        //Classes might be already be available on class path, so they
-        //should be sorted out
-        Set<Class<? extends ValueDetectionService>> alreadyLoadedClasses;
-        ConfigurationBuilder configuration = new ConfigurationBuilder()
-                .addClassLoader(classLoader)
-                .useParallelExecutor(Runtime.getRuntime().availableProcessors())
-                    //this idiom is necessary for the detection with
-                    //Reflections.getSubTypesOf to work
-                .filterInputsBy(FilterBuilder.parse("+.*"));
-        configuration.setUrls(ClasspathHelper.forClassLoader()
-            //works here, but not for files in JAR
-        );
-        Reflections reflections = new Reflections(configuration);
-        alreadyLoadedClasses = reflections.getSubTypesOf(ValueDetectionService.class);
-
-        //- unclear how to configure Reflections for packages in JAR
-        //programmatically (without package string) -> get all package names
-        //first
-        //- adding JAR entries which are not root directories causes
-        //Reflections to not work
-        JarFile jarFile = new JarFile(valueDetectionServiceJARPath);
-        Enumeration allEntries = jarFile.entries();
-        Set<String> packages = new HashSet<>();
-        while (allEntries.hasMoreElements()) {
-            JarEntry entry = (JarEntry) allEntries.nextElement();
-            if(entry.isDirectory()) {
-                String package0 = entry.getName();
-                //only add root packages because Reflections is confused
-                //otherwise (still unclear how to use) (have exactly one,
-                //trailing slash)
-                if(StringUtils.countMatches(package0, "/") == 1) {
-                    assert package0.endsWith("/");
-                    package0 = StringUtils.removeEnd(package0, "/");
-                    package0 = package0.replaceAll("/", ".");
-                    packages.add(package0);
-                }
-            }
-        }
-        configuration = new ConfigurationBuilder()
-                .addClassLoader(classLoader)
-                .useParallelExecutor(Runtime.getRuntime().availableProcessors())
-                    //this idiom is necessary for the detection with
-                    //Reflections.getSubTypesOf to work
-                .filterInputsBy(FilterBuilder.parse("+.*"))
-                .addUrls(ClasspathHelper.forClassLoader());
-        for(String package0 : packages) {
-            configuration.setUrls(ClasspathHelper.forPackage(package0, classLoader));
-        }
-        reflections = new Reflections(configuration);
-        Set<Class<? extends ValueDetectionService>> jarServices = reflections.getSubTypesOf(ValueDetectionService.class);
-        Set<Class<? extends ValueDetectionService>> services = new HashSet<>();
-        for(Class<? extends ValueDetectionService> jarService : jarServices) {
-            if(!alreadyLoadedClasses.contains(jarService)) {
-                services.add(jarService);
-            }
-        }
-        return services;
     }
 
     /**
@@ -328,90 +261,100 @@ public class ValueDetectionServiceAddDialog extends JDialog {
     }//GEN-LAST:event_pathBrowseButtonActionPerformed
 
     private void loadButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loadButtonActionPerformed
-        File selectedFile = new File(this.pathTextField.getText());
-        if(!selectedFile.exists()) {
-            issueHandler.handle(new Message(String.format("Selected file "
-                    + "'%s' doesn't exist",
-                            selectedFile.getName()
-                        //don't use absolute path here beacuse the message that
-                        //an existing directory doesn't exist is confusing
-                    ),
-                    JOptionPane.ERROR_MESSAGE,
-                    "File doesn't exist"));
-            return;
-        }
-        String selectedFilePath = selectedFile.getAbsolutePath();
-        servicesComboBoxModel.removeAllElements();
         try {
-            URLClassLoader classLoader = new URLClassLoader(new URL[] { selectedFile.toURI().toURL()},
-                    Thread.currentThread().getContextClassLoader()
-                        //System.class.getClassLoader doesn't work
-            );
-            Set<Class<? extends ValueDetectionService>> services = loadValueDetectionServices(selectedFile,
-                    classLoader);
-            if(services.isEmpty()) {
-                issueHandler.handle(new Message(String.format("Loaded JAR doesn't contain "
-                        + "classes implementing %s",
-                                ValueDetectionService.class),
+            File selectedFile = new File(this.pathTextField.getText());
+            if(!selectedFile.exists()) {
+                issueHandler.handle(new Message(String.format("Selected file "
+                        + "'%s' doesn't exist",
+                                selectedFile.getName()
+                            //don't use absolute path here beacuse the message that
+                            //an existing directory doesn't exist is confusing
+                        ),
                         JOptionPane.ERROR_MESSAGE,
-                        "No implementations in JAR"));
+                        "File doesn't exist"));
                 return;
             }
-            for(Class<? extends ValueDetectionService> service : services) {
-                ConfPanel serviceConfPanelAnnotation = service.getAnnotation(ConfPanel.class);
-                if(serviceConfPanelAnnotation == null) {
-                    issueHandler.handle(new Message(String.format("implementation of %s doesn't have a class "
-                            + "annotation %s, implementation will be ignored",
-                            service,
-                            ConfPanel.class),
-                            JOptionPane.WARNING_MESSAGE,
-                            "Implementation without annotation"));
-                    continue;
+            String selectedFilePath = selectedFile.getAbsolutePath();
+            servicesComboBoxModel.removeAllElements();
+            try {
+                URLClassLoader classLoader = new URLClassLoader(new URL[] { selectedFile.toURI().toURL()},
+                        Thread.currentThread().getContextClassLoader()
+                            //System.class.getClassLoader doesn't work
+                );
+                ServiceLoader<ValueDetectionService> serviceLoader = ServiceLoader.load(ValueDetectionService.class,
+                        classLoader);
+                Iterator<ValueDetectionService> serviceLoaderItr = serviceLoader.iterator();
+                Set<ValueDetectionService> services = new HashSet<>();
+                while(serviceLoaderItr.hasNext()) {
+                    ValueDetectionService valueDetectionService = serviceLoaderItr.next();
+                    services.add(valueDetectionService);
                 }
-                Class<? extends ValueDetectionServiceConfPanel> serviceConfPanelClass = serviceConfPanelAnnotation.confPanelClass();
-                ValueDetectionServiceConfPanel serviceConfPanel;
-                try {
-                    Constructor<? extends ValueDetectionServiceConfPanel> serviceConfPanelClassConstructor;
-                    try {
-                        serviceConfPanelClassConstructor = serviceConfPanelClass.getDeclaredConstructor();
-                    } catch (NoSuchMethodException | SecurityException ex) {
-                        issueHandler.handle(new Message(String.format(
-                                "configuration "
-                                + "panel class %s of service implementation %s "
-                                + "doesn't have an accessible constructor "
-                                + "which allows to pass an instance of %s as "
-                                + "only argument",
-                                        serviceConfPanelClass,
-                                        service,
-                                        ValueDetectionServiceConf.class),
-                                JOptionPane.ERROR_MESSAGE,
-                                "Missing constructor"
-                                ));
+                if(services.isEmpty()) {
+                    issueHandler.handle(new Message(String.format("Loaded JAR doesn't contain "
+                            + "classes implementing %s",
+                                    ValueDetectionService.class),
+                            JOptionPane.ERROR_MESSAGE,
+                            "No implementations in JAR"));
+                    return;
+                }
+                for(ValueDetectionService service : services) {
+                    ConfPanel serviceConfPanelAnnotation = service.getClass().getAnnotation(ConfPanel.class);
+                    if(serviceConfPanelAnnotation == null) {
+                        issueHandler.handle(new Message(String.format("implementation of %s doesn't have a class "
+                                + "annotation %s, implementation will be ignored",
+                                service,
+                                ConfPanel.class),
+                                JOptionPane.WARNING_MESSAGE,
+                                "Implementation without annotation"));
                         continue;
                     }
-                    serviceConfPanel = serviceConfPanelClassConstructor.newInstance();
-                    serviceConfPanel.init(issueHandler);
-                } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
-                    issueHandler.handle(new Message(String.format(
-                            "initialization of %s for service implementation "
-                            + "%s failed due to the following exception: %s",
-                                    serviceConfPanelClass,
-                                    service,
-                                    ExceptionUtils.getRootCauseMessage(ex)),
-                            JOptionPane.ERROR_MESSAGE,
-                            "Inialization of conf panel failed"));
-                    continue;
+                    Class<? extends ValueDetectionServiceConfPanel> serviceConfPanelClass = serviceConfPanelAnnotation.confPanelClass();
+                    ValueDetectionServiceConfPanel serviceConfPanel;
+                    try {
+                        Constructor<? extends ValueDetectionServiceConfPanel> serviceConfPanelClassConstructor;
+                        try {
+                            serviceConfPanelClassConstructor = serviceConfPanelClass.getDeclaredConstructor();
+                        } catch (NoSuchMethodException | SecurityException ex) {
+                            issueHandler.handle(new Message(String.format(
+                                    "configuration "
+                                    + "panel class %s of service implementation %s "
+                                    + "doesn't have an accessible constructor "
+                                    + "which allows to pass an instance of %s as "
+                                    + "only argument",
+                                            serviceConfPanelClass,
+                                            service,
+                                            ValueDetectionServiceConf.class),
+                                    JOptionPane.ERROR_MESSAGE,
+                                    "Missing constructor"
+                                    ));
+                            continue;
+                        }
+                        serviceConfPanel = serviceConfPanelClassConstructor.newInstance();
+                        serviceConfPanel.init(issueHandler);
+                    } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+                        issueHandler.handle(new Message(String.format(
+                                "initialization of %s for service implementation "
+                                + "%s failed due to the following exception: %s",
+                                        serviceConfPanelClass,
+                                        service,
+                                        ExceptionUtils.getRootCauseMessage(ex)),
+                                JOptionPane.ERROR_MESSAGE,
+                                "Inialization of conf panel failed"));
+                        continue;
+                    }
+                    Pair<String, ValueDetectionServiceConfPanel> newElement = new ImmutablePair<String, ValueDetectionServiceConfPanel>(service.getClass().getSimpleName(),
+                            serviceConfPanel);
+                    servicesComboBoxModel.addElement(newElement);
+                    servicesComboBox.setSelectedItem(newElement);
+                    this.lastSuccessfulPath = selectedFilePath;
                 }
-                Pair<String, ValueDetectionServiceConfPanel> newElement = new ImmutablePair<String, ValueDetectionServiceConfPanel>(service.getSimpleName(),
-                        serviceConfPanel);
-                servicesComboBoxModel.addElement(newElement);
-                servicesComboBox.setSelectedItem(newElement);
-                this.lastSuccessfulPath = selectedFilePath;
+            } catch (IOException ex) {
+                issueHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
             }
-        } catch (MalformedURLException ex) {
-            issueHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
-        } catch (IOException ex) {
-            Logger.getLogger(ValueDetectionServiceAddDialog.class.getName()).log(Level.SEVERE, null, ex);
+        }catch(Throwable ex) {
+            LOGGER.error("unexpected exception occured during loading of service implementation JAR",
+                    ex);
+            issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
         }
     }//GEN-LAST:event_loadButtonActionPerformed
 

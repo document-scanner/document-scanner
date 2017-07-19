@@ -236,12 +236,6 @@
             <type>jar</type>
         </dependency>
         <dependency>
-            <groupId>org.reflections</groupId>
-            <artifactId>reflections</artifactId>
-            <version>0.9.10</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
             <groupId>richtercloud</groupId>
             <artifactId>credential-store</artifactId>
             <version>1.0-SNAPSHOT</version>
