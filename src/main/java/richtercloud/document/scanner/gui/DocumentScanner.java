@@ -921,7 +921,9 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         try {
             this.scan();
         }catch(Throwable ex) {
-            handleUnexpectedException(ex, "Unexpected exception occured during scan");
+            handleUnexpectedException(ex,
+                    "Exception occured during scanning",
+                    "An unexpected exception occured during scanning: %s");
         }
     }//GEN-LAST:event_scanMenuItemActionPerformed
 
@@ -932,7 +934,9 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                     messageHandler,
                     this.documentScannerConf);
         } catch (IOException | SaneException ex) {
-            handleException(ex, "Unexpected exception");
+            handleException(ex,
+                    "Exception during scanner selection",
+                    "An unexpected exception during scanner selection occured: %s");
             return;
         }
         scannerSelectionDialog.pack();
@@ -1014,8 +1018,9 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             this.oCREngine = oCREngineFactory.create(documentScannerConf.getoCREngineConf());
             mainPanel.setoCREngine(oCREngine);
         }catch(Exception ex) {
-            LOGGER.error("unexpected exception during OCR engine configuration", ex);
-            issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+            handleUnexpectedException(ex,
+                    "Exception during OCR Engine configuration",
+                    "An unexpected exception during OCR engine configuration occured: %s");
         }
     }//GEN-LAST:event_oCRMenuItemActionPerformed
 
@@ -1041,7 +1046,9 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             addDocument(images,
                     selectedFile);
         } catch (DocumentAddException | InterruptedException | ExecutionException | IOException ex) {
-            handleException(ex, "Exception during adding new document");
+            handleException(ex,
+                    "Exception during adding of new document",
+                    "An unexpected exception during adding of new document occured: %s");
         }
     }//GEN-LAST:event_openMenuItemActionPerformed
 
@@ -1080,12 +1087,15 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 try {
                     addDocument(selectedEntity);
                 } catch (DocumentAddException | IOException ex) {
-                    handleException(ex, "Exception during adding new document");
+                    handleException(ex,
+                            "Exception during adding of new document",
+                            "An unexpected exception during adding of new document occured: %s");
                 }
             }
         }catch(Throwable ex) {
-            LOGGER.error("an unexpected exception occured during editing entry", ex);
-            issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+            handleUnexpectedException(ex,
+                    "Exception during editing of entry occured",
+                    "An unexpected exception occured during editing entry: %s");
         }
     }//GEN-LAST:event_editEntryMenuItemActionPerformed
 
@@ -1138,12 +1148,14 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                     //this.validate(); //not necessary
                 }
             } catch (DocumentAddException | InterruptedException | ExecutionException | IOException ex) {
-                handleException(ex, "Exception during adding new document");
+                handleException(ex,
+                        "Exception during adding of new document",
+                        "An unexpected exception during adding of new document occured: %s");
             }
         }catch(Throwable ex) {
-            LOGGER.error("unexpected exception during opening of scan for selection occured",
-                    ex);
-            this.issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+            handleUnexpectedException(ex,
+                    "Exception during opening of scan for selection",
+                    "An unexpected exception during opening of scan for selection occured: %s");
         }
     }//GEN-LAST:event_openSelectionMenuItemActionPerformed
 
@@ -1209,8 +1221,9 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             this.documentScannerConf.setValueDetectionServiceJARPaths(serviceConfDialog.getValueDetectionServiceJARPaths());
             this.mainPanel.applyValueDetectionServiceSelection();
         }catch(Throwable ex) {
-            LOGGER.error("an unexpected exception during value detection configuration occured", ex);
-            issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+            handleUnexpectedException(ex,
+                    "Exception during value detection service configuration",
+                    "An unexpected exception during value detection configuration occured: %s");
         }
     }//GEN-LAST:event_valueDetectionMenuItemActionPerformed
 
@@ -1421,7 +1434,9 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         }
                         throw new RuntimeException(ex);
                     }catch(InterruptedException ex) {
-                        handleUnexpectedException(ex, "Exception during scanning");
+                        handleUnexpectedException(ex,
+                                "Exception during scanning",
+                                "An unexpected exception during scanning occured: %s");
                     }catch(TimeoutException ex) {
                         messageHandler.handle(new Message(String.format("Opening "
                                 + "the scanner device '%s' timed out after %d %s, "
@@ -1476,20 +1491,39 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 this.validate();
             }
         } catch (SaneException | IOException | IllegalArgumentException | DocumentAddException ex) {
-            this.handleException(ex, "Exception during scanning");
+            this.handleException(ex,
+                    "Exception during scanning",
+                    "An unexpected exception during scanning occured: %s");
         }
         //Don't call device.close because it resets all options
     }
 
-    private void handleException(Throwable ex, String title) {
-        LOGGER.info("handling exception {}", ex);
-        this.messageHandler.handle(new Message(String.format("The following exception occured: %s", ExceptionUtils.getRootCauseMessage(ex)),
+    /**
+     * Handles logging and user feedback of {@code ex}.
+     * @param ex
+     * @param title
+     * @param text an optional text to explain in which situation the exception
+     * occured (can be {@code null} in which case a not very helpful default
+     * text like "The following exception occured:" will be chosen). It should
+     * end with {@code : %s} so that adding the exception cause message makes
+     * sense.
+     */
+    private void handleException(Throwable ex,
+            String title,
+            String text) {
+        LOGGER.info("handling exception {}",
+                ex);
+        this.messageHandler.handle(new Message(String.format(text != null ? text : "The following exception occured: %s", ExceptionUtils.getRootCauseMessage(ex)),
                 JOptionPane.ERROR_MESSAGE,
                 title));
     }
 
-    private void handleUnexpectedException(Throwable ex, String title) {
-        handleException(ex, title);
+    private void handleUnexpectedException(Throwable ex,
+            String title,
+            String text) {
+        handleException(ex,
+                title,
+                text);
         this.issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
         this.dispose();
             //- there's few sense to leave the application running after an
