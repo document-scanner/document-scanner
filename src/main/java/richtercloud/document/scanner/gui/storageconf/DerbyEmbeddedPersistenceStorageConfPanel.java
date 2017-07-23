@@ -111,7 +111,7 @@ public class DerbyEmbeddedPersistenceStorageConfPanel extends StorageConfPanel<D
     public void save() {
         this.storageConf.setDatabaseName(this.databaseNameTextField.getText());
         this.storageConf.setUsername(this.usernameTextField.getText());
-        this.storageConf.setPassword(new String(this.passwordPasswordField.getPassword()));
+        this.storageConf.setPassword(String.valueOf(this.passwordPasswordField.getPassword()));
     }
 
     @Override

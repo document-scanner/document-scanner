@@ -547,15 +547,15 @@ public class MySQLAutoPersistenceStorageConfPanel extends StorageConfPanel<MySQL
                                 int modeGroup = (modeOctal % 100) / 10;
                                 int modeOthers = modeOctal % 10;
                                 //from http://stackoverflow.com/questions/34234598/how-to-convert-an-input-of-3-octal-numbers-into-chmod-permissions-into-binary
-                                permStringBuilder.append((modeUser & 4) == 0 ? '-' : 'r');
-                                permStringBuilder.append((modeUser & 2) == 0 ? '-' : 'w');
-                                permStringBuilder.append((modeUser & 1) == 0 ? '-' : 'x');
-                                permStringBuilder.append((modeGroup & 4) == 0 ? '-' : 'r');
-                                permStringBuilder.append((modeGroup & 2) == 0 ? '-' : 'w');
-                                permStringBuilder.append((modeGroup & 1) == 0 ? '-' : 'x');
-                                permStringBuilder.append((modeOthers & 4) == 0 ? '-' : 'r');
-                                permStringBuilder.append((modeOthers & 2) == 0 ? '-' : 'w');
-                                permStringBuilder.append((modeOthers & 1) == 0 ? '-' : 'x');
+                                permStringBuilder.append((modeUser & 4) == 0 ? '-' : 'r')
+                                        .append((modeUser & 2) == 0 ? '-' : 'w')
+                                        .append((modeUser & 1) == 0 ? '-' : 'x')
+                                        .append((modeGroup & 4) == 0 ? '-' : 'r')
+                                        .append((modeGroup & 2) == 0 ? '-' : 'w')
+                                        .append((modeGroup & 1) == 0 ? '-' : 'x')
+                                        .append((modeOthers & 4) == 0 ? '-' : 'r')
+                                        .append((modeOthers & 2) == 0 ? '-' : 'w')
+                                        .append((modeOthers & 1) == 0 ? '-' : 'x');
                                 String permString = permStringBuilder.toString();
                                 Files.setPosixFilePermissions(outputFilePath, PosixFilePermissions.fromString(permString));
                             }
@@ -651,7 +651,7 @@ public class MySQLAutoPersistenceStorageConfPanel extends StorageConfPanel<MySQL
         this.storageConf.setPort((int) this.portSpinner.getValue());
         String username = this.usernameTextField.getText();
         this.storageConf.setUsername(username);
-        String password = new String(this.passwordPasswordField.getPassword());
+        String password = String.valueOf(this.passwordPasswordField.getPassword());
         this.storageConf.setPassword(password);
     }
 

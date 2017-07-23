@@ -52,7 +52,7 @@ public class PostgresqlAutoPersistenceStorageConfPanel extends StorageConfPanel<
         this.storageConf.setPort((int) this.portSpinner.getValue());
         String username = this.usernameTextField.getText();
         this.storageConf.setUsername(username);
-        String password = new String(this.passwordPasswordField.getPassword());
+        String password = String.valueOf(this.passwordPasswordField.getPassword());
         this.storageConf.setPassword(password);
         this.storageConf.setInitdbBinaryPath(this.initdbBinaryPathTextField.getText());
         this.storageConf.setPostgresBinaryPath(this.postgresBinaryPathTextField.getText());

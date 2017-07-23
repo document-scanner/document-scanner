@@ -74,6 +74,14 @@ device name which come from the caller.
 */
 public class DocumentController {
     private final static Logger LOGGER = LoggerFactory.getLogger(DocumentController.class);
+    private final static String OPENING_CLOSED_DEVICE_TEMPLATE = "Opening closed device '%s'.";
+    private final static String OPTION_NOT_WRITABLE_TEMPLATE = "Option '%s' isn't writable.";
+    private final static String OPTION_NOT_READABLE_TEMPLATE = "Option '%s' isn't readable.";
+    private final static String OPTION_TYPE_MISMATCH_TEMPLATE = "Option '%s' "
+                    + "isn't of type %s. This indicates an errornous SANE "
+                    + "implementation. Can't proceed.";
+    private final static String OPTION_CONSTRAINT_MISMATCH_TEMPLATE = "option '%s' has "
+                    + "constraint type different from '%s' or '%s'";
     /**
      * The lock to avoid any issues coming from accessing {@code scannerDevice}
      * from different threads. Only one scan can take place at the same time
@@ -156,7 +164,7 @@ public class DocumentController {
             if(deviceOpeningFutureMap.get(scannerDevice) != null) {
                 throw new DeviceOpeningAlreadyInProgressException(scannerDevice.getName());
             }
-            LOGGER.debug(String.format("opening closed device '%s'",
+            LOGGER.debug(String.format(OPENING_CLOSED_DEVICE_TEMPLATE,
                     scannerDevice));
             Future<Void> deviceOpeningFuture = Executors.newSingleThreadExecutor().submit(() -> {
                 scannerDevice.open();
@@ -270,7 +278,7 @@ public class DocumentController {
         assert scannerConf != null;
         assert scannerConf.getPaperFormat() != null;
         if(!device.isOpen()) {
-            LOGGER.debug(String.format("opening closed device '%s'",
+            LOGGER.debug(String.format(OPENING_CLOSED_DEVICE_TEMPLATE,
                     device));
             device.open();
         }
@@ -292,13 +300,13 @@ public class DocumentController {
     public void setMode(SaneDevice device,
             String mode) throws IOException, SaneException {
         if(!device.isOpen()) {
-            LOGGER.debug(String.format("opening closed device '%s'",
+            LOGGER.debug(String.format(OPENING_CLOSED_DEVICE_TEMPLATE,
                     device));
             device.open();
         }
         SaneOption modeOption = device.getOption(MODE_OPTION_NAME);
         if(!modeOption.isWriteable()) {
-            throw new IllegalArgumentException(String.format("Option '%s' isn't writable.", MODE_OPTION_NAME));
+            throw new IllegalArgumentException(String.format(OPTION_NOT_WRITABLE_TEMPLATE, MODE_OPTION_NAME));
         }
         LOGGER.debug(String.format("setting default mode '%s' on device '%s'", mode, device));
         modeOption.setStringValue(mode);
@@ -309,7 +317,7 @@ public class DocumentController {
         String mode = scannerConf.getMode();
         SaneOption modeOption = device.getOption(MODE_OPTION_NAME);
         if(!modeOption.isReadable()) {
-            throw new IllegalArgumentException(String.format("option '%s' isn't readable", MODE_OPTION_NAME));
+            throw new IllegalArgumentException(String.format(OPTION_NOT_READABLE_TEMPLATE, MODE_OPTION_NAME));
         }
         if(!modeOption.getType().equals(OptionValueType.STRING)) {
             throw new IllegalArgumentException(String.format("Option '%s' isn't of type STRING. This indicates an errornous SANE implementation. Can't proceed.", MODE_OPTION_NAME));
@@ -332,7 +340,7 @@ public class DocumentController {
     public void setResolution(SaneDevice device,
             int resolution) throws IOException, SaneException {
         if(!device.isOpen()) {
-            LOGGER.debug(String.format("opening closed device '%s'",
+            LOGGER.debug(String.format(OPENING_CLOSED_DEVICE_TEMPLATE,
                     device));
             device.open();
         }
@@ -341,7 +349,7 @@ public class DocumentController {
             throw new IllegalArgumentException(String.format("Option '%s' isn't of type INT. This indicates an errornous SANE implementation. Can't proceed.", RESOLUTION_OPTION_NAME));
         }
         if(!resolutionOption.isWriteable()) {
-            throw new IllegalArgumentException(String.format("option '%s' isn't writable", RESOLUTION_OPTION_NAME));
+            throw new IllegalArgumentException(String.format(OPTION_NOT_WRITABLE_TEMPLATE, RESOLUTION_OPTION_NAME));
         }
         LOGGER.debug(String.format("setting default resolution '%d' on device '%s'", resolution, device));
         resolutionOption.setIntegerValue(resolution);
@@ -352,7 +360,7 @@ public class DocumentController {
             int resolutionWish) throws IOException {
         SaneOption resolutionOption = device.getOption(RESOLUTION_OPTION_NAME);
         if(!resolutionOption.isReadable()) {
-            throw new IllegalArgumentException(String.format("Option '%s' isn't readable.", RESOLUTION_OPTION_NAME));
+            throw new IllegalArgumentException(String.format(OPTION_NOT_READABLE_TEMPLATE, RESOLUTION_OPTION_NAME));
         }
         if(!resolutionOption.getType().equals(OptionValueType.INT)) {
             throw new IllegalArgumentException(String.format("Option '%s' isn't of type INT. This indicates an errornous SANE implementation. Can't proceed.", RESOLUTION_OPTION_NAME));
@@ -380,13 +388,13 @@ public class DocumentController {
     public void setDocumentSource(SaneDevice device,
             String documentSource) throws IOException, SaneException {
         if(!device.isOpen()) {
-            LOGGER.debug(String.format("opening closed device '%s'",
+            LOGGER.debug(String.format(OPENING_CLOSED_DEVICE_TEMPLATE,
                     device));
             device.open();
         }
         SaneOption documentSourceOption = device.getOption(DOCUMENT_SOURCE_OPTION_NAME);
         if(!documentSourceOption.isWriteable()) {
-            throw new IllegalArgumentException(String.format("option '%s' isn't writable", DOCUMENT_SOURCE_OPTION_NAME));
+            throw new IllegalArgumentException(String.format(OPTION_NOT_WRITABLE_TEMPLATE, DOCUMENT_SOURCE_OPTION_NAME));
         }
         LOGGER.debug(String.format("setting default document source '%s' on device '%s'", documentSource, device));
         documentSourceOption.setStringValue(documentSource);
@@ -419,12 +427,10 @@ public class DocumentController {
             ScannerConf scannerConf) throws IOException {
         SaneOption documentSourceOption = device.getOption(DOCUMENT_SOURCE_OPTION_NAME);
         if(!documentSourceOption.isReadable()) {
-            throw new IllegalArgumentException(String.format("Option '%s' isn't readable.", DOCUMENT_SOURCE_OPTION_NAME));
+            throw new IllegalArgumentException(String.format(OPTION_NOT_READABLE_TEMPLATE, DOCUMENT_SOURCE_OPTION_NAME));
         }
         if(!documentSourceOption.getType().equals(OptionValueType.STRING)) {
-            throw new IllegalArgumentException(String.format("Option '%s' "
-                    + "isn't of type STRING. This indicates an errornous SANE "
-                    + "implementation. Can't proceed.",
+            throw new IllegalArgumentException(String.format(OPTION_TYPE_MISMATCH_TEMPLATE,
                     DOCUMENT_SOURCE_OPTION_NAME));
         }
         String documentSource = scannerConf.getSource();
@@ -439,7 +445,7 @@ public class DocumentController {
             float width,
             float height) throws IOException, SaneException {
         if(!device.isOpen()) {
-            LOGGER.debug(String.format("opening closed device '%s'",
+            LOGGER.debug(String.format(OPENING_CLOSED_DEVICE_TEMPLATE,
                     device));
             device.open();
         }
@@ -448,54 +454,50 @@ public class DocumentController {
         SaneOption bottomRightXOption = device.getOption(BOTTOM_RIGHT_X);
         SaneOption bottomRightYOption = device.getOption(BOTTOM_RIGHT_Y);
         if(!topLeftXOption.isReadable()) {
-            throw new IllegalArgumentException(String.format("Option '%s' isn't readable.", TOP_LEFT_X));
+            throw new IllegalArgumentException(String.format(OPTION_NOT_READABLE_TEMPLATE, TOP_LEFT_X));
         }
         if(!topLeftYOption.isReadable()) {
-            throw new IllegalArgumentException(String.format("Option '%s' isn't readable.", TOP_LEFT_Y));
+            throw new IllegalArgumentException(String.format(OPTION_NOT_READABLE_TEMPLATE, TOP_LEFT_Y));
         }
         if(!bottomRightXOption.isReadable()) {
-            throw new IllegalArgumentException(String.format("Option '%s' isn't readable.", BOTTOM_RIGHT_X));
+            throw new IllegalArgumentException(String.format(OPTION_NOT_READABLE_TEMPLATE, BOTTOM_RIGHT_X));
         }
         if(!bottomRightYOption.isReadable()) {
-            throw new IllegalArgumentException(String.format("Option '%s' isn't readable.", BOTTOM_RIGHT_Y));
+            throw new IllegalArgumentException(String.format(OPTION_NOT_READABLE_TEMPLATE, BOTTOM_RIGHT_Y));
         }
         if(!topLeftXOption.getType().equals(OptionValueType.FIXED)) {
-            throw new IllegalArgumentException(String.format("Option '%s' "
-                    + "isn't of type STRING. This indicates an errornous SANE "
-                    + "implementation. Can't proceed.",
-                    TOP_LEFT_X));
+            throw new IllegalArgumentException(String.format(OPTION_TYPE_MISMATCH_TEMPLATE,
+                    TOP_LEFT_X,
+                    OptionValueType.FIXED));
         }
         if(!topLeftYOption.getType().equals(OptionValueType.FIXED)) {
-            throw new IllegalArgumentException(String.format("Option '%s' "
-                    + "isn't of type STRING. This indicates an errornous SANE "
-                    + "implementation. Can't proceed.",
-                    TOP_LEFT_Y));
+            throw new IllegalArgumentException(String.format(OPTION_TYPE_MISMATCH_TEMPLATE,
+                    TOP_LEFT_Y,
+                    OptionValueType.FIXED));
         }
         if(!bottomRightXOption.getType().equals(OptionValueType.FIXED)) {
-            throw new IllegalArgumentException(String.format("Option '%s' "
-                    + "isn't of type STRING. This indicates an errornous SANE "
-                    + "implementation. Can't proceed.",
-                    BOTTOM_RIGHT_X));
+            throw new IllegalArgumentException(String.format(OPTION_TYPE_MISMATCH_TEMPLATE,
+                    BOTTOM_RIGHT_X,
+                    OptionValueType.FIXED));
         }
         if(!bottomRightYOption.getType().equals(OptionValueType.FIXED)) {
-            throw new IllegalArgumentException(String.format("Option '%s' "
-                    + "isn't of type STRING. This indicates an errornous SANE "
-                    + "implementation. Can't proceed.",
-                    BOTTOM_RIGHT_Y));
+            throw new IllegalArgumentException(String.format(OPTION_TYPE_MISMATCH_TEMPLATE,
+                    BOTTOM_RIGHT_Y,
+                    OptionValueType.FIXED));
         }
         assert width > 0;
         assert height > 0;
         if(!topLeftXOption.isWriteable()) {
-            throw new IllegalArgumentException(String.format("option '%s' isn't writable", TOP_LEFT_X));
+            throw new IllegalArgumentException(String.format(OPTION_NOT_WRITABLE_TEMPLATE, TOP_LEFT_X));
         }
         if(!topLeftYOption.isWriteable()) {
-            throw new IllegalArgumentException(String.format("option '%s' isn't writable", TOP_LEFT_Y));
+            throw new IllegalArgumentException(String.format(OPTION_NOT_WRITABLE_TEMPLATE, TOP_LEFT_Y));
         }
         if(!bottomRightXOption.isWriteable()) {
-            throw new IllegalArgumentException(String.format("option '%s' isn't writable", BOTTOM_RIGHT_X));
+            throw new IllegalArgumentException(String.format(OPTION_NOT_WRITABLE_TEMPLATE, BOTTOM_RIGHT_X));
         }
         if(!bottomRightYOption.isWriteable()) {
-            throw new IllegalArgumentException(String.format("option '%s' isn't writable", BOTTOM_RIGHT_Y));
+            throw new IllegalArgumentException(String.format(OPTION_NOT_WRITABLE_TEMPLATE, BOTTOM_RIGHT_Y));
         }
         LOGGER.debug(String.format("setting paper format %fx%f on device '%s'",
                 width,
@@ -503,8 +505,7 @@ public class DocumentController {
                 device));
         if(!(OptionValueConstraintType.RANGE_CONSTRAINT.equals(topLeftXOption.getConstraintType())
                 || OptionValueConstraintType.NO_CONSTRAINT.equals(topLeftXOption.getConstraintType()))) {
-            throw new IllegalArgumentException(String.format("option '%s' has "
-                    + "constraint type different from '%s' or '%s'",
+            throw new IllegalArgumentException(String.format(OPTION_CONSTRAINT_MISMATCH_TEMPLATE,
                     TOP_LEFT_X,
                     OptionValueConstraintType.RANGE_CONSTRAINT,
                     OptionValueConstraintType.NO_CONSTRAINT //suggested
@@ -514,8 +515,7 @@ public class DocumentController {
         }
         if(!(OptionValueConstraintType.RANGE_CONSTRAINT.equals(topLeftYOption.getConstraintType())
                 || OptionValueConstraintType.NO_CONSTRAINT.equals(topLeftYOption.getConstraintType()))) {
-            throw new IllegalArgumentException(String.format("option '%s' has "
-                    + "constraint type different from '%s' or '%s'",
+            throw new IllegalArgumentException(String.format(OPTION_CONSTRAINT_MISMATCH_TEMPLATE,
                     TOP_LEFT_Y,
                     OptionValueConstraintType.RANGE_CONSTRAINT,
                     OptionValueConstraintType.NO_CONSTRAINT //suggested
@@ -525,8 +525,7 @@ public class DocumentController {
         }
         if(!(OptionValueConstraintType.RANGE_CONSTRAINT.equals(bottomRightXOption.getConstraintType())
                 || OptionValueConstraintType.NO_CONSTRAINT.equals(bottomRightXOption.getConstraintType()))) {
-            throw new IllegalArgumentException(String.format("option '%s' has "
-                    + "constraint type different from '%s' or '%s'",
+            throw new IllegalArgumentException(String.format(OPTION_CONSTRAINT_MISMATCH_TEMPLATE,
                     BOTTOM_RIGHT_X,
                     OptionValueConstraintType.RANGE_CONSTRAINT,
                     OptionValueConstraintType.NO_CONSTRAINT //suggested
@@ -536,8 +535,7 @@ public class DocumentController {
         }
         if(!(OptionValueConstraintType.RANGE_CONSTRAINT.equals(bottomRightYOption.getConstraintType())
                 || OptionValueConstraintType.NO_CONSTRAINT.equals(bottomRightYOption.getConstraintType()))) {
-            throw new IllegalArgumentException(String.format("option '%s' has "
-                    + "constraint type different from '%s' or '%s'",
+            throw new IllegalArgumentException(String.format(OPTION_CONSTRAINT_MISMATCH_TEMPLATE,
                     BOTTOM_RIGHT_Y,
                     OptionValueConstraintType.RANGE_CONSTRAINT,
                     OptionValueConstraintType.NO_CONSTRAINT //suggested
@@ -594,13 +592,13 @@ public class DocumentController {
 
     public DocumentSource getDocumentSourceEnum(SaneDevice device) throws IOException, SaneException {
         if(!device.isOpen()) {
-            LOGGER.debug(String.format("opening closed device '%s'",
+            LOGGER.debug(String.format(OPENING_CLOSED_DEVICE_TEMPLATE,
                     device));
             device.open();
         }
         SaneOption documentSourceOption = device.getOption(DOCUMENT_SOURCE_OPTION_NAME);
         if(!documentSourceOption.isReadable()) {
-            throw new IllegalArgumentException(String.format("option '%s' isn't readable", DOCUMENT_SOURCE_OPTION_NAME));
+            throw new IllegalArgumentException(String.format(OPTION_NOT_READABLE_TEMPLATE, DOCUMENT_SOURCE_OPTION_NAME));
         }
         String documentSource = documentSourceOption.getStringValue();
         DocumentSource retValue = DocumentSource.UNKNOWN;

@@ -142,7 +142,7 @@ public class DerbyNetworkPersistenceStorageConfPanel extends StorageConfPanel<De
         this.storageConf.setPort((int) this.portSpinner.getValue());
         String username = this.usernameTextField.getText();
         this.storageConf.setUsername(username);
-        String password = new String(this.passwordPasswordField.getPassword());
+        String password = String.valueOf(this.passwordPasswordField.getPassword());
         this.storageConf.setPassword(password);
     }
 

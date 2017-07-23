@@ -235,7 +235,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private final IssueHandler issueHandler;
     private final MessageHandler messageHandler = new DialogMessageHandler(this,
             "", //titlePrefix
-            String.format("- %s %s", Constants.APP_NAME, Constants.APP_VERSION));
+            generateTitleSuffix() //titleSuffix
+    );
     private final JavaFXDialogMessageHandler javaFXDialogMessageHandler = new JavaFXDialogMessageHandler();
     private final ConfirmMessageHandler confirmMessageHandler = new DialogConfirmMessageHandler(this);
     private final Map<Class<?>, WarningHandler<?>> warningHandlers = new HashMap<>();
@@ -317,6 +318,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             "caching-image-wrapper-init-thread"
     );
     private final DocumentController documentController;
+    private final static String YES = "Yes";
+    private final static String NO = "No";
 
     /**
      * Creates new DocumentScanner which does nothing unless
@@ -381,7 +384,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             bugHandler = new DialogBugHandler(this,
                     Constants.BUG_URL,
                     "", //titlePrefix
-                    String.format("- %s %s", Constants.APP_NAME, Constants.APP_VERSION) //titleSuffix
+                    generateTitleSuffix() //titleSuffix
             );
         }
         this.issueHandler = new DefaultIssueHandler(messageHandler,
@@ -570,6 +573,11 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         this.documentScannerConf.getImageWrapperStorageDir().getAbsolutePath()));
             }
         }
+    }
+
+    private static String generateTitleSuffix() {
+        String retValue = String.format("- %s %s", Constants.APP_NAME, Constants.APP_VERSION);
+        return retValue;
     }
 
     public static String handleSearchScannerException(String text,
@@ -1029,8 +1037,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                                 Constants.SELECTED_ENTITIES_EDIT_WARNING),
                         JOptionPane.QUESTION_MESSAGE,
                         "Open documents?"),
-                        "Yes", "No");
-                if(!answer.equals("Yes")) {
+                        YES, NO);
+                if(!answer.equals(YES)) {
                     return;
                 }
             }
@@ -1144,8 +1152,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                                 selectedFile.getName()),
                         JOptionPane.WARNING_MESSAGE,
                         "File exists"),
-                        "Yes", "No");
-                success = answer.equals("Yes");
+                        YES, NO);
+                success = answer.equals(YES);
             }else {
                 success = true;
             }
@@ -1469,10 +1477,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private static void handleExceptionInEventQueueThread(Throwable ex) {
         ConfirmMessageHandler confirmMessageHandler = new DialogConfirmMessageHandler(null, //parent
                 "", //titlePrefix
-                String.format("- %s %s", Constants.APP_NAME, Constants.APP_VERSION) //titleSuffix
+                generateTitleSuffix() //titleSuffix
         );
-        String yes = "Yes";
-        String no = "No";
         String answer = confirmMessageHandler.confirm(new Message(String.format(
                 "The error '%s' occured. Do you allow anonymous upload of "
                         + "information about the reason for issue to the"
@@ -1480,16 +1486,16 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         ExceptionUtils.getRootCauseMessage(ex)),
                 JOptionPane.QUESTION_MESSAGE,
                 "Anoymous contribution"),
-                yes,
-                no);
+                YES,
+                NO);
         BugHandler bugHandler;
         if(answer == null //if dialog has been canceled
-                || !answer.equals(yes)) {
+                || !answer.equals(YES)) {
             //still display the error message with the complete stacktrace
             bugHandler = new DialogBugHandler(null, //parent
                     Constants.BUG_URL,
                     "", //titlePrefix
-                    String.format("- %s %s", Constants.APP_NAME, Constants.APP_VERSION) //titleSuffix
+                    generateTitleSuffix() //titleSuffix
             );
         }else {
             bugHandler = new RavenBugHandler(RAVEN_DSN);
