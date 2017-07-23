@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.gui.DocumentScanner;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
+import richtercloud.document.scanner.gui.scanresult.DocumentController;
 import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
 
@@ -154,6 +155,7 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
     private String address;
     private final MessageHandler messageHandler;
     private final DocumentScannerConf documentScannerConf;
+    private final DocumentController documentController;
 
     /**
      * Creates new scanner selection dialog. The selection result and initial
@@ -166,7 +168,8 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
      */
     public ScannerSelectionDialog(java.awt.Frame parent,
             MessageHandler messageHandler,
-            DocumentScannerConf documentScannerConf) throws UnknownHostException, IOException, SaneException {
+            DocumentScannerConf documentScannerConf,
+            DocumentController documentController) throws UnknownHostException, IOException, SaneException {
         super(parent,
                 DocumentScanner.generateApplicationWindowTitle("Select scanner",
                         Constants.APP_NAME,
@@ -181,12 +184,16 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
             throw new IllegalArgumentException("documentScannerConf mustn't be null");
         }
         this.documentScannerConf = documentScannerConf;
+        if(documentController == null) {
+            throw new IllegalArgumentException("documentController mustn't be null");
+        }
+        this.documentController = documentController;
         initComponents();
         this.tableModel.addTableModelListener(this.scannerDialogTableModelListener);
         this.scannerDialogTable.getSelectionModel().addListSelectionListener(this.scannerDialogTableSelectionListener);
         this.scannerDialogAddressTextField.setText(documentScannerConf.getScannerSaneAddress());
         for(String scannerName : documentScannerConf.getScannerConfMap().keySet()) {
-            SaneDevice existingDevice = DocumentScanner.getScannerDevice(scannerName,
+            SaneDevice existingDevice = documentController.getScannerDevice(scannerName,
                     documentScannerConf.getScannerConfMap(),
                     SCANNER_ADDRESS_DEFAULT,
                     documentScannerConf.getResolutionWish());
@@ -218,7 +225,7 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
                             ScannerEditDialog.RESOLUTION_OPTION_NAME));
                     continue;
                 }
-                SaneDevice cachedAvailableDevice = DocumentScanner.getScannerDevice(availableDevice.getName(),
+                SaneDevice cachedAvailableDevice = documentController.getScannerDevice(availableDevice.getName(),
                         documentScannerConf.getScannerConfMap(),
                         addressString,
                         documentScannerConf.getResolutionWish()); //otherwise option changes are lost
@@ -381,10 +388,11 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
         ScannerEditDialog scannerEditDialog;
         ScannerConf scannerConf = this.documentScannerConf.getScannerConfMap().get(device.getName());
         try {
-            ScannerEditDialog.configureDefaultOptionValues(device,
+            documentController.configureDefaultOptionValues(device,
                 scannerConf,
                 documentScannerConf.getResolutionWish());
             scannerEditDialog = new ScannerEditDialog(this,
+                documentController,
                 device,
                 scannerConf,
                 documentScannerConf.getResolutionWish(),

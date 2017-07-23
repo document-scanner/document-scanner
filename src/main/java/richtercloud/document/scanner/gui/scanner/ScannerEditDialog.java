@@ -14,11 +14,8 @@
  */
 package richtercloud.document.scanner.gui.scanner;
 
-import au.com.southsky.jfreesane.OptionValueConstraintType;
-import au.com.southsky.jfreesane.OptionValueType;
 import au.com.southsky.jfreesane.SaneDevice;
 import au.com.southsky.jfreesane.SaneException;
-import au.com.southsky.jfreesane.SaneOption;
 import au.com.southsky.jfreesane.SaneWord;
 import java.awt.Component;
 import java.awt.Dialog;
@@ -38,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.gui.DocumentScanner;
+import richtercloud.document.scanner.gui.scanresult.DocumentController;
 import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
 
@@ -67,8 +65,10 @@ public class ScannerEditDialog extends javax.swing.JDialog {
     public final static String BOTTOM_RIGHT_Y = "br-y";
     private final ScannerConf scannerConf;
     private final DefaultListModel<ScannerConfPaperFormat> paperFormatListModel = new DefaultListModel<>();
+    private final DocumentController documentController;
 
     public ScannerEditDialog(Dialog parent,
+            DocumentController documentController,
             final SaneDevice device,
             ScannerConf scannerConf,
             int resolutionWish,
@@ -76,6 +76,10 @@ public class ScannerEditDialog extends javax.swing.JDialog {
         super(parent,
                 true //modal
         );
+        if(documentController == null) {
+            throw new IllegalArgumentException("documentController mustn't be null");
+        }
+        this.documentController = documentController;
         if(device == null) {
             throw new IllegalArgumentException("device mustn't be null");
         }
@@ -101,6 +105,7 @@ public class ScannerEditDialog extends javax.swing.JDialog {
      * {@link SaneDevice#open() } fails
      */
     public ScannerEditDialog(java.awt.Frame parent,
+            DocumentController documentController,
             final SaneDevice device,
             ScannerConf scannerConf,
             int resolutionWish,
@@ -111,6 +116,10 @@ public class ScannerEditDialog extends javax.swing.JDialog {
                         Constants.APP_VERSION),
                 true //modal
         );
+        if(documentController == null) {
+            throw new IllegalArgumentException("documentController mustn't be null");
+        }
+        this.documentController = documentController;
         if(device == null) {
             throw new IllegalArgumentException("device mustn't be null");
         }
@@ -131,8 +140,10 @@ public class ScannerEditDialog extends javax.swing.JDialog {
         initComponents();
         if(!device.isOpen()) {
             device.open();
+                //No need to think about opening in background because the user
+                //requested an edit dialog and wants to edit as far as possible
         }
-        configureDefaultOptionValues(device,
+        documentController.configureDefaultOptionValues(device,
                 scannerConf,
                 resolutionWish);
         //values in scannerConf should be != null after
@@ -182,7 +193,7 @@ public class ScannerEditDialog extends javax.swing.JDialog {
                 String mode;
                 try {
                     mode = (String) ScannerEditDialog.this.modeComboBox.getSelectedItem();
-                    setMode(device,
+                    documentController.setMode(device,
                             mode);
                     scannerConf.setMode(mode);
                 } catch(IllegalArgumentException ex) {
@@ -199,7 +210,7 @@ public class ScannerEditDialog extends javax.swing.JDialog {
                 int resolution;
                 try {
                     resolution = (Integer) ScannerEditDialog.this.resolutionComboBox.getSelectedItem();
-                    setResolution(device, resolution);
+                    documentController.setResolution(device, resolution);
                     scannerConf.setResolution(resolution);
                 } catch(IllegalArgumentException ex) {
                     messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
@@ -215,7 +226,7 @@ public class ScannerEditDialog extends javax.swing.JDialog {
                 String documentSource;
                 try {
                     documentSource = (String) ScannerEditDialog.this.documentSourceComboBox.getSelectedItem();
-                    setDocumentSource(device,
+                    documentController.setDocumentSource(device,
                             documentSource);
                     scannerConf.setSource(documentSource);
                 } catch(IllegalArgumentException ex) {
@@ -231,7 +242,7 @@ public class ScannerEditDialog extends javax.swing.JDialog {
                 try {
                     assert paperFormatList.getSelectedValue() != null;
                     ScannerConfPaperFormat selectedFormat = paperFormatList.getSelectedValue();
-                    setPaperFormat(device,
+                    documentController.setPaperFormat(device,
                             selectedFormat.getWidth(),
                             selectedFormat.getHeight());
                     scannerConf.setPaperFormat(selectedFormat);
@@ -249,393 +260,6 @@ public class ScannerEditDialog extends javax.swing.JDialog {
                 true //shouldScroll
         );
             //should trigger selection listeners
-    }
-
-    private static String selectBestDocumentSource(List<String> documentSourceConstraints) {
-        String documentSource = null;
-        for(String documentSourceConstraint : documentSourceConstraints) {
-            if("Duplex".equalsIgnoreCase(documentSourceConstraint)) {
-                documentSource = documentSourceConstraint;
-                break;
-            }
-        }
-        if(documentSource == null) {
-            for(String documentSourceConstraint : documentSourceConstraints) {
-                if("ADF".equalsIgnoreCase(documentSourceConstraint)
-                        || "Automatic document feeder".equalsIgnoreCase(documentSourceConstraint)) {
-                    documentSource = documentSourceConstraint;
-                    break;
-                }
-            }
-        }
-        if(documentSource == null) {
-            documentSource = documentSourceConstraints.get(0);
-        }
-        return documentSource;
-    }
-
-    /**
-     * Sets convenient default values on the scanner ("color" scan mode and the
-     * resolution value closest to 300 DPI). Readability and writability of
-     * options are checked. The type of the options are checked as well in order
-     * to fail with a helpful error message in case of an errornous SANE
-     * implementation.
-     *
-     * For a list of SANE options see
-     * http://www.sane-project.org/html/doc014.html.
-     *
-     * @param device
-     * @param scannerConf the {@link ScannerConf} to retrieve eventually
-     * existing values from (e.g. persisted values from previous runs)
-     * @throws IOException
-     * @throws SaneException
-     * @throws IllegalArgumentException if the option denoted by
-     * {@link #MODE_OPTION_NAME} or {@link #RESOLUTION_OPTION_NAME} isn't
-     * readable or writable
-     */
-    public static void configureDefaultOptionValues(SaneDevice device,
-            ScannerConf scannerConf,
-            int resolutionWish) throws IOException, SaneException {
-        assert device != null;
-        assert scannerConf != null;
-        assert scannerConf.getPaperFormat() != null;
-        if(!device.isOpen()) {
-            LOGGER.debug(String.format("opening closed device '%s'",
-                    device));
-            device.open();
-        }
-        configureModeDefault(device,
-                scannerConf);
-        configureResolutionDefault(device,
-                scannerConf,
-                resolutionWish);
-        configureDocumentSourceDefault(device,
-                scannerConf);
-        setMode(device,
-                scannerConf.getMode());
-        setResolution(device,
-                scannerConf.getResolution());
-        setDocumentSource(device,
-                scannerConf.getSource());
-    }
-
-    public static void setMode(SaneDevice device,
-            String mode) throws IOException, SaneException {
-        if(!device.isOpen()) {
-            LOGGER.debug(String.format("opening closed device '%s'",
-                    device));
-            device.open();
-        }
-        SaneOption modeOption = device.getOption(MODE_OPTION_NAME);
-        if(!modeOption.isWriteable()) {
-            throw new IllegalArgumentException(String.format("Option '%s' isn't writable.", MODE_OPTION_NAME));
-        }
-        LOGGER.debug(String.format("setting default mode '%s' on device '%s'", mode, device));
-        modeOption.setStringValue(mode);
-    }
-
-    public static void configureModeDefault(SaneDevice device,
-            ScannerConf scannerConf) throws IOException {
-        String mode = scannerConf.getMode();
-        SaneOption modeOption = device.getOption(MODE_OPTION_NAME);
-        if(!modeOption.isReadable()) {
-            throw new IllegalArgumentException(String.format("option '%s' isn't readable", MODE_OPTION_NAME));
-        }
-        if(!modeOption.getType().equals(OptionValueType.STRING)) {
-            throw new IllegalArgumentException(String.format("Option '%s' isn't of type STRING. This indicates an errornous SANE implementation. Can't proceed.", MODE_OPTION_NAME));
-        }
-        if(mode == null) {
-            for(String modeConstraint : modeOption.getStringConstraints()) {
-                if("color".equalsIgnoreCase(modeConstraint.trim())) {
-                    mode = modeConstraint;
-                    break;
-                }
-            }
-            if(mode == null) {
-                mode = modeOption.getStringConstraints().get(0);
-            }
-            scannerConf.setMode(mode);
-        }
-        scannerConf.setMode(mode);
-    }
-
-    public static void setResolution(SaneDevice device,
-            int resolution) throws IOException, SaneException {
-        if(!device.isOpen()) {
-            LOGGER.debug(String.format("opening closed device '%s'",
-                    device));
-            device.open();
-        }
-        SaneOption resolutionOption = device.getOption(RESOLUTION_OPTION_NAME);
-        if(!resolutionOption.getType().equals(OptionValueType.INT)) {
-            throw new IllegalArgumentException(String.format("Option '%s' isn't of type INT. This indicates an errornous SANE implementation. Can't proceed.", RESOLUTION_OPTION_NAME));
-        }
-        if(!resolutionOption.isWriteable()) {
-            throw new IllegalArgumentException(String.format("option '%s' isn't writable", RESOLUTION_OPTION_NAME));
-        }
-        LOGGER.debug(String.format("setting default resolution '%d' on device '%s'", resolution, device));
-        resolutionOption.setIntegerValue(resolution);
-    }
-
-    public static void configureResolutionDefault(SaneDevice device,
-            ScannerConf scannerConf,
-            int resolutionWish) throws IOException {
-        SaneOption resolutionOption = device.getOption(RESOLUTION_OPTION_NAME);
-        if(!resolutionOption.isReadable()) {
-            throw new IllegalArgumentException(String.format("Option '%s' isn't readable.", RESOLUTION_OPTION_NAME));
-        }
-        if(!resolutionOption.getType().equals(OptionValueType.INT)) {
-            throw new IllegalArgumentException(String.format("Option '%s' isn't of type INT. This indicates an errornous SANE implementation. Can't proceed.", RESOLUTION_OPTION_NAME));
-        }
-        Integer resolution = scannerConf.getResolution();
-        if(resolution == null) {
-            int resolutionDifference = Integer.MAX_VALUE;
-            for(SaneWord resolutionConstraint : resolutionOption.getWordConstraints()) {
-                int resolutionConstraintValue = resolutionConstraint.integerValue();
-                int resolutionConstraintDifference = Math.abs(resolutionWish-resolutionConstraintValue);
-                if(resolutionConstraintDifference < resolutionDifference) {
-                    resolution = resolutionConstraintValue;
-                    resolutionDifference = resolutionConstraintDifference;
-                    if(resolutionDifference == 0) {
-                        //not possible to find more accurate values
-                        break;
-                    }
-                }
-            }
-            assert resolution != null;
-            scannerConf.setResolution(resolution);
-        }
-    }
-
-    public static void setDocumentSource(SaneDevice device,
-            String documentSource) throws IOException, SaneException {
-        if(!device.isOpen()) {
-            LOGGER.debug(String.format("opening closed device '%s'",
-                    device));
-            device.open();
-        }
-        SaneOption documentSourceOption = device.getOption(DOCUMENT_SOURCE_OPTION_NAME);
-        if(!documentSourceOption.isWriteable()) {
-            throw new IllegalArgumentException(String.format("option '%s' isn't writable", DOCUMENT_SOURCE_OPTION_NAME));
-        }
-        LOGGER.debug(String.format("setting default document source '%s' on device '%s'", documentSource, device));
-        documentSourceOption.setStringValue(documentSource);
-    }
-
-    public static void configureDocumentSourceDefault(SaneDevice device,
-            ScannerConf scannerConf) throws IOException {
-        SaneOption documentSourceOption = device.getOption(DOCUMENT_SOURCE_OPTION_NAME);
-        if(!documentSourceOption.isReadable()) {
-            throw new IllegalArgumentException(String.format("Option '%s' isn't readable.", DOCUMENT_SOURCE_OPTION_NAME));
-        }
-        if(!documentSourceOption.getType().equals(OptionValueType.STRING)) {
-            throw new IllegalArgumentException(String.format("Option '%s' "
-                    + "isn't of type STRING. This indicates an errornous SANE "
-                    + "implementation. Can't proceed.",
-                    DOCUMENT_SOURCE_OPTION_NAME));
-        }
-        String documentSource = scannerConf.getSource();
-        if(documentSource == null) {
-            documentSource = selectBestDocumentSource(documentSourceOption.getStringConstraints());
-            assert documentSource != null;
-            scannerConf.setSource(documentSource);
-        }
-    }
-
-    public static void setPaperFormat(SaneDevice device,
-            float width,
-            float height) throws IOException, SaneException {
-        if(!device.isOpen()) {
-            LOGGER.debug(String.format("opening closed device '%s'",
-                    device));
-            device.open();
-        }
-        SaneOption topLeftXOption = device.getOption(TOP_LEFT_X);
-        SaneOption topLeftYOption = device.getOption(TOP_LEFT_Y);
-        SaneOption bottomRightXOption = device.getOption(BOTTOM_RIGHT_X);
-        SaneOption bottomRightYOption = device.getOption(BOTTOM_RIGHT_Y);
-        if(!topLeftXOption.isReadable()) {
-            throw new IllegalArgumentException(String.format("Option '%s' isn't readable.", TOP_LEFT_X));
-        }
-        if(!topLeftYOption.isReadable()) {
-            throw new IllegalArgumentException(String.format("Option '%s' isn't readable.", TOP_LEFT_Y));
-        }
-        if(!bottomRightXOption.isReadable()) {
-            throw new IllegalArgumentException(String.format("Option '%s' isn't readable.", BOTTOM_RIGHT_X));
-        }
-        if(!bottomRightYOption.isReadable()) {
-            throw new IllegalArgumentException(String.format("Option '%s' isn't readable.", BOTTOM_RIGHT_Y));
-        }
-        if(!topLeftXOption.getType().equals(OptionValueType.FIXED)) {
-            throw new IllegalArgumentException(String.format("Option '%s' "
-                    + "isn't of type STRING. This indicates an errornous SANE "
-                    + "implementation. Can't proceed.",
-                    TOP_LEFT_X));
-        }
-        if(!topLeftYOption.getType().equals(OptionValueType.FIXED)) {
-            throw new IllegalArgumentException(String.format("Option '%s' "
-                    + "isn't of type STRING. This indicates an errornous SANE "
-                    + "implementation. Can't proceed.",
-                    TOP_LEFT_Y));
-        }
-        if(!bottomRightXOption.getType().equals(OptionValueType.FIXED)) {
-            throw new IllegalArgumentException(String.format("Option '%s' "
-                    + "isn't of type STRING. This indicates an errornous SANE "
-                    + "implementation. Can't proceed.",
-                    BOTTOM_RIGHT_X));
-        }
-        if(!bottomRightYOption.getType().equals(OptionValueType.FIXED)) {
-            throw new IllegalArgumentException(String.format("Option '%s' "
-                    + "isn't of type STRING. This indicates an errornous SANE "
-                    + "implementation. Can't proceed.",
-                    BOTTOM_RIGHT_Y));
-        }
-        assert width > 0;
-        assert height > 0;
-        if(!topLeftXOption.isWriteable()) {
-            throw new IllegalArgumentException(String.format("option '%s' isn't writable", TOP_LEFT_X));
-        }
-        if(!topLeftYOption.isWriteable()) {
-            throw new IllegalArgumentException(String.format("option '%s' isn't writable", TOP_LEFT_Y));
-        }
-        if(!bottomRightXOption.isWriteable()) {
-            throw new IllegalArgumentException(String.format("option '%s' isn't writable", BOTTOM_RIGHT_X));
-        }
-        if(!bottomRightYOption.isWriteable()) {
-            throw new IllegalArgumentException(String.format("option '%s' isn't writable", BOTTOM_RIGHT_Y));
-        }
-        LOGGER.debug(String.format("setting paper format %fx%f on device '%s'",
-                width,
-                height,
-                device));
-        if(!(OptionValueConstraintType.RANGE_CONSTRAINT.equals(topLeftXOption.getConstraintType())
-                || OptionValueConstraintType.NO_CONSTRAINT.equals(topLeftXOption.getConstraintType()))) {
-            throw new IllegalArgumentException(String.format("option '%s' has "
-                    + "constraint type different from '%s' or '%s'",
-                    TOP_LEFT_X,
-                    OptionValueConstraintType.RANGE_CONSTRAINT,
-                    OptionValueConstraintType.NO_CONSTRAINT //suggested
-                        //descriptions at
-                        //https://github.com/sjamesr/jfreesane/pull/62
-            ));
-        }
-        if(!(OptionValueConstraintType.RANGE_CONSTRAINT.equals(topLeftYOption.getConstraintType())
-                || OptionValueConstraintType.NO_CONSTRAINT.equals(topLeftYOption.getConstraintType()))) {
-            throw new IllegalArgumentException(String.format("option '%s' has "
-                    + "constraint type different from '%s' or '%s'",
-                    TOP_LEFT_Y,
-                    OptionValueConstraintType.RANGE_CONSTRAINT,
-                    OptionValueConstraintType.NO_CONSTRAINT //suggested
-                        //descriptions at
-                        //https://github.com/sjamesr/jfreesane/pull/62
-            ));
-        }
-        if(!(OptionValueConstraintType.RANGE_CONSTRAINT.equals(bottomRightXOption.getConstraintType())
-                || OptionValueConstraintType.NO_CONSTRAINT.equals(bottomRightXOption.getConstraintType()))) {
-            throw new IllegalArgumentException(String.format("option '%s' has "
-                    + "constraint type different from '%s' or '%s'",
-                    BOTTOM_RIGHT_X,
-                    OptionValueConstraintType.RANGE_CONSTRAINT,
-                    OptionValueConstraintType.NO_CONSTRAINT //suggested
-                        //descriptions at
-                        //https://github.com/sjamesr/jfreesane/pull/62
-            ));
-        }
-        if(!(OptionValueConstraintType.RANGE_CONSTRAINT.equals(bottomRightYOption.getConstraintType())
-                || OptionValueConstraintType.NO_CONSTRAINT.equals(bottomRightYOption.getConstraintType()))) {
-            throw new IllegalArgumentException(String.format("option '%s' has "
-                    + "constraint type different from '%s' or '%s'",
-                    BOTTOM_RIGHT_Y,
-                    OptionValueConstraintType.RANGE_CONSTRAINT,
-                    OptionValueConstraintType.NO_CONSTRAINT //suggested
-                        //descriptions at
-                        //https://github.com/sjamesr/jfreesane/pull/62
-            ));
-        }
-        //don't check topleft constraint values because it's just overkill
-        if(OptionValueConstraintType.RANGE_CONSTRAINT.equals(bottomRightXOption.getConstraintType())) {
-            double widthMinimum = bottomRightXOption.getRangeConstraints().getMinimumFixed();
-            if(width < widthMinimum) {
-                throw new IllegalArgumentException(String.format("width %f is "
-                        + "less than the minimum %f specified by the constraint of "
-                        + "option '%s'",
-                        width,
-                        widthMinimum,
-                        BOTTOM_RIGHT_X));
-            }
-            double widthMaximum = bottomRightXOption.getRangeConstraints().getMaximumFixed();
-            if(width > widthMaximum) {
-                throw new IllegalArgumentException(String.format("width %f is "
-                        + "greater than the maximum %f specified by the constraint of "
-                        + "option '%s'",
-                        width,
-                        widthMaximum,
-                        BOTTOM_RIGHT_X));
-            }
-        }
-        if(OptionValueConstraintType.RANGE_CONSTRAINT.equals(bottomRightYOption.getConstraintType())) {
-            double heightMinimum = bottomRightYOption.getRangeConstraints().getMinimumFixed();
-            if(height < heightMinimum) {
-                throw new IllegalArgumentException(String.format("height %f is "
-                        + "less than the minimum %f specified by the constraint of "
-                        + "option '%s'",
-                        height,
-                        heightMinimum,
-                        BOTTOM_RIGHT_Y));
-            }
-            double heightMaximum = bottomRightYOption.getRangeConstraints().getMaximumFixed();
-            if(height > heightMaximum) {
-                throw new IllegalArgumentException(String.format("height %f is "
-                        + "greater than the maximum %f specified by the constraint of "
-                        + "option '%s'",
-                        height,
-                        heightMaximum,
-                        BOTTOM_RIGHT_Y));
-            }
-        }
-        topLeftXOption.setFixedValue(0);
-        topLeftYOption.setFixedValue(0);
-        bottomRightXOption.setFixedValue(width);
-        bottomRightYOption.setFixedValue(height);
-    }
-
-    public static DocumentSource getDocumentSourceEnum(SaneDevice device) throws IOException, SaneException {
-        if(!device.isOpen()) {
-            LOGGER.debug(String.format("opening closed device '%s'",
-                    device));
-            device.open();
-        }
-        SaneOption documentSourceOption = device.getOption(DOCUMENT_SOURCE_OPTION_NAME);
-        if(!documentSourceOption.isReadable()) {
-            throw new IllegalArgumentException(String.format("option '%s' isn't readable", DOCUMENT_SOURCE_OPTION_NAME));
-        }
-        String documentSource = documentSourceOption.getStringValue();
-        DocumentSource retValue = DocumentSource.UNKNOWN;
-        if(documentSource.equalsIgnoreCase("Flatbed")) {
-            retValue = DocumentSource.FLATBED;
-        }else if(documentSource.equalsIgnoreCase("ADF") || documentSource.equalsIgnoreCase("Automated document feeder")) {
-            retValue = DocumentSource.ADF;
-        }else if(documentSource.equalsIgnoreCase("Duplex")) {
-            retValue = DocumentSource.ADF_DUPLEX;
-        }
-        return retValue;
-    }
-
-    public static void setDocumentSourceEnum(SaneDevice device,
-            DocumentSource documentSource) throws IOException, SaneException {
-        switch(documentSource) {
-            case FLATBED:
-                setDocumentSource(device, "Flatbed");
-                break;
-            case ADF:
-                setDocumentSource(device, "ADF");
-                break;
-            case ADF_DUPLEX:
-                setDocumentSource(device, "Duplex");
-                break;
-            default:
-                throw new IllegalStateException(String.format("document source %s not supported", documentSource));
-        }
     }
 
     /**

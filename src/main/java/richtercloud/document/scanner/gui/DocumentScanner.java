@@ -16,8 +16,6 @@ package richtercloud.document.scanner.gui;
 
 import au.com.southsky.jfreesane.SaneDevice;
 import au.com.southsky.jfreesane.SaneException;
-import au.com.southsky.jfreesane.SaneSession;
-import au.com.southsky.jfreesane.SaneStatus;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
@@ -30,14 +28,12 @@ import com.thoughtworks.xstream.XStream;
 import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.net.InetAddress;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Collections;
@@ -47,8 +43,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
@@ -58,10 +52,12 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
-import javax.swing.SwingWorker;
+import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jscience.economics.money.Currency;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,11 +68,13 @@ import richtercloud.document.scanner.components.tag.FileTagStorage;
 import richtercloud.document.scanner.components.tag.TagStorage;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.gui.scanner.DocumentSource;
-import richtercloud.document.scanner.gui.scanner.ScannerConf;
-import richtercloud.document.scanner.gui.scanner.ScannerEditDialog;
 import static richtercloud.document.scanner.gui.scanner.ScannerEditDialog.DOCUMENT_SOURCE_OPTION_NAME;
 import richtercloud.document.scanner.gui.scanner.ScannerPageSelectDialog;
 import richtercloud.document.scanner.gui.scanner.ScannerSelectionDialog;
+import richtercloud.document.scanner.gui.scanresult.DeviceOpeningAlreadyInProgressException;
+import richtercloud.document.scanner.gui.scanresult.DocumentController;
+import richtercloud.document.scanner.gui.scanresult.ScanJob;
+import richtercloud.document.scanner.gui.scanresult.ScanJobFinishCallback;
 import richtercloud.document.scanner.gui.scanresult.ScannerResultDialog;
 import richtercloud.document.scanner.gui.storageconf.StorageConfPanelCreationException;
 import richtercloud.document.scanner.gui.storageconf.StorageSelectionDialog;
@@ -153,8 +151,6 @@ import richtercloud.reflection.form.builder.storage.StorageCreationException;
 import richtercloud.reflection.form.builder.storage.copy.StorageConfCopyException;
 import richtercloud.reflection.form.builder.storage.copy.StorageConfCopyFactory;
 import richtercloud.reflection.form.builder.typehandler.TypeHandler;
-import richtercloud.swing.worker.get.wait.dialog.SwingWorkerCompletionWaiter;
-import richtercloud.swing.worker.get.wait.dialog.SwingWorkerGetWaitDialog;
 import richtercloud.validation.tools.FieldRetriever;
 
 /**
@@ -182,6 +178,13 @@ import richtercloud.validation.tools.FieldRetriever;
  * of a document are managed in one tab and separate docking is set up for each.
  * Switch document tabs on one component of the document and make its other
  * components change - like NetBeans does with editor and navigator and others.
+ *
+ * <h2>Scan jobs</h2>
+ * Scans ought to occur in a background task while already scanned and sorted
+ * documents can be stored. It's too much work to provide extra behavior for the
+ * first scan task which seems odd to be placed into a background task
+ * immediately, but this can be compensated by making the scan result dialog
+ * appear automatically if there're no open documents.
  *
  * @author richter
  */
@@ -253,17 +256,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private final OCREngineFactory oCREngineFactory = new DelegatingOCREngineFactory();
     private OCREngine oCREngine;
     /**
-     * Since {@link SaneSession#getDevice(java.lang.String) } overwrites
-     * configuration settings, keep a reference to once retrieved
-     * {@link SaneDevice}.
-     */
-    private final static Map<String, SaneDevice> NAME_DEVICE_MAP = new HashMap<>();
-    /**
-     * Uses the string representation stored in {@link ScannerConf} in order to
-     * avoid confusion with equality of {@link InetAddress}es.
-     */
-    private final static Map<String, SaneSession> ADDRESS_SESSION_MAP = new HashMap<>();
-    /**
      * The default non-zero exit code.
      */
     private final static int SYSTEM_EXIT_ERROR_GENERAL = 1;
@@ -324,7 +316,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     },
             "caching-image-wrapper-init-thread"
     );
-    private Map<SaneDevice, Future<Void>> deviceOpeningFutureMap = new HashMap<>();
+    private final DocumentController documentController;
 
     /**
      * Creates new DocumentScanner which does nothing unless
@@ -440,6 +432,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
 
         OCREngineConf oCREngineConf = documentScannerConf.getoCREngineConf();
         this.oCREngine = oCREngineFactory.create(oCREngineConf);
+        this.documentController = new DocumentController();
 
         this.initComponents();
 
@@ -542,41 +535,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         mainPanelPanel.add(this.mainPanel);
     }
 
-    public static SaneDevice getScannerDevice(String scannerName,
-            Map<String, ScannerConf> scannerConfMap,
-            String scannerAddressFallback,
-            int resolutionWish) throws IOException, SaneException {
-        if(scannerAddressFallback == null) {
-            throw new IllegalArgumentException("scannerAddressFallback mustn't be null");
-        }
-        SaneDevice retValue = NAME_DEVICE_MAP.get(scannerName);
-        if(retValue == null) {
-            ScannerConf scannerConf = scannerConfMap.get(scannerName);
-            if(scannerConf == null) {
-                scannerConf = new ScannerConf(scannerName);
-                scannerConfMap.put(scannerName, scannerConf);
-            }
-            SaneSession saneSession = ADDRESS_SESSION_MAP.get(scannerConf.getScannerAddress());
-            if(saneSession == null) {
-                String scannerAddress = scannerConf.getScannerAddress();
-                if(scannerAddress == null) {
-                    scannerAddress = scannerAddressFallback;
-                }
-                InetAddress scannerInetAddress = InetAddress.getByName(scannerAddress);
-                saneSession = SaneSession.withRemoteSane(scannerInetAddress);
-                ADDRESS_SESSION_MAP.put(scannerConf.getScannerAddress(), saneSession);
-                scannerConf.setScannerAddress(scannerAddress);
-            }
-            retValue = saneSession.getDevice(scannerName);
-            NAME_DEVICE_MAP.put(scannerName, retValue);
-            ScannerEditDialog.configureDefaultOptionValues(retValue,
-                    scannerConf,
-                    resolutionWish
-            );
-        }
-        return retValue;
-    }
-
     /**
      * Validates  {@code conf} from configuration file.
      */
@@ -586,7 +544,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         String scannerName = this.documentScannerConf.getScannerName();
         if(scannerName != null) {
             try {
-                this.scannerDevice = getScannerDevice(scannerName,
+                this.scannerDevice = documentController.getScannerDevice(scannerName,
                         this.documentScannerConf.getScannerConfMap(),
                         DocumentScannerConf.SCANNER_SANE_ADDRESS_DEFAULT,
                         documentScannerConf.getResolutionWish());
@@ -646,16 +604,9 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                     LOGGER.warn("an unexpected exception occured during save of configurations into file '{}', changes most likely lost", this.documentScannerConf.getConfigFile().getAbsolutePath());
                 }
             }
-            if(this.scannerDevice != null) {
-                if(this.scannerDevice.isOpen()) {
-                    try {
-                        this.scannerDevice.close();
-                    } catch (IOException ex) {
-                        LOGGER.warn(String.format("an unexpected exception occured during closing the scanner device '%s'",
-                                this.scannerDevice.getName()));
-                    }
-                }
-            }
+            this.documentController.shutdown();
+                //shuts down this.scannerDevice as well
+            assert !this.scannerDevice.isOpen();
             if(this.storage != null) {
                 this.storage.shutdown();
             }
@@ -690,16 +641,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
      */
     @Override
     public void close() {
-        //DocumentScanner doesn't necessarily need to manage device. It'd be
-        //more elegant if that was done by a manager or conf class.
-        if (this.scannerDevice != null && this.scannerDevice.isOpen()) {
-            try {
-                this.scannerDevice.close();
-            } catch (IOException ex) {
-                LOGGER.error("an exception during shutdown of scanner device occured", ex);
-            }
-            this.scannerDevice = null;
-        }
         try {
             //@TODO: this can hang a shutdown (difficult to abort initialization
             //of resources)
@@ -735,6 +676,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         selectScannerMenuItem = new javax.swing.JMenuItem();
         knownScannersMenuItemSeparator = new javax.swing.JPopupMenu.Separator();
         scanMenuItem = new javax.swing.JMenuItem();
+        scanResultsMenuItem = new javax.swing.JMenuItem();
         openMenuItem = new javax.swing.JMenuItem();
         openSelectionMenuItem = new javax.swing.JMenuItem();
         closeMenuItem = new javax.swing.JMenuItem();
@@ -786,6 +728,14 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             }
         });
         fileMenu.add(scanMenuItem);
+
+        scanResultsMenuItem.setText("Scan results...");
+        scanResultsMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                scanResultsMenuItemActionPerformed(evt);
+            }
+        });
+        fileMenu.add(scanResultsMenuItem);
 
         openMenuItem.setText("Open scan...");
         openMenuItem.addActionListener(new java.awt.event.ActionListener() {
@@ -932,7 +882,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         try {
             scannerSelectionDialog = new ScannerSelectionDialog(this,
                     messageHandler,
-                    this.documentScannerConf);
+                    this.documentScannerConf,
+                    documentController);
         } catch (IOException | SaneException ex) {
             handleException(ex,
                     "Exception during scanner selection",
@@ -950,7 +901,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             return;
         }
         try {
-            this.scannerDevice = getScannerDevice(documentScannerConf.getScannerName(),
+            this.scannerDevice = documentController.getScannerDevice(documentScannerConf.getScannerName(),
                     documentScannerConf.getScannerConfMap(),
                     DocumentScannerConf.SCANNER_SANE_ADDRESS_DEFAULT,
                     documentScannerConf.getResolutionWish());
@@ -1118,35 +1069,41 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                     LOGGER.debug("image retrieval has been canceled, discontinuing adding document");
                     return;
                 }
-                if(!images.isEmpty()) {
-                    final List<List<ImageWrapper>> scannerResults = new LinkedList<>();
-                    ScannerResultDialog scannerResultDialog = new ScannerResultDialog(this,
-                            images,
-                            this.documentScannerConf.getPreferredScanResultPanelWidth(),
-                            scannerDevice,
-                            documentScannerConf.getImageWrapperStorageDir(),
-                            javaFXDialogMessageHandler,
-                            issueHandler,
-                            this //openDocumentWaitDialogParent
-                    );
-                    scannerResultDialog.setLocationRelativeTo(this);
-                    scannerResultDialog.setVisible(true);
-                    if(this.documentScannerConf.isRememberPreferredScanResultPanelWidth()) {
-                        this.documentScannerConf.setPreferredScanResultPanelWidth(scannerResultDialog.getPanelWidth());
-                    }
-                    List<List<ImageWrapper>> dialogResult = scannerResultDialog.getSortedDocuments();
-                    if(dialogResult == null) {
-                        //dialog canceled
-                        return;
-                    }
-                    scannerResults.addAll(scannerResultDialog.getSortedDocuments());
-                    for(List<ImageWrapper> scannerResult : scannerResults) {
-                        addDocument(scannerResult,
-                                null //selectedFile
-                        );
-                    }
-                    //this.validate(); //not necessary
+                if(images.isEmpty()) {
+                    LOGGER.debug(String.format("selected file '%s' contained no images",
+                            selectedFile.getAbsolutePath()));
+                    return;
                 }
+                documentController.addDocumentJob(images);
+                //always open dialog for pages from PDF because they don't take
+                //time to open
+                final List<List<ImageWrapper>> scannerResults = new LinkedList<>();
+                ScannerResultDialog scannerResultDialog = new ScannerResultDialog(this,
+                        this.documentScannerConf.getPreferredScanResultPanelWidth(),
+                        documentController,
+                        scannerDevice,
+                        documentScannerConf.getImageWrapperStorageDir(),
+                        javaFXDialogMessageHandler,
+                        issueHandler,
+                        this //openDocumentWaitDialogParent
+                );
+                scannerResultDialog.setLocationRelativeTo(this);
+                scannerResultDialog.setVisible(true);
+                if(this.documentScannerConf.isRememberPreferredScanResultPanelWidth()) {
+                    this.documentScannerConf.setPreferredScanResultPanelWidth(scannerResultDialog.getPanelWidth());
+                }
+                List<List<ImageWrapper>> dialogResult = scannerResultDialog.getSortedDocuments();
+                if(dialogResult == null) {
+                    //dialog canceled
+                    return;
+                }
+                scannerResults.addAll(scannerResultDialog.getSortedDocuments());
+                for(List<ImageWrapper> scannerResult : scannerResults) {
+                    addDocument(scannerResult,
+                            null //selectedFile
+                    );
+                }
+                //this.validate(); //not necessary
             } catch (DocumentAddException | InterruptedException | ExecutionException | IOException ex) {
                 handleException(ex,
                         "Exception during adding of new document",
@@ -1227,6 +1184,45 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
     }//GEN-LAST:event_valueDetectionMenuItemActionPerformed
 
+    private void scanResultsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_scanResultsMenuItemActionPerformed
+        try {
+            try {
+                final List<List<ImageWrapper>> scannerResults = new LinkedList<>();
+                ScannerResultDialog scannerResultDialog = new ScannerResultDialog(this,
+                        this.documentScannerConf.getPreferredScanResultPanelWidth(),
+                        documentController,
+                        scannerDevice,
+                        documentScannerConf.getImageWrapperStorageDir(),
+                        javaFXDialogMessageHandler,
+                        issueHandler,
+                        this //openDocumentWaitDialogParent
+                );
+                scannerResultDialog.setLocationRelativeTo(this);
+                scannerResultDialog.setVisible(true);
+                if(this.documentScannerConf.isRememberPreferredScanResultPanelWidth()) {
+                    this.documentScannerConf.setPreferredScanResultPanelWidth(scannerResultDialog.getPanelWidth());
+                }
+                List<List<ImageWrapper>> dialogResult = scannerResultDialog.getSortedDocuments();
+                if(dialogResult == null) {
+                    //dialog canceled
+                    return;
+                }
+                scannerResults.addAll(scannerResultDialog.getSortedDocuments());
+                for(List<ImageWrapper> scannerResult : scannerResults) {
+                    addDocument(scannerResult,
+                            null //selectedFile
+                    );
+                }
+            } catch (IOException | DocumentAddException ex) {
+                messageHandler.handle(new ExceptionMessage(ex));
+            }
+        }catch(Throwable ex) {
+            handleUnexpectedException(ex,
+                    "Exception during scanning",
+                    "Unexpected exception during scanning occured: %s");
+        }
+    }//GEN-LAST:event_scanResultsMenuItemActionPerformed
+
     private void addDocument(List<ImageWrapper> images,
             File selectedFile) throws DocumentAddException, IOException {
         //wait as long as possible
@@ -1258,6 +1254,46 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     }
 
     /**
+     * Determines the document source used on the scanner device and whether
+     * everything ought to be scanned or a selection of pages.
+     *
+     * @param scannerDevice
+     * @param dialogParent
+     * @return
+     * @throws IOException
+     * @throws DocumentSourceOptionMissingException
+     * @throws SaneException
+     */
+    public static Pair<DocumentSource, Integer> determineDocumentSource(DocumentController documentController,
+            SaneDevice scannerDevice,
+            Window dialogParent) throws IOException, DocumentSourceOptionMissingException, SaneException {
+        if(scannerDevice.getOption(DOCUMENT_SOURCE_OPTION_NAME) == null) {
+            //an exception is thrown in order to allow data to be reported
+            //through BugHandler
+            throw new DocumentSourceOptionMissingException(scannerDevice);
+        }
+        DocumentSource configuredDocumentSource = documentController.getDocumentSourceEnum(scannerDevice);
+        DocumentSource selectedDocumentSource;
+        final ScannerPageSelectDialog scannerPageSelectDialog;
+        if(configuredDocumentSource != DocumentSource.UNKNOWN) {
+            scannerPageSelectDialog = new ScannerPageSelectDialog(dialogParent,
+                    configuredDocumentSource);
+            scannerPageSelectDialog.setVisible(true);
+            selectedDocumentSource = scannerPageSelectDialog.getSelectedDocumentSource();
+        }else {
+            scannerPageSelectDialog = null;
+            selectedDocumentSource = DocumentSource.UNKNOWN;
+        }
+        if(selectedDocumentSource == null) {
+            return null;
+        }
+        return new ImmutablePair<>(selectedDocumentSource,
+                scannerPageSelectDialog == null || scannerPageSelectDialog.isScanAll()
+                        ? null
+                        : scannerPageSelectDialog.getPageCount());
+    }
+
+    /**
      * How to select scan source? There might be inimaginable scan sources
      * besides flatbed, ADF and duplex ADF which will be configurable in the
      * scanner edit dialog. If those are configured, there can't be any dialog
@@ -1274,222 +1310,112 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
      *
      * @return the retrieved images or {@code null} if the wait dialog has been
      * canceled
-     * @throws SaneException
-     * @throws IOException
      */
-    public static List<ImageWrapper> retrieveImages(SaneDevice scannerDevice,
-            Window dialogParent,
-            File imageWrapperStorageDir,
-            MessageHandler messageHandler) throws SaneException, IOException, DocumentSourceOptionMissingException {
-        if(scannerDevice.getOption(DOCUMENT_SOURCE_OPTION_NAME) == null) {
-            //an exception is thrown in order to allow data to be reported
-            //through BugHandler
-            throw new DocumentSourceOptionMissingException(scannerDevice);
-        }
-        DocumentSource configuredDocumentSource = ScannerEditDialog.getDocumentSourceEnum(scannerDevice);
-        final DocumentSource selectedDocumentSource;
-        final ScannerPageSelectDialog scannerPageSelectDialog;
-        if(configuredDocumentSource != DocumentSource.UNKNOWN) {
-            scannerPageSelectDialog = new ScannerPageSelectDialog(dialogParent,
-                    configuredDocumentSource);
-            scannerPageSelectDialog.setVisible(true);
-            selectedDocumentSource = scannerPageSelectDialog.getSelectedDocumentSource();
-        }else {
-            scannerPageSelectDialog = null;
-            selectedDocumentSource = DocumentSource.UNKNOWN;
-        }
-        if(selectedDocumentSource == null) {
-            return null;
-        }
-        final SwingWorkerGetWaitDialog dialog = new SwingWorkerGetWaitDialog(dialogParent,
-                DocumentScanner.generateApplicationWindowTitle("Scanning",
-                        Constants.APP_NAME,
-                        Constants.APP_VERSION),
-                "Scanning", //labelText
-                "Scanning" //progressBarText
-        );
-        SwingWorkerCompletionWaiter swingWorkerCompletionWaiter = new SwingWorkerCompletionWaiter(dialog);
-        SwingWorker<List<ImageWrapper>, Void> worker = new SwingWorker<List<ImageWrapper>, Void>() {
-            @Override
-            protected List<ImageWrapper> doInBackground() throws Exception {
-                ScannerEditDialog.setDocumentSourceEnum(scannerDevice,
-                        selectedDocumentSource);
-                List<ImageWrapper> retValue = new LinkedList<>();
-                if(selectedDocumentSource == DocumentSource.FLATBED || selectedDocumentSource == DocumentSource.UNKNOWN) {
-                    BufferedImage scannedImage = scannerDevice.acquireImage();
-                    //catching ScanException and invoking scannerDevice.close
-                    //causes all settings to be reset (resolution, color, etc.)
-                    //and doesn't avoid SaneException at every following call to
-                    //scannerDevice.acquireImage
-                    ImageWrapper imageWrapper = new CachingImageWrapper(imageWrapperStorageDir,
-                            scannedImage);
-                    retValue.add(imageWrapper);
-                }else {
-                    //ADF or duplex ADF
-                    if(selectedDocumentSource == DocumentSource.ADF) {
-                        ScannerEditDialog.setDocumentSource(scannerDevice, "ADF");
-                    }else {
-                        ScannerEditDialog.setDocumentSource(scannerDevice, "Duplex");
-                    }
-                    if(scannerPageSelectDialog.isScanAll()) {
-                        while (true) {
-                            try {
-                                BufferedImage scannedImage = scannerDevice.acquireImage();
-                                ImageWrapper imageWrapper = new CachingImageWrapper(imageWrapperStorageDir,
-                                        scannedImage);
-                                retValue.add(imageWrapper);
-                            } catch (SaneException e) {
-                                if (e.getStatus() == SaneStatus.STATUS_NO_DOCS) {
-                                    // this is the out of paper condition that we expect
-                                    LOGGER.info("no pages left to scan");
-                                    break;
-                                } else {
-                                    // some other exception that was not expected
-                                    throw e;
-                                }
-                            }
-                        }
-                    }else {
-                        int scannedPagesCount = 0;
-                        while(scannedPagesCount < scannerPageSelectDialog.getPageCount()) {
-                            LOGGER.info(String.format("requested scan of %d pages", scannerPageSelectDialog.getPageCount()));
-                            try {
-                                BufferedImage scannedImage = scannerDevice.acquireImage();
-                                ImageWrapper imageWrapper = new CachingImageWrapper(imageWrapperStorageDir,
-                                        scannedImage);
-                                retValue.add(imageWrapper);
-                            } catch (SaneException e) {
-                                if (e.getStatus() == SaneStatus.STATUS_NO_DOCS) {
-                                    // this is the out of paper condition that we expect
-                                    LOGGER.info("no pages left to scan");
-                                    break;
-                                } else {
-                                    // some other exception that was not expected
-                                    throw e;
-                                }
-                            }
-                            scannedPagesCount += 1;
-                        }
-                        scannerDevice.cancel(); //scanner remains in scan mode otherwise
-                    }
-                }
-                return retValue;
-            }
-        };
-        worker.addPropertyChangeListener(swingWorkerCompletionWaiter);
-        worker.execute();
-        //the dialog will be visible until the SwingWorker is done
-        dialog.setVisible(true);
-        if(dialog.isCanceled()) {
-            return null;
-        }
-        try {
-            return worker.get();
-        } catch (InterruptedException | ExecutionException ex) {
-            messageHandler.handle(new Message(ex.getCause(), JOptionPane.ERROR_MESSAGE));
-            return null;
-        }
-    }
-
     private void scan() throws DocumentSourceOptionMissingException {
         assert this.scannerDevice != null;
         try {
-            if(!this.scannerDevice.isOpen()) {
-                if(deviceOpeningFutureMap.get(scannerDevice) != null) {
-                    messageHandler.handle(new Message(String.format("The "
-                            + "opening of device '%s' is already in progress. "
-                            + "The opening might be in a loop/deadlock state "
-                            + "which could be fixed by de- and reconnecting "
-                            + "the device from your computer, restarting the "
-                            + "device, restarting %s or rebooting your "
-                            + "computer",
-                                    scannerDevice,
-                                    Constants.APP_NAME),
-                            JOptionPane.ERROR_MESSAGE,
-                            "Opening of scanner device already in progress"));
-                    return;
-                }else {
-                    LOGGER.debug(String.format("opening closed device '%s'",
-                            this.scannerDevice));
-                    Future<Void> deviceOpeningFuture = Executors.newSingleThreadExecutor().submit(() -> {
-                        scannerDevice.open();
-                        return null;
-                            //only Callables allow throwing of exceptions
-                    });
-                    deviceOpeningFutureMap.put(scannerDevice, deviceOpeningFuture);
-                    try {
-                        deviceOpeningFuture.get(documentScannerConf.getScannerOpenWaitTime(),
-                               documentScannerConf.getScannerOpenWaitTimeUnit());
-                    }catch(ExecutionException ex) {
-                        if(ex.getCause() instanceof SaneException) {
-                            throw (SaneException)ex.getCause();
-                        }else if(ex.getCause() instanceof IOException) {
-                            throw (IOException)ex.getCause();
-                        }else if(ex.getCause() instanceof IllegalArgumentException) {
-                            throw (IllegalArgumentException)ex.getCause();
-                        }else if(ex.getCause() instanceof IllegalStateException) {
-                            throw (IllegalStateException)ex.getCause();
-                        }else if(ex.getCause() instanceof DocumentAddException) {
-                            throw (DocumentAddException)ex.getCause();
-                        }
-                        throw new RuntimeException(ex);
-                    }catch(InterruptedException ex) {
-                        handleUnexpectedException(ex,
-                                "Exception during scanning",
-                                "An unexpected exception during scanning occured: %s");
-                    }catch(TimeoutException ex) {
-                        messageHandler.handle(new Message(String.format("Opening "
-                                + "the scanner device '%s' timed out after %d %s, "
-                                + "can't proceed. Consider increasing the timeout "
-                                + "value in options",
-                                        scannerDevice,
-                                        documentScannerConf.getScannerOpenWaitTime(),
-                                        documentScannerConf.getScannerOpenWaitTimeUnit()),
-                                JOptionPane.ERROR_MESSAGE,
-                                "Opening scanner device timed out"));
-                        return;
-                    }
-                    this.deviceOpeningFutureMap.remove(scannerDevice);
-                }
-            }
-            List<ImageWrapper> scannedImages = retrieveImages(scannerDevice,
-                    this,
-                    documentScannerConf.getImageWrapperStorageDir(),
-                    messageHandler);
-            if(scannedImages == null) {
-                //canceled or exception which has been handled inside retrieveImages
+            try {
+                documentController.openScannerDevice(this.scannerDevice,
+                        this.documentScannerConf.getScannerOpenWaitTime(),
+                        this.documentScannerConf.getScannerOpenWaitTimeUnit());
+            }catch(DeviceOpeningAlreadyInProgressException ex) {
+                messageHandler.handle(new Message(String.format("The "
+                        + "opening of device '%s' is already in progress. "
+                        + "The opening might be in a loop/deadlock state "
+                        + "which could be fixed by de- and reconnecting "
+                        + "the device from your computer, restarting the "
+                        + "device, restarting %s or rebooting your "
+                        + "computer",
+                                this.documentScannerConf.getScannerName(),
+                                Constants.APP_NAME),
+                        JOptionPane.ERROR_MESSAGE,
+                        "Opening of scanner device already in progress"));
+                return;
+            }catch(InterruptedException ex) {
+                handleUnexpectedException(ex,
+                        "Exception during scanning",
+                        "An unexpected exception during scanning occured: %s");
+            }catch(TimeoutException ex) {
+                messageHandler.handle(new Message(String.format("Opening "
+                        + "the scanner device '%s' timed out after %d %s, "
+                        + "can't proceed. Consider increasing the timeout "
+                        + "value in options",
+                                this.documentScannerConf.getScannerName(),
+                                documentScannerConf.getScannerOpenWaitTime(),
+                                documentScannerConf.getScannerOpenWaitTimeUnit()),
+                        JOptionPane.ERROR_MESSAGE,
+                        "Opening scanner device timed out"));
                 return;
             }
-            if(!scannedImages.isEmpty()) {
-                LOGGER.debug(String.format("scanned %d pages", scannedImages.size()));
-                final List<List<ImageWrapper>> scannerResults = new LinkedList<>();
-                ScannerResultDialog scannerResultDialog = new ScannerResultDialog(this,
-                        scannedImages,
-                        this.documentScannerConf.getPreferredScanResultPanelWidth(),
-                        scannerDevice,
-                        documentScannerConf.getImageWrapperStorageDir(),
-                        javaFXDialogMessageHandler,
-                        issueHandler,
-                        this //openDocumentWaitDialogParent
-                );
-                scannerResultDialog.setLocationRelativeTo(this);
-                scannerResultDialog.setVisible(true);
-                if(this.documentScannerConf.isRememberPreferredScanResultPanelWidth()) {
-                    this.documentScannerConf.setPreferredScanResultPanelWidth(scannerResultDialog.getPanelWidth());
-                }
-                List<List<ImageWrapper>> dialogResult = scannerResultDialog.getSortedDocuments();
-                if(dialogResult == null) {
-                    //dialog canceled
-                    return;
-                }
-                scannerResults.addAll(scannerResultDialog.getSortedDocuments());
-                for(List<ImageWrapper> scannerResult : scannerResults) {
-                    addDocument(scannerResult,
-                            null //selectedFile
-                    );
-                }
-                this.validate();
+            Pair<DocumentSource, Integer> documentSourcePair = determineDocumentSource(this.documentController,
+                    scannerDevice,
+                    this);
+            if(documentSourcePair == null) {
+                //dialog in determineDocumentSource has been aborted
+                return;
             }
+            ScanJob scanJob = documentController.addScanJob(documentController,
+                    scannerDevice,
+                    documentSourcePair.getKey(),
+                    this.documentScannerConf.getImageWrapperStorageDir(),
+                    documentSourcePair.getValue(),
+                    messageHandler);
+            ScanJobFinishCallback scanJobFinishCallback = imagesUnmodifiable -> {
+                SwingUtilities.invokeLater(() -> {
+                    try {
+                        if (imagesUnmodifiable == null) {
+                            //canceled or exception which has been handled inside retrieveImages
+                            return;
+                        }
+                        if(imagesUnmodifiable.isEmpty()) {
+                            LOGGER.debug("scanner returned no pages and no error");
+                            return;
+                        }
+                        LOGGER.debug(String.format("scanned %d pages", imagesUnmodifiable.size()));
+                        final List<List<ImageWrapper>> scannerResults = new LinkedList<>();
+                        if(mainPanel.getDocumentCount() == 0) {
+                            //Only open dialog if there's no open document in order to
+                            //avoid disturbing entering of data. The new scan is
+                            //available in the dialog which can be opened manually.
+                            ScannerResultDialog scannerResultDialog = new ScannerResultDialog(DocumentScanner.this,
+                                    DocumentScanner.this.documentScannerConf.getPreferredScanResultPanelWidth(),
+                                    documentController,
+                                    scannerDevice,
+                                    documentScannerConf.getImageWrapperStorageDir(),
+                                    javaFXDialogMessageHandler,
+                                    issueHandler,
+                                    DocumentScanner.this //openDocumentWaitDialogParent
+                            );
+                            scannerResultDialog.setLocationRelativeTo(DocumentScanner.this);
+                            scannerResultDialog.setVisible(true);
+                            if(DocumentScanner.this.documentScannerConf.isRememberPreferredScanResultPanelWidth()) {
+                                DocumentScanner.this.documentScannerConf.setPreferredScanResultPanelWidth(scannerResultDialog.getPanelWidth());
+                            }
+                            List<List<ImageWrapper>> dialogResult = scannerResultDialog.getSortedDocuments();
+                            if(dialogResult == null) {
+                                //dialog canceled
+                                return;
+                            }
+                            scannerResults.addAll(scannerResultDialog.getSortedDocuments());
+                            for(List<ImageWrapper> scannerResult : scannerResults) {
+                                addDocument(scannerResult,
+                                        null //selectedFile
+                                );
+                            }
+                            DocumentScanner.this.validate();
+                        }
+                    }catch(DocumentAddException | IOException ex) {
+                        messageHandler.handle(new Message(ex));
+                    }
+                });
+            };
+            scanJob.setFinishCallback(scanJobFinishCallback);
+                //callback can be set safely until thread or other
+                //executor isn't started
+            Thread scanJobThread = new Thread(scanJob,
+                    String.format("scan-job-thread-%d",
+                            documentController.getDocumentJobCount().intValue()+1));
+            scanJobThread.start();
         } catch (SaneException | IOException | IllegalArgumentException | DocumentAddException ex) {
             this.handleException(ex,
                     "Exception during scanning",
@@ -1731,6 +1657,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private javax.swing.JMenuItem optionsMenuItem;
     private javax.swing.JMenuItem saveMenuItem;
     private javax.swing.JMenuItem scanMenuItem;
+    private javax.swing.JMenuItem scanResultsMenuItem;
     private javax.swing.JMenu scannerSelectionMenu;
     private javax.swing.JMenuItem selectScannerMenuItem;
     private javax.swing.JMenu storageSelectionMenu;

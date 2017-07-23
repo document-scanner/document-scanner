@@ -16,10 +16,13 @@ package richtercloud.document.scanner.gui.scanresult;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 import javafx.geometry.Orientation;
 import javafx.scene.layout.FlowPane;
+import richtercloud.document.scanner.ifaces.ImageWrapper;
 
 /**
+ * Is a pane for displaying and managing multiple {@link ScanResultViewPane}s.
  *
  * @author richter
  */
@@ -55,5 +58,9 @@ public class ScanResultPane extends FlowPane {
 
     public List<ScanResultViewPane> getSelectedScanResults() {
         return selectedScanResults;
+    }
+
+    public void removeScanResultViewPanesOf(List<ImageWrapper> imageWrappers) {
+        removeScanResultPanes(scanResultPanes.stream().filter(scanResultPane -> imageWrappers.contains(scanResultPane.getImageWrapper())).collect(Collectors.toList()));
     }
 }

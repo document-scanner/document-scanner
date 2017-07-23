@@ -21,27 +21,34 @@ import java.awt.Window;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.embed.swing.JFXPanel;
 import javafx.event.EventHandler;
+import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SplitPane;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.util.Callback;
 import javax.swing.GroupLayout;
@@ -51,12 +58,14 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.gui.DocumentScanner;
 import richtercloud.document.scanner.gui.DocumentSourceOptionMissingException;
 import richtercloud.document.scanner.gui.Tools;
+import richtercloud.document.scanner.gui.scanner.DocumentSource;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.message.handler.BugHandler;
 import richtercloud.message.handler.ExceptionMessage;
@@ -67,6 +76,14 @@ import richtercloud.message.handler.Message;
  * Allows associating scan results, i.e. images, with documents which group
  * scan results. Callers can open a document tag for each document.
  *
+ * Availble images come from document jobs which are listed in the form of
+ * toggle buttons whose activation triggers displaying in the list of available
+ * images. This allows to restore overview if a larger set of scan jobs is
+ * handled. Once all pages of a scan job have been added to a document, it is
+ * automatically removed and images are only moved between the image selection
+ * and the document pane in case the image ever is moved back to the image
+ * selection pane after removing a document.
+ *
  * Documents are organized in a {@link DocumentPane}.
  *
  * Zoom function controls both document and scan result zoom since there's no
@@ -74,6 +91,17 @@ import richtercloud.message.handler.Message;
  *
  * @author richter
  */
+/*
+internal implementation notes:
+- @TODO: The toggle buttons for toggling displaying of scan results of each
+document job should be disabled as long as the scan is running, but the
+re-enabling with ToggleButton.setDisable(false) doesn't work for unknown reasons
+although performed on the JavaFX thread with Platform.runLater (search for
+`setDisable` in order to investigate; see
+https://github.com/krichter722/javafx-toggle-button-demo for a draft for a MCVE
+which doesn't exhibit the issue yet -> maybe better to scale down from large
+application)
+*/
 public class ScannerResultDialog extends JDialog {
     private static final long serialVersionUID = 1L;
     private final static Logger LOGGER = LoggerFactory.getLogger(ScannerResultDialog.class);
@@ -131,6 +159,9 @@ public class ScannerResultDialog extends JDialog {
     private final JavaFXDialogMessageHandler messageHandler;
     private final BugHandler bugHandler;
     private final Window openDocumentWaitDialogParent;
+    private final DocumentController documentController;
+    private Map<DocumentJob, List<ImageWrapper>> documentJobImageMapping = new HashMap<>();
+    private Map<DocumentJob, DocumentJobToggleButton> documentJobToggleButtonMapping = new HashMap<>();
 
     /**
      *
@@ -148,8 +179,8 @@ public class ScannerResultDialog extends JDialog {
      * @throws IOException
      */
     public ScannerResultDialog(Window owner,
-            List<ImageWrapper> initialScanResultImages,
             int preferredScanResultPanelWidth,
+            DocumentController documentController,
             SaneDevice scannerDevice,
             File imageWrapperStorageDir,
             JavaFXDialogMessageHandler messageHandler,
@@ -161,6 +192,10 @@ public class ScannerResultDialog extends JDialog {
         this.panelWidth = preferredScanResultPanelWidth;
         this.panelHeight = panelWidth * 297 / 210;
         this.scannerDevice = scannerDevice;
+        if(documentController == null) {
+            throw new IllegalArgumentException("documentController mustn't be null");
+        }
+        this.documentController = documentController;
         if(imageWrapperStorageDir == null) {
             throw new IllegalArgumentException("imageWrapperStorageDir mustn't be null");
         }
@@ -204,6 +239,13 @@ public class ScannerResultDialog extends JDialog {
             leftPane.setCenter(documentPaneScrollPane);
             GridPane buttonPaneTop = new GridPane();
             GridPane buttonPaneLeft = new GridPane();
+            FlowPane documentJobPane = new FlowPane();
+            documentJobPane.setOrientation(Orientation.VERTICAL);
+            documentJobPane.setColumnHalignment(HPos.RIGHT);
+            documentJobPane.setPrefHeight(10);
+            documentJobPane.setVgap(5);
+            documentJobPane.setHgap(5);
+                //change of orientation seems to change sense of vgap and hgap
             buttonPaneLeft.setHgap(5);
             buttonPaneLeft.setPadding(new Insets(5));
             buttonPaneLeft.add(addDocumentButton, 0, 0);
@@ -232,7 +274,8 @@ public class ScannerResultDialog extends JDialog {
                 public void handle(MouseEvent event) {
                     //enqueue the scan results which were grouped in the document
                     //back into the scan result pane...
-                    for(ImageWrapper selectedDocumentScanResult : documentPane.getSelectedDocument().getImageWrappers()) {
+                    List<ImageWrapper> selectedDocumentImageWrappers = documentPane.getSelectedDocument().getImageWrappers();
+                    for(ImageWrapper selectedDocumentScanResult : selectedDocumentImageWrappers) {
                         try {
                             addScanResult(selectedDocumentScanResult,
                                     scanResultPane,
@@ -241,8 +284,14 @@ public class ScannerResultDialog extends JDialog {
                             throw new RuntimeException(ex);
                         }
                     }
-                    //...and remove the document
+                    //...remove the document...
                     documentPane.getChildren().remove(documentPane.getChildren().size()-1);
+                    //...and create a new scan job for them in order to increase
+                    //overview
+                    DocumentJob documentJob = documentController.addDocumentJob(selectedDocumentImageWrappers);
+                    addDocumentJobToggleButton(documentJob,
+                            documentJobPane,
+                            scanResultPane);
                 }
             });
             addImagesButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent event) -> {
@@ -307,21 +356,23 @@ public class ScannerResultDialog extends JDialog {
 
                     //scanResultPane.getSelectedScanResults() is empty now
                     addImagesButton.setDisable(true);
+
+                    //handle removal of empty document jobs
+                    ListIterator<DocumentJob> documentJobItr = documentController.getDocumentJobs().listIterator();
+                    while(documentJobItr.hasNext()) {
+                        DocumentJob documentJob = documentJobItr.next();
+                        if(documentJob.getImagesUnmodifiable().stream().allMatch(imageWrapper -> documentPane.getDocumentNodes().stream().map(a -> a.getImageWrappers()).anyMatch(b -> b.contains(imageWrapper)))) {
+                            documentJobItr.remove();
+                            DocumentJobToggleButton documentJobToggleButton = documentJobToggleButtonMapping.remove(documentJob);
+                            assert documentJobToggleButton != null;
+                            documentJobPane.getChildren().remove(documentJobToggleButton);
+                        }
+                    }
                 }catch(Throwable ex) {
                     LOGGER.error("an unexpected exception during adding of images occured", ex);
                     this.bugHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             });
-
-            for(ImageWrapper scanResultImage : initialScanResultImages) {
-                try {
-                    addScanResult(scanResultImage,
-                            scanResultPane,
-                            scanResultPane.getSelectedScanResults());
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                }
-            }
 
             BorderPane rightPane = new BorderPane();
             rightPane.setCenter(scanResultPaneScrollPane);
@@ -332,6 +383,7 @@ public class ScannerResultDialog extends JDialog {
             Button zoomOutButton = new Button("-");
             Button scanMoreButton = new Button("Scan more");
             Button openDocumentButton = new Button("Open scan");
+            Label scanResultsLabel = new Label("Scan results: ");
             Button deletePageButton = new Button("Delete page");
             Button selectAllButton = new Button("Select all");
             Button turnRightButton = new Button("Turn right");
@@ -369,6 +421,29 @@ public class ScannerResultDialog extends JDialog {
                     3, //columnIndex
                     0 //rowIndex
             );
+            buttonPaneTop.add(scanResultsLabel,
+                    4, //columnIndex
+                    0 //rowIndex
+            );
+            buttonPaneTop.add(documentJobPane,
+                    5, //columnIndex
+                    0 //rowIndex
+            );
+            for(DocumentJob documentJob : documentController.getDocumentJobs()) {
+                addDocumentJobToggleButton(documentJob,
+                        documentJobPane,
+                        scanResultPane);
+                handleDocumentJobToggleButtonPressed(documentJob,
+                        scanResultPane);
+                    //- handling event firing programmatically is painful
+                    //because the event handler invoked from
+                    //documentJobToggleButton.fireEvent doesn't reconize
+                    //that the button ought to be pressed after
+                    //documentJobToggleButton.fire
+                    //- addDocumentJob doesn't add to scanResultPane because
+                    //that already happens if a document is removed so that code
+                    //reusage is improved
+            }
             buttonPaneRight.add(deletePageButton,
                     2, //columnIndex
                     0 //rowIndex
@@ -419,23 +494,55 @@ public class ScannerResultDialog extends JDialog {
                                 "No scanner selected and configured"));
                         return;
                     }
-                    List<ImageWrapper> newImages = DocumentScanner.retrieveImages(this.scannerDevice,
-                            this,
+                    Pair<DocumentSource, Integer> documentSourcePair = DocumentScanner.determineDocumentSource(this.documentController,
+                            this.scannerDevice,
+                            this);
+                    ScanJob scanJob = documentController.addScanJob(this.documentController,
+                            this.scannerDevice,
+                            documentSourcePair.getKey(),
                             this.imageWrapperStorageDir,
+                            documentSourcePair.getValue(),
                             this.messageHandler);
-                    if(newImages == null) {
-                        //dialog has been canceled
-                        return;
-                    }
-                    for(ImageWrapper newImage : newImages) {
-                        try {
-                            addScanResult(newImage,
-                                    scanResultPane,
-                                    scanResultPane.getSelectedScanResults());
-                        } catch (IOException ex) {
-                            throw new RuntimeException(ex);
-                        }
-                    }
+                    final DocumentJobToggleButton scanJobToggleButton = new DocumentJobToggleButton(scanJob //scanJob
+                    );
+                    ScanJobFinishCallback scanJobFinishCallback = imagesUnmodifiable -> {
+                        Platform.runLater(() -> {
+                            if(imagesUnmodifiable == null) {
+                                //dialog has been canceled
+                                buttonPaneTop.getChildren().remove(scanJobToggleButton);
+                                    //remove toggle button for canceled job
+                                return;
+                            }
+                            scanJobToggleButton.setDisable(false);
+                                //doesn't work, see internal implementation notes of class for
+                                //details
+                            scanJobToggleButton.setSelected(true);
+                                //doesn't work neither
+                            for(ImageWrapper newImage : imagesUnmodifiable) {
+                                try {
+                                    addScanResult(newImage,
+                                            scanResultPane,
+                                            scanResultPane.getSelectedScanResults());
+                                } catch (IOException ex) {
+                                    throw new RuntimeException(ex);
+                                }
+                            }
+                        });
+                    };
+                    scanJob.setFinishCallback(scanJobFinishCallback);
+                        //callback can be set safely until thread or other
+                        //executor isn't started
+                    scanJobToggleButton.setDocumentJob(scanJob);
+                    Thread scanJobThread = new Thread(scanJob,
+                            String.format("scan-job-thread-%d",
+                                    documentController.getDocumentJobCount().intValue()+1));
+                    addDocumentJobToggleButton(scanJob,
+                            documentJobPane,
+                            scanResultPane);
+                    scanJobToggleButton.setDisable(true);
+                        //re-enabling doesn't work, see internal implementation
+                        //notes of class for details
+                    scanJobThread.start();
                 } catch (SaneException | IOException ex) {
                     messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
                 } catch(DocumentSourceOptionMissingException ex) {
@@ -670,6 +777,53 @@ public class ScannerResultDialog extends JDialog {
             //KISS: the panel is always added at the end of documentPane, so
             //always scroll
         return retValue;
+    }
+
+    private void handleDocumentJobToggleButtonPressed(DocumentJob documentJob,
+            ScanResultPane scanResultPane) {
+        for(ImageWrapper scanResultImage : documentJob.getImagesUnmodifiable()) {
+            try {
+                addScanResult(scanResultImage,
+                        scanResultPane,
+                        scanResultPane.getSelectedScanResults());
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+        documentJobImageMapping.put(documentJob,
+                new LinkedList<>(documentJob.getImagesUnmodifiable())
+                    //needs to be a copy because the original is cleared
+        );
+    }
+
+    private void addDocumentJobToggleButton(DocumentJob documentJob,
+            Pane documentJobPane,
+            ScanResultPane scanResultPane) {
+        DocumentJobToggleButton documentJobToggleButton = new DocumentJobToggleButton(documentJob);
+        documentJobToggleButtonMapping.put(documentJob,
+                documentJobToggleButton);
+        documentJobPane.getChildren().add(documentJobToggleButton);
+        //documentJobToggleButton.setDisable(!documentJob.isFinished());
+            //re-enabling doesn't work, see internal implementation notes of
+            //class for details
+        documentJobToggleButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent event) -> {
+            //move images from selection pane to job list where they can
+            //be moved back from if the button is toggled again
+            if(documentJobToggleButton.isSelected()) {
+                handleDocumentJobToggleButtonPressed(documentJob,
+                        scanResultPane);
+            }else {
+                //documentJobToggleButton not pressed
+                scanResultPane.removeScanResultViewPanesOf(documentJob.getImagesUnmodifiable());
+            }
+        });
+        if(documentJob.isFinished()) {
+            documentJobToggleButton.setSelected(true);
+                //set selected state visually which doesn't trigger the
+                //action events
+        }
+        LOGGER.debug(String.format("added toggle button for document job %d",
+                documentJob.getJobNumber()));
     }
 
     /**

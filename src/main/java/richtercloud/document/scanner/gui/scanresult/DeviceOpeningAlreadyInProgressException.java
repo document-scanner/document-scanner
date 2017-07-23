@@ -3,42 +3,26 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
+
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package richtercloud.document.scanner.gui.scanresult;
 
-import java.io.IOException;
-import richtercloud.document.scanner.ifaces.ImageWrapper;
-
 /**
- * Wraps an {@link ImageWrapper} and uses selection highlighting and zoom code
- * from {@link ImageViewPane}.
  *
  * @author richter
  */
-public class ScanResultViewPane extends ImageViewPane {
-    private final ImageWrapper imageWrapper;
+public class DeviceOpeningAlreadyInProgressException extends Exception {
+    private static final long serialVersionUID = 1L;
 
-    public ScanResultViewPane(ImageWrapper scanResult,
-            int imageWidth) throws IOException {
-        super(scanResult,
-                imageWidth);
-        this.imageWrapper = scanResult;
-    }
-
-    public ImageWrapper getImageWrapper() {
-        return imageWrapper;
-    }
-
-    @Override
-    protected ImageWrapper getTopMostImageWrapper() {
-        return this.imageWrapper;
+    public DeviceOpeningAlreadyInProgressException(String scannerDeviceName) {
+        super(String.format("Opening of scanner device '%s' already in progress",
+                scannerDeviceName));
     }
 }

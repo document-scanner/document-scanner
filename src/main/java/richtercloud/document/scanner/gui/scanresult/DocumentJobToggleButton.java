@@ -14,31 +14,31 @@
  */
 package richtercloud.document.scanner.gui.scanresult;
 
-import java.io.IOException;
-import richtercloud.document.scanner.ifaces.ImageWrapper;
+import javafx.scene.control.ToggleButton;
 
 /**
- * Wraps an {@link ImageWrapper} and uses selection highlighting and zoom code
- * from {@link ImageViewPane}.
  *
  * @author richter
  */
-public class ScanResultViewPane extends ImageViewPane {
-    private final ImageWrapper imageWrapper;
+public class DocumentJobToggleButton extends ToggleButton {
+    private DocumentJob documentJob;
 
-    public ScanResultViewPane(ImageWrapper scanResult,
-            int imageWidth) throws IOException {
-        super(scanResult,
-                imageWidth);
-        this.imageWrapper = scanResult;
+    /**
+     * Creates a new document job toggle button.
+     *
+     * @param documentJob the document job of the toggle button
+     */
+    public DocumentJobToggleButton(DocumentJob documentJob) {
+        super(String.format("#%d",
+                documentJob.getJobNumber()));
+        this.documentJob = documentJob;
     }
 
-    public ImageWrapper getImageWrapper() {
-        return imageWrapper;
+    public DocumentJob getDocumentJob() {
+        return documentJob;
     }
 
-    @Override
-    protected ImageWrapper getTopMostImageWrapper() {
-        return this.imageWrapper;
+    public void setDocumentJob(DocumentJob documentJob) {
+        this.documentJob = documentJob;
     }
 }
