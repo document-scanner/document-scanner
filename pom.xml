@@ -20,40 +20,6 @@
         <richtercloud.document.scanner.version>1.0-beta4</richtercloud.document.scanner.version>
             <!-- for izpack plugin below (property for better visibility) -->
     </properties>
-    <repositories>
-        <repository>
-            <id>sonatype-nexus-snapshots</id>
-            <name>Sonatype Nexus snapshot repository</name>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>never</updatePolicy>
-            </snapshots>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-        </repository>
-            <!-- for izPack 5.0.11-SNAPSHOT with important fixes for creation
-                of valid .desktop files -->
-    </repositories>
-    <pluginRepositories>
-        <pluginRepository>
-            <id>sonatype-nexus-snapshots</id>
-            <name>Sonatype Nexus snapshot repository</name>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>never</updatePolicy>
-                    <!-- only need changes of https://github.com/izpack/izpack/pull/562,
-                    #561 and #560 -->
-            </snapshots>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-        </pluginRepository>
-            <!-- for izPack 5.0.11-SNAPSHOT with important fixes for creation
-                of valid .desktop files -->
-    </pluginRepositories>
     <dependencies>
         <!--document-scanner dependencies-->
         <dependency>
