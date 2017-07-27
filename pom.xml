@@ -20,6 +20,36 @@
         <richtercloud.document.scanner.version>1.0-beta4</richtercloud.document.scanner.version>
             <!-- for izpack plugin below (property for better visibility) -->
     </properties>
+    <repositories>
+        <repository>
+            <id>apache-snapshots-group</id>
+            <name>Apache snapshots group repository</name>
+            <url>https://repository.apache.org/content/groups/snapshots</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+        </repository>
+            <!-- fix missing `commons-numbers-core:1.0-SNAPSHOT` on Travis CI
+            -->
+    </repositories>
+    <pluginRepositories>
+        <pluginRepository>
+            <id>apache-snapshots-group</id>
+            <name>Apache snapshots group repository</name>
+            <url>https://repository.apache.org/content/groups/snapshots</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+        </pluginRepository>
+            <!-- fix missing `commons-numbers-core:1.0-SNAPSHOT` on Travis CI
+            -->
+    </pluginRepositories>
     <dependencies>
         <!--document-scanner dependencies-->
         <dependency>
