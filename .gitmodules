@@ -1,0 +1,3 @@
+[submodule "document-scanner-pmd-excludes"]
+	path = document-scanner-pmd-excludes
+	url = https://github.com/document-scanner/document-scanner-pmd-excludes
