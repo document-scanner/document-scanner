@@ -36,8 +36,11 @@
                   </Group>
                   <Component id="autoSaveImageDataCheckBox" max="32767" attributes="0"/>
                   <Component id="autoSaveOCRDataCheckBox" alignment="0" max="32767" attributes="0"/>
-                  <Group type="102" alignment="0" attributes="0">
-                      <Component id="autoOCRValueDetectionCheckBox" min="-2" max="-2" attributes="0"/>
+                  <Group type="102" attributes="0">
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Component id="autoOCRValueDetectionCheckBox" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="rememberTrimWhitespaceCheckBox" alignment="0" min="-2" max="-2" attributes="0"/>
+                      </Group>
                       <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
                   </Group>
               </Group>
@@ -56,6 +59,8 @@
               <Component id="autoSaveOCRDataCheckBox" min="-2" max="-2" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
               <Component id="autoOCRValueDetectionCheckBox" min="-2" max="-2" attributes="0"/>
+              <EmptySpace max="-2" attributes="0"/>
+              <Component id="rememberTrimWhitespaceCheckBox" min="-2" max="-2" attributes="0"/>
               <EmptySpace max="32767" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="saveButton" alignment="3" min="-2" max="-2" attributes="0"/>
@@ -101,6 +106,11 @@
     <Component class="javax.swing.JCheckBox" name="autoOCRValueDetectionCheckBox">
       <Properties>
         <Property name="text" type="java.lang.String" value="Automatically detect OCR values (might be slow)"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JCheckBox" name="rememberTrimWhitespaceCheckBox">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Remember trim whitespace option in OCR copy text area"/>
       </Properties>
     </Component>
   </SubComponents>

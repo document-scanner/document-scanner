@@ -27,6 +27,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 import javax.swing.JRadioButtonMenuItem;
@@ -50,6 +51,10 @@ import richtercloud.validation.tools.FieldRetriever;
  *
  * If nothing is selected and setting a value on a field with context menu is
  * requested, the complete content of the OCR text area is used.
+ *
+ * Provides a checkbox to allow quick switching between trimming whitespace from
+ * copied text or not. Since there's no easy way to manipulate the source of a
+ * paste action, the state of the checkbox will be read when the text is pasted.
  *
  * @author richter
  */
@@ -294,11 +299,22 @@ public class DefaultOCRPanel extends OCRPanel {
                 }
             }
         }
+        this.trimWhitespaceCheckBox.setSelected(documentScannerConf.isTrimWhitespace());
+        this.trimWhitespaceCheckBox.addActionListener((event) -> {
+            if(DefaultOCRPanel.this.documentScannerConf.isRememberTrimWhitespace()) {
+                DefaultOCRPanel.this.documentScannerConf.setTrimWhitespace(true);
+            }
+        });
     }
 
     @Override
     public JTextArea getoCRResultTextArea() {
         return this.oCRResultTextArea;
+    }
+
+    @Override
+    public JCheckBox getTrimWhitespaceCheckBox() {
+        return trimWhitespaceCheckBox;
     }
 
     /**
@@ -328,6 +344,7 @@ public class DefaultOCRPanel extends OCRPanel {
         dateFormatButton = new javax.swing.JButton();
         timeFormatButton = new javax.swing.JButton();
         dateTimeFormatButton = new javax.swing.JButton();
+        trimWhitespaceCheckBox = new javax.swing.JCheckBox();
 
         oCRResultPopupPasteIntoMenu.setText("Paste into");
         oCRResultPopup.add(oCRResultPopupPasteIntoMenu);
@@ -412,6 +429,8 @@ public class DefaultOCRPanel extends OCRPanel {
         });
         toolbar.add(dateTimeFormatButton);
 
+        trimWhitespaceCheckBox.setText("Trim whitespace off copied text");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -422,7 +441,8 @@ public class DefaultOCRPanel extends OCRPanel {
                     .addComponent(oCRResultTextAreaScrollPane)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(oCRResultLabel)
-                        .addGap(0, 0, Short.MAX_VALUE)))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(trimWhitespaceCheckBox)))
                 .addContainerGap())
             .addComponent(toolbar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
@@ -430,9 +450,11 @@ public class DefaultOCRPanel extends OCRPanel {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(oCRResultLabel)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(oCRResultLabel)
+                    .addComponent(trimWhitespaceCheckBox))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(oCRResultTextAreaScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 226, Short.MAX_VALUE)
+                .addComponent(oCRResultTextAreaScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 220, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(toolbar, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
@@ -495,5 +517,6 @@ public class DefaultOCRPanel extends OCRPanel {
     private javax.swing.JButton timeFormatButton;
     private javax.swing.ButtonGroup timeFormatPopupButtonGroup;
     private javax.swing.JToolBar toolbar;
+    private javax.swing.JCheckBox trimWhitespaceCheckBox;
     // End of variables declaration//GEN-END:variables
 }

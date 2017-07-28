@@ -14,6 +14,7 @@
  */
 package richtercloud.document.scanner.gui;
 
+import java.awt.Component;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
@@ -21,6 +22,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.swing.JComponent;
+import javax.swing.JTextField;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.DocumentFilter;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import richtercloud.document.scanner.components.OCRResultPanel;
@@ -64,6 +68,7 @@ import richtercloud.reflection.form.builder.jpa.fieldhandler.JPAMappingFieldHand
 import richtercloud.reflection.form.builder.jpa.fieldhandler.factory.JPAAmountMoneyMappingFieldHandlerFactory;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
 import richtercloud.reflection.form.builder.jpa.panels.QueryHistoryEntryStorage;
+import richtercloud.reflection.form.builder.jpa.panels.StringAutoCompletePanel;
 import richtercloud.reflection.form.builder.jpa.storage.FieldInitializer;
 import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 import richtercloud.reflection.form.builder.jpa.typehandler.ElementCollectionTypeHandler;
@@ -364,7 +369,22 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
             return new ImmutablePair<JComponent, ComponentHandler<?>>(retValue,
                     TAG_COMPONENT_HANDLER);
         }
+        if(field.getType().equals(String.class)) {
+            Pair<JComponent, ComponentHandler<?>> retValue = super.handle0(field,
+                    instance,
+                    updateListener,
+                    reflectionFormBuilder);
+            assert retValue.getKey() instanceof StringAutoCompletePanel;
+            StringAutoCompletePanel retValueCast = (StringAutoCompletePanel) retValue.getKey();
+            Component retValueCastEditorComponent = retValueCast.getComboBox().getEditor().getEditorComponent();
+            assert retValueCastEditorComponent instanceof JTextField;
+            JTextField retValueCastEditorTextField = (JTextField) retValueCastEditorComponent;
+            AbstractDocument retValueCastEditorTextFieldDocument = (AbstractDocument)retValueCastEditorTextField.getDocument();
+            DocumentFilter documentFilterGlazedLists = retValueCastEditorTextFieldDocument.getDocumentFilter();
+            retValueCastEditorTextFieldDocument.setDocumentFilter(new TrimDocumentFilter(documentFilterGlazedLists,
+                    mainPanel));
+            return retValue;
+        }
         return super.handle0(field, instance, updateListener, reflectionFormBuilder);
     }
-
 }

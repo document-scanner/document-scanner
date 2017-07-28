@@ -257,6 +257,8 @@ public class DocumentScannerConf implements Serializable {
     private Map<Class<?>, OCRResultFormatter<?>> autoOCRValueDetectionFormatterMap = AUTO_OCR_VALUE_DETECTION_FORMATTER_MAP;
     private long scannerOpenWaitTime = SCANNER_OPEN_WAIT_TIME_DEFAULT;
     private TimeUnit scannerOpenWaitTimeUnit = SCANNER_OPEN_WAIT_TIME_UNIT_DEFAULT;
+    private boolean trimWhitespace = true;
+    private boolean rememberTrimWhitespace = true;
 
     /**
      * Creates an configuration with default values.
@@ -354,7 +356,9 @@ public class DocumentScannerConf implements Serializable {
             File credentialsStoreFile,
             Map<Class<?>, OCRResultFormatter<?>> autoOCRValueDetectionFormatterMap,
             long scannerOpenWaitTime,
-            TimeUnit scannerOpenWaitTimeUnit
+            TimeUnit scannerOpenWaitTimeUnit,
+            boolean trimWhitespace,
+            boolean rememberTrimWhitespace
     ) {
         this.configFile = configFile;
         this.scannerName = scannerName;
@@ -398,6 +402,8 @@ public class DocumentScannerConf implements Serializable {
         this.autoOCRValueDetectionFormatterMap = autoOCRValueDetectionFormatterMap;
         this.scannerOpenWaitTime = scannerOpenWaitTime;
         this.scannerOpenWaitTimeUnit = scannerOpenWaitTimeUnit;
+        this.trimWhitespace = trimWhitespace;
+        this.rememberTrimWhitespace = rememberTrimWhitespace;
     }
 
     /**
@@ -446,8 +452,26 @@ public class DocumentScannerConf implements Serializable {
                 documentScannerConf.getCredentialsStoreFile(),
                 documentScannerConf.getAutoOCRValueDetectionFormatterMap(),
                 documentScannerConf.getScannerOpenWaitTime(),
-                documentScannerConf.getScannerOpenWaitTimeUnit()
+                documentScannerConf.getScannerOpenWaitTimeUnit(),
+                documentScannerConf.isTrimWhitespace(),
+                documentScannerConf.isRememberTrimWhitespace()
         );
+    }
+
+    public boolean isRememberTrimWhitespace() {
+        return rememberTrimWhitespace;
+    }
+
+    public void setRememberTrimWhitespace(boolean rememberTrimWhitespace) {
+        this.rememberTrimWhitespace = rememberTrimWhitespace;
+    }
+
+    public boolean isTrimWhitespace() {
+        return trimWhitespace;
+    }
+
+    public void setTrimWhitespace(boolean trimWhitespace) {
+        this.trimWhitespace = trimWhitespace;
     }
 
     public long getScannerOpenWaitTime() {
