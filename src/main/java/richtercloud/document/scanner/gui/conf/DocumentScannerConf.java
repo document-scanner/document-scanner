@@ -40,6 +40,7 @@ import richtercloud.document.scanner.valuedetectionservice.ContactValueDetection
 import richtercloud.document.scanner.valuedetectionservice.CurrencyFormatValueDetectionServiceConf;
 import richtercloud.document.scanner.valuedetectionservice.DateFormatValueDetectionServiceConf;
 import richtercloud.document.scanner.valuedetectionservice.TrieCurrencyFormatValueDetectionServiceConf;
+import richtercloud.document.scanner.valuedetectionservice.ValueDetectionService;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceConf;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyEmbeddedPersistenceStorageConf;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyNetworkPersistenceStorageConf;
@@ -123,6 +124,7 @@ public class DocumentScannerConf implements Serializable {
     }
     private final static long SCANNER_OPEN_WAIT_TIME_DEFAULT = 15;
     private final static TimeUnit SCANNER_OPEN_WAIT_TIME_UNIT_DEFAULT = TimeUnit.SECONDS;
+    private final static String TEXT_LANGUAGE_IDENTIFIER_DEFAULT = ValueDetectionService.retrieveLanguageIdentifier(LOCALE_DEFAULT);
     /**
      * The file the this configuration has been loaded from. Might be
      * {@code null} if no initial configuration file has been specified.
@@ -259,6 +261,12 @@ public class DocumentScannerConf implements Serializable {
     private TimeUnit scannerOpenWaitTimeUnit = SCANNER_OPEN_WAIT_TIME_UNIT_DEFAULT;
     private boolean trimWhitespace = true;
     private boolean rememberTrimWhitespace = true;
+    /**
+     * The pre-selection of text language which is used in value detection.
+     * {@code null} indicates that the language ought to be recognized
+     * automatically.
+     */
+    private String textLanguageIdentifier = TEXT_LANGUAGE_IDENTIFIER_DEFAULT;
 
     /**
      * Creates an configuration with default values.
@@ -358,7 +366,8 @@ public class DocumentScannerConf implements Serializable {
             long scannerOpenWaitTime,
             TimeUnit scannerOpenWaitTimeUnit,
             boolean trimWhitespace,
-            boolean rememberTrimWhitespace
+            boolean rememberTrimWhitespace,
+            String textLanguageIdentifier
     ) {
         this.configFile = configFile;
         this.scannerName = scannerName;
@@ -404,6 +413,7 @@ public class DocumentScannerConf implements Serializable {
         this.scannerOpenWaitTimeUnit = scannerOpenWaitTimeUnit;
         this.trimWhitespace = trimWhitespace;
         this.rememberTrimWhitespace = rememberTrimWhitespace;
+        this.textLanguageIdentifier = textLanguageIdentifier;
     }
 
     /**
@@ -454,8 +464,17 @@ public class DocumentScannerConf implements Serializable {
                 documentScannerConf.getScannerOpenWaitTime(),
                 documentScannerConf.getScannerOpenWaitTimeUnit(),
                 documentScannerConf.isTrimWhitespace(),
-                documentScannerConf.isRememberTrimWhitespace()
+                documentScannerConf.isRememberTrimWhitespace(),
+                documentScannerConf.getTextLanguageIdentifier()
         );
+    }
+
+    public String getTextLanguageIdentifier() {
+        return textLanguageIdentifier;
+    }
+
+    public void setTextLanguageIdentifier(String textLanguageIdentifier) {
+        this.textLanguageIdentifier = textLanguageIdentifier;
     }
 
     public boolean isRememberTrimWhitespace() {

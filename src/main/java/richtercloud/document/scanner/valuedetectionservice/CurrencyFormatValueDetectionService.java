@@ -140,4 +140,15 @@ public class CurrencyFormatValueDetectionService extends AbstractFormatValueDete
         });
         return retValue;
     }
+
+    /**
+     * Supports all languages.
+     *
+     * @param languageIdentifier an arbitrary language identifier can be passed
+     * @return always {@code true}
+     */
+    @Override
+    public boolean supportsLanguage(String languageIdentifier) {
+        return true;
+    }
 }

@@ -53,7 +53,9 @@ public class TrieCurrencyFormatValueDetectionServiceTest {
         TrieCurrencyFormatValueDetectionService instance = new TrieCurrencyFormatValueDetectionService(amountMoneyCurrencyStorage,
                 amountMoneyExchangeRateRetriever);
         LOGGER.debug(String.format("running with currency symbol without space with input '%s'", input));
-        LinkedHashSet<ValueDetectionResult<Amount<Money>>> result = instance.fetchResults0(input);
+        LinkedHashSet<ValueDetectionResult<Amount<Money>>> result = instance.fetchResults0(input,
+                null //languageIdentifier
+        );
         LOGGER.debug(String.format("result: %s", result));
         assertTrue(result.contains(new ValueDetectionResult<>("5€",
                 Amount.valueOf(5.0d, Currency.EUR)
@@ -62,7 +64,9 @@ public class TrieCurrencyFormatValueDetectionServiceTest {
         //test with currency symbol (with space)
         input = "jfklds jklfd jklds jkldfs fjkdls jkdflss fdjskl f jklfds fkd 5 € jkfdls fkldfsjklf  fdjklf sjklfds f jkldslskd ";
         LOGGER.debug(String.format("running with currency symbol with space with input '%s'", input));
-        result = instance.fetchResults0(input);
+        result = instance.fetchResults0(input,
+                null //languageIdentifier
+        );
         assertTrue(result.contains(new ValueDetectionResult<>("5 €",
                 Amount.valueOf(5.0d, Currency.EUR)
         )));
@@ -70,14 +74,18 @@ public class TrieCurrencyFormatValueDetectionServiceTest {
         //test with currency name (without space)
         input = "jfklds jklfd jklds jkldfs fjkdls jkdflss fdjskl f jklfds fkd 5EUR jkfdls fkldfsjklf  fdjklf sjklfds f jkldslskd ";
         LOGGER.debug(String.format("running with currency name without space with input '%s'", input));
-        result = instance.fetchResults0(input);
+        result = instance.fetchResults0(input,
+                null //languageIdentifier
+        );
         assertTrue(result.contains(new ValueDetectionResult<>("5EUR",
                 Amount.valueOf(5.0d, Currency.EUR)
         )));
 
         input = "jfklds jklfd jklds jkldfs fjkdls jkdflss fdjskl f jklfds fkd 5 EUR jkfdls fkldfsjklf  fdjklf sjklfds f jkldslskd ";
         LOGGER.debug(String.format("running with currency name with space with input '%s'", input));
-        result = instance.fetchResults0(input);
+        result = instance.fetchResults0(input,
+                null //languageIdentifier
+        );
         assertTrue(result.contains(new ValueDetectionResult<>("5 EUR",
                 Amount.valueOf(5.0d, Currency.EUR)
         )));
@@ -85,14 +93,18 @@ public class TrieCurrencyFormatValueDetectionServiceTest {
         //test currency symbol before value (without space)
         input = "jfklds jklfd jklds jkldfs fjkdls jkdflss fdjskl f jklfds fkd EUR5 jkfdls fkldfsjklf  fdjklf sjklfds f jkldslskd ";
         LOGGER.debug(String.format("running with currency name before value without space with input '%s'", input));
-        result = instance.fetchResults0(input);
+        result = instance.fetchResults0(input,
+                null //languageIdentifier
+        );
         assertTrue(result.contains(new ValueDetectionResult<>("EUR5",
                 Amount.valueOf(5.0d, Currency.EUR)
         )));
 
         input = "jfklds jklfd jklds jkldfs fjkdls jkdflss fdjskl f jklfds fkd EUR 5 jkfdls fkldfsjklf  fdjklf sjklfds f jkldslskd ";
         LOGGER.debug(String.format("running with currency name before value with space with input '%s'", input));
-        result = instance.fetchResults0(input);
+        result = instance.fetchResults0(input,
+                null //languageIdentifier
+        );
         assertTrue(result.contains(new ValueDetectionResult<>("EUR 5",
                 Amount.valueOf(5.0d, Currency.EUR)
         )));
@@ -101,7 +113,9 @@ public class TrieCurrencyFormatValueDetectionServiceTest {
         //all combinations need to be run again)
         input = "jfklds jklfd jklds jkldfs fjkdls jkdflss 4€ fdjskl f jklfds fkd EUR 5 jkfdls fkldfsjklf  fdjklf sjklfds f jkldslskd ";
         LOGGER.debug(String.format("running with currency name before value with space with input '%s'", input));
-        result = instance.fetchResults0(input);
+        result = instance.fetchResults0(input,
+                null //languageIdentifier
+        );
         assertTrue(result.contains(new ValueDetectionResult<>("EUR 5",
                 Amount.valueOf(5.0d, Currency.EUR)
         )));

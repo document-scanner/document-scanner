@@ -95,7 +95,9 @@ public class DateFormatValueDetectionServiceTest {
         String input = inputBuilder.toString();
         LOGGER.debug(String.format("Testing single date with input '%s'", input));
         DateFormatValueDetectionService instance = new DateFormatValueDetectionService();
-        List<ValueDetectionResult<Date>> results = instance.fetchResults(input);
+        List<ValueDetectionResult<Date>> results = instance.fetchResults(input,
+                null //languageIdentifier
+        );
         assertTrue(!results.isEmpty());
         boolean dateFound = false;
         for(ValueDetectionResult<?> result: results) {
@@ -134,7 +136,9 @@ public class DateFormatValueDetectionServiceTest {
         input = inputBuilder.toString();
         LOGGER.debug(String.format("Test multiple dates (%d) with input '%s'", dateCount, input));
         instance = new DateFormatValueDetectionService();
-        results = instance.fetchResults(input);
+        results = instance.fetchResults(input,
+                null //languageIdentifier
+        );
         assertTrue(!results.isEmpty());
         dateFound = false;
         for(ValueDetectionResult<?> result: results) {
@@ -147,7 +151,9 @@ public class DateFormatValueDetectionServiceTest {
 
         //Special test
         instance = new DateFormatValueDetectionService();
-        results = instance.fetchResults("27.10.2015 ");
+        results = instance.fetchResults("27.10.2015 ",
+                null //languageIdentifier
+        );
         assertTrue(!results.isEmpty());
     }
 }

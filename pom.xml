@@ -19,6 +19,7 @@
         <izpack.staging>${project.build.directory}/staging</izpack.staging>
         <richtercloud.document.scanner.version>1.0-beta4</richtercloud.document.scanner.version>
             <!-- for izpack plugin below (property for better visibility) -->
+        <richtercloud.document.scanner.tika.version>1.16</richtercloud.document.scanner.tika.version>
     </properties>
     <repositories>
         <repository>
@@ -201,8 +202,13 @@
         <dependency>
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-core</artifactId>
-            <version>1.13</version>
+            <version>${richtercloud.document.scanner.tika.version}</version>
             <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-langdetect</artifactId>
+            <version>${richtercloud.document.scanner.tika.version}</version>
         </dependency>
         <dependency>
             <groupId>richtercloud</groupId>

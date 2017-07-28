@@ -75,10 +75,12 @@ public abstract class AbstractFormatValueDetectionService<T> extends AbstractVal
      * different {@link Date} for the same substring of {@code input}.
      *
      * @param input
+     * @param languageIdentifier the language identifier
      * @return
      */
     @Override
-    public LinkedHashSet<ValueDetectionResult<T>> fetchResults0(String input) {
+    public LinkedHashSet<ValueDetectionResult<T>> fetchResults0(String input,
+            String languageIdentifier) {
         final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() //2 threads per processor cause only 50 % CPU usage, 1 per CPU reaches 80-90 %
                 );
             //Executors.newCachedThreadPool() causes OutOfMemeoryException

@@ -44,7 +44,8 @@ public class ContactValueDetectionService extends AbstractValueDetectionService<
      * @return the list of detected results
      */
     @Override
-    public LinkedHashSet<ValueDetectionResult<Company>> fetchResults0(String input) {
+    public LinkedHashSet<ValueDetectionResult<Company>> fetchResults0(String input,
+            String languageIdentifier) {
         LinkedHashSet<ValueDetectionResult<Company>> retValue = new LinkedHashSet<>();
         StringTokenizer tokenizer = new StringTokenizer(input,
                 "\n", //delimiter
@@ -153,5 +154,16 @@ public class ContactValueDetectionService extends AbstractValueDetectionService<
 //            Logger.getLogger(AddressValueDetectionService.class.getName()).log(Level.SEVERE, null, ex);
 //        }
 //        return null;
+    }
+
+    /**
+     * Supports all languages.
+     *
+     * @param languageIdentifier an arbitrary language identifier can be passed
+     * @return always {@code true}
+     */
+    @Override
+    public boolean supportsLanguage(String languageIdentifier) {
+        return true;
     }
 }

@@ -143,16 +143,22 @@ public class DefaultEntityPanel extends EntityPanel {
             comboBox.setEnabled(false);
         }
         Thread valueDetectionThread = new Thread(() -> {
-            valueDetectionNonGUI(oCRSelectPanelPanelFetcher, forceRenewal);
-            SwingUtilities.invokeLater(() -> {
-                try {
-                    valueDetectionGUI();
-                }catch(Exception ex) {
-                    LOGGER.error("unexpected exception during fetching of "
-                            + "auto-OCR-detection values", ex);
-                    issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
-                }
-            });
+            try {
+                valueDetectionNonGUI(oCRSelectPanelPanelFetcher, forceRenewal);
+                SwingUtilities.invokeLater(() -> {
+                    try {
+                        valueDetectionGUI();
+                    }catch(Exception ex) {
+                        LOGGER.error("unexpected exception during fetching of "
+                                + "auto-OCR-detection values", ex);
+                        issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+                    }
+                });
+            }catch(Throwable ex) {
+                LOGGER.error("unexpected exception during value detection occured",
+                        ex);
+                DefaultEntityPanel.this.issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+            }
         },
                 "auto-ocr-value-detection-thread");
         valueDetectionThread.start();
@@ -172,7 +178,34 @@ public class DefaultEntityPanel extends EntityPanel {
             }
             if(oCRResult != null) {
                 //null indicates that the recognition has been aborted
-                detectionResults = valueDetectionService.fetchResults(oCRResult);
+                String languageIdentifier = documentScannerConf.getTextLanguageIdentifier();
+                if(languageIdentifier == null) {
+                    //@TODO: the following fails due to unintuitive
+                    //NullPointerException inside Tika which should be fixed,
+                    //but can't be because of build issues and test failures
+                    //which should be fixed by devs after Travis CI script is
+                    //merge, see https://github.com/apache/tika/pull/197 for PR
+//                    //indicates that the text language ought to be recognized
+//                    //automatically
+//                    LanguageDetector languageDetector = LanguageDetector.getDefaultLanguageDetector();
+//                    List<LanguageResult> languageResults = languageDetector.detectAll(oCRResult);
+//                    if(languageResults.size() != 1) {
+//                        //detection result is either empty or has more than one
+//                        //candidate -> need user input
+//                        issueHandler.handle(new Message("The language of the "
+//                                + "OCR result couldn't be detected "
+//                                + "automatically, please select the text "
+//                                + "language in the list",
+//                                JOptionPane.ERROR_MESSAGE,
+//                                "Language detection failed"));
+//                        return;
+//                    }
+//                    languageIdentifier = languageResults.get(0).getLanguage();
+                    languageIdentifier = ValueDetectionService.retrieveLanguageIdentifier(documentScannerConf.getLocale());
+                    assert languageIdentifier != null && !languageIdentifier.isEmpty();
+                }
+                detectionResults = valueDetectionService.fetchResults(oCRResult,
+                        languageIdentifier);
             }
         }
     }

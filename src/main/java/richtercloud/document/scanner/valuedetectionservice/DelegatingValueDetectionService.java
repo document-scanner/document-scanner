@@ -89,7 +89,8 @@ public class DelegatingValueDetectionService<T> extends AbstractValueDetectionSe
     }
 
     @Override
-    public LinkedHashSet<ValueDetectionResult<T>> fetchResults0(final String input) {
+    public LinkedHashSet<ValueDetectionResult<T>> fetchResults0(final String input,
+            String languageIdentifier) {
         progressWordCountMap.clear();
         progressWordNumberMap.clear();
         progressFinishedMap.clear();
@@ -100,7 +101,8 @@ public class DelegatingValueDetectionService<T> extends AbstractValueDetectionSe
             Runnable runnable = new Runnable() {
                 @Override
                 public void run() {
-                    List<ValueDetectionResult<T>> serviceResults = valueDetectionService.fetchResults(input);
+                    List<ValueDetectionResult<T>> serviceResults = valueDetectionService.fetchResults(input,
+                            languageIdentifier);
                     //not necessary to prevent values to get added to retValue because
                     //retValue after cancelation isn't specified
                     synchronized(retValue) {
@@ -125,5 +127,16 @@ public class DelegatingValueDetectionService<T> extends AbstractValueDetectionSe
         for(ValueDetectionService<?> valueDetectionService : valueDetectionServices) {
             valueDetectionService.cancelFetch();
         }
+    }
+
+    /**
+     * Supports all languages.
+     *
+     * @param languageIdentifier an arbitrary language identifier can be passed
+     * @return always {@code true}
+     */
+    @Override
+    public boolean supportsLanguage(String languageIdentifier) {
+        return true;
     }
 }

@@ -75,7 +75,8 @@ public class TrieCurrencyFormatValueDetectionService extends AbstractValueDetect
     }
 
     @Override
-    protected LinkedHashSet<ValueDetectionResult<Amount<Money>>> fetchResults0(String input) {
+    protected LinkedHashSet<ValueDetectionResult<Amount<Money>>> fetchResults0(String input,
+            String languageIdentifier) {
         final LinkedHashSet<ValueDetectionResult<Amount<Money>>> retValue = new LinkedHashSet<>();
         final List<String> tokens = new LinkedList<>();
         StringTokenizer tokenizer = new StringTokenizer(input);
@@ -223,5 +224,16 @@ public class TrieCurrencyFormatValueDetectionService extends AbstractValueDetect
             throw new RuntimeException(ex);
         }
         return retValue;
+    }
+
+    /**
+     * Supports all languages.
+     *
+     * @param languageIdentifier an arbitrary language identifier can be passed
+     * @return always {@code true}
+     */
+    @Override
+    public boolean supportsLanguage(String languageIdentifier) {
+        return true;
     }
 }
