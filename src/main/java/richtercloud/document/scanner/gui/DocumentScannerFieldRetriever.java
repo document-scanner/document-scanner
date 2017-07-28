@@ -18,6 +18,7 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.ListIterator;
 import richtercloud.document.scanner.components.annotations.Invisible;
+import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.reflection.form.builder.jpa.JPACachedFieldRetriever;
 import richtercloud.validation.tools.FieldRetrievalException;
 
@@ -26,10 +27,15 @@ import richtercloud.validation.tools.FieldRetrievalException;
  * @author richter
  */
 public class DocumentScannerFieldRetriever extends JPACachedFieldRetriever {
+    private final DocumentScannerConf documentScannerConf;
+
+    public DocumentScannerFieldRetriever(DocumentScannerConf documentScannerConf) {
+        this.documentScannerConf = documentScannerConf;
+    }
 
     @Override
     public List<Field> retrieveRelevantFields(Class<?> entityClass) throws FieldRetrievalException {
-        List<Field> retValue = super.retrieveRelevantFields(entityClass);
+        List<Field> retValue = documentScannerConf.getFieldOrderMap().get(entityClass);
         ListIterator<Field> retValueItr = retValue.listIterator();
         while(retValueItr.hasNext()) {
             Field retValueNxt = retValueItr.next();
@@ -37,6 +43,9 @@ public class DocumentScannerFieldRetriever extends JPACachedFieldRetriever {
                 retValueItr.remove();
             }
         }
+        //it shouldn't matter that we're manipulating
+        //DocumentScannerConf.fieldOrderMap directly since noone would ever want
+        //to have @Invisible fields in the ordering
         return retValue;
     }
 }

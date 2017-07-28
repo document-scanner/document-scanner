@@ -14,7 +14,18 @@
  */
 package richtercloud.document.scanner.gui;
 
+import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import javax.swing.JScrollPane;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
+import richtercloud.document.scanner.gui.conf.FieldOrderPanel;
+import richtercloud.reflection.form.builder.ClassInfo;
+import richtercloud.validation.tools.FieldRetrievalException;
+import richtercloud.validation.tools.FieldRetriever;
 
 /**
  * A dialog which allows to enforce instantiation of component values based on
@@ -31,6 +42,7 @@ they can be retrieved when returning the new configuration instance
 public class DocumentScannerConfDialog extends javax.swing.JDialog {
     private static final long serialVersionUID = 1L;
     private DocumentScannerConf documentScannerConf;
+    private final Map<Class<?>, List<Field>> fieldOrderMap;
 
     /**
      * Creates new form DocumentScannerOptionsDialog
@@ -40,7 +52,9 @@ public class DocumentScannerConfDialog extends javax.swing.JDialog {
      * to be updated when values of components change
      */
     public DocumentScannerConfDialog(java.awt.Frame parent,
-            DocumentScannerConf documentScannerConf) {
+            DocumentScannerConf documentScannerConf,
+            Set<Class<?>> entityClasses,
+            FieldRetriever fieldRetriever) throws FieldRetrievalException {
         super(parent,
                 true //always modal
         );
@@ -51,6 +65,42 @@ public class DocumentScannerConfDialog extends javax.swing.JDialog {
         this.autoSaveOCRDataCheckBox.setSelected(documentScannerConf.isAutoSaveOCRData());
         this.autoOCRValueDetectionCheckBox.setSelected(documentScannerConf.isAutoOCRValueDetection());
         this.rememberTrimWhitespaceCheckBox.setSelected(documentScannerConf.isRememberTrimWhitespace());
+        assert documentScannerConf.getFieldOrderMap() != null;
+        if(documentScannerConf.getFieldOrderMap() == null) {
+            fieldOrderMap = new HashMap<>();
+            for(Class<?> entityClass : entityClasses) {
+                List<Field> classFields = fieldRetriever.retrieveRelevantFields(entityClass);
+                fieldOrderMap.put(entityClass,
+                        classFields);
+            }
+        }else {
+            assert documentScannerConf.getFieldOrderMap().keySet().equals(entityClasses);
+            fieldOrderMap = new HashMap<>(documentScannerConf.getFieldOrderMap());
+        }
+        List<Class<?>> fieldOrderMapKeys = new LinkedList<>(fieldOrderMap.keySet());
+        fieldOrderMapKeys.sort((Class<?> o1, Class<?> o2) -> {
+            ClassInfo o1ClassInfo = o1.getAnnotation(ClassInfo.class);
+            ClassInfo o2ClassInfo = o2.getAnnotation(ClassInfo.class);
+            if(o1ClassInfo != null && o2ClassInfo != null) {
+                return o1ClassInfo.name().compareTo(o2ClassInfo.name());
+            }else {
+                return o1.getSimpleName().compareTo(o2.getSimpleName());
+            }
+        });
+        for(Class<?> entityClass : fieldOrderMapKeys) {
+            FieldOrderPanel fieldOrderPanel = new FieldOrderPanel(fieldOrderMap.get(entityClass));
+            JScrollPane fieldOrderPanelScrollPane = new JScrollPane(fieldOrderPanel);
+            String title;
+            ClassInfo entityClassInfo = entityClass.getAnnotation(ClassInfo.class);
+            if(entityClassInfo != null) {
+                title = entityClassInfo.name();
+            }else {
+                title = entityClass.getSimpleName();
+            }
+            fieldOrderTabbedPane.add(title, //title
+                    fieldOrderPanelScrollPane);
+        }
+        pack();
     }
 
     /**
@@ -69,6 +119,9 @@ public class DocumentScannerConfDialog extends javax.swing.JDialog {
         autoSaveOCRDataCheckBox = new javax.swing.JCheckBox();
         autoOCRValueDetectionCheckBox = new javax.swing.JCheckBox();
         rememberTrimWhitespaceCheckBox = new javax.swing.JCheckBox();
+        fieldOrderSeparator = new javax.swing.JSeparator();
+        fieldOrderTabbedPane = new javax.swing.JTabbedPane();
+        fieldOrderTabbedPaneLabel = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setModal(true);
@@ -97,6 +150,8 @@ public class DocumentScannerConfDialog extends javax.swing.JDialog {
 
         rememberTrimWhitespaceCheckBox.setText("Remember trim whitespace option in OCR copy text area");
 
+        fieldOrderTabbedPaneLabel.setText("Field order:");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -104,6 +159,7 @@ public class DocumentScannerConfDialog extends javax.swing.JDialog {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(fieldOrderTabbedPane, javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(autoGenerateIDsCheckBox, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addGap(0, 0, Short.MAX_VALUE)
@@ -112,11 +168,13 @@ public class DocumentScannerConfDialog extends javax.swing.JDialog {
                         .addComponent(saveButton))
                     .addComponent(autoSaveImageDataCheckBox, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(autoSaveOCRDataCheckBox, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(fieldOrderSeparator)
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(autoOCRValueDetectionCheckBox)
-                            .addComponent(rememberTrimWhitespaceCheckBox))
-                        .addGap(0, 0, Short.MAX_VALUE)))
+                            .addComponent(rememberTrimWhitespaceCheckBox)
+                            .addComponent(fieldOrderTabbedPaneLabel))
+                        .addGap(0, 306, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -132,7 +190,13 @@ public class DocumentScannerConfDialog extends javax.swing.JDialog {
                 .addComponent(autoOCRValueDetectionCheckBox)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(rememberTrimWhitespaceCheckBox)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(fieldOrderSeparator, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(fieldOrderTabbedPaneLabel)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(fieldOrderTabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 179, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(saveButton)
                     .addComponent(discardButton))
@@ -149,6 +213,7 @@ public class DocumentScannerConfDialog extends javax.swing.JDialog {
         this.documentScannerConf.setAutoSaveOCRData(this.autoSaveOCRDataCheckBox.isSelected());
         this.documentScannerConf.setAutoOCRValueDetection(this.autoOCRValueDetectionCheckBox.isSelected());
         this.documentScannerConf.setRememberTrimWhitespace(this.rememberTrimWhitespaceCheckBox.isSelected());
+        this.documentScannerConf.setFieldOrderMap(this.fieldOrderMap);
         this.setVisible(false);
     }//GEN-LAST:event_saveButtonActionPerformed
 
@@ -163,6 +228,9 @@ public class DocumentScannerConfDialog extends javax.swing.JDialog {
     private javax.swing.JCheckBox autoSaveImageDataCheckBox;
     private javax.swing.JCheckBox autoSaveOCRDataCheckBox;
     private javax.swing.JButton discardButton;
+    private javax.swing.JSeparator fieldOrderSeparator;
+    private javax.swing.JTabbedPane fieldOrderTabbedPane;
+    private javax.swing.JLabel fieldOrderTabbedPaneLabel;
     private javax.swing.JCheckBox rememberTrimWhitespaceCheckBox;
     private javax.swing.JButton saveButton;
     // End of variables declaration//GEN-END:variables

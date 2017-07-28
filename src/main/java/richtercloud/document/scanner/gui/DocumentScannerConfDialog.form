@@ -27,6 +27,7 @@
           <Group type="102" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
+                  <Component id="fieldOrderTabbedPane" alignment="1" max="32767" attributes="0"/>
                   <Component id="autoGenerateIDsCheckBox" alignment="0" max="32767" attributes="0"/>
                   <Group type="102" alignment="1" attributes="0">
                       <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
@@ -34,14 +35,16 @@
                       <EmptySpace type="unrelated" max="-2" attributes="0"/>
                       <Component id="saveButton" min="-2" max="-2" attributes="0"/>
                   </Group>
-                  <Component id="autoSaveImageDataCheckBox" max="32767" attributes="0"/>
+                  <Component id="autoSaveImageDataCheckBox" alignment="0" max="32767" attributes="0"/>
                   <Component id="autoSaveOCRDataCheckBox" alignment="0" max="32767" attributes="0"/>
+                  <Component id="fieldOrderSeparator" alignment="0" max="32767" attributes="0"/>
                   <Group type="102" attributes="0">
                       <Group type="103" groupAlignment="0" attributes="0">
                           <Component id="autoOCRValueDetectionCheckBox" alignment="0" min="-2" max="-2" attributes="0"/>
                           <Component id="rememberTrimWhitespaceCheckBox" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="fieldOrderTabbedPaneLabel" alignment="0" min="-2" max="-2" attributes="0"/>
                       </Group>
-                      <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
+                      <EmptySpace min="0" pref="306" max="32767" attributes="0"/>
                   </Group>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
@@ -51,22 +54,28 @@
     <DimensionLayout dim="1">
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" alignment="0" attributes="0">
-              <EmptySpace max="-2" attributes="0"/>
+              <EmptySpace min="-2" max="-2" attributes="0"/>
               <Component id="autoGenerateIDsCheckBox" min="-2" max="-2" attributes="0"/>
-              <EmptySpace max="-2" attributes="0"/>
+              <EmptySpace min="-2" max="-2" attributes="0"/>
               <Component id="autoSaveImageDataCheckBox" min="-2" max="-2" attributes="0"/>
-              <EmptySpace max="-2" attributes="0"/>
+              <EmptySpace min="-2" max="-2" attributes="0"/>
               <Component id="autoSaveOCRDataCheckBox" min="-2" max="-2" attributes="0"/>
-              <EmptySpace max="-2" attributes="0"/>
+              <EmptySpace min="-2" max="-2" attributes="0"/>
               <Component id="autoOCRValueDetectionCheckBox" min="-2" max="-2" attributes="0"/>
-              <EmptySpace max="-2" attributes="0"/>
+              <EmptySpace min="-2" max="-2" attributes="0"/>
               <Component id="rememberTrimWhitespaceCheckBox" min="-2" max="-2" attributes="0"/>
-              <EmptySpace max="32767" attributes="0"/>
+              <EmptySpace min="-2" max="-2" attributes="0"/>
+              <Component id="fieldOrderSeparator" min="-2" pref="10" max="-2" attributes="0"/>
+              <EmptySpace min="-2" max="-2" attributes="0"/>
+              <Component id="fieldOrderTabbedPaneLabel" min="-2" max="-2" attributes="0"/>
+              <EmptySpace min="-2" max="-2" attributes="0"/>
+              <Component id="fieldOrderTabbedPane" pref="179" max="32767" attributes="0"/>
+              <EmptySpace type="unrelated" min="-2" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="saveButton" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="discardButton" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
-              <EmptySpace max="-2" attributes="0"/>
+              <EmptySpace min="-2" max="-2" attributes="0"/>
           </Group>
       </Group>
     </DimensionLayout>
@@ -111,6 +120,17 @@
     <Component class="javax.swing.JCheckBox" name="rememberTrimWhitespaceCheckBox">
       <Properties>
         <Property name="text" type="java.lang.String" value="Remember trim whitespace option in OCR copy text area"/>
+      </Properties>
+    </Component>
+    <Component class="javax.swing.JSeparator" name="fieldOrderSeparator">
+    </Component>
+    <Container class="javax.swing.JTabbedPane" name="fieldOrderTabbedPane">
+
+      <Layout class="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout"/>
+    </Container>
+    <Component class="javax.swing.JLabel" name="fieldOrderTabbedPaneLabel">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Field order:"/>
       </Properties>
     </Component>
   </SubComponents>

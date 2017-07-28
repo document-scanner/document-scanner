@@ -275,7 +275,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private final StorageConfCopyFactory storageConfCopyFactory = new DelegatingStorageConfCopyFactory();
     private final QueryHistoryEntryStorageFactory entryStorageFactory;
     private final QueryHistoryEntryStorage entryStorage;
-    private final JPAFieldRetriever reflectionFormBuilderFieldRetriever = new DocumentScannerFieldRetriever();
+    private final JPAFieldRetriever reflectionFormBuilderFieldRetriever;
     private final FieldRetriever readOnlyFieldRetriever = new JPACachedFieldRetriever();
     /**
      * Start to fetch results and warm up the cache after start.
@@ -350,6 +350,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         fileAppender.start();
         rootLogger.addAppender(fileAppender);
         LOGGER.info(String.format("logging to file '%s'", documentScannerConf.getLogFilePath()));
+
+        this.reflectionFormBuilderFieldRetriever = new DocumentScannerFieldRetriever(documentScannerConf);
 
         //check whether user allowed automatic bug tracking
         if(!documentScannerConf.isSkipUserAllowedAutoBugTrackingQuestion()) {
@@ -1013,8 +1015,16 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
 
     @SuppressWarnings("PMD.UnusedFormalParameter")
     private void optionsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_optionsMenuItemActionPerformed
-        DocumentScannerConfDialog documentScannerConfDialog = new DocumentScannerConfDialog(this, documentScannerConf);
-        documentScannerConfDialog.setVisible(true);
+        try {
+            DocumentScannerConfDialog documentScannerConfDialog = new DocumentScannerConfDialog(this,
+                    documentScannerConf,
+                    Constants.ENTITY_CLASSES,
+                    fieldRetriever);
+            documentScannerConfDialog.setVisible(true);
+        } catch (Throwable ex) {
+            handleUnexpectedException(ex, "unexpected exception during preparation of configuration dialog",
+                    "An unexpected exception during the preparation of the configuration dialog occured: %s");
+        }
     }//GEN-LAST:event_optionsMenuItemActionPerformed
 
     @SuppressWarnings("PMD.UnusedFormalParameter")

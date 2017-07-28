@@ -18,6 +18,7 @@ import com.beust.jcommander.Parameter;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.reflect.Field;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -267,6 +268,11 @@ public class DocumentScannerConf implements Serializable {
      * automatically.
      */
     private String textLanguageIdentifier = TEXT_LANGUAGE_IDENTIFIER_DEFAULT;
+    /**
+     * Allows to save ordering of field for specific classes. {@code null}
+     * indicates that no ordering has been configured, yet.
+     */
+    private Map<Class<?>, List<Field>> fieldOrderMap = null;
 
     /**
      * Creates an configuration with default values.
@@ -367,7 +373,8 @@ public class DocumentScannerConf implements Serializable {
             TimeUnit scannerOpenWaitTimeUnit,
             boolean trimWhitespace,
             boolean rememberTrimWhitespace,
-            String textLanguageIdentifier
+            String textLanguageIdentifier,
+            Map<Class<?>, List<Field>> fieldOrderMap
     ) {
         this.configFile = configFile;
         this.scannerName = scannerName;
@@ -414,6 +421,7 @@ public class DocumentScannerConf implements Serializable {
         this.trimWhitespace = trimWhitespace;
         this.rememberTrimWhitespace = rememberTrimWhitespace;
         this.textLanguageIdentifier = textLanguageIdentifier;
+        this.fieldOrderMap = fieldOrderMap;
     }
 
     /**
@@ -465,8 +473,17 @@ public class DocumentScannerConf implements Serializable {
                 documentScannerConf.getScannerOpenWaitTimeUnit(),
                 documentScannerConf.isTrimWhitespace(),
                 documentScannerConf.isRememberTrimWhitespace(),
-                documentScannerConf.getTextLanguageIdentifier()
+                documentScannerConf.getTextLanguageIdentifier(),
+                documentScannerConf.getFieldOrderMap()
         );
+    }
+
+    public Map<Class<?>, List<Field>> getFieldOrderMap() {
+        return fieldOrderMap;
+    }
+
+    public void setFieldOrderMap(Map<Class<?>, List<Field>> fieldOrderMap) {
+        this.fieldOrderMap = fieldOrderMap;
     }
 
     public String getTextLanguageIdentifier() {
