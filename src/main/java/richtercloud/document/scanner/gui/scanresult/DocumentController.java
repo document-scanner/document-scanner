@@ -171,11 +171,18 @@ public class DocumentController {
                 return null;
                     //only Callables allow throwing of exceptions
             });
+            LOGGER.trace(String.format("adding opening-in-progress marker for device '%s'",
+                    scannerDevice));
             deviceOpeningFutureMap.put(scannerDevice, deviceOpeningFuture);
             try {
                 deviceOpeningFuture.get(scannerOpenWaitTime,
                        scannerOpenWaitTimeUnit);
+                LOGGER.debug(String.format("opened device '%s' successfully",
+                        scannerDevice));
             }catch(ExecutionException ex) {
+                LOGGER.debug(String.format("opening of device '%s' aborted because of exception",
+                                scannerDevice),
+                        ex);
                 if(ex.getCause() instanceof SaneException) {
                     throw (SaneException)ex.getCause();
                 }else if(ex.getCause() instanceof IOException) {
@@ -188,8 +195,11 @@ public class DocumentController {
                     throw (DocumentAddException)ex.getCause();
                 }
                 throw new RuntimeException(ex);
+            }finally {
+                LOGGER.trace(String.format("removing opening-in-progress marker for device '%s'",
+                        scannerDevice));
+                this.deviceOpeningFutureMap.remove(scannerDevice);
             }
-            this.deviceOpeningFutureMap.remove(scannerDevice);
         }
     }
 
