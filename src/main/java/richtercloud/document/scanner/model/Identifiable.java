@@ -117,6 +117,7 @@ Exception Description: The type [class java.sql.Timestamp] for the attribute [la
     @PrePersist
     @PreUpdate
     @UsedUpdate
+    @SuppressWarnings("PMD.UnusedPrivateMethod")
     private void updateLastModifiedTimestamp() {
         this.lastUsed = new Date(System.currentTimeMillis());
     }

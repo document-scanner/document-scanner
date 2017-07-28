@@ -14,8 +14,6 @@
  */
 package richtercloud.document.scanner.setter;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.ocrresult.OCRResult;
 import richtercloud.reflection.form.builder.TransformationException;
 import richtercloud.reflection.form.builder.jpa.panels.EmbeddableListPanel;
@@ -27,7 +25,6 @@ import richtercloud.validation.tools.FieldRetrievalException;
  */
 public class EmbeddableListPanelSetter implements ValueSetter<Object, EmbeddableListPanel> {
     private final static EmbeddableListPanelSetter INSTANCE = new EmbeddableListPanelSetter();
-    private final static Logger LOGGER = LoggerFactory.getLogger(EmbeddableListPanelSetter.class);
 
     public static EmbeddableListPanelSetter getInstance() {
         return INSTANCE;

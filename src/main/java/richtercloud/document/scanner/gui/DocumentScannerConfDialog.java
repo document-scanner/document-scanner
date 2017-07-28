@@ -134,6 +134,7 @@ public class DocumentScannerConfDialog extends javax.swing.JDialog {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveButtonActionPerformed
         this.documentScannerConf.setAutoGenerateIDs(this.autoGenerateIDsCheckBox.isSelected());
         this.documentScannerConf.setAutoSaveImageData(this.autoSaveImageDataCheckBox.isSelected());
@@ -142,6 +143,7 @@ public class DocumentScannerConfDialog extends javax.swing.JDialog {
         this.setVisible(false);
     }//GEN-LAST:event_saveButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void discardButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_discardButtonActionPerformed
         this.setVisible(false);
     }//GEN-LAST:event_discardButtonActionPerformed

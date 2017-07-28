@@ -33,13 +33,10 @@ import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JTextArea;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.ifaces.OCRPanel;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.message.handler.IssueHandler;
-import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 import richtercloud.validation.tools.FieldRetriever;
 
 /**
@@ -72,8 +69,6 @@ overkill and strangely results in > 20 identical format results of "-12345,987"
 */
 public class DefaultOCRPanel extends OCRPanel {
     private static final long serialVersionUID = 1L;
-    private final static Logger LOGGER = LoggerFactory.getLogger(DefaultOCRPanel.class);
-    private final IssueHandler issueHandler;
     private final DocumentScannerConf documentScannerConf;
     private final JScrollPopupMenu currencyFormatPopup = new JScrollPopupMenu("Currency");
     private final JScrollPopupMenu dateFormatPopup = new JScrollPopupMenu("Date");
@@ -91,15 +86,10 @@ public class DefaultOCRPanel extends OCRPanel {
     public DefaultOCRPanel(Set<Class<?>> entityClasses,
             ReflectionFormPanelTabbedPane reflectionFormPanelTabbedPane,
             Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping,
-            PersistenceStorage storage,
             IssueHandler issueHandler,
             FieldRetriever fieldRetriever,
             DocumentScannerConf documentScannerConf) {
         this.initComponents();
-        if(issueHandler == null) {
-            throw new IllegalArgumentException("messageHandler mustn't be null");
-        }
-        this.issueHandler = issueHandler;
         if(documentScannerConf == null) {
             throw new IllegalArgumentException("documentScannerConf mustn't be "
                     + "null");
@@ -448,6 +438,7 @@ public class DefaultOCRPanel extends OCRPanel {
         );
     }// </editor-fold>//GEN-END:initComponents
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void oCRResultTextAreaMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_oCRResultTextAreaMouseClicked
         if(evt.getButton() == MouseEvent.BUTTON3) {
             //right click
@@ -455,26 +446,32 @@ public class DefaultOCRPanel extends OCRPanel {
         }
     }//GEN-LAST:event_oCRResultTextAreaMouseClicked
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void numberFormatButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_numberFormatButtonActionPerformed
         numberFormatPopup.show(toolbar, 0, 0);
     }//GEN-LAST:event_numberFormatButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void percentFormatButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_percentFormatButtonActionPerformed
         percentFormatPopup.show(toolbar, 0, 0);
     }//GEN-LAST:event_percentFormatButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void currencyFormatButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_currencyFormatButtonActionPerformed
         currencyFormatPopup.show(toolbar, 0, 0);
     }//GEN-LAST:event_currencyFormatButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void dateFormatButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_dateFormatButtonActionPerformed
         dateFormatPopup.show(toolbar, 0, 0);
     }//GEN-LAST:event_dateFormatButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void timeFormatButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_timeFormatButtonActionPerformed
         timeFormatPopup.show(toolbar, 0, 0);
     }//GEN-LAST:event_timeFormatButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void dateTimeFormatButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_dateTimeFormatButtonActionPerformed
         dateTimeFormatPopup.show(toolbar, 0, 0);
     }//GEN-LAST:event_dateTimeFormatButtonActionPerformed

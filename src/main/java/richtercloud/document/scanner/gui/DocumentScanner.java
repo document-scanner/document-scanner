@@ -61,8 +61,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.jscience.economics.money.Currency;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import richtercloud.credential.store.EncryptedCredentialStore;
-import richtercloud.credential.store.EncryptedFileCredentialStore;
 import richtercloud.document.scanner.components.ValueDetectionPanel;
 import richtercloud.document.scanner.components.tag.FileTagStorage;
 import richtercloud.document.scanner.components.tag.TagStorage;
@@ -279,7 +277,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private final QueryHistoryEntryStorage entryStorage;
     private final JPAFieldRetriever reflectionFormBuilderFieldRetriever = new DocumentScannerFieldRetriever();
     private final FieldRetriever readOnlyFieldRetriever = new JPACachedFieldRetriever();
-    private final EncryptedCredentialStore<String, String> credentialStore;
     /**
      * Start to fetch results and warm up the cache after start.
      */
@@ -353,8 +350,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         fileAppender.start();
         rootLogger.addAppender(fileAppender);
         LOGGER.info(String.format("logging to file '%s'", documentScannerConf.getLogFilePath()));
-
-        this.credentialStore = new EncryptedFileCredentialStore<>(documentScannerConf.getCredentialsStoreFile());
 
         //check whether user allowed automatic bug tracking
         if(!documentScannerConf.isSkipUserAllowedAutoBugTrackingQuestion()) {
@@ -525,7 +520,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 oCREngine,
                 typeHandlerMapping,
                 documentScannerConf,
-                this, //oCRProgressMonitorParent
                 tagStorage,
                 idApplier,
                 idGenerator,
@@ -868,6 +862,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void exitMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exitMenuItemActionPerformed
         this.setVisible(false);
         this.close();
@@ -875,6 +870,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         this.dispose();
     }//GEN-LAST:event_exitMenuItemActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void scanMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_scanMenuItemActionPerformed
         try {
             this.scan();
@@ -885,6 +881,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
     }//GEN-LAST:event_scanMenuItemActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void selectScannerMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectScannerMenuItemActionPerformed
         ScannerSelectionDialog scannerSelectionDialog;
         try {
@@ -919,6 +916,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         afterScannerSelection();
     }//GEN-LAST:event_selectScannerMenuItemActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void storageSelectionMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_storageSelectionMenuItemActionPerformed
         StorageSelectionDialog storageSelectionDialog;
         try {
@@ -960,6 +958,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
     }//GEN-LAST:event_storageSelectionMenuItemActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void oCRMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_oCRMenuItemActionPerformed
         try {
             DocumentScannerConf documentScannerConf0 = new DocumentScannerConf(documentScannerConf);
@@ -983,6 +982,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
     }//GEN-LAST:event_oCRMenuItemActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void openMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openMenuItemActionPerformed
         JFileChooser chooser = new JFileChooser();
         chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -1011,11 +1011,13 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
     }//GEN-LAST:event_openMenuItemActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void optionsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_optionsMenuItemActionPerformed
         DocumentScannerConfDialog documentScannerConfDialog = new DocumentScannerConfDialog(this, documentScannerConf);
         documentScannerConfDialog.setVisible(true);
     }//GEN-LAST:event_optionsMenuItemActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void editEntryMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_editEntryMenuItemActionPerformed
         try {
             EntityEditingDialog entityEditingDialog = new EntityEditingDialog(this,
@@ -1024,8 +1026,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                     storage,
                     issueHandler,
                     confirmMessageHandler,
-                    idApplier,
-                    warningHandlers,
                     queryComponentFieldInitializer,
                     entryStorage,
                     readOnlyFieldRetriever);
@@ -1058,6 +1058,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
     }//GEN-LAST:event_editEntryMenuItemActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void openSelectionMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openSelectionMenuItemActionPerformed
         try {
             JFileChooser chooser = new JFileChooser();
@@ -1124,6 +1125,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
     }//GEN-LAST:event_openSelectionMenuItemActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void closeMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_closeMenuItemActionPerformed
         this.mainPanel.removeActiveDocument();
         if(this.mainPanel.getDocumentCount() == 0) {
@@ -1132,6 +1134,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
     }//GEN-LAST:event_closeMenuItemActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void exportMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exportMenuItemActionPerformed
         JFileChooser chooser = new JFileChooser();
         chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -1168,6 +1171,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
     }//GEN-LAST:event_exportMenuItemActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void valueDetectionMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_valueDetectionMenuItemActionPerformed
         try {
             ValueDetectionServiceConfDialog serviceConfDialog = new ValueDetectionServiceConfDialog(this,
@@ -1192,6 +1196,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
     }//GEN-LAST:event_valueDetectionMenuItemActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void scanResultsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_scanResultsMenuItemActionPerformed
         try {
             try {

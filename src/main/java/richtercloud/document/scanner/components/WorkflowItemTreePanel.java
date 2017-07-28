@@ -23,7 +23,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import javax.swing.GroupLayout;
@@ -48,8 +47,6 @@ import richtercloud.document.scanner.model.validator.WorkflowItemValidator;
 import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.Message;
-import richtercloud.reflection.form.builder.jpa.WarningHandler;
-import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
 import richtercloud.reflection.form.builder.jpa.panels.QueryHistoryEntryStorage;
 import richtercloud.reflection.form.builder.jpa.panels.QueryListPanel;
 import richtercloud.reflection.form.builder.jpa.storage.FieldInitializer;
@@ -101,8 +98,6 @@ public class WorkflowItemTreePanel extends JPanel {
     private final Set<Class<?>> entityClasses;
     private final Class<?> primaryClassSelection;
     private final MainPanel mainPanel;
-    private final IdApplier idApplier;
-    private final Map<Class<?>, WarningHandler<?>> warningHandlers;
     private final FieldInitializer fieldInitializer;
     private final QueryHistoryEntryStorage entryStorage;
     private final FieldRetriever fieldRetriever;
@@ -128,8 +123,6 @@ public class WorkflowItemTreePanel extends JPanel {
             Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
             MainPanel mainPanel,
-            IdApplier idApplier,
-            Map<Class<?>, WarningHandler<?>> warningHandlers,
             FieldInitializer fieldInitializer,
             QueryHistoryEntryStorage entryStorage) throws IllegalArgumentException, IllegalAccessException, FieldRetrievalException {
         this.entityClasses = entityClasses;
@@ -138,11 +131,6 @@ public class WorkflowItemTreePanel extends JPanel {
         this.issueHandler = issueHandler;
         this.confirmMessageHandler = confirmMessageHandler;
         this.mainPanel = mainPanel;
-        if(idApplier == null) {
-            throw new IllegalArgumentException("idApplier mustn't be null");
-        }
-        this.idApplier = idApplier;
-        this.warningHandlers = warningHandlers;
         this.fieldInitializer = fieldInitializer;
         this.entryStorage = entryStorage;
         this.fieldRetriever = fieldRetriever;
@@ -172,8 +160,6 @@ public class WorkflowItemTreePanel extends JPanel {
                                     WorkflowItemTreePanel.this.storage,
                                     WorkflowItemTreePanel.this.issueHandler,
                                     WorkflowItemTreePanel.this.confirmMessageHandler,
-                                    WorkflowItemTreePanel.this.idApplier,
-                                    WorkflowItemTreePanel.this.warningHandlers,
                                     WorkflowItemTreePanel.this.fieldInitializer,
                                     WorkflowItemTreePanel.this.entryStorage,
                                     WorkflowItemTreePanel.this.fieldRetriever

@@ -28,8 +28,6 @@ import javax.swing.Scrollable;
 import javax.swing.SwingConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
-import richtercloud.document.scanner.ifaces.OCREngine;
 import richtercloud.document.scanner.ifaces.OCRSelectPanel;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanel;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelSelectionListener;
@@ -76,25 +74,16 @@ public class DefaultOCRSelectPanelPanel extends OCRSelectPanelPanel implements S
      * {@link OCRSelectComponent} represents scan data).
      */
     private File documentFile;
-    private float zoomLevel = 1;
-    private final DocumentScannerConf documentScannerConf;
 
     public DefaultOCRSelectPanelPanel(OCRSelectPanel panel,
-            File documentFile,
-            OCREngine oCREngine,
-            DocumentScannerConf documentScannerConf) {
+            File documentFile) {
         this(new LinkedList<>(Arrays.asList(panel)),
-                documentFile,
-                oCREngine,
-                documentScannerConf);
+                documentFile);
     }
 
     public DefaultOCRSelectPanelPanel(List<OCRSelectPanel> panels,
-            File documentFile,
-            OCREngine oCREngine,
-            DocumentScannerConf documentScannerConf) {
+            File documentFile) {
         this.documentFile = documentFile;
-        this.documentScannerConf = documentScannerConf;
         FlowLayout layout = new FlowLayout(FlowLayout.CENTER, 5, 5);
         this.setLayout(layout);
         for(OCRSelectPanel panel : panels) {
@@ -244,7 +233,6 @@ public class DefaultOCRSelectPanelPanel extends OCRSelectPanelPanel implements S
     @Override
     public void setZoomLevels(float zoomLevel) throws IOException {
         LOGGER.trace(String.format("changing zoom level to %f", zoomLevel));
-        this.zoomLevel = zoomLevel; //before updatePreferredSize
         for(OCRSelectPanel oCRSelectPanel : this.oCRSelectPanels) {
             oCRSelectPanel.setZoomLevel(zoomLevel);
         }

@@ -16,18 +16,12 @@ package richtercloud.document.scanner.gui;
 
 import richtercloud.document.scanner.model.Document;
 import richtercloud.reflection.form.builder.jpa.storage.FieldInitializer;
-import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 
 /**
  *
  * @author richter
  */
 public class DocumentScannerFieldInitializer implements FieldInitializer {
-    private PersistenceStorage storage;
-
-    public DocumentScannerFieldInitializer(PersistenceStorage storage) {
-        this.storage = storage;
-    }
 
     @Override
     public void initialize(Object entity) throws IllegalArgumentException, IllegalAccessException {

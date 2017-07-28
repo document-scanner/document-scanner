@@ -236,18 +236,22 @@ public class ScannerPageSelectDialog extends JDialog {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void allRadioButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_allRadioButtonActionPerformed
         pageCountSpinner.setEnabled(false);
     }//GEN-LAST:event_allRadioButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void numberRadioButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_numberRadioButtonActionPerformed
         pageCountSpinner.setEnabled(true);
     }//GEN-LAST:event_numberRadioButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelButtonActionPerformed
         this.setVisible(false);
     }//GEN-LAST:event_cancelButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void scanButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_scanButtonActionPerformed
         if(flatbedRadioButton.isSelected()) {
             this.selectedDocumentSource = DocumentSource.FLATBED;

@@ -269,8 +269,7 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
                 DefaultOCRSelectComponent.this.entityPanel.setEnabled(false);
                     //will be re-enabled in ValueDetectionListener
                 DefaultOCRSelectComponent.this.entityPanel.valueDetection(new DefaultOCRSelectPanelPanelFetcher(DefaultOCRSelectComponent.this.getoCRSelectPanelPanel(),
-                        DefaultOCRSelectComponent.this.oCREngine,
-                        documentScannerConf),
+                        DefaultOCRSelectComponent.this.oCREngine),
                         false //forceRenewal
                 );
             }
@@ -280,8 +279,7 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
             public void actionPerformed(ActionEvent e) {
                 DefaultOCRSelectComponent.this.valueDetectionButton.setEnabled(false);
                 DefaultOCRSelectComponent.this.entityPanel.valueDetection(new DefaultOCRSelectPanelPanelFetcher(DefaultOCRSelectComponent.this.getoCRSelectPanelPanel(),
-                        DefaultOCRSelectComponent.this.oCREngine,
-                        documentScannerConf),
+                        DefaultOCRSelectComponent.this.oCREngine),
                         true //forceRenewal
                 );
             }

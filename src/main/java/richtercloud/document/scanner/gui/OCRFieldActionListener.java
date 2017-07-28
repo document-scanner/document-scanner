@@ -18,8 +18,6 @@ import java.lang.reflect.Field;
 import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JTextArea;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.ocrresult.OCRResult;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.message.handler.MessageHandler;
@@ -31,8 +29,6 @@ import richtercloud.reflection.form.builder.ReflectionFormPanel;
  * selected) to be set on the field which corresponds to the menu item.
  */
 public class OCRFieldActionListener extends AbstractFieldActionListener<OCRResult> {
-
-    private final static Logger LOGGER = LoggerFactory.getLogger(OCRFieldActionListener.class);
     private final JTextArea oCRResultTextArea;
 
     public OCRFieldActionListener(JTextArea oCRResultTextArea,

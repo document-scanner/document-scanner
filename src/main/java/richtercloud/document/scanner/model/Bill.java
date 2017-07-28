@@ -65,6 +65,7 @@ public class Bill extends Document {
                 digitalOnly,
                 sender,
                 recipient);
+        this.amount = amount;
     }
 
     public Bill(Amount<Money> amount,

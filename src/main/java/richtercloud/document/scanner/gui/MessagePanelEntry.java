@@ -111,6 +111,7 @@ public class MessagePanelEntry extends JPanel {
         );
     }// </editor-fold>//GEN-END:initComponents
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void closeButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_closeButtonActionPerformed
         this.setVisible(false);
         this.getParent().remove(this);

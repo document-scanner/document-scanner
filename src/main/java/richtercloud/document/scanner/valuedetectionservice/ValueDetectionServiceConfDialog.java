@@ -275,6 +275,7 @@ public class ValueDetectionServiceConfDialog extends javax.swing.JDialog {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void availableAddButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_availableAddButtonActionPerformed
         ValueDetectionServiceAddDialog addDialog = new ValueDetectionServiceAddDialog(this,
                 issueHandler);
@@ -291,6 +292,7 @@ public class ValueDetectionServiceConfDialog extends javax.swing.JDialog {
         this.availableListModel.addElement(createdConf.getValue());
     }//GEN-LAST:event_availableAddButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void closeButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_closeButtonActionPerformed
         this.availableValueDetectionServiceConfs = null;
         this.selectedValueDetectionServiceConfs = null;
@@ -298,6 +300,7 @@ public class ValueDetectionServiceConfDialog extends javax.swing.JDialog {
         this.setVisible(false);
     }//GEN-LAST:event_closeButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void selectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectButtonActionPerformed
         ValueDetectionServiceConf serviceConf = this.availableList.getSelectedValue();
         this.availableListModel.removeElement(serviceConf);
@@ -306,6 +309,7 @@ public class ValueDetectionServiceConfDialog extends javax.swing.JDialog {
         this.selectedValueDetectionServiceConfs.add(serviceConf);
     }//GEN-LAST:event_selectButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void deselectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deselectButtonActionPerformed
         ValueDetectionServiceConf serviceConf = this.selectedList.getSelectedValue();
         this.selectedListModel.removeElement(serviceConf);
@@ -314,6 +318,7 @@ public class ValueDetectionServiceConfDialog extends javax.swing.JDialog {
         this.availableValueDetectionServiceConfs.add(serviceConf);
     }//GEN-LAST:event_deselectButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveButtonActionPerformed
         this.setVisible(false);
     }//GEN-LAST:event_saveButtonActionPerformed

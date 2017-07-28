@@ -31,8 +31,6 @@ import javax.swing.JOptionPane;
 import javax.swing.MutableComboBoxModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.gui.DocumentScanner;
 import richtercloud.document.scanner.gui.scanresult.DocumentController;
@@ -53,8 +51,6 @@ public class ScannerEditDialog extends javax.swing.JDialog {
     private MutableComboBoxModel<String> modeComboBoxModel = new DefaultComboBoxModel<>();
     private MutableComboBoxModel<Integer> resolutionComboBoxModel = new DefaultComboBoxModel<>();
     private MutableComboBoxModel<String> documentSourceComboBoxModel = new DefaultComboBoxModel<>();
-    private final static Logger LOGGER = LoggerFactory.getLogger(ScannerEditDialog.class);
-    private final SaneDevice device;
     private final MessageHandler messageHandler;
     public final static String MODE_OPTION_NAME = "mode";
     public final static String RESOLUTION_OPTION_NAME = "resolution";
@@ -80,10 +76,6 @@ public class ScannerEditDialog extends javax.swing.JDialog {
             throw new IllegalArgumentException("documentController mustn't be null");
         }
         this.documentController = documentController;
-        if(device == null) {
-            throw new IllegalArgumentException("device mustn't be null");
-        }
-        this.device = device;
         if(messageHandler == null) {
             throw new IllegalArgumentException("messageHandler mustn't be null");
         }
@@ -120,10 +112,6 @@ public class ScannerEditDialog extends javax.swing.JDialog {
             throw new IllegalArgumentException("documentController mustn't be null");
         }
         this.documentController = documentController;
-        if(device == null) {
-            throw new IllegalArgumentException("device mustn't be null");
-        }
-        this.device = device;
         if(messageHandler == null) {
             throw new IllegalArgumentException("messageHandler mustn't be null");
         }
@@ -394,10 +382,12 @@ public class ScannerEditDialog extends javax.swing.JDialog {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void closeButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_closeButtonActionPerformed
         this.setVisible(false);
     }//GEN-LAST:event_closeButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void paperFormatAddButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_paperFormatAddButtonActionPerformed
         ScannerConfPaperFormat paperFormat = new ScannerConfPaperFormat();
         ScannerConfPaperFormatDialog paperFormatDialog = new ScannerConfPaperFormatDialog(this,
@@ -406,6 +396,7 @@ public class ScannerEditDialog extends javax.swing.JDialog {
         paperFormatDialog.setVisible(true);
     }//GEN-LAST:event_paperFormatAddButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void paperFormatEditButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_paperFormatEditButtonActionPerformed
         ScannerConfPaperFormatDialog paperFormatDialog = new ScannerConfPaperFormatDialog(this,
                 messageHandler,

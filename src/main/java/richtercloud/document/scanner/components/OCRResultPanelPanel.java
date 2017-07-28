@@ -17,8 +17,6 @@ package richtercloud.document.scanner.components;
 import java.util.HashSet;
 import java.util.Set;
 import javax.swing.JTextArea;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import richtercloud.reflection.form.builder.panels.CancelablePanelListener;
 import richtercloud.reflection.form.builder.panels.CancelablePanelPanel;
 
@@ -39,7 +37,6 @@ JXLayer of SwingX
 */
 public class OCRResultPanelPanel extends CancelablePanelPanel {
     private static final long serialVersionUID = 1L;
-    private final static Logger LOGGER = LoggerFactory.getLogger(OCRResultPanel.class);
     private final Set<OCRResultPanelUpdateListener> updateListeners = new HashSet<>();
     private final String initialValue;
     private final boolean async;
@@ -111,8 +108,6 @@ public class OCRResultPanelPanel extends CancelablePanelPanel {
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
-        java.awt.GridBagConstraints gridBagConstraints;
-
         oCRResultButton = new javax.swing.JButton();
         oCRResultTextAreaScrollPane = new javax.swing.JScrollPane();
         oCRResultTextArea = new javax.swing.JTextArea();
@@ -152,6 +147,7 @@ public class OCRResultPanelPanel extends CancelablePanelPanel {
         );
     }// </editor-fold>//GEN-END:initComponents
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void oCRResultButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_oCRResultButtonActionPerformed
         for(CancelablePanelListener listener : getListeners()) {
             listener.onStart(async,

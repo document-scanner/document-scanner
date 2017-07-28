@@ -211,6 +211,7 @@ public class StorageSelectionDialog extends javax.swing.JDialog {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void storageDialogCancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_storageDialogCancelButtonActionPerformed
         this.selectedStorageConf = null;
             //is fine to set null because the value in the dialog doesn't affect
@@ -218,6 +219,7 @@ public class StorageSelectionDialog extends javax.swing.JDialog {
         this.setVisible(false);
     }//GEN-LAST:event_storageDialogCancelButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void storageDialogSelectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_storageDialogSelectButtonActionPerformed
         this.selectedStorageConf = this.storageList.getSelectedValue();
         assert this.selectedStorageConf != null;
@@ -233,6 +235,7 @@ public class StorageSelectionDialog extends javax.swing.JDialog {
         this.setVisible(false);
     }//GEN-LAST:event_storageDialogSelectButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void storageDialogNewButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_storageDialogNewButtonActionPerformed
         StorageCreateDialog storageCreateDialog = new StorageCreateDialog(this,
                 storageConfPanelFactory);
@@ -243,6 +246,7 @@ public class StorageSelectionDialog extends javax.swing.JDialog {
         this.documentScannerConf.getAvailableStorageConfs().add(createdStorageConf);
     }//GEN-LAST:event_storageDialogNewButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void storageDialogEditButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_storageDialogEditButtonActionPerformed
         Object storageListSelectedValue = storageList.getSelectedValue();
         assert storageListSelectedValue instanceof StorageConf;

@@ -366,14 +366,17 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void scannerDialogSearchButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_scannerDialogSearchButtonActionPerformed
         this.searchScanner();
     }//GEN-LAST:event_scannerDialogSearchButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void scannerDialogCancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_scannerDialogCancelButtonActionPerformed
         this.setVisible(false);
     }//GEN-LAST:event_scannerDialogCancelButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void scannerDialogSelectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_scannerDialogSelectButtonActionPerformed
         assert this.scannerDialogTable.getSelectedRow() != -1;
         this.selectedDevice = this.tableModel.getDevices().get(this.scannerDialogTable.getSelectedRow());
@@ -382,6 +385,7 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
         this.setVisible(false);
     }//GEN-LAST:event_scannerDialogSelectButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void scannerDialogEditButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_scannerDialogEditButtonActionPerformed
         assert this.scannerDialogTable.getSelectedRow() != -1;
         SaneDevice device = this.tableModel.getDevices().get(this.scannerDialogTable.getSelectedRow());

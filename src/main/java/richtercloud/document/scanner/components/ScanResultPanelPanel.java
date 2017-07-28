@@ -18,8 +18,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.reflection.form.builder.panels.CancelablePanelListener;
 import richtercloud.reflection.form.builder.panels.CancelablePanelPanel;
@@ -40,7 +38,6 @@ maps in MainPanel and pass reference to MainPanel to components contained in it
 */
 public class ScanResultPanelPanel extends CancelablePanelPanel {
     private static final long serialVersionUID = 1L;
-    private final static Logger LOGGER = LoggerFactory.getLogger(ScanResultPanelPanel.class);
     private List<ImageWrapper> scanData;
     private final static String LABEL_DEFAULT_TEXT = "No data scanned";
     private Set<ScanResultPanelUpdateListener> updateListener = new HashSet<>();
@@ -167,6 +164,7 @@ public class ScanResultPanelPanel extends CancelablePanelPanel {
         );
     }// </editor-fold>//GEN-END:initComponents
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveButtonActionPerformed
         for(CancelablePanelListener listener : getListeners()) {
             listener.onStart(async,
@@ -174,6 +172,7 @@ public class ScanResultPanelPanel extends CancelablePanelPanel {
         }
     }//GEN-LAST:event_saveButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void deleteButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteButtonActionPerformed
         setValue(null);
     }//GEN-LAST:event_deleteButtonActionPerformed

@@ -21,8 +21,6 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.message.handler.IssueHandler;
 import richtercloud.reflection.form.builder.ReflectionFormPanel;
@@ -44,7 +42,6 @@ interfaces which allow adding of menu items it's necessary that this factory
 returns the menu items in order to allow the caller to process them.
 */
 public abstract class AbstractFieldPopupMenuFactory {
-    private final static Logger LOGGER = LoggerFactory.getLogger(AbstractFieldPopupMenuFactory.class);
     private final Map<Class<? extends JComponent>, ValueSetter<?, ?>> valueSetterMapping;
     private final IssueHandler issueHandler;
 

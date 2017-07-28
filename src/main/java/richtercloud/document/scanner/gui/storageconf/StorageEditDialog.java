@@ -87,7 +87,7 @@ public class StorageEditDialog extends JDialog {
             }catch(StorageConfValidationException ex) {
                 //keep create dialog displayed until a valid StorageConf is created
                 //or the creation has been canceled
-                messageHandler.handle(new Message(ex,
+                this.messageHandler.handle(new Message(ex,
                         JOptionPane.ERROR_MESSAGE));
                 return;
             }

@@ -34,8 +34,6 @@ import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.Message;
 import richtercloud.reflection.form.builder.ClassInfo;
-import richtercloud.reflection.form.builder.jpa.WarningHandler;
-import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
 import richtercloud.reflection.form.builder.jpa.panels.QueryHistoryEntryStorage;
 import richtercloud.reflection.form.builder.jpa.panels.QueryPanel;
 import richtercloud.reflection.form.builder.jpa.storage.FieldInitializer;
@@ -105,8 +103,6 @@ public class EntityEditingDialog extends javax.swing.JDialog {
             PersistenceStorage storage,
             IssueHandler issueHandler,
             ConfirmMessageHandler confirmMessageHandler,
-            IdApplier<?> idApplier,
-            Map<Class<?>, WarningHandler<?>> warningHandlers,
             FieldInitializer fieldInitializer,
             QueryHistoryEntryStorage entryStorage,
             FieldRetriever fieldRetriever) {
@@ -291,11 +287,13 @@ public class EntityEditingDialog extends javax.swing.JDialog {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void entityEditingClassComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_entityEditingClassComboBoxActionPerformed
         Class<?> selectedEntityClass = (Class<?>) entityEditingClassComboBox.getSelectedItem();
         handleEntityEditingQueryPanelUpdate(selectedEntityClass);
     }//GEN-LAST:event_entityEditingClassComboBoxActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelButtonActionPerformed
         this.entityEditingQueryPanel.clearSelection(); //causes
             //getSelectedEntities to return an empty list which indicates that
@@ -303,10 +301,12 @@ public class EntityEditingDialog extends javax.swing.JDialog {
         this.setVisible(false);
     }//GEN-LAST:event_cancelButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void editButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_editButtonActionPerformed
         this.setVisible(false);
     }//GEN-LAST:event_editButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void deleteButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteButtonActionPerformed
         String answer = confirmMessageHandler.confirm(new Message(
                 "Do you really want to delete all selected entities?",

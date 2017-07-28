@@ -59,8 +59,6 @@ public class ReflectionFormPanelTabbedPane extends JTabbedPane {
     */
     private final Map<Class<?>, ReflectionFormPanel> classPanelMap = new HashMap<>();
     private final Map<Integer, Class<?>> indexClassMap = new HashMap<>();
-    private final Set<Class<?>> entityClasses;
-    private final Class<?> primaryClassSelection;
     private final JPAReflectionFormBuilder reflectionFormBuilder;
     private final FieldHandler fieldHandler;
     private final MessageHandler messageHandler;
@@ -85,8 +83,6 @@ public class ReflectionFormPanelTabbedPane extends JTabbedPane {
             JPAReflectionFormBuilder reflectionFormBuilder,
             FieldHandler fieldHandler,
             MessageHandler messageHandler) throws TransformationException, FieldRetrievalException {
-        this.entityClasses = entityClasses;
-        this.primaryClassSelection = primaryClassSelection;
         this.reflectionFormBuilder = reflectionFormBuilder;
         this.fieldHandler = fieldHandler;
         this.messageHandler = messageHandler;
@@ -136,7 +132,7 @@ public class ReflectionFormPanelTabbedPane extends JTabbedPane {
                 String message = String.format("An exception during creation of components occured (details: %s)",
                         ex.getMessage());
                 LOGGER.error(message, ex);
-                messageHandler.handle(new Message(message,
+                ReflectionFormPanelTabbedPane.this.messageHandler.handle(new Message(message,
                         JOptionPane.ERROR_MESSAGE,
                         "Component creation failed"));
                 throw new RuntimeException(ex);

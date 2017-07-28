@@ -14,7 +14,6 @@
  */
 package richtercloud.document.scanner.gui;
 
-import java.awt.Window;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
@@ -49,7 +48,6 @@ import richtercloud.document.scanner.ifaces.MainPanel;
 import richtercloud.document.scanner.model.WorkflowItem;
 import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.IssueHandler;
-import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.ComponentHandler;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
@@ -62,7 +60,6 @@ import richtercloud.reflection.form.builder.fieldhandler.MappedFieldUpdateEvent;
 import richtercloud.reflection.form.builder.fieldhandler.MappingFieldHandler;
 import richtercloud.reflection.form.builder.fieldhandler.factory.AmountMoneyMappingFieldHandlerFactory;
 import richtercloud.reflection.form.builder.jpa.JPAReflectionFormBuilder;
-import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.fieldhandler.JPAMappingFieldHandler;
 import richtercloud.reflection.form.builder.jpa.fieldhandler.factory.JPAAmountMoneyMappingFieldHandlerFactory;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
@@ -108,16 +105,13 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
     private final OCRResultPanelFetcher oCRResultPanelFetcher;
     private final ScanResultPanelFetcher scanResultPanelFetcher;
     private final DocumentScannerConf documentScannerConf;
-    private final Window oCRProgressMonitorParent;
     private final PersistenceStorage storage;
     private final Set<Class<?>> entityClasses;
     private final Class<?> primaryClassSelection;
     private final MainPanel mainPanel;
     private final TagStorage tagStorage;
     private final ConfirmMessageHandler confirmMessageHandler;
-    private final Map<Class<?>, WarningHandler<?>> warningHandlers;
     private final FieldInitializer fieldInitializer;
-    private final MessageHandler messageHandler;
     private final QueryHistoryEntryStorage entryStorage;
     private final FieldRetriever readOnlyFieldRetriever;
 
@@ -160,13 +154,11 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
             OCRResultPanelFetcher oCRResultPanelFetcher,
             ScanResultPanelFetcher scanResultPanelFetcher,
             DocumentScannerConf documentScannerConf,
-            Window oCRProgressMonitorParent,
             Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
             MainPanel mainPanel,
             TagStorage tagStorage,
             IdApplier idApplier,
-            Map<Class<?>, WarningHandler<?>> warningHandlers,
             int initialQueryLimit,
             String bidirectionalHelpDialogTitle,
             FieldInitializer fieldInitializer,
@@ -216,14 +208,12 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
                 oCRResultPanelFetcher,
                 scanResultPanelFetcher,
                 documentScannerConf,
-                oCRProgressMonitorParent,
                 storage,
                 entityClasses,
                 primaryClassSelection,
                 mainPanel,
                 tagStorage,
                 idApplier,
-                warningHandlers,
                 fieldInitializer,
                 entryStorage,
                 readOnlyFieldRetriever);
@@ -242,14 +232,12 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
             OCRResultPanelFetcher oCRResultPanelFetcher,
             ScanResultPanelFetcher scanResultPanelFetcher,
             DocumentScannerConf documentScannerConf,
-            Window oCRProgressMonitorParent,
             PersistenceStorage storage,
             Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
             MainPanel mainPanel,
             TagStorage tagStorage,
             IdApplier idApplier,
-            Map<Class<?>, WarningHandler<?>> warningHandlers,
             FieldInitializer fieldInitializer,
             QueryHistoryEntryStorage entryStorage,
             FieldRetriever readOnlyFieldRetriever) {
@@ -265,7 +253,6 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
         this.oCRResultPanelFetcher = oCRResultPanelFetcher;
         this.scanResultPanelFetcher = scanResultPanelFetcher;
         this.documentScannerConf = documentScannerConf;
-        this.oCRProgressMonitorParent = oCRProgressMonitorParent;
         if(storage == null) {
             throw new IllegalArgumentException("storage mustn't be null");
         }
@@ -275,9 +262,7 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
         this.mainPanel = mainPanel;
         this.tagStorage = tagStorage;
         this.confirmMessageHandler = confirmMessageHandler;
-        this.warningHandlers = warningHandlers;
         this.fieldInitializer = fieldInitializer;
-        this.messageHandler = issueHandler;
         this.entryStorage = entryStorage;
         this.readOnlyFieldRetriever = readOnlyFieldRetriever;
     }
@@ -353,8 +338,6 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
                     entityClasses,
                     primaryClassSelection,
                     mainPanel,
-                    getIdApplier(),
-                    warningHandlers,
                     fieldInitializer,
                     entryStorage
             );

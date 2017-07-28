@@ -46,7 +46,6 @@ import richtercloud.reflection.form.builder.jpa.storage.DerbyNetworkPersistenceS
 import richtercloud.reflection.form.builder.jpa.storage.MySQLAutoPersistenceStorageConf;
 import richtercloud.reflection.form.builder.jpa.storage.PostgresqlAutoPersistenceStorageConf;
 import richtercloud.reflection.form.builder.storage.StorageConf;
-import richtercloud.reflection.form.builder.storage.XMLStorageConf;
 
 /**
  * Represents deserialized instances of configurations which are supposed to be
@@ -259,16 +258,6 @@ public class DocumentScannerConf implements Serializable {
     private long scannerOpenWaitTime = SCANNER_OPEN_WAIT_TIME_DEFAULT;
     private TimeUnit scannerOpenWaitTimeUnit = SCANNER_OPEN_WAIT_TIME_UNIT_DEFAULT;
 
-    private static Set<StorageConf> generateAvailableStorageConfsDefault(Set<Class<?>> entityClasses,
-            File xMLStorageFile) throws IOException {
-        Set<StorageConf> availableStorageConfs = new HashSet<>();
-        availableStorageConfs.add(new DerbyEmbeddedPersistenceStorageConf(entityClasses,
-                        DATABASE_NAME_DEFAULT,
-                        SCHEME_CHECKSUM_FILE_DEFAULT));
-        availableStorageConfs.add(new XMLStorageConf(xMLStorageFile));
-        return availableStorageConfs;
-    }
-
     /**
      * Creates an configuration with default values.
      */
@@ -404,7 +393,8 @@ public class DocumentScannerConf implements Serializable {
         this.amountMoneyExchangeRateRetrieverFileCacheDir = amountMoneyExchangeRateRetrieverFileCacheDir;
         this.amountMoneyExchangeRateRetrieverExpirationMillis = amountMoneyExchangeRateRetrieverExpirationMillis;
         this.userAllowedAutoBugTracking = userAllowedAutoBugTracking;
-        this.skipUserAllowedAutoBugTrackingQuestion = this.skipUserAllowedAutoBugTrackingQuestion;
+        this.skipUserAllowedAutoBugTrackingQuestion = skipUserAllowedAutoBugTrackingQuestion;
+        this.credentialsStoreFile = credentialsStoreFile;
         this.autoOCRValueDetectionFormatterMap = autoOCRValueDetectionFormatterMap;
         this.scannerOpenWaitTime = scannerOpenWaitTime;
         this.scannerOpenWaitTimeUnit = scannerOpenWaitTimeUnit;

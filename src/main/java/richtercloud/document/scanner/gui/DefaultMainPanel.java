@@ -15,7 +15,6 @@
 package richtercloud.document.scanner.gui;
 
 import java.awt.HeadlessException;
-import java.awt.Window;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -176,7 +175,6 @@ public class DefaultMainPanel extends MainPanel {
     private final FieldRetriever fieldRetriever = new JPACachedFieldRetriever();
     private final Map<java.lang.reflect.Type, TypeHandler<?, ?,?, ?>> typeHandlerMapping;
     private final DocumentScannerConf documentScannerConf;
-    private final Window oCRProgressMonitorParent;
     private final TagStorage tagStorage;
     private final IdApplier idApplier;
     private final Map<Class<?>, WarningHandler<?>> warningHandlers;
@@ -202,7 +200,6 @@ public class DefaultMainPanel extends MainPanel {
             OCREngine oCREngine,
             Map<java.lang.reflect.Type, TypeHandler<?, ?,?, ?>> typeHandlerMapping,
             DocumentScannerConf documentScannerConf,
-            Window oCRProgressMonitorParent,
             TagStorage tagStorage,
             IdApplier idApplier,
             IdGenerator idGenerator,
@@ -224,7 +221,6 @@ public class DefaultMainPanel extends MainPanel {
                 oCREngine,
                 typeHandlerMapping,
                 documentScannerConf,
-                oCRProgressMonitorParent,
                 tagStorage,
                 idApplier,
                 idGenerator,
@@ -248,7 +244,6 @@ public class DefaultMainPanel extends MainPanel {
             OCREngine oCREngine,
             Map<java.lang.reflect.Type, TypeHandler<?, ?,?, ?>> typeHandlerMapping,
             DocumentScannerConf documentScannerConf,
-            Window oCRProgressMonitorParent,
             TagStorage tagStorage,
             IdApplier idApplier,
             IdGenerator idGenerator,
@@ -287,7 +282,6 @@ public class DefaultMainPanel extends MainPanel {
         this.layout = new GroupLayout(this);
         setLayout(layout);
         this.oCREngine = oCREngine;
-        this.oCRProgressMonitorParent = oCRProgressMonitorParent;
         if(tagStorage == null) {
             throw new IllegalArgumentException("tagStorage mustn't be null");
         }
@@ -451,7 +445,7 @@ public class DefaultMainPanel extends MainPanel {
             try {
                 //Querying the data of entityToEditScanResultField with a JPQL
                 //statement doesn't set the data on entityToEdit
-                DocumentScannerFieldInitializer scanDataFieldInitializer = new DocumentScannerFieldInitializer(storage);
+                DocumentScannerFieldInitializer scanDataFieldInitializer = new DocumentScannerFieldInitializer();
                 scanDataFieldInitializer.initialize(entityToEdit);
                     //custom (de-)serialization in DefaultImageWrapper doesn't
                     //guarantee that scanData is available if field is lazy
@@ -521,8 +515,7 @@ public class DefaultMainPanel extends MainPanel {
         if(this.documentScannerConf.isAutoOCRValueDetection()) {
             oCRSelectComponent.getValueDetectionButton().setEnabled(false);
             entityPanel.valueDetection(new DefaultOCRSelectPanelPanelFetcher(oCRSelectComponent.getoCRSelectPanelPanel(),
-                    oCREngine,
-                    documentScannerConf),
+                    oCREngine),
                     false //forceRenewal (shouldn't matter here since the
                         //initial list of results has to be empty)
             );
@@ -581,9 +574,7 @@ public class DefaultMainPanel extends MainPanel {
                 }
             }
             OCRSelectPanelPanel oCRSelectPanelPanel = new DefaultOCRSelectPanelPanel(panels,
-                    documentFile,
-                    oCREngine,
-                    documentScannerConf);
+                    documentFile);
 
             DocumentTabOCRResultPanelFetcher oCRResultPanelFetcher = new DocumentTabOCRResultPanelFetcher(oCRSelectPanelPanel //oCRSelectPanelPanel
                     );
@@ -635,14 +626,12 @@ public class DefaultMainPanel extends MainPanel {
                     oCRResultPanelFetcher,
                     scanResultPanelFetcher,
                     this.documentScannerConf,
-                    oCRProgressMonitorParent, //oCRProgressMonitorParent
                     storage,
                     entityClasses,
                     primaryClassSelection,
                     this,
                     tagStorage,
                     idApplier,
-                    warningHandlers,
                     queryComponentFieldInitializer,
                     entryStorage,
                     readOnlyFieldRetriever
@@ -680,17 +669,10 @@ public class DefaultMainPanel extends MainPanel {
             OCRPanel oCRPanel = new DefaultOCRPanel(entityClasses0,
                     reflectionFormPanelTabbedPane,
                     valueSetterMapping,
-                    storage,
                     issueHandler,
                     reflectionFormBuilderFieldRetriever,
                     documentScannerConf);
-            EntityPanel entityPanel = new DefaultEntityPanel(entityClasses0,
-                    primaryClassSelection0,
-                    valueSetterMapping,
-                    oCRResultPanelFetcher,
-                    scanResultPanelFetcher,
-                    amountMoneyUsageStatisticsStorage,
-                    amountMoneyCurrencyStorage,
+            EntityPanel entityPanel = new DefaultEntityPanel(amountMoneyCurrencyStorage,
                     amountMoneyExchangeRateRetriever,
                     reflectionFormBuilder,
                     fieldHandler,
@@ -773,8 +755,7 @@ public class DefaultMainPanel extends MainPanel {
          */
         DocumentTabOCRResultPanelFetcher(OCRSelectPanelPanel oCRSelectPanelPanel) {
             this.oCRSelectPanelPanelFetcher = new DefaultOCRSelectPanelPanelFetcher(oCRSelectPanelPanel,
-                    oCREngine,
-                    documentScannerConf);
+                    oCREngine);
         }
 
         @Override

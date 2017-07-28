@@ -71,7 +71,7 @@ public class TesseractOCREngineConfPanel extends OCREngineConfPanel<TesseractOCR
                 try {
                     onBinaryChanged();
                 }catch (IOException | InterruptedException | TesseractOCREngineAvailableLanguageRetrievalException ex) {
-                    messageHandler.handle(new Message(ex, JOptionPane.WARNING_MESSAGE));
+                    TesseractOCREngineConfPanel.this.messageHandler.handle(new Message(ex, JOptionPane.WARNING_MESSAGE));
                 }
             }
         });

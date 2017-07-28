@@ -113,11 +113,13 @@ public class TagComponentCreateDialog extends javax.swing.JDialog {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelButtonActionPerformed
         this.newTag = null;
         this.setVisible(false);
     }//GEN-LAST:event_cancelButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveButtonActionPerformed
         this.newTag = this.textField.getText();
         this.tagStorage.addTag(newTag);

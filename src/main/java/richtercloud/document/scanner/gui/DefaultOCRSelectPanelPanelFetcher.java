@@ -21,9 +21,6 @@ import java.util.List;
 import java.util.Set;
 import org.apache.commons.collections4.OrderedMap;
 import org.apache.commons.collections4.map.LinkedMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.ifaces.OCREngine;
 import richtercloud.document.scanner.ifaces.OCREngineProgressEvent;
@@ -42,18 +39,14 @@ import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcherProgressLi
  * @author richter
  */
 public class DefaultOCRSelectPanelPanelFetcher implements OCRSelectPanelPanelFetcher {
-    private final static Logger LOGGER = LoggerFactory.getLogger(DefaultOCRSelectPanelPanelFetcher.class);
     private final OCRSelectPanelPanel oCRSelectPanelPanel;
     private final Set<OCRSelectPanelPanelFetcherProgressListener> progressListeners = new HashSet<>();
-    private final DocumentScannerConf documentScannerConf;
     private final OCREngine oCREngine;
 
     public DefaultOCRSelectPanelPanelFetcher(OCRSelectPanelPanel oCRSelectPanelPanel,
-            OCREngine oCREngine,
-            DocumentScannerConf documentScannerConf) {
+            OCREngine oCREngine) {
         this.oCRSelectPanelPanel = oCRSelectPanelPanel;
         this.oCREngine = oCREngine;
-        this.documentScannerConf = documentScannerConf;
     }
 
     @Override
@@ -68,7 +61,6 @@ public class DefaultOCRSelectPanelPanelFetcher implements OCRSelectPanelPanelFet
 
     @Override
     public String fetch() throws OCREngineRecognitionException {
-        int i=0;
         List<OCRSelectPanel> imagePanels = oCRSelectPanelPanel.getoCRSelectPanels();
         OrderedMap<ImageWrapper, InputStream> imageStreams = new LinkedMap<>();
         for (final OCRSelectPanel imagePanel : imagePanels) {

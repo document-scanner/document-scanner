@@ -56,7 +56,7 @@ public class StorageCreateDialog extends javax.swing.JDialog {
                 Class<? extends StorageConf> clazz = (Class<? extends StorageConf>) e.getItem();
                 try {
                     //@TODO: error handling
-                    StorageConf storageConf = clazz.getDeclaredConstructor().newInstance();
+                    clazz.getDeclaredConstructor().newInstance();
                 } catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
                     throw new RuntimeException(ex);
                 }
@@ -103,11 +103,6 @@ public class StorageCreateDialog extends javax.swing.JDialog {
         storageCreateDialogNameLabel.setText("Name");
 
         storageCreateDialogTypeComboBox.setModel(storageCreateDialogTypeComboBoxModel);
-        storageCreateDialogTypeComboBox.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                storageCreateDialogTypeComboBoxActionPerformed(evt);
-            }
-        });
 
         storageCreateDialogTypeLabel.setText("Type");
 
@@ -185,14 +180,12 @@ public class StorageCreateDialog extends javax.swing.JDialog {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void storageCreateDialogTypeComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_storageCreateDialogTypeComboBoxActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_storageCreateDialogTypeComboBoxActionPerformed
-
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void storageCreateDialogCancelDialogActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_storageCreateDialogCancelDialogActionPerformed
         this.setVisible(false);
     }//GEN-LAST:event_storageCreateDialogCancelDialogActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void storageCreateDialogSaveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_storageCreateDialogSaveButtonActionPerformed
         selectedStorageConfPanel.save();
         try {

@@ -29,7 +29,6 @@ import richtercloud.document.scanner.gui.DocumentScanner;
  * @author richter
  */
 public class TagComponent extends JPanel {
-
     private static final long serialVersionUID = 1L;
     private final TagStorage tagStorage;
     private final DefaultListModel availableListModel = new DefaultListModel();
@@ -211,6 +210,7 @@ public class TagComponent extends JPanel {
         );
     }// </editor-fold>//GEN-END:initComponents
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void availableListFilterTextFieldKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_availableListFilterTextFieldKeyPressed
         Set<String> tags = tagStorage.getAvailableTags();
         if(availableListFilterTextField.getText().isEmpty()) {
@@ -227,6 +227,7 @@ public class TagComponent extends JPanel {
         }
     }//GEN-LAST:event_availableListFilterTextFieldKeyPressed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void selectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectButtonActionPerformed
         if(this.availableList.getSelectedIndex() == -1) {
             return;
@@ -239,6 +240,7 @@ public class TagComponent extends JPanel {
         }
     }//GEN-LAST:event_selectButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void deselectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deselectButtonActionPerformed
         if(this.selectedList.getSelectedIndex() == -1) {
             return;
@@ -251,6 +253,7 @@ public class TagComponent extends JPanel {
         }
     }//GEN-LAST:event_deselectButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void addButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addButtonActionPerformed
         TagComponentCreateDialog dialog = new TagComponentCreateDialog(SwingUtilities.getWindowAncestor(this),
                 tagStorage);
@@ -260,6 +263,7 @@ public class TagComponent extends JPanel {
         }
     }//GEN-LAST:event_addButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void deleteButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteButtonActionPerformed
         if(availableList.getSelectedIndex() == -1) {
             return;

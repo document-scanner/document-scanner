@@ -296,6 +296,7 @@ public class MySQLAutoPersistenceStorageConfPanel extends StorageConfPanel<MySQL
         );
     }// </editor-fold>//GEN-END:initComponents
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void downloadButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_downloadButtonActionPerformed
         String downloadURL;
         String downloadTarget;

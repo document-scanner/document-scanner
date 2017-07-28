@@ -247,6 +247,7 @@ public class ValueDetectionServiceAddDialog extends JDialog {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void pathBrowseButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pathBrowseButtonActionPerformed
         JFileChooser chooser = new JFileChooser();
         FileNameExtensionFilter filter = new FileNameExtensionFilter(
@@ -260,6 +261,7 @@ public class ValueDetectionServiceAddDialog extends JDialog {
         this.pathTextField.setText(selectedFile.getPath());
     }//GEN-LAST:event_pathBrowseButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void loadButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loadButtonActionPerformed
         try {
             File selectedFile = new File(this.pathTextField.getText());
@@ -358,6 +360,7 @@ public class ValueDetectionServiceAddDialog extends JDialog {
         }
     }//GEN-LAST:event_loadButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveButtonActionPerformed
         try {
             if(this.serviceConfPanel == null) {
@@ -379,6 +382,7 @@ public class ValueDetectionServiceAddDialog extends JDialog {
         }
     }//GEN-LAST:event_saveButtonActionPerformed
 
+    @SuppressWarnings("PMD.UnusedFormalParameter")
     private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelButtonActionPerformed
         this.setVisible(false);
     }//GEN-LAST:event_cancelButtonActionPerformed

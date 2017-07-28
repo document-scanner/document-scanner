@@ -58,11 +58,12 @@ public class Shipping extends WorkflowItem {
             Company sender,
             Company recipient,
             Date theDate,
-            Date received) {
+            Date deliveryDate) {
         super(sender,
                 recipient,
                 theDate);
         this.packages = packages;
+        this.deliveryDate = deliveryDate;
     }
 
     public Date getDeliveryDate() {
