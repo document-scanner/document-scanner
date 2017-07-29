@@ -18,6 +18,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -50,11 +51,8 @@ public class MainPanelScanResultPanelFetcherTest {
         OCRSelectPanel oCRSelectPanel1 = mock(OCRSelectPanel.class);
         OCRSelectPanel oCRSelectPanel2 = mock(OCRSelectPanel.class);
         BufferedImage image = ImageIO.read(MainPanelScanResultPanelFetcherTest.class.getResource("/File_CC-BY-SA_3_icon_88x31.png"));
-        File imageWrapperStorage = File.createTempFile(MainPanelScanResultPanelFetcherTest.class.getSimpleName(),
-                "image-storage-wrapper-storage");
-        imageWrapperStorage.delete();
-        imageWrapperStorage.mkdirs();
-        ImageWrapper imageWrapper = new DefaultImageWrapper(imageWrapperStorage, image);
+        File imageWrapperStorageDir = Files.createTempDirectory(MainPanelScanResultPanelFetcherTest.class.getSimpleName()).toFile();
+        ImageWrapper imageWrapper = new DefaultImageWrapper(imageWrapperStorageDir, image);
         when(oCRSelectPanel1.getImage()).thenReturn(imageWrapper);
         when(oCRSelectPanel2.getImage()).thenReturn(imageWrapper);
         List<OCRSelectPanel> oCRSelectPanels = new LinkedList<>(Arrays.asList(oCRSelectPanel1,

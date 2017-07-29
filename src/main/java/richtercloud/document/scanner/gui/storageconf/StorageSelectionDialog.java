@@ -26,8 +26,8 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.message.handler.ConfirmMessageHandler;
+import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.Message;
-import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.storage.StorageConf;
 import richtercloud.reflection.form.builder.storage.StorageConfValidationException;
 
@@ -64,7 +64,7 @@ public class StorageSelectionDialog extends javax.swing.JDialog {
      * disposed.
      */
     private StorageConf selectedStorageConf = null;
-    private final MessageHandler messageHandler;
+    private final IssueHandler issueHandler;
     private final StorageConfPanelFactory storageConfPanelFactory;
 
     /**
@@ -72,15 +72,15 @@ public class StorageSelectionDialog extends javax.swing.JDialog {
      */
     public StorageSelectionDialog(Window parent,
             DocumentScannerConf documentScannerConf,
-            MessageHandler messageHandler,
+            IssueHandler issueHandler,
             ConfirmMessageHandler confirmMessageHandler) throws IOException, StorageConfValidationException, StorageConfPanelCreationException {
         super(parent,
                 ModalityType.APPLICATION_MODAL //modalityType
         );
         this.documentScannerConf = documentScannerConf;
-        this.messageHandler = messageHandler;
+        this.issueHandler = issueHandler;
 
-        this.storageConfPanelFactory = new DefaultStorageConfPanelFactory(messageHandler,
+        this.storageConfPanelFactory = new DefaultStorageConfPanelFactory(issueHandler,
                 confirmMessageHandler,
                 documentScannerConf.isSkipMD5SumCheck());
         for(StorageConf availableStorageConf : this.documentScannerConf.getAvailableStorageConfs()) {
@@ -229,7 +229,7 @@ public class StorageSelectionDialog extends javax.swing.JDialog {
                 //can't be created in a valid state because they require values
                 //to be set (e.g. a password)
         } catch (StorageConfValidationException ex) {
-            messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+            issueHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
             return;
         }
         this.setVisible(false);
@@ -260,7 +260,7 @@ public class StorageSelectionDialog extends javax.swing.JDialog {
         assert storageConfPanel != null;
         StorageEditDialog storageEditDialog = new StorageEditDialog(this,
                 storageConfPanel,
-                messageHandler);
+                issueHandler);
         storageEditDialog.setLocationRelativeTo(this);
         storageEditDialog.setVisible(true);
         StorageConf editedStorageConf = storageEditDialog.getEditedStorageConf();

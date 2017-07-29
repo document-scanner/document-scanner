@@ -924,7 +924,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         try {
             storageSelectionDialog = new StorageSelectionDialog(this,
                     documentScannerConf,
-                    messageHandler,
+                    issueHandler,
                     confirmMessageHandler);
         } catch (IOException | StorageConfValidationException | StorageConfPanelCreationException ex) {
             throw new RuntimeException(ex);

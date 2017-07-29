@@ -16,7 +16,7 @@ package richtercloud.document.scanner.gui.storageconf;
 
 import java.io.IOException;
 import richtercloud.message.handler.ConfirmMessageHandler;
-import richtercloud.message.handler.MessageHandler;
+import richtercloud.message.handler.IssueHandler;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyEmbeddedPersistenceStorageConf;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyNetworkPersistenceStorageConf;
 import richtercloud.reflection.form.builder.jpa.storage.MySQLAutoPersistenceStorageConf;
@@ -28,14 +28,14 @@ import richtercloud.reflection.form.builder.storage.StorageConf;
  * @author richter
  */
 public class DefaultStorageConfPanelFactory implements StorageConfPanelFactory {
-    private final MessageHandler messageHandler;
+    private final IssueHandler issueHandler;
     private final ConfirmMessageHandler confirmMessageHandler;
     private final boolean skipMD5SumCheck;
 
-    public DefaultStorageConfPanelFactory(MessageHandler messageHandler,
+    public DefaultStorageConfPanelFactory(IssueHandler issueHandler,
             ConfirmMessageHandler confirmMessageHandler,
             boolean skipMD5SumCheck) {
-        this.messageHandler = messageHandler;
+        this.issueHandler = issueHandler;
         this.confirmMessageHandler = confirmMessageHandler;
         this.skipMD5SumCheck = skipMD5SumCheck;
     }
@@ -52,7 +52,7 @@ public class DefaultStorageConfPanelFactory implements StorageConfPanelFactory {
         }else if(storageConf instanceof MySQLAutoPersistenceStorageConf) {
             try {
                 retValue = new MySQLAutoPersistenceStorageConfPanel((MySQLAutoPersistenceStorageConf) storageConf,
-                        messageHandler,
+                        issueHandler,
                         confirmMessageHandler,
                         skipMD5SumCheck);
             } catch (IOException ex) {

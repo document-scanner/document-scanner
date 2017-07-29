@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
+import java.nio.file.Files;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import javafx.application.Platform;
@@ -79,13 +80,7 @@ public class DefaultImageWrapper implements ImageWrapper {
             //use ImageIO parallel to the cache implemented in
             //DefaultImageWrapper because it can't hurt
         try {
-            File imageIOCacheDir = File.createTempFile("document-scanner-image-io-cache", null);
-            if(!imageIOCacheDir.delete()) {
-                throw new IOException(String.format("deletion of file '%s' failed", imageIOCacheDir.getAbsolutePath()));
-            }
-            if(!imageIOCacheDir.mkdirs()) {
-                throw new IOException(String.format("creation of directory '%s' failed", imageIOCacheDir.getAbsolutePath()));
-            }
+            File imageIOCacheDir = Files.createTempDirectory("document-scanner-image-io-cache").toFile();
             ImageIO.setCacheDirectory(imageIOCacheDir);
             LOGGER.debug(String.format("set '%s' as cache directory for ImageIO", imageIOCacheDir.getAbsolutePath()));
         } catch (IOException ex) {

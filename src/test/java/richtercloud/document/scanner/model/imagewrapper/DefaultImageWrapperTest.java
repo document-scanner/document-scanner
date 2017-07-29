@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.nio.file.Files;
 import javax.imageio.ImageIO;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -45,11 +46,7 @@ public class DefaultImageWrapperTest {
         ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream);
         InputStream instanceInputStream = DefaultImageWrapperTest.class.getResourceAsStream("/File_CC-BY-SA_3_icon_88x31.png");
         BufferedImage instanceImage = ImageIO.read(instanceInputStream);
-        File storageDir = File.createTempFile(DefaultImageWrapperTest.class.getSimpleName(),
-                "storage-dir" //suffix
-        );
-        storageDir.delete();
-        storageDir.mkdirs();
+        File storageDir = Files.createTempDirectory(DefaultImageWrapperTest.class.getSimpleName()).toFile();
         DefaultImageWrapper instance = new DefaultImageWrapper(storageDir,
                 instanceImage);
         objectOutputStream.writeObject(instance);

@@ -14,41 +14,32 @@
  */
 package richtercloud.document.scanner.gui.storageconf;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
+import com.google.common.collect.ImmutableMap;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.attribute.PosixFilePermissions;
-import java.util.concurrent.ExecutionException;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import java.util.Map;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
-import javax.swing.SwingWorker;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.gui.DocumentScanner;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
+import richtercloud.jhbuild.java.wrapper.ArchitectureNotRecognizedException;
+import richtercloud.jhbuild.java.wrapper.DownloadCombi;
+import richtercloud.jhbuild.java.wrapper.DownloadFailureCallbackReation;
+import richtercloud.jhbuild.java.wrapper.DownloadTools;
+import richtercloud.jhbuild.java.wrapper.ExtractionException;
+import richtercloud.jhbuild.java.wrapper.ExtractionMode;
+import richtercloud.jhbuild.java.wrapper.MD5SumCheckUnequalsCallbackReaction;
+import richtercloud.jhbuild.java.wrapper.OSNotRecognizedException;
+import richtercloud.jhbuild.java.wrapper.SupportedOS;
 import richtercloud.message.handler.ConfirmMessageHandler;
+import richtercloud.message.handler.ExceptionMessage;
+import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.Message;
-import richtercloud.message.handler.MessageHandler;
 import richtercloud.reflection.form.builder.jpa.storage.MySQLAutoPersistenceStorageConf;
-import richtercloud.swing.worker.get.wait.dialog.SwingWorkerGetWaitDialog;
 
 /**
  *
@@ -57,61 +48,76 @@ import richtercloud.swing.worker.get.wait.dialog.SwingWorkerGetWaitDialog;
 public class MySQLAutoPersistenceStorageConfPanel extends StorageConfPanel<MySQLAutoPersistenceStorageConf> {
     private static final long serialVersionUID = 1L;
     private final static Logger LOGGER = LoggerFactory.getLogger(MySQLAutoPersistenceStorageConfPanel.class);
-    public final static String DOWNLOAD_URL_LINUX_64 = "http://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-5.7.17-linux-glibc2.5-x86_64.tar.gz";
-    public final static String DOWNLOAD_URL_LINUX_32 = "http://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-5.7.17-linux-glibc2.5-i686.tar.gz";
-    public final static String DOWNLOAD_URL_WINDOWS_64 = "http://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-5.7.17-winx64.zip";
-    public final static String DOWNLOAD_URL_WINDOWS_32 = "http://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-5.7.17-win32.zip";
-    public final static String DOWNLOAD_URL_MAC_OSX_64 = "http://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-5.7.17-macos10.12-x86_64.tar.gz";
+    public final static String MYSQL_DOWNLOAD_URL_LINUX_64 = "https://cdn.mysql.com/Downloads/MySQL-5.7/mysql-5.7.19-linux-glibc2.12-x86_64.tar.gz";
+    public final static String MYSQL_DOWNLOAD_URL_LINUX_32 = "https://cdn.mysql.com/Downloads/MySQL-5.7/mysql-5.7.19-linux-glibc2.12-i686.tar.gz";
+    public final static String MYSQL_DOWNLOAD_URL_WINDOWS_64 = "https://cdn.mysql.com/Downloads/MySQL-5.7/mysql-5.7.19-winx64.zip";
+    public final static String MYSQL_DOWNLOAD_URL_WINDOWS_32 = "https://cdn.mysql.com/Downloads/MySQL-5.7/mysql-5.7.19-win32.zip";
+    public final static String MYSQL_DOWNLOAD_URL_MAC_OSX_64 = "https://cdn.mysql.com/Downloads/MySQL-5.7/mysql-5.7.19-macos10.12-x86_64.tar.gz";
         //Mac OSX doesn't have 32-bit versions
     private final MySQLAutoPersistenceStorageConf storageConf;
-    private final MessageHandler messageHandler;
+    private final IssueHandler issueHandler;
     private final ConfirmMessageHandler confirmMessageHandler;
     /**
      * The target of the MySQL download. Doesn't need to be exposed to the user.
      */
-    protected final static String MYSQL_DOWNLOAD_TARGET_LINUX_64 = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT, "mysql-5.7.17-linux-glibc2.5-x86_64.tar.gz").getAbsolutePath();
-    protected final static String MYSQL_DOWNLOAD_TARGET_LINUX_32 = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT, "mysql-5.7.17-linux-glibc2.5-i686.tar.gz").getAbsolutePath();
+    protected final static String MYSQL_DOWNLOAD_TARGET_LINUX_64 = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT, "mysql-5.7.19-linux-glibc2.12-x86_64.tar.gz").getAbsolutePath();
+    protected final static String MYSQL_DOWNLOAD_TARGET_LINUX_32 = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT, "mysql-5.7.19-linux-glibc2.12-i686.tar.gz").getAbsolutePath();
         //downloading same file with `i386` instead of `i686` works as well, but
         //it's unclear what it refers to (MD5 sums need to be adjusted and the
         //`i686` file proposed on the MySQL download page
-    protected final static String MYSQL_DOWNLOAD_TARGET_WINDOWS_64 = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT, "mysql-5.7.17-winx64.zip").getAbsolutePath();
-    protected final static String MYSQL_DOWNLOAD_TARGET_WINDOWS_32 = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT, "mysql-5.7.17-win32.zip").getAbsolutePath();
-    protected final static String MYSQL_DOWNLOAD_TARGET_MAC_OSX_64 = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT, "mysql-5.7.17-macos10.12-x86_64.tar.gz").getAbsolutePath();
+    protected final static String MYSQL_DOWNLOAD_TARGET_WINDOWS_64 = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT, "mysql-5.7.19-winx64.zip").getAbsolutePath();
+    protected final static String MYSQL_DOWNLOAD_TARGET_WINDOWS_32 = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT, "mysql-5.7.19-win32.zip").getAbsolutePath();
+    protected final static String MYSQL_DOWNLOAD_TARGET_MAC_OSX_64 = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT, "mysql-5.7.19-macos10.12-x86_64.tar.gz").getAbsolutePath();
     /**
      * The resulting directory after extraction. Doesn't need to be exposed to
      * the user.
      */
-    protected final static String MYSQL_EXTRACTION_TARGET_LINUX_64 = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT, "mysql-5.7.17-linux-glibc2.5-x86_64").getAbsolutePath();
-    protected final static String MYSQL_EXTRACTION_TARGET_LINUX_32 = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT, "mysql-5.7.17-linux-glibc2.5-i686").getAbsolutePath();
-    protected final static String MYSQL_EXTRACTION_TARGET_WINDOWS_64 = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT, "mysql-5.7.17-winx64").getAbsolutePath();
-    protected final static String MYSQL_EXTRACTION_TARGET_WINDOWS_32 = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT, "mysql-5.7.17-win32").getAbsolutePath();
-    protected final static String MYSQL_EXTRACTION_TARGET_MAC_OSX_64 = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT, "mysql-5.7.17-macos10.12-x86_64").getAbsolutePath();
-    protected final static String MD5_SUM_LINUX_64 = "699aeb2ad680d178171fa95a7ba7b347";
-    protected final static String MD5_SUM_LINUX_32 = "8363887fa2af67af414675d09cbb3262";
-    protected final static String MD5_SUM_WINDOWS_64 = "95155e6addfbd35ec6624d5807f7a27d";
-    protected final static String MD5_SUM_WINDOWS_32 = "d7497e614856d8f41b55b7ddabf82142";
-    protected final static String MD5_SUM_MAC_OSX_64 = "c618b15bb316f35561cbbd9df2dc9ac8";
-    protected final static int EXTRACTION_MODE_TAR_GZ = 1;
-    protected final static int EXTRACTION_MODE_ZIP = 2;
-    protected final static int MYSQL_EXTRACTION_MODE_LINUX_64 = EXTRACTION_MODE_TAR_GZ;
-    protected final static int MYSQL_EXTRACTION_MODE_LINUX_32 = EXTRACTION_MODE_TAR_GZ;
-    protected final static int MYSQL_EXTRACTION_MODE_WINDOWS_64 = EXTRACTION_MODE_ZIP;
-    protected final static int MYSQL_EXTRACTION_MODE_WINDOWS_32 = EXTRACTION_MODE_ZIP;
-    protected final static int MYSQL_EXTRACTION_MODE_MAC_OSX_64 = EXTRACTION_MODE_TAR_GZ;
-    /**
-     * Return value of {@link #getWindowsBitness() }.
-     */
-    protected final static int WINDOWS_BITNESS_32 = 1;
-    /**
-     * Return value of {@link #getWindowsBitness() }.
-     */
-    protected final static int WINDOWS_BITNESS_64 = 2;
-    protected final static String MD5_SUM_CHECK_FAILED_RETRY = "Retry download";
-    protected final static String MD5_SUM_CHECK_FAILED_ABORT = "Abort download";
+    protected final static String MYSQL_EXTRACTION_LOCATION_LINUX_64 = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT, "mysql-5.7.19-linux-glibc2.12-x86_64").getAbsolutePath();
+    protected final static String MYSQL_EXTRACTION_LOCATION_LINUX_32 = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT, "mysql-5.7.19-linux-glibc2.12-i686").getAbsolutePath();
+    protected final static String MYSQL_EXTRACTION_LOCATION_WINDOWS_64 = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT, "mysql-5.7.19-winx64").getAbsolutePath();
+    protected final static String MYSQL_EXTRACTION_LOCATION_WINDOWS_32 = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT, "mysql-5.7.19-win32").getAbsolutePath();
+    protected final static String MYSQL_EXTRACTION_LOCATION_MAC_OSX_64 = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT, "mysql-5.7.19-macos10.12-x86_64").getAbsolutePath();
+    protected final static String MD5_SUM_LINUX_64 = "dbe7e5e820377c29d8681005065e5728";
+    protected final static String MD5_SUM_LINUX_32 = "32c4e286b7016bc1f45995849c235e41";
+    protected final static String MD5_SUM_WINDOWS_64 = "f4397d33052c5257c5e6cdabd8819024";
+    protected final static String MD5_SUM_WINDOWS_32 = "ae800b20d9e5eb3f7c0d647c3569be1e";
+    protected final static String MD5_SUM_MAC_OSX_64 = "48dfa875670f3c6468acc3ab72252f9e";
+    protected final static ExtractionMode MYSQL_EXTRACTION_MODE_LINUX_64 = ExtractionMode.EXTRACTION_MODE_TAR_GZ;
+    protected final static ExtractionMode MYSQL_EXTRACTION_MODE_LINUX_32 = ExtractionMode.EXTRACTION_MODE_TAR_GZ;
+    protected final static ExtractionMode MYSQL_EXTRACTION_MODE_WINDOWS_64 = ExtractionMode.EXTRACTION_MODE_ZIP;
+    protected final static ExtractionMode MYSQL_EXTRACTION_MODE_WINDOWS_32 = ExtractionMode.EXTRACTION_MODE_ZIP;
+    protected final static ExtractionMode MYSQL_EXTRACTION_MODE_MAC_OSX_64 = ExtractionMode.EXTRACTION_MODE_TAR_GZ;
     private final boolean skipMD5SumCheck;
+    private final Map<SupportedOS, DownloadCombi> oSDownloadCombiMap = new ImmutableMap.Builder<SupportedOS, DownloadCombi>()
+            .put(SupportedOS.LINUX_32, new DownloadCombi(MYSQL_DOWNLOAD_URL_LINUX_32,
+                    MYSQL_DOWNLOAD_TARGET_LINUX_32,
+                    MYSQL_EXTRACTION_MODE_LINUX_32,
+                    MYSQL_EXTRACTION_LOCATION_LINUX_32,
+                    MD5_SUM_LINUX_32))
+            .put(SupportedOS.LINUX_64, new DownloadCombi(MYSQL_DOWNLOAD_URL_LINUX_64,
+                    MYSQL_DOWNLOAD_TARGET_LINUX_64,
+                    MYSQL_EXTRACTION_MODE_LINUX_64,
+                    MYSQL_EXTRACTION_LOCATION_LINUX_64,
+                    MD5_SUM_LINUX_64))
+            .put(SupportedOS.WINDOWS_32, new DownloadCombi(MYSQL_DOWNLOAD_URL_WINDOWS_32,
+                    MYSQL_DOWNLOAD_TARGET_WINDOWS_32,
+                    MYSQL_EXTRACTION_MODE_WINDOWS_32,
+                    MYSQL_EXTRACTION_LOCATION_WINDOWS_32,
+                    MD5_SUM_WINDOWS_32))
+            .put(SupportedOS.WINDOWS_64, new DownloadCombi(MYSQL_DOWNLOAD_URL_WINDOWS_64,
+                    MYSQL_DOWNLOAD_TARGET_WINDOWS_64,
+                    MYSQL_EXTRACTION_MODE_WINDOWS_64,
+                    MYSQL_EXTRACTION_LOCATION_WINDOWS_64,
+                    MD5_SUM_WINDOWS_64))
+            .put(SupportedOS.MAC_OSX_64, new DownloadCombi(MYSQL_DOWNLOAD_URL_MAC_OSX_64,
+                    MYSQL_DOWNLOAD_TARGET_MAC_OSX_64,
+                    MYSQL_EXTRACTION_MODE_MAC_OSX_64,
+                    MYSQL_EXTRACTION_LOCATION_MAC_OSX_64,
+                    MD5_SUM_MAC_OSX_64))
+            .build();
 
     public MySQLAutoPersistenceStorageConfPanel(MySQLAutoPersistenceStorageConf storageConf,
-            MessageHandler messageHandler,
+            IssueHandler issueHandler,
             ConfirmMessageHandler confirmMessageHandler,
             boolean skipMD5SumCheck) throws IOException {
         initComponents();
@@ -124,7 +130,7 @@ public class MySQLAutoPersistenceStorageConfPanel extends StorageConfPanel<MySQL
                 storageConf.getPassword(),
                 storageConf.getDatabaseName(),
                 storageConf.getSchemeChecksumFile());
-        this.messageHandler = messageHandler;
+        this.issueHandler = issueHandler;
         this.confirmMessageHandler = confirmMessageHandler;
         this.skipMD5SumCheck = skipMD5SumCheck;
         this.baseDirTextField.setText(storageConf.getBaseDir());
@@ -147,7 +153,7 @@ public class MySQLAutoPersistenceStorageConfPanel extends StorageConfPanel<MySQL
         passwordLabel = new javax.swing.JLabel();
         passwordPasswordField = new javax.swing.JPasswordField();
         portSpinner = new javax.swing.JSpinner();
-        jLabel1 = new javax.swing.JLabel();
+        portSpinnerLabel = new javax.swing.JLabel();
         databaseDirTextField = new javax.swing.JTextField();
         databaseDirTextFieldLabel = new javax.swing.JLabel();
         hostnameTextField = new javax.swing.JTextField();
@@ -159,7 +165,7 @@ public class MySQLAutoPersistenceStorageConfPanel extends StorageConfPanel<MySQL
         databaseNameTextField = new javax.swing.JTextField();
         databaseNameTextFieldLabel = new javax.swing.JLabel();
         downloadButton = new javax.swing.JButton();
-        jSeparator1 = new javax.swing.JSeparator();
+        directorySeparator = new javax.swing.JSeparator();
         mysqldTextField = new javax.swing.JTextField();
         mysqladminTextField = new javax.swing.JTextField();
         mysqlTextField = new javax.swing.JTextField();
@@ -172,7 +178,7 @@ public class MySQLAutoPersistenceStorageConfPanel extends StorageConfPanel<MySQL
 
         passwordPasswordField.setText("jPasswordField1");
 
-        jLabel1.setText("Port");
+        portSpinnerLabel.setText("Port");
 
         databaseDirTextFieldLabel.setText("Database directory");
 
@@ -221,7 +227,7 @@ public class MySQLAutoPersistenceStorageConfPanel extends StorageConfPanel<MySQL
                             .addComponent(mysqlTextField)
                             .addComponent(mysqldTextField)
                             .addComponent(mysqladminTextField)))
-                    .addComponent(jSeparator1)
+                    .addComponent(directorySeparator)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addGap(0, 0, Short.MAX_VALUE)
                         .addComponent(downloadButton))
@@ -230,7 +236,7 @@ public class MySQLAutoPersistenceStorageConfPanel extends StorageConfPanel<MySQL
                             .addComponent(databaseNameTextFieldLabel)
                             .addComponent(databaseDirTextFieldLabel)
                             .addComponent(hostnameTextFieldLabel)
-                            .addComponent(jLabel1)
+                            .addComponent(portSpinnerLabel)
                             .addComponent(usernameLabel)
                             .addComponent(passwordLabel))
                         .addGap(18, 18, 18)
@@ -267,7 +273,7 @@ public class MySQLAutoPersistenceStorageConfPanel extends StorageConfPanel<MySQL
                     .addComponent(mysqlTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(mysqlTextFieldLabel))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(directorySeparator, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(databaseNameTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -283,7 +289,7 @@ public class MySQLAutoPersistenceStorageConfPanel extends StorageConfPanel<MySQL
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(portSpinner, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel1))
+                    .addComponent(portSpinnerLabel))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(usernameTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -296,339 +302,91 @@ public class MySQLAutoPersistenceStorageConfPanel extends StorageConfPanel<MySQL
         );
     }// </editor-fold>//GEN-END:initComponents
 
-    @SuppressWarnings("PMD.UnusedFormalParameter")
-    private void downloadButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_downloadButtonActionPerformed
-        String downloadURL;
-        String downloadTarget;
-        int extractionMode;
-        String extractionLocation;
-        String md5Sum;
-        LOGGER.debug(String.format("system properties os.name is '%s' and "
-                + "os.arch is '%s'",
-                System.getProperty("os.name"),
-                System.getProperty("os.arch")));
-        if(SystemUtils.IS_OS_LINUX) {
-            if("amd64".equals(SystemUtils.OS_ARCH)) {
-                LOGGER.debug("assuming Linux 64-bit");
-                downloadURL = DOWNLOAD_URL_LINUX_64;
-                downloadTarget = MYSQL_DOWNLOAD_TARGET_LINUX_64;
-                extractionMode = MYSQL_EXTRACTION_MODE_LINUX_64;
-                extractionLocation = MYSQL_EXTRACTION_TARGET_LINUX_64;
-                md5Sum = MD5_SUM_LINUX_64;
-            }else if("i386".equals(SystemUtils.OS_ARCH)) {
-                LOGGER.debug("assuming Linux 32-bit");
-                downloadURL = DOWNLOAD_URL_LINUX_32;
-                downloadTarget = MYSQL_DOWNLOAD_TARGET_LINUX_32;
-                extractionMode = MYSQL_EXTRACTION_MODE_LINUX_32;
-                extractionLocation = MYSQL_EXTRACTION_TARGET_LINUX_32;
-                md5Sum = MD5_SUM_LINUX_32;
-            }else {
-                messageHandler.handle(new Message(String.format("Linux "
-                        + "operating system architecture %s isn't supported "
-                        + "for automatic download, please download MySQL "
-                        + "manually and set pathes accordingly",
-                                SystemUtils.OS_ARCH),
-                        JOptionPane.WARNING_MESSAGE,
-                        "Linux OS architecture not supported"));
-                return;
-            }
-        }else if(SystemUtils.IS_OS_WINDOWS) {
-            if(getWindowsBitness() == WINDOWS_BITNESS_64) {
-                LOGGER.debug("assuming Windows 64-bit");
-                downloadURL = DOWNLOAD_URL_WINDOWS_64;
-                downloadTarget = MYSQL_DOWNLOAD_TARGET_WINDOWS_64;
-                extractionMode = MYSQL_EXTRACTION_MODE_WINDOWS_64;
-                extractionLocation = MYSQL_EXTRACTION_TARGET_WINDOWS_64;
-                md5Sum = MD5_SUM_WINDOWS_64;
-            }else if(getWindowsBitness() == WINDOWS_BITNESS_32) {
-                LOGGER.debug("assuming Windows 32-bit");
-                downloadURL = DOWNLOAD_URL_WINDOWS_32;
-                downloadTarget = MYSQL_DOWNLOAD_TARGET_WINDOWS_32;
-                extractionMode = MYSQL_EXTRACTION_MODE_WINDOWS_32;
-                extractionLocation = MYSQL_EXTRACTION_TARGET_WINDOWS_32;
-                md5Sum = MD5_SUM_WINDOWS_32;
-            }else {
-                messageHandler.handle(new Message(String.format("Windows "
-                        + "operating system architecture %s isn't supported "
-                        + "for automatic download, please download MySQL "
-                        + "manually and set pathes accordingly",
-                                SystemUtils.OS_ARCH),
-                        JOptionPane.WARNING_MESSAGE,
-                        "Linux OS architecture not supported"));
-                return;
-            }
-        }else if(SystemUtils.IS_OS_MAC) {
-            if("x84_86".equals(SystemUtils.OS_ARCH)) {
-                LOGGER.debug("assuming Mac OSX 64-bit");
-                downloadURL = DOWNLOAD_URL_MAC_OSX_64;
-                downloadTarget = MYSQL_DOWNLOAD_TARGET_MAC_OSX_64;
-                extractionMode = MYSQL_EXTRACTION_MODE_MAC_OSX_64;
-                extractionLocation = MYSQL_EXTRACTION_TARGET_MAC_OSX_64;
-                md5Sum = MD5_SUM_MAC_OSX_64;
-            }else {
-                messageHandler.handle(new Message(String.format("Mac "
-                        + "operating system architecture %s isn't supported "
-                        + "for automatic download, please download MySQL "
-                        + "manually and set pathes accordingly",
-                                SystemUtils.OS_ARCH),
-                        JOptionPane.WARNING_MESSAGE,
-                        "Linux OS architecture not supported"));
-                return;
-            }
-        }else {
-            this.messageHandler.handle(new Message(String.format("Operating "
+    protected DownloadCombi getDownloadCombi() {
+        SupportedOS currentOS;
+        try {
+            currentOS = DownloadTools.getCurrentOS();
+        } catch (OSNotRecognizedException ex) {
+            this.issueHandler.handle(new Message(String.format("Operating "
                     + "system %s isn't supported for automatic download, "
                     + "please download MySQL manually and set pathes "
                     + "accordingly",
                             SystemUtils.OS_NAME),
                     JOptionPane.WARNING_MESSAGE,
                     "Operating system not supported"));
-            return;
+            return null;
+        } catch (ArchitectureNotRecognizedException ex) {
+            this.issueHandler.handle(new Message(String.format("%s "
+                    + "operating system architecture %s isn't supported "
+                    + "for automatic download, please download MySQL "
+                    + "manually and set pathes accordingly",
+                            ex.getoSName(),
+                            SystemUtils.OS_ARCH),
+                    JOptionPane.WARNING_MESSAGE,
+                    "Linux OS architecture not supported"));
+            return null;
         }
-        while(!mySQLDownload(downloadURL,
-                downloadTarget,
-                extractionMode,
-                extractionLocation,
-                md5Sum)) {
-            MySQLDownloadDialog mySQLDownloadDialog = new MySQLDownloadDialog(SwingUtilities.getWindowAncestor(this));
-            mySQLDownloadDialog.setLocationRelativeTo(this);
-            mySQLDownloadDialog.setVisible(true);
-            if(mySQLDownloadDialog.isCanceled()) {
+        DownloadCombi retValue = oSDownloadCombiMap.get(currentOS);
+        assert retValue != null;
+        return retValue;
+    }
+
+    @SuppressWarnings("PMD.UnusedFormalParameter")
+    private void downloadButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_downloadButtonActionPerformed
+        try {
+            DownloadCombi downloadCombi = getDownloadCombi();
+            if(downloadCombi == null) {
+                //system could not be recognized
                 return;
             }
-            downloadURL = mySQLDownloadDialog.getDownloadURL();
-            extractionLocation = mySQLDownloadDialog.getExtractionLocation();
-            md5Sum = mySQLDownloadDialog.getMd5Sum();
+            mySQLDownload(downloadCombi);
+            baseDirTextField.setText(downloadCombi.getExtractionLocation());
+                //not necessary to set on storageConf because it'll be set in save
+        }catch(Throwable ex) {
+            LOGGER.error("unexpected exception during download of MySQL occured",
+                    ex);
+            issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
         }
-        baseDirTextField.setText(extractionLocation);
-            //not necessary to set on storageConf because it'll be set in save
     }//GEN-LAST:event_downloadButtonActionPerformed
 
-    /**
-     * Windows lies about 64-bit systems in order to make 32-bit programs work
-     * on 64-bit systems. Taken from
-     * http://stackoverflow.com/questions/4748673/how-can-i-check-the-bitness-of-my-os-using-java-j2se-not-os-arch.
-     * @return {@link #WINDOWS_BITNESS_32} or {@link #WINDOWS_BITNESS_64}
-     */
-    private int getWindowsBitness() {
-        assert SystemUtils.IS_OS_WINDOWS;
-        String arch = System.getenv("PROCESSOR_ARCHITECTURE");
-        String wow64Arch = System.getenv("PROCESSOR_ARCHITEW6432");
-        int realArch = arch != null && arch.endsWith("64")
-                          || wow64Arch != null && wow64Arch.endsWith("64")
-                              ? WINDOWS_BITNESS_64 : WINDOWS_BITNESS_32;
-        return realArch;
-    }
-
-    /**
-     * One step in a MySQL download loop.
-     * @param downloadURL
-     * @param extractionDir the directory where the directory contained in the
-     * MySQL tarball ought to be placed
-     * @param md5Sum
-     * @return {@code true} if the validation, download and extraction were
-     * successful, {@code false} otherwise
-     */
-    protected boolean mySQLDownload(String downloadURL,
-            String downloadTarget,
-            int extractionMode,
-            String extractionDir,
-            String md5Sum) {
-        final SwingWorkerGetWaitDialog dialog = new SwingWorkerGetWaitDialog(JOptionPane.getFrameForComponent(this),
+    protected boolean mySQLDownload(DownloadCombi downloadCombi) throws IOException, ExtractionException {
+        boolean retValue = DownloadTools.downloadFile(downloadCombi,
+                SwingUtilities.getWindowAncestor(this), //downloadDialogParent
                 DocumentScanner.generateApplicationWindowTitle("Downloading MySQL",
                         Constants.APP_NAME,
-                        Constants.APP_VERSION),
-                "Downloading MySQL",
-                "Downloading MySQL");
-        SwingWorker<Boolean, Void> downloadWorker = new SwingWorker<Boolean, Void>() {
-            @Override
-            protected Boolean doInBackground() throws Exception {
-                try {
-                    boolean needDownload;
-                    if(skipMD5SumCheck) {
-                        needDownload = !new File(downloadTarget).exists();
-                    }else {
-                        needDownload = true;
-                        if(!md5Sum.isEmpty() && new File(downloadTarget).exists()) {
-                            LOGGER.debug(String.format("reading download file '%s' for MD5 sum calculation", downloadTarget));
-                            String md5 = DigestUtils.md5Hex(new BufferedInputStream(new FileInputStream(downloadTarget)));
-                            if(md5Sum.equals(md5)) {
-                                LOGGER.debug(String.format("MD5 sum %s of download file '%s' matches", md5Sum, downloadTarget));
-                                needDownload = false;
-                            }else {
-                                LOGGER.debug(String.format("MD5 sum %s of download file '%s' doesn't match (should be %s), requesting new download", md5, downloadTarget, md5Sum));
-                            }
-                        }
-                    }
-                    if(dialog.isCanceled()) {
-                        return false;
-                    }
-                    if(needDownload) {
-                        boolean success = false;
-                        while(!success) {
-                            URL downloadURLURL = new URL(downloadURL);
-                            FileOutputStream out =
-                                    new FileOutputStream(downloadTarget);
-                            InputStream downloadURLInputStream = downloadURLURL.openStream();
-                            IOUtils.copy(downloadURLInputStream,
-                                    out);
-                            out.flush();
-                            out.close();
-                            downloadURLInputStream.close();
-                            if(dialog.isCanceled()) {
-                                return false;
-                            }
-                            if(md5Sum.isEmpty()) {
-                                success = true;
-                            }else {
-                                String md5 = DigestUtils.md5Hex(new BufferedInputStream(new FileInputStream(downloadTarget)));
-                                if(md5Sum.equals(md5)) {
-                                    success = true;
-                                }else {
-                                    String answer = confirmMessageHandler.confirm(new Message(String.format(
-                                            "MD5 sum %s "
-                                            + "of download '%s' doesn't match the "
-                                            + "specified MD5 sum %s. This "
-                                            + "indicates an incomplete download, a "
-                                            + "wrong specified MD5 sum or an error "
-                                            + "during transfer.",
-                                                    md5,
-                                                    downloadTarget,
-                                                    md5Sum),
-                                            JOptionPane.ERROR_MESSAGE,
-                                            "MD5 sum verification failed"),
-                                            MD5_SUM_CHECK_FAILED_RETRY,
-                                            MD5_SUM_CHECK_FAILED_ABORT);
-                                    if(MD5_SUM_CHECK_FAILED_ABORT.equals(answer)) {
-                                        return false;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if(dialog.isCanceled()) {
-                        return false;
-                    }
-                    if(!new File(extractionDir).exists()) {
-                        FileInputStream fileInputStream = new FileInputStream(downloadTarget);
-                        if(extractionMode == EXTRACTION_MODE_TAR_GZ) {
-                            GZIPInputStream gZIPInputStream = new GZIPInputStream(fileInputStream);
-                            TarArchiveInputStream tarArchiveInputStream = new TarArchiveInputStream(gZIPInputStream);
-                            String extractionDirTar = new File(extractionDir).getParent();
-                            LOGGER.debug(String.format("extracting into '%s'", extractionDirTar));
-                            TarArchiveEntry entry = null;
-                            while ((entry = (TarArchiveEntry)tarArchiveInputStream.getNextEntry()) != null) {
-                                final File outputFile = new File(extractionDirTar, entry.getName());
-                                if (entry.isDirectory()) {
-                                    LOGGER.trace(String.format("Attempting to write output directory %s.", outputFile.getAbsolutePath()));
-                                    if (!outputFile.exists()) {
-                                        LOGGER.trace(String.format("Attempting to create output directory %s.", outputFile.getAbsolutePath()));
-                                        if (!outputFile.mkdirs()) {
-                                            throw new IllegalStateException(String.format("Couldn't create directory %s.", outputFile.getAbsolutePath()));
-                                        }
-                                    }
-                                } else {
-                                    LOGGER.trace(String.format("Creating output file %s.", outputFile.getAbsolutePath()));
-                                    final File outputFileParent = outputFile.getParentFile();
-                                    if (!outputFileParent.exists()) {
-                                        if(!outputFileParent.mkdirs()) {
-                                            throw new IOException(String.format("Couldn't create directory %s.", outputFileParent.getAbsolutePath()));
-                                        }
-                                    }
-                                    final OutputStream outputFileStream = new FileOutputStream(outputFile);
-                                    IOUtils.copy(tarArchiveInputStream, outputFileStream);
-                                    outputFileStream.close();
-                                }
-                                //not the most efficient way, but certainly a
-                                //comprehensive one
-                                int modeOctal = Integer.parseInt(Integer.toOctalString(entry.getMode()));
-                                Path outputFilePath = Paths.get(outputFile.getAbsolutePath());
-                                StringBuilder permStringBuilder = new StringBuilder(9);
-                                int modeUser = modeOctal / 100;
-                                int modeGroup = (modeOctal % 100) / 10;
-                                int modeOthers = modeOctal % 10;
-                                //from http://stackoverflow.com/questions/34234598/how-to-convert-an-input-of-3-octal-numbers-into-chmod-permissions-into-binary
-                                permStringBuilder.append((modeUser & 4) == 0 ? '-' : 'r')
-                                        .append((modeUser & 2) == 0 ? '-' : 'w')
-                                        .append((modeUser & 1) == 0 ? '-' : 'x')
-                                        .append((modeGroup & 4) == 0 ? '-' : 'r')
-                                        .append((modeGroup & 2) == 0 ? '-' : 'w')
-                                        .append((modeGroup & 1) == 0 ? '-' : 'x')
-                                        .append((modeOthers & 4) == 0 ? '-' : 'r')
-                                        .append((modeOthers & 2) == 0 ? '-' : 'w')
-                                        .append((modeOthers & 1) == 0 ? '-' : 'x');
-                                String permString = permStringBuilder.toString();
-                                Files.setPosixFilePermissions(outputFilePath, PosixFilePermissions.fromString(permString));
-                            }
-                            tarArchiveInputStream.close();
-                        }else if(extractionMode == EXTRACTION_MODE_ZIP) {
-                            File destDir = new File(extractionDir);
-                            if (!destDir.exists()) {
-                                destDir.mkdir();
-                            }
-                            ZipInputStream zipIn = new ZipInputStream(new FileInputStream(downloadTarget));
-                            ZipEntry entry = zipIn.getNextEntry();
-                            // iterates over entries in the zip file
-                            while (entry != null) {
-                                String filePath = extractionDir + File.separator + entry.getName();
-                                if (!entry.isDirectory()) {
-                                    // if the entry is a file, extracts it
-                                    extractFile(zipIn, filePath);
-                                } else {
-                                    // if the entry is a directory, make the directory
-                                    File dir = new File(filePath);
-                                    dir.mkdir();
-                                }
-                                zipIn.closeEntry();
-                                entry = zipIn.getNextEntry();
-                            }
-                            zipIn.close();
-                        }else {
-                            throw new IllegalArgumentException(String.format(
-                                    "extractionMode %d isn't supported",
-                                    extractionMode));
-                        }
-                    }else {
-                        if(!new File(extractionDir).isDirectory()) {
-                            messageHandler.handle(new Message(String.format("extraction directory '%s' exists, but is not a directory", extractionDir),
-                                    JOptionPane.ERROR_MESSAGE,
-                                    "Invalid extraction target"));
-                            return false;
-                        }
-                    }
-                } catch(IOException ex) {
-                    LOGGER.error("unexpected exception, see nested exception for details", ex);
-                    messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
-                    return false;
-                }
-                return true;
-            }
-
-            @Override
-            protected void done() {
-                dialog.setVisible(false);
-            }
-        };
-        downloadWorker.execute();
-        dialog.setVisible(true);
-        if(dialog.isCanceled()) {
-            return false;
-                //returning false here will result in another
-                //MySQLDownloadDialog being displayed in which the whole
-                //download action can be canceled
-        }
-        try {
-            return downloadWorker.get();
-        } catch (InterruptedException | ExecutionException ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
-    private void extractFile(ZipInputStream zipIn, String filePath) throws IOException {
-        BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(filePath));
-        IOUtils.copy(zipIn, bos);
-        bos.flush();
-        bos.close();
+                        Constants.APP_VERSION), //downloadDialogTitle
+                "Downloading MySQL", //labelText
+                "Downloading MySQL", //progressBarText
+                skipMD5SumCheck,
+            ex -> {
+                DownloadFailureCallbackReation answer = confirmMessageHandler.confirm(new Message(String.format(
+                        "Download failed because of the following exception: %s",
+                                ex.getMessage()),
+                        JOptionPane.ERROR_MESSAGE,
+                        "Download failed"),
+                        DownloadFailureCallbackReation.CANCEL,
+                        DownloadFailureCallbackReation.RETRY);
+                return answer;
+            },
+            (String md5SumExpected, String md5SumActual) -> {
+                MD5SumCheckUnequalsCallbackReaction answer = confirmMessageHandler.confirm(new Message(String.format(
+                        "MD5 sum %s "
+                        + "of download '%s' doesn't match the "
+                        + "specified MD5 sum %s. This "
+                        + "indicates an incomplete download, a "
+                        + "wrong specified MD5 sum or an error "
+                        + "during transfer.",
+                                md5SumActual,
+                                downloadCombi.getDownloadTarget(),
+                                md5SumExpected),
+                        JOptionPane.ERROR_MESSAGE,
+                        "MD5 sum verification failed"),
+                        MD5SumCheckUnequalsCallbackReaction.RETRY,
+                        MD5SumCheckUnequalsCallbackReaction.CANCEL);
+                return answer;
+            } //mD5SumCheckUnequalsCallback
+        );
+        return retValue;
     }
 
     @Override
@@ -669,11 +427,10 @@ public class MySQLAutoPersistenceStorageConfPanel extends StorageConfPanel<MySQL
     private javax.swing.JLabel databaseDirTextFieldLabel;
     private javax.swing.JTextField databaseNameTextField;
     private javax.swing.JLabel databaseNameTextFieldLabel;
+    private javax.swing.JSeparator directorySeparator;
     private javax.swing.JButton downloadButton;
     private javax.swing.JTextField hostnameTextField;
     private javax.swing.JLabel hostnameTextFieldLabel;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JSeparator jSeparator1;
     private javax.swing.JTextField mysqlTextField;
     private javax.swing.JLabel mysqlTextFieldLabel;
     private javax.swing.JTextField mysqladminTextField;
@@ -683,6 +440,7 @@ public class MySQLAutoPersistenceStorageConfPanel extends StorageConfPanel<MySQL
     private javax.swing.JLabel passwordLabel;
     private javax.swing.JPasswordField passwordPasswordField;
     private javax.swing.JSpinner portSpinner;
+    private javax.swing.JLabel portSpinnerLabel;
     private javax.swing.JLabel usernameLabel;
     private javax.swing.JTextField usernameTextField;
     // End of variables declaration//GEN-END:variables

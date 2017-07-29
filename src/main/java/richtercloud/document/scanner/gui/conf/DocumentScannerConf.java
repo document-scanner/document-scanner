@@ -288,10 +288,15 @@ public class DocumentScannerConf implements Serializable {
         Pair<String, String> bestInitialPostgresqlBasePathPair = PostgresqlAutoPersistenceStorageConf.findBestInitialPostgresqlBasePath();
         this.availableStorageConfs.add(new PostgresqlAutoPersistenceStorageConf(Constants.ENTITY_CLASSES,
                 "document-scanner",
+                null, //password (specification by user enforced through
+                    //validation)
+                "document-scanner", //databaseName
                 SCHEME_CHECKSUM_FILE_DEFAULT,
                 POSTGRESQL_DATABASE_DIR_DEFAULT,
                 bestInitialPostgresqlBasePathPair.getKey(),
-                bestInitialPostgresqlBasePathPair.getValue()));
+                bestInitialPostgresqlBasePathPair.getValue(),
+                "createdb" //createdbBinaryPath
+        ));
         this.availableStorageConfs.add(new MySQLAutoPersistenceStorageConf(Constants.ENTITY_CLASSES,
                 "document-scanner",
                 MYSQL_DATABASE_DIR_DEFAULT,
