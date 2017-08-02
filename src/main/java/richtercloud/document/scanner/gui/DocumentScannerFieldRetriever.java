@@ -19,23 +19,25 @@ import java.util.List;
 import java.util.ListIterator;
 import richtercloud.document.scanner.components.annotations.Invisible;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
-import richtercloud.reflection.form.builder.jpa.JPACachedFieldRetriever;
+import richtercloud.reflection.form.builder.jpa.OrderedJPACachedFieldRetriever;
 import richtercloud.validation.tools.FieldRetrievalException;
 
 /**
+ * A {@link FieldRetriever} which removes fields annotated with
+ * {@link Invisible} from the list of fields returned by
+ * {@link #retrieveRelevantFields(java.lang.Class) }.
  *
  * @author richter
  */
-public class DocumentScannerFieldRetriever extends JPACachedFieldRetriever {
-    private final DocumentScannerConf documentScannerConf;
+public class DocumentScannerFieldRetriever extends OrderedJPACachedFieldRetriever {
 
     public DocumentScannerFieldRetriever(DocumentScannerConf documentScannerConf) {
-        this.documentScannerConf = documentScannerConf;
+        super(documentScannerConf.getFieldOrderMap());
     }
 
     @Override
     public List<Field> retrieveRelevantFields(Class<?> entityClass) throws FieldRetrievalException {
-        List<Field> retValue = documentScannerConf.getFieldOrderMap().get(entityClass);
+        List<Field> retValue = super.retrieveRelevantFields(entityClass);
         ListIterator<Field> retValueItr = retValue.listIterator();
         while(retValueItr.hasNext()) {
             Field retValueNxt = retValueItr.next();
