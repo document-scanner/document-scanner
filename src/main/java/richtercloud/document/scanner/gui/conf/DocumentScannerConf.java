@@ -64,7 +64,8 @@ import richtercloud.reflection.form.builder.storage.StorageConf;
  */
 public class DocumentScannerConf implements Serializable {
     private static final long serialVersionUID = 1L;
-    public final static String SCANNER_SANE_ADDRESS_DEFAULT = "localhost";
+    private final static String LOCALHOST_TEMPLATE = "localhost";
+    public final static String SCANNER_SANE_ADDRESS_DEFAULT = LOCALHOST_TEMPLATE;
     private final static OCREngineConf OCR_ENGINE_CONF_DEFAULT = new TesseractOCREngineConf();
     private static final Locale LOCALE_DEFAULT = Locale.getDefault();
     private static final Currency CURRENCY_DEFAULT = new Currency(java.util.Currency.getInstance(LOCALE_DEFAULT).getCurrencyCode());
@@ -103,7 +104,7 @@ public class DocumentScannerConf implements Serializable {
     private final static File TAG_STORAGE_FILE_DEFAULT = new File(CONFIG_DIR_DEFAULT, TAG_STORAGE_FILE_NAME);
     private final static String IMAGE_WRAPPER_STORAGE_FILE_NAME_DEFAULT = "image-storage";
     private final static File IMAGE_WRAPPER_STORAGE_DIR = new File(CONFIG_DIR_DEFAULT, IMAGE_WRAPPER_STORAGE_FILE_NAME_DEFAULT);
-    private final static String HOSTNAME_DEFAULT = "localhost";
+    private final static String HOSTNAME_DEFAULT = LOCALHOST_TEMPLATE;
     private final static String POSTGRESQL_DATABASE_DIR_DEFAULT = new File(CONFIG_DIR_DEFAULT, "databases-postgresql").getAbsolutePath();
     private final static String MYSQL_DATABASE_DIR_DEFAULT = new File(CONFIG_DIR_DEFAULT, "databases-mysql").getAbsolutePath();
     public final static String LOG_FILE_PATH_DEFAULT = new File(CONFIG_DIR_DEFAULT, "document-scanner.log").getAbsolutePath();
@@ -287,6 +288,7 @@ public class DocumentScannerConf implements Serializable {
                 SCHEME_CHECKSUM_FILE_DEFAULT));
         Pair<String, String> bestInitialPostgresqlBasePathPair = PostgresqlAutoPersistenceStorageConf.findBestInitialPostgresqlBasePath();
         this.availableStorageConfs.add(new PostgresqlAutoPersistenceStorageConf(Constants.ENTITY_CLASSES,
+                LOCALHOST_TEMPLATE, //hostname
                 "document-scanner",
                 null, //password (specification by user enforced through
                     //validation)
@@ -298,6 +300,7 @@ public class DocumentScannerConf implements Serializable {
                 "createdb" //createdbBinaryPath
         ));
         this.availableStorageConfs.add(new MySQLAutoPersistenceStorageConf(Constants.ENTITY_CLASSES,
+                LOCALHOST_TEMPLATE, //hostname
                 "document-scanner",
                 MYSQL_DATABASE_DIR_DEFAULT,
                 SCHEME_CHECKSUM_FILE_DEFAULT

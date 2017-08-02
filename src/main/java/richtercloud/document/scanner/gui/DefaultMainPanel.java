@@ -80,12 +80,9 @@ import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.Message;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
-import richtercloud.reflection.form.builder.components.money.AmountMoneyUsageStatisticsStorage;
 import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
 import richtercloud.reflection.form.builder.fieldhandler.MappingFieldHandler;
 import richtercloud.reflection.form.builder.fieldhandler.factory.AmountMoneyMappingFieldHandlerFactory;
-import richtercloud.reflection.form.builder.jpa.IdGenerator;
-import richtercloud.reflection.form.builder.jpa.JPACachedFieldRetriever;
 import richtercloud.reflection.form.builder.jpa.JPAFieldRetriever;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.fieldhandler.factory.JPAAmountMoneyMappingFieldHandlerFactory;
@@ -161,7 +158,6 @@ public class DefaultMainPanel extends MainPanel {
     private PersistenceStorage storage;
     private final IssueHandler issueHandler;
     private final ConfirmMessageHandler confirmMessageHandler;
-    private final AmountMoneyUsageStatisticsStorage amountMoneyUsageStatisticsStorage;
     private final AmountMoneyCurrencyStorage amountMoneyCurrencyStorage;
     private final AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever;
     /**
@@ -172,7 +168,6 @@ public class DefaultMainPanel extends MainPanel {
      * but only one focused.
      */
     private OCRSelectComponent oCRSelectComponent;
-    private final FieldRetriever fieldRetriever = new JPACachedFieldRetriever();
     private final Map<java.lang.reflect.Type, TypeHandler<?, ?,?, ?>> typeHandlerMapping;
     private final DocumentScannerConf documentScannerConf;
     private final TagStorage tagStorage;
@@ -186,12 +181,10 @@ public class DefaultMainPanel extends MainPanel {
     private final QueryHistoryEntryStorage entryStorage;
     private final JPAFieldRetriever reflectionFormBuilderFieldRetriever;
     private final FieldRetriever readOnlyFieldRetriever;
-    private final IdGenerator idGenerator;
 
     public DefaultMainPanel(Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
             PersistenceStorage storage,
-            AmountMoneyUsageStatisticsStorage amountMoneyUsageStatisticsStorage,
             AmountMoneyCurrencyStorage amountMoneyAdditionalCurrencyStorage,
             AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever,
             IssueHandler issueHandler,
@@ -202,7 +195,6 @@ public class DefaultMainPanel extends MainPanel {
             DocumentScannerConf documentScannerConf,
             TagStorage tagStorage,
             IdApplier idApplier,
-            IdGenerator idGenerator,
             Map<Class<?>, WarningHandler<?>> warningHandlers,
             FieldInitializer queryComponentFieldInitializer,
             QueryHistoryEntryStorage entryStorage,
@@ -212,7 +204,6 @@ public class DefaultMainPanel extends MainPanel {
                 primaryClassSelection,
                 DocumentScanner.VALUE_SETTER_MAPPING_DEFAULT,
                 storage,
-                amountMoneyUsageStatisticsStorage,
                 amountMoneyAdditionalCurrencyStorage,
                 amountMoneyExchangeRateRetriever,
                 issueHandler,
@@ -223,7 +214,6 @@ public class DefaultMainPanel extends MainPanel {
                 documentScannerConf,
                 tagStorage,
                 idApplier,
-                idGenerator,
                 warningHandlers,
                 queryComponentFieldInitializer,
                 entryStorage,
@@ -235,7 +225,6 @@ public class DefaultMainPanel extends MainPanel {
             Class<?> primaryClassSelection,
             Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping,
             PersistenceStorage storage,
-            AmountMoneyUsageStatisticsStorage amountMoneyUsageStatisticsStorage,
             AmountMoneyCurrencyStorage amountMoneyCurrencyStorage,
             AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever,
             IssueHandler issueHandler,
@@ -246,7 +235,6 @@ public class DefaultMainPanel extends MainPanel {
             DocumentScannerConf documentScannerConf,
             TagStorage tagStorage,
             IdApplier idApplier,
-            IdGenerator idGenerator,
             Map<Class<?>, WarningHandler<?>> warningHandlers,
             FieldInitializer queryComponentFieldInitializer,
             QueryHistoryEntryStorage entryStorage,
@@ -270,14 +258,12 @@ public class DefaultMainPanel extends MainPanel {
         this.primaryClassSelection = primaryClassSelection;
         this.valueSetterMapping = valueSetterMapping;
         this.storage = storage;
-        this.amountMoneyUsageStatisticsStorage = amountMoneyUsageStatisticsStorage;
         this.amountMoneyCurrencyStorage = amountMoneyCurrencyStorage;
         this.amountMoneyExchangeRateRetriever = amountMoneyExchangeRateRetriever;
         this.typeHandlerMapping = typeHandlerMapping;
         this.queryComponentFieldInitializer = queryComponentFieldInitializer;
         this.reflectionFormBuilderFieldRetriever = reflectionFormBuilderFieldRetriever;
         this.readOnlyFieldRetriever = readOnlyFieldRetriever;
-        this.idGenerator = idGenerator;
         this.entryStorage = entryStorage;
         this.layout = new GroupLayout(this);
         setLayout(layout);
@@ -581,8 +567,7 @@ public class DefaultMainPanel extends MainPanel {
             MainPanelScanResultPanelFetcher scanResultPanelFetcher = new MainPanelScanResultPanelFetcher(oCRSelectPanelPanel //oCRSelectPanelPanel
                     );
 
-            AmountMoneyMappingFieldHandlerFactory embeddableFieldHandlerFactory = new AmountMoneyMappingFieldHandlerFactory(amountMoneyUsageStatisticsStorage,
-                    amountMoneyCurrencyStorage,
+            AmountMoneyMappingFieldHandlerFactory embeddableFieldHandlerFactory = new AmountMoneyMappingFieldHandlerFactory(amountMoneyCurrencyStorage,
                     amountMoneyExchangeRateRetriever,
                     issueHandler);
             FieldHandler embeddableFieldHandler = new MappingFieldHandler(embeddableFieldHandlerFactory.generateClassMapping(),
@@ -595,10 +580,8 @@ public class DefaultMainPanel extends MainPanel {
             JPAAmountMoneyMappingFieldHandlerFactory jPAAmountMoneyMappingFieldHandlerFactory = JPAAmountMoneyMappingFieldHandlerFactory.create(storage,
                     Constants.INITIAL_QUERY_LIMIT_DEFAULT,
                     issueHandler,
-                    amountMoneyUsageStatisticsStorage,
                     amountMoneyCurrencyStorage,
                     amountMoneyExchangeRateRetriever,
-                    Constants.BIDIRECTIONAL_HELP_DIALOG_TITLE,
                     readOnlyFieldRetriever);
             ToManyTypeHandler toManyTypeHandler = new ToManyTypeHandler(storage,
                     issueHandler,
@@ -622,7 +605,6 @@ public class DefaultMainPanel extends MainPanel {
                     toOneTypeHandler,
                     issueHandler,
                     confirmMessageHandler,
-                    fieldRetriever,
                     oCRResultPanelFetcher,
                     scanResultPanelFetcher,
                     this.documentScannerConf,
@@ -652,7 +634,6 @@ public class DefaultMainPanel extends MainPanel {
                     confirmMessageHandler,
                     reflectionFormBuilderFieldRetriever,
                     idApplier,
-                    idGenerator,
                     warningHandlers,
                     valueSetterMapping,
                     documentScannerConf);

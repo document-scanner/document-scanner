@@ -123,6 +123,7 @@ public class MySQLAutoPersistenceStorageConfPanel extends StorageConfPanel<MySQL
         initComponents();
         this.storageConf = new MySQLAutoPersistenceStorageConf(storageConf.getDatabaseDir(),
                 storageConf.getBaseDir(),
+                storageConf.getHostname(),
                 storageConf.getPort(),
                 storageConf.getDatabaseDriver(),
                 storageConf.getEntityClasses(),

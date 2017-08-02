@@ -118,10 +118,8 @@ import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrency
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetrieverException;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyPanel;
-import richtercloud.reflection.form.builder.components.money.AmountMoneyUsageStatisticsStorage;
 import richtercloud.reflection.form.builder.components.money.FailsafeAmountMoneyExchangeRateRetriever;
 import richtercloud.reflection.form.builder.components.money.FileAmountMoneyCurrencyStorage;
-import richtercloud.reflection.form.builder.components.money.FileAmountMoneyUsageStatisticsStorage;
 import richtercloud.reflection.form.builder.jpa.IdGenerationException;
 import richtercloud.reflection.form.builder.jpa.IdGenerator;
 import richtercloud.reflection.form.builder.jpa.JPACachedFieldRetriever;
@@ -225,7 +223,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 EmbeddableListPanelSetter.getInstance());
         VALUE_SETTER_MAPPING_DEFAULT = Collections.unmodifiableMap(valueSetterMappingDefault);
     }
-    private final AmountMoneyUsageStatisticsStorage amountMoneyUsageStatisticsStorage;
     private final AmountMoneyCurrencyStorage amountMoneyCurrencyStorage;
     private final AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever;
     private final TagStorage tagStorage;
@@ -447,17 +444,11 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 String.format("%s shutdown hook", DocumentScanner.class.getSimpleName())
         ));
 
-        try {
-            this.amountMoneyUsageStatisticsStorage = new FileAmountMoneyUsageStatisticsStorage(documentScannerConf.getAmountMoneyUsageStatisticsStorageFile());
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
         this.amountMoneyCurrencyStorage = new FileAmountMoneyCurrencyStorage(documentScannerConf.getAmountMoneyCurrencyStorageFile());
         this.tagStorage = new FileTagStorage(documentScannerConf.getTagStorageFile());
         JPAAmountMoneyMappingTypeHandlerFactory fieldHandlerFactory = new JPAAmountMoneyMappingTypeHandlerFactory(storage,
                 Constants.INITIAL_QUERY_LIMIT_DEFAULT,
                 issueHandler,
-                Constants.BIDIRECTIONAL_HELP_DIALOG_TITLE,
                 readOnlyFieldRetriever);
         this.typeHandlerMapping = fieldHandlerFactory.generateTypeHandlerMapping();
 
@@ -513,7 +504,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         this.mainPanel = new DefaultMainPanel(Constants.ENTITY_CLASSES,
                 Constants.PRIMARY_CLASS_SELECTION,
                 storage,
-                amountMoneyUsageStatisticsStorage,
                 amountMoneyCurrencyStorage,
                 amountMoneyExchangeRateRetriever,
                 issueHandler,
@@ -524,7 +514,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 documentScannerConf,
                 tagStorage,
                 idApplier,
-                idGenerator,
                 warningHandlers,
                 queryComponentFieldInitializer,
                 entryStorage,

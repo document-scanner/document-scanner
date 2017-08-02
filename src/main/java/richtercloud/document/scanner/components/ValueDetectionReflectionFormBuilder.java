@@ -49,7 +49,6 @@ import richtercloud.reflection.form.builder.Tools;
 import richtercloud.reflection.form.builder.TransformationException;
 import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
 import richtercloud.reflection.form.builder.fieldhandler.FieldHandlingException;
-import richtercloud.reflection.form.builder.jpa.IdGenerator;
 import richtercloud.reflection.form.builder.jpa.JPAFieldRetriever;
 import richtercloud.reflection.form.builder.jpa.JPAReflectionFormBuilder;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
@@ -97,7 +96,6 @@ public class ValueDetectionReflectionFormBuilder extends JPAReflectionFormBuilde
             ConfirmMessageHandler confirmMessageHandler,
             JPAFieldRetriever fieldRetriever,
             IdApplier idApplier,
-            IdGenerator idGenerator,
             Map<Class<?>, WarningHandler<?>> warningHandlers,
             Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping,
             DocumentScannerConf documentScannerConf) {
@@ -107,7 +105,6 @@ public class ValueDetectionReflectionFormBuilder extends JPAReflectionFormBuilde
                 confirmMessageHandler,
                 fieldRetriever,
                 idApplier,
-                idGenerator,
                 warningHandlers);
         this.valueSetterMapping = valueSetterMapping;
         this.documentScannerConf = documentScannerConf;
