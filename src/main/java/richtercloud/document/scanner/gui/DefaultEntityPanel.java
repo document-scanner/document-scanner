@@ -14,6 +14,7 @@
  */
 package richtercloud.document.scanner.gui;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
@@ -26,6 +27,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.tika.language.detect.LanguageDetector;
+import org.apache.tika.language.detect.LanguageResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.components.ValueDetectionReflectionFormBuilder;
@@ -68,9 +71,25 @@ public class DefaultEntityPanel extends EntityPanel {
      * result.
      */
     private List<ValueDetectionResult<?>> detectionResults;
+    /**
+     * The Apache Tika language detector used for value detection.
+     */
+    /*
+    internal implementation notes:
+    - @TODO: figure out whether it's better in terms of memory requirement and
+    performance to have one instance per EntityPanel or one static instance
+    whose access needs to be synchronized since there's no info about eventual
+    thread-safety of LanguageDetector
+    */
+    private final LanguageDetector languageDetector;
 
     /**
-     * Creates new form EntityPanel
+     * Creates new form EntityPanel.
+     *
+     * @throws ValueDetectionServiceCreationException if one happens in
+     * {@link #applyValueDetectionServiceSelection() }
+     * @throws IOException if one happens during loading of Apache Tika language
+     * detector models
      */
     public DefaultEntityPanel(AmountMoneyCurrencyStorage amountMoneyAdditionalCurrencyStorage,
             AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever,
@@ -83,7 +102,8 @@ public class DefaultEntityPanel extends EntityPanel {
             IllegalArgumentException,
             InvocationTargetException,
             NoSuchMethodException,
-            ValueDetectionServiceCreationException {
+            ValueDetectionServiceCreationException,
+            IOException {
         if(fieldHandler == null) {
             throw new IllegalArgumentException("fieldHandler mustn't be null");
         }
@@ -103,6 +123,15 @@ public class DefaultEntityPanel extends EntityPanel {
         this.documentScannerConf = documentScannerConf;
         this.amountMoneyExchangeRateRetriever = amountMoneyExchangeRateRetriever;
         this.amountMoneyAdditionalCurrencyStorage = amountMoneyAdditionalCurrencyStorage;
+        this.languageDetector = LanguageDetector.getDefaultLanguageDetector();
+        assert languageDetector != null;
+        languageDetector.loadModels();
+            //- avoids NullPointerException in
+            //org.apache.tika.langdetect.OptimaizeLangDetector which is usually
+            //returned by LanguageDetector.getDefaultLanguageDetector, requested
+            //clarification at https://issues.apache.org/jira/browse/TIKA-2439
+            //- takes a long time, so languageDetector should be initialized in
+            //constructor
         applyValueDetectionServiceSelection();
     }
 
@@ -180,28 +209,21 @@ public class DefaultEntityPanel extends EntityPanel {
                 //null indicates that the recognition has been aborted
                 String languageIdentifier = documentScannerConf.getTextLanguageIdentifier();
                 if(languageIdentifier == null) {
-                    //@TODO: the following fails due to unintuitive
-                    //NullPointerException inside Tika which should be fixed,
-                    //but can't be because of build issues and test failures
-                    //which should be fixed by devs after Travis CI script is
-                    //merge, see https://github.com/apache/tika/pull/197 for PR
-//                    //indicates that the text language ought to be recognized
-//                    //automatically
-//                    LanguageDetector languageDetector = LanguageDetector.getDefaultLanguageDetector();
-//                    List<LanguageResult> languageResults = languageDetector.detectAll(oCRResult);
-//                    if(languageResults.size() != 1) {
-//                        //detection result is either empty or has more than one
-//                        //candidate -> need user input
-//                        issueHandler.handle(new Message("The language of the "
-//                                + "OCR result couldn't be detected "
-//                                + "automatically, please select the text "
-//                                + "language in the list",
-//                                JOptionPane.ERROR_MESSAGE,
-//                                "Language detection failed"));
-//                        return;
-//                    }
-//                    languageIdentifier = languageResults.get(0).getLanguage();
-                    languageIdentifier = ValueDetectionService.retrieveLanguageIdentifier(documentScannerConf.getLocale());
+                    //indicates that the text language ought to be recognized
+                    //automatically
+                    List<LanguageResult> languageResults = languageDetector.detectAll(oCRResult);
+                    if(languageResults.size() != 1) {
+                        //detection result is either empty or has more than one
+                        //candidate -> need user input
+                        issueHandler.handle(new Message("The language of the "
+                                + "OCR result couldn't be detected "
+                                + "automatically, please select the text "
+                                + "language in the list",
+                                JOptionPane.ERROR_MESSAGE,
+                                "Language detection failed"));
+                        return;
+                    }
+                    languageIdentifier = languageResults.get(0).getLanguage();
                     assert languageIdentifier != null && !languageIdentifier.isEmpty();
                 }
                 detectionResults = valueDetectionService.fetchResults(oCRResult,
