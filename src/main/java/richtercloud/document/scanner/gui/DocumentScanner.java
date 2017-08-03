@@ -263,11 +263,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
      * displayed if more documents than this value are about to be opened.
      */
     private PersistenceStorage storage;
-    private final DelegatingPersistenceStorageFactory delegatingStorageFactory = new DelegatingPersistenceStorageFactory("richtercloud_document-scanner_jar_1.0-SNAPSHOTPU",
-            24, //@TODo: low limit no longer necessary after ImageWrapper is
-                //used for binary data storage in document
-            messageHandler,
-            fieldRetriever);
+    private final DelegatingPersistenceStorageFactory delegatingStorageFactory;
     private final FieldInitializer queryComponentFieldInitializer;
     private final StorageConfCopyFactory storageConfCopyFactory = new DelegatingStorageConfCopyFactory();
     private final QueryHistoryEntryStorageFactory entryStorageFactory;
@@ -358,6 +354,12 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
         this.issueHandler = new DefaultIssueHandler(messageHandler,
                 bugHandler);
+
+        this.delegatingStorageFactory = new DelegatingPersistenceStorageFactory("richtercloud_document-scanner_jar_1.0-SNAPSHOTPU",
+                24, //@TODo: low limit no longer necessary after ImageWrapper is
+                    //used for binary data storage in document
+                issueHandler,
+                fieldRetriever);
 
         this.amountMoneyExchangeRetrieverInitThread = new Thread(() -> {
             LOGGER.debug("Starting prefetching of currency exchange rates in "
