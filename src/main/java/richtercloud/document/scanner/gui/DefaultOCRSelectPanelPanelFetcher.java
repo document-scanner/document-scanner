@@ -69,7 +69,7 @@ public class DefaultOCRSelectPanelPanelFetcher implements OCRSelectPanelPanelFet
                 imageStreams.put(imagePanel.getImage(),
                         imageStream);
             } catch (IOException ex) {
-                throw new RuntimeException(ex);
+                throw new OCREngineRecognitionException(ex);
             }
         }
         oCREngine.addProgressListener(new OCREngineProgressListener() {

@@ -261,7 +261,7 @@ public class ValueDetectionServiceAddDialog extends JDialog {
         this.pathTextField.setText(selectedFile.getPath());
     }//GEN-LAST:event_pathBrowseButtonActionPerformed
 
-    @SuppressWarnings("PMD.UnusedFormalParameter")
+    @SuppressWarnings({"PMD.UnusedFormalParameter", "PMD.AvoidCatchingThrowable"})
     private void loadButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loadButtonActionPerformed
         try {
             File selectedFile = new File(this.pathTextField.getText());
@@ -360,7 +360,7 @@ public class ValueDetectionServiceAddDialog extends JDialog {
         }
     }//GEN-LAST:event_loadButtonActionPerformed
 
-    @SuppressWarnings("PMD.UnusedFormalParameter")
+    @SuppressWarnings({"PMD.UnusedFormalParameter", "PMD.AvoidCatchingThrowable"})
     private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveButtonActionPerformed
         try {
             if(this.serviceConfPanel == null) {
@@ -377,7 +377,7 @@ public class ValueDetectionServiceAddDialog extends JDialog {
             this.createdConf = new ImmutablePair<>(this.lastSuccessfulPath,
                     createdConf);
             this.setVisible(false);
-        }catch(Exception ex) {
+        }catch(Throwable ex) {
             issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
         }
     }//GEN-LAST:event_saveButtonActionPerformed

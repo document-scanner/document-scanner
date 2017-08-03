@@ -15,6 +15,8 @@
 package richtercloud.document.scanner.components.tag;
 
 import java.awt.Window;
+import richtercloud.message.handler.ExceptionMessage;
+import richtercloud.message.handler.IssueHandler;
 
 /**
  *
@@ -25,16 +27,19 @@ public class TagComponentCreateDialog extends javax.swing.JDialog {
     private static final long serialVersionUID = 1L;
     private final TagStorage tagStorage;
     private String newTag;
+    private final IssueHandler issueHandler;
 
     /**
      * Creates new form TagComponentCreateDialog
      */
     public TagComponentCreateDialog(Window parent,
-            TagStorage tagStorage) {
+            TagStorage tagStorage,
+            IssueHandler issueHandler) {
         super(parent,
                 ModalityType.APPLICATION_MODAL
         );
         this.tagStorage = tagStorage;
+        this.issueHandler = issueHandler;
         initComponents();
     }
 
@@ -121,9 +126,13 @@ public class TagComponentCreateDialog extends javax.swing.JDialog {
 
     @SuppressWarnings("PMD.UnusedFormalParameter")
     private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveButtonActionPerformed
-        this.newTag = this.textField.getText();
-        this.tagStorage.addTag(newTag);
-        setVisible(false);
+        try {
+            this.newTag = this.textField.getText();
+            this.tagStorage.addTag(newTag);
+            setVisible(false);
+        } catch (TagRetrievalException ex) {
+            issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+        }
     }//GEN-LAST:event_saveButtonActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

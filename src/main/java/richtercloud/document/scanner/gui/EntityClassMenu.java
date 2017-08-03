@@ -28,14 +28,13 @@ import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.components.ValueDetectionPanel;
 import richtercloud.document.scanner.gui.ocrresult.OCRResult;
 import richtercloud.document.scanner.setter.ValueSetter;
-import richtercloud.message.handler.ExceptionMessage;
 import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.Message;
 import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.reflection.form.builder.FieldInfo;
 import richtercloud.reflection.form.builder.ReflectionFormPanel;
+import richtercloud.reflection.form.builder.ResetException;
 import richtercloud.reflection.form.builder.TransformationException;
-import richtercloud.validation.tools.FieldRetrievalException;
 import richtercloud.validation.tools.FieldRetriever;
 
 /**
@@ -62,19 +61,11 @@ public class EntityClassMenu extends JMenu {
                 ReflectionFormPanel reflectionFormPanel;
                 try {
                     reflectionFormPanel = reflectionFormPanelTabbedPane.getReflectionFormPanel(entityClass);
-                } catch (TransformationException | FieldRetrievalException ex) {
+                } catch (TransformationException | NoSuchFieldException | ResetException ex) {
                     EntityClassMenu.this.issueHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
                     return;
                 }
-                List<Field> relevantFields;
-                try {
-                    relevantFields = fieldRetriever.retrieveRelevantFields(entityClass);
-                } catch (FieldRetrievalException ex) {
-                    LOGGER.error("unexpected exception during retrieval of fields",
-                            ex);
-                    issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
-                    return;
-                }
+                List<Field> relevantFields = fieldRetriever.retrieveRelevantFields(entityClass);
                 for(Field relevantField : relevantFields) {
                     JComponent relevantFieldComponent = reflectionFormPanel.getComponentByField(relevantField);
                     assert relevantFieldComponent instanceof ValueDetectionPanel;

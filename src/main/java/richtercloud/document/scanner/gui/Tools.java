@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.ifaces.DocumentAddException;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.model.imagewrapper.CachingImageWrapper;
+import richtercloud.message.handler.IssueHandler;
 import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.swing.worker.get.wait.dialog.SwingWorkerCompletionWaiter;
 import richtercloud.swing.worker.get.wait.dialog.SwingWorkerGetWaitDialog;
@@ -89,7 +90,8 @@ public class Tools {
     */
     public static List<ImageWrapper> retrieveImages(final File documentFile,
             Window waitDialogParent,
-            File imageWrapperStorageDir) throws DocumentAddException, InterruptedException, ExecutionException {
+            File imageWrapperStorageDir,
+            IssueHandler issueHandler) throws DocumentAddException, InterruptedException, ExecutionException {
         if(documentFile == null) {
             throw new IllegalArgumentException("documentFile mustn't be null");
         }
@@ -102,7 +104,7 @@ public class Tools {
         );
         final SwingWorker<List<ImageWrapper>, Void> worker = new SwingWorker<List<ImageWrapper>, Void>() {
             @Override
-            protected List<ImageWrapper> doInBackground() throws Exception {
+            protected List<ImageWrapper> doInBackground() throws DocumentAddException {
                 List<ImageWrapper> retValue = new LinkedList<>();
                 try {
                     InputStream pdfInputStream = new FileInputStream(documentFile);
@@ -115,7 +117,9 @@ public class Tools {
                                 return null;
                             }
                             BufferedImage image = pdfRenderer.renderImageWithDPI(page, 300, ImageType.RGB);
-                            ImageWrapper imageWrapper = new CachingImageWrapper(imageWrapperStorageDir, image);
+                            ImageWrapper imageWrapper = new CachingImageWrapper(imageWrapperStorageDir,
+                                    image,
+                                    issueHandler);
                             retValue.add(imageWrapper);
                         }
                     }

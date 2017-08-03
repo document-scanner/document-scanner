@@ -25,6 +25,7 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import richtercloud.message.handler.IssueHandler;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorageException;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
@@ -45,8 +46,10 @@ public class CurrencyFormatValueDetectionServiceTest {
         System.out.println("getMaxWords");
         AmountMoneyCurrencyStorage amountMoneyCurrencyStorage = mock(AmountMoneyCurrencyStorage.class);
         AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever = mock(AmountMoneyExchangeRateRetriever.class);
+        IssueHandler issueHandler = mock(IssueHandler.class);
         CurrencyFormatValueDetectionService instance = new CurrencyFormatValueDetectionService(amountMoneyCurrencyStorage,
-                amountMoneyExchangeRateRetriever);
+                amountMoneyExchangeRateRetriever,
+                issueHandler);
         int expResult = 2; //the only thing that makes sense with currency
             //formats
         int result = instance.getMaxWords();
@@ -64,9 +67,11 @@ public class CurrencyFormatValueDetectionServiceTest {
         AmountMoneyCurrencyStorage amountMoneyCurrencyStorage = new MemoryAmountMoneyCurrencyStorage();
         amountMoneyCurrencyStorage.saveCurrency(Currency.EUR);
         AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever = mock(AmountMoneyExchangeRateRetriever.class);
+        IssueHandler issueHandler = mock(IssueHandler.class);
         when(amountMoneyExchangeRateRetriever.getSupportedCurrencies()).thenReturn(new HashSet<>(Arrays.asList(Currency.EUR)));
         CurrencyFormatValueDetectionService instance = new CurrencyFormatValueDetectionService(amountMoneyCurrencyStorage,
-                amountMoneyExchangeRateRetriever);
+                amountMoneyExchangeRateRetriever,
+                issueHandler);
         List<ValueDetectionResult<Amount<Money>>> retValues = instance.checkResult(inputSub, inputSplits, i);
         assertTrue(retValues.contains(new ValueDetectionResult<>(inputSub, Amount.valueOf(1.2d, Currency.EUR))));
     }

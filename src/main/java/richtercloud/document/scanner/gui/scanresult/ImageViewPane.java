@@ -25,6 +25,8 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
+import richtercloud.message.handler.ExceptionMessage;
+import richtercloud.message.handler.IssueHandler;
 
 /**
  * A wrapper around {@link ImageView} which provides a {@link Pane} to be
@@ -63,9 +65,14 @@ public abstract class ImageViewPane extends GridPane {
      * The topmost {@link ImageView}.
      */
     private final ImageView imageView;
+    private final IssueHandler issueHandler;
 
-    public ImageViewPane(int imageWidth, int imageHeight) {
-        this(new WritableImage(imageWidth, imageHeight));
+    public ImageViewPane(int imageWidth,
+            int imageHeight,
+            IssueHandler issueHandler) {
+        this(new WritableImage(imageWidth,
+                imageHeight),
+                issueHandler);
     }
 
     /**
@@ -76,12 +83,17 @@ public abstract class ImageViewPane extends GridPane {
      * @param imageWidth the preferred width of the image which is used to
      * calculate the height while preserving width-height ratio
      */
-    public ImageViewPane(ImageWrapper scanResult, int imageWidth) throws IOException {
-        this(scanResult.getImagePreviewFX(imageWidth));
+    public ImageViewPane(ImageWrapper scanResult,
+            int imageWidth,
+            IssueHandler issueHandler) throws IOException {
+        this(scanResult.getImagePreviewFX(imageWidth),
+                issueHandler);
     }
 
-    private ImageViewPane(WritableImage image) {
+    private ImageViewPane(WritableImage image,
+            IssueHandler issueHandler) {
         this.imageView = new ImageView(image);
+        this.issueHandler = issueHandler;
         add(this.imageView,
                 0, //columnIndex
                 0 //rowIndex
@@ -120,7 +132,7 @@ public abstract class ImageViewPane extends GridPane {
             try {
                 this.imageView.setImage(getTopMostImageWrapper().getImagePreviewFX(newWidth));
             } catch (IOException ex) {
-                throw new RuntimeException(ex);
+                issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
             }
         }
         int oldWidth = (int) this.getWidth();
@@ -141,7 +153,7 @@ public abstract class ImageViewPane extends GridPane {
                 WritableImage newImage = getTopMostImageWrapper().getImagePreviewFX(width);
                 this.imageView.setImage(newImage);
             } catch (IOException ex) {
-                throw new RuntimeException(ex);
+                issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
             }
         }
     }

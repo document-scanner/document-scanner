@@ -89,13 +89,14 @@ public abstract class AbstractFieldActionListener<T> implements ActionListener {
     }
 
     @Override
+    @SuppressWarnings("PMD.AvoidCatchingThrowable")
     public void actionPerformed(ActionEvent e) {
         JComponent comp = retrieveComponent();
         T fieldValue = retrieveValue();
         ValueSetter valueSetter = retrieveValueSetter(comp);
         try {
             valueSetter.setValue(fieldValue, comp);
-        } catch (Exception ex) {
+        } catch (Throwable ex) {
             LOGGER.error("An exception during setting the OCR value on " + "component occured", ex);
             messageHandler.handle(new Message(String.format("The " + "following exception occured while setting the " + "selected value on the field: %s", ExceptionUtils.getRootCauseMessage(ex)), JOptionPane.ERROR_MESSAGE, "Exception occured"));
         }

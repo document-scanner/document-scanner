@@ -25,6 +25,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.FormatUtils;
+import richtercloud.message.handler.IssueHandler;
 
 /**
  * A brute-force "getting-started" attempt of implementation which has quite
@@ -35,7 +36,6 @@ import richtercloud.document.scanner.gui.FormatUtils;
  */
 public class DateFormatValueDetectionService extends AbstractFormatValueDetectionService<Date> {
     private final static Logger LOGGER = LoggerFactory.getLogger(DateFormatValueDetectionService.class);
-
     /**
      * The max. number of words a date can be made up from.
      */
@@ -55,6 +55,10 @@ public class DateFormatValueDetectionService extends AbstractFormatValueDetectio
         }
         MAX_FORMAT_WORDS = wordsLongest;
         LOGGER.debug(String.format("Max. of words in every date format of every locale is %d", wordsLongest));
+    }
+
+    public DateFormatValueDetectionService(IssueHandler issueHandler) {
+        super(issueHandler);
     }
 
     @Override

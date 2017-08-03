@@ -33,6 +33,7 @@ import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.ifaces.OCRSelectPanel;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanel;
 import richtercloud.document.scanner.model.imagewrapper.DefaultImageWrapper;
+import richtercloud.message.handler.IssueHandler;
 
 /**
  *
@@ -52,7 +53,10 @@ public class MainPanelScanResultPanelFetcherTest {
         OCRSelectPanel oCRSelectPanel2 = mock(OCRSelectPanel.class);
         BufferedImage image = ImageIO.read(MainPanelScanResultPanelFetcherTest.class.getResource("/File_CC-BY-SA_3_icon_88x31.png"));
         File imageWrapperStorageDir = Files.createTempDirectory(MainPanelScanResultPanelFetcherTest.class.getSimpleName()).toFile();
-        ImageWrapper imageWrapper = new DefaultImageWrapper(imageWrapperStorageDir, image);
+        IssueHandler issueHandler = mock(IssueHandler.class);
+        ImageWrapper imageWrapper = new DefaultImageWrapper(imageWrapperStorageDir,
+                image,
+                issueHandler);
         when(oCRSelectPanel1.getImage()).thenReturn(imageWrapper);
         when(oCRSelectPanel2.getImage()).thenReturn(imageWrapper);
         List<OCRSelectPanel> oCRSelectPanels = new LinkedList<>(Arrays.asList(oCRSelectPanel1,

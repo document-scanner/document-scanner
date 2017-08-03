@@ -20,6 +20,8 @@ import java.awt.event.ItemListener;
 import java.lang.reflect.InvocationTargetException;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.MutableComboBoxModel;
+import richtercloud.message.handler.ExceptionMessage;
+import richtercloud.message.handler.IssueHandler;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyEmbeddedPersistenceStorageConf;
 import richtercloud.reflection.form.builder.storage.StorageConf;
 import richtercloud.reflection.form.builder.storage.StorageConfValidationException;
@@ -43,7 +45,8 @@ public class StorageCreateDialog extends javax.swing.JDialog {
      * Creates new form StorageCreateDialog
      */
     public StorageCreateDialog(Window parent,
-            StorageConfPanelFactory storageConfPanelFactory) {
+            StorageConfPanelFactory storageConfPanelFactory,
+            IssueHandler issueHandler) {
         super(parent,
                 ModalityType.APPLICATION_MODAL //modalityType
         );
@@ -52,13 +55,14 @@ public class StorageCreateDialog extends javax.swing.JDialog {
         this.storageCreateDialogTypeComboBoxModel.addElement(DerbyEmbeddedPersistenceStorageConf.class);
         this.storageCreateDialogTypeComboBox.addItemListener(new ItemListener() {
             @Override
+            @SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
             public void itemStateChanged(ItemEvent e) {
                 Class<? extends StorageConf> clazz = (Class<? extends StorageConf>) e.getItem();
                 try {
-                    //@TODO: error handling
                     clazz.getDeclaredConstructor().newInstance();
                 } catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
-                    throw new RuntimeException(ex);
+                    issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+                    return;
                 }
                 StorageConfPanel<?> storageConfPanel;
                 try {

@@ -19,7 +19,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import richtercloud.document.scanner.model.Identifiable;
-import richtercloud.message.handler.MessageHandler;
+import richtercloud.message.handler.IssueHandler;
 import richtercloud.reflection.form.builder.jpa.panels.QueryHistoryEntryStorageFactory;
 import richtercloud.reflection.form.builder.jpa.panels.XMLFileQueryHistoryEntryStorageFactory;
 
@@ -41,11 +41,11 @@ public class DocumentScannerFileQueryHistoryEntryStorageFactory extends XMLFileQ
     public DocumentScannerFileQueryHistoryEntryStorageFactory(File file,
             Set<Class<?>> entityClasses,
             boolean forbidSubtypes,
-            MessageHandler messageHandler) {
+            IssueHandler issueHandler) {
         super(file,
                 entityClasses,
                 forbidSubtypes,
-                messageHandler);
+                issueHandler);
     }
 
     @Override

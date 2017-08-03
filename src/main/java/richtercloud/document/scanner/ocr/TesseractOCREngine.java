@@ -26,6 +26,7 @@ import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.ifaces.OCREngineRecognitionException;
+import richtercloud.message.handler.IssueHandler;
 
 /**
  * A {@link OCREngine} which uses tesseract in inter-process communication
@@ -41,8 +42,10 @@ public class TesseractOCREngine extends ProcessOCREngine<TesseractOCREngineConf>
     private static final Logger LOGGER = LoggerFactory.getLogger(TesseractOCREngine.class);
     private final TesseractOCREngineConf oCREngineConf;
 
-    public TesseractOCREngine(TesseractOCREngineConf oCREngineConf) {
-        super(oCREngineConf);
+    public TesseractOCREngine(TesseractOCREngineConf oCREngineConf,
+            IssueHandler issueHandler) {
+        super(oCREngineConf,
+                issueHandler);
         if(oCREngineConf == null) {
             throw new IllegalArgumentException("oCREngineConf mustn't be empty");
         }

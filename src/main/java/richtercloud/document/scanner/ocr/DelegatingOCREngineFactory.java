@@ -16,13 +16,18 @@ package richtercloud.document.scanner.ocr;
 
 import richtercloud.document.scanner.ifaces.OCREngine;
 import richtercloud.document.scanner.ifaces.OCREngineConf;
+import richtercloud.message.handler.IssueHandler;
 
 /**
  *
  * @author richter
  */
 public class DelegatingOCREngineFactory implements OCREngineFactory<OCREngine, OCREngineConf> {
-    private final static TesseractOCREngineFactory TESSERACT_OCRENGINE_FACTORY = new TesseractOCREngineFactory();
+    private final TesseractOCREngineFactory tesseractOCREngineFactory;
+
+    public DelegatingOCREngineFactory(IssueHandler issueHandler) {
+        this.tesseractOCREngineFactory = new TesseractOCREngineFactory(issueHandler);
+    }
 
     /**
      * Supports {@link TesseractOCREngineConf} only.
@@ -33,7 +38,7 @@ public class DelegatingOCREngineFactory implements OCREngineFactory<OCREngine, O
     @Override
     public OCREngine create(OCREngineConf oCREngineConf) {
         if(oCREngineConf instanceof TesseractOCREngineConf) {
-            return TESSERACT_OCRENGINE_FACTORY.create((TesseractOCREngineConf) oCREngineConf);
+            return tesseractOCREngineFactory.create((TesseractOCREngineConf) oCREngineConf);
         }
         throw new IllegalArgumentException(String.format("OCREngineConf of type '%s' isn't supported", oCREngineConf.getClass()));
     }

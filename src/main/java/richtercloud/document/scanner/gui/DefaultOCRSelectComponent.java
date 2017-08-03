@@ -35,6 +35,8 @@ import richtercloud.document.scanner.ifaces.OCRSelectPanelPanel;
 import richtercloud.document.scanner.ifaces.ProgressButton;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceListener;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceUpdateEvent;
+import richtercloud.message.handler.ExceptionMessage;
+import richtercloud.message.handler.IssueHandler;
 
 /**
  * A container for a {@link OCRSelectPanelPanel} and a toolbar for navigation in
@@ -76,7 +78,8 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
             OCREngine oCREngine,
             DocumentScannerConf documentScannerConf,
             final Set<JPanel> valueDetectionPanels,
-            File file) {
+            File file,
+            IssueHandler issueHandler) {
         this.oCRSelectPanelPanel = oCRSelectPanelPanel;
         this.entityPanel = entityPanel;
         this.oCREngine = oCREngine;
@@ -214,6 +217,7 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
 
         zoomInButton.addActionListener(new ActionListener() {
             @Override
+            @SuppressWarnings("PMD.AvoidCatchingThrowable")
             public void actionPerformed(ActionEvent e) {
                 try {
                     float zoomLevelOld = DefaultOCRSelectComponent.this.zoomLevel;
@@ -223,8 +227,8 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
                         int preferredOCRSelectPanelWidthNew = (int) (documentScannerConf.getPreferredOCRSelectPanelWidth()*zoomLevel/zoomLevelOld);
                         documentScannerConf.setPreferredOCRSelectPanelWidth(preferredOCRSelectPanelWidthNew);
                     }
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
+                } catch (Throwable ex) {
+                    issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             }
         });
@@ -243,7 +247,7 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
                         documentScannerConf.setPreferredOCRSelectPanelWidth(preferredOCRSelectPanelWidthNew);
                     }
                 } catch (IOException ex) {
-                    throw new RuntimeException(ex);
+                    issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             }
         });

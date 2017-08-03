@@ -49,7 +49,8 @@ import static richtercloud.document.scanner.gui.scanner.ScannerEditDialog.TOP_LE
 import static richtercloud.document.scanner.gui.scanner.ScannerEditDialog.TOP_LEFT_Y;
 import richtercloud.document.scanner.ifaces.DocumentAddException;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
-import richtercloud.message.handler.MessageHandler;
+import richtercloud.message.handler.ExceptionMessage;
+import richtercloud.message.handler.IssueHandler;
 
 /**
  * Manages shared resources related to scanning and is a controller in the sence
@@ -121,6 +122,11 @@ public class DocumentController {
      * avoid confusion with equality of {@link InetAddress}es.
      */
     private final Map<String, SaneSession> addressSessionMap = new HashMap<>();
+    private final IssueHandler issueHandler;
+
+    public DocumentController(IssueHandler issueHandler) {
+        this.issueHandler = issueHandler;
+    }
 
     public SaneDevice getScannerDevice(String scannerName,
             Map<String, ScannerConf> scannerConfMap,
@@ -194,7 +200,7 @@ public class DocumentController {
                 }else if(ex.getCause() instanceof DocumentAddException) {
                     throw (DocumentAddException)ex.getCause();
                 }
-                throw new RuntimeException(ex);
+                issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
             }finally {
                 LOGGER.trace(String.format("removing opening-in-progress marker for device '%s'",
                         scannerDevice));
@@ -234,13 +240,13 @@ public class DocumentController {
             DocumentSource selectedDocumentSource,
             File imageWrapperStorageDir,
             Integer pageCount,
-            MessageHandler messageHandler) {
+            IssueHandler issueHandler) {
         ScanJob retValue = new ScanJob(documentController,
                 scannerDevice,
                 selectedDocumentSource,
                 imageWrapperStorageDir,
                 pageCount,
-                messageHandler,
+                issueHandler,
                 this.documentJobCount.incrementAndGet() //jobNumber
         );
         this.documentJobs.add(retValue);

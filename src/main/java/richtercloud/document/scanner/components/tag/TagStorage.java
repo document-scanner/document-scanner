@@ -22,9 +22,9 @@ import java.util.Set;
  */
 public interface TagStorage {
 
-    public Set<String> getAvailableTags();
+    public Set<String> getAvailableTags() throws TagRetrievalException;
 
-    public void addTag(String tag);
+    public void addTag(String tag) throws TagRetrievalException;
 
-    public void removeTag(String tag);
+    public void removeTag(String tag) throws TagRetrievalException;
 }

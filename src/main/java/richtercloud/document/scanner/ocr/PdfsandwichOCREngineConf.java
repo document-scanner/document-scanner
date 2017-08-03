@@ -16,6 +16,7 @@ package richtercloud.document.scanner.ocr;
 
 import java.util.Objects;
 import richtercloud.document.scanner.ifaces.OCREngineConfValidationException;
+import richtercloud.message.handler.IssueHandler;
 
 /**
  *
@@ -40,7 +41,7 @@ public class PdfsandwichOCREngineConf extends ProcessOCREngineConf {
     }
 
     @Override
-    public void validate() throws OCREngineConfValidationException {
+    public void validate(IssueHandler issueHandler) throws OCREngineConfValidationException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 

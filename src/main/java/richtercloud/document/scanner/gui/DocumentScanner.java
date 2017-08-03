@@ -108,7 +108,7 @@ import richtercloud.message.handler.DialogConfirmMessageHandler;
 import richtercloud.message.handler.DialogMessageHandler;
 import richtercloud.message.handler.ExceptionMessage;
 import richtercloud.message.handler.IssueHandler;
-import richtercloud.message.handler.JavaFXDialogMessageHandler;
+import richtercloud.message.handler.JavaFXDialogIssueHandler;
 import richtercloud.message.handler.Message;
 import richtercloud.message.handler.MessageHandler;
 import richtercloud.message.handler.raven.bug.handler.RavenBugHandler;
@@ -232,7 +232,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             "", //titlePrefix
             generateTitleSuffix() //titleSuffix
     );
-    private final JavaFXDialogMessageHandler javaFXDialogMessageHandler = new JavaFXDialogMessageHandler();
+    private final JavaFXDialogIssueHandler javaFXDialogMessageHandler = new JavaFXDialogIssueHandler();
     private final ConfirmMessageHandler confirmMessageHandler = new DialogConfirmMessageHandler(this);
     private final Map<Class<?>, WarningHandler<?>> warningHandlers = new HashMap<>();
     static {
@@ -249,7 +249,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     initialized entityManager
     */
     private MainPanel mainPanel;
-    private final OCREngineFactory oCREngineFactory = new DelegatingOCREngineFactory();
+    private final OCREngineFactory oCREngineFactory;
     private OCREngine oCREngine;
     /**
      * The default non-zero exit code.
@@ -277,21 +277,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     /**
      * Start to fetch results and warm up the cache after start.
      */
-    private final Thread amountMoneyExchangeRetrieverInitThread = new Thread(() -> {
-        LOGGER.debug("Starting prefetching of currency exchange rates in "
-                + "the background");
-        try {
-            Set<Currency> supportedCurrencies = DocumentScanner.this.amountMoneyExchangeRateRetriever.getSupportedCurrencies();
-            for(Currency supportedCurrency : supportedCurrencies) {
-                DocumentScanner.this.amountMoneyExchangeRateRetriever.retrieveExchangeRate(supportedCurrency);
-            }
-        } catch (AmountMoneyExchangeRateRetrieverException ex) {
-            //all parts of FailsafeAmountMoneyExchangeRateRetriever failed
-            throw new RuntimeException(ex);
-        }
-    },
-            "amount-money-exchange-rate-retriever-init-thread"
-    );
+    private final Thread amountMoneyExchangeRetrieverInitThread;
     /**
      * Allows early initialization of Apache Ignite in the background.
      */
@@ -299,18 +285,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     internal implementatio notes:
     - not necessary that this is a property, but kept as such for convenience.
     */
-    private final Thread cachingImageWrapperInitThread = new Thread(() -> {
-        try {
-            Class.forName(CachingImageWrapper.class.getName());
-                //loads the static block in CachingImageWrapper in order
-                //to minimize delay when initializing the first
-                //CachingImageWrapper
-        } catch (ClassNotFoundException ex) {
-            throw new RuntimeException(ex);
-        }
-    },
-            "caching-image-wrapper-init-thread"
-    );
+    private final Thread cachingImageWrapperInitThread;
     private final DocumentController documentController;
     private final static String YES = "Yes";
     private final static String NO = "No";
@@ -384,6 +359,36 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         this.issueHandler = new DefaultIssueHandler(messageHandler,
                 bugHandler);
 
+        this.amountMoneyExchangeRetrieverInitThread = new Thread(() -> {
+            LOGGER.debug("Starting prefetching of currency exchange rates in "
+                    + "the background");
+            try {
+                Set<Currency> supportedCurrencies = DocumentScanner.this.amountMoneyExchangeRateRetriever.getSupportedCurrencies();
+                for(Currency supportedCurrency : supportedCurrencies) {
+                    DocumentScanner.this.amountMoneyExchangeRateRetriever.retrieveExchangeRate(supportedCurrency);
+                }
+            } catch (AmountMoneyExchangeRateRetrieverException ex) {
+                //all parts of FailsafeAmountMoneyExchangeRateRetriever failed
+                issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+            }
+        },
+                "amount-money-exchange-rate-retriever-init-thread"
+        );
+        this.cachingImageWrapperInitThread  = new Thread(() -> {
+            try {
+                Class.forName(CachingImageWrapper.class.getName());
+                    //loads the static block in CachingImageWrapper in order
+                    //to minimize delay when initializing the first
+                    //CachingImageWrapper
+            } catch (ClassNotFoundException ex) {
+                issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+            }
+        },
+                "caching-image-wrapper-init-thread"
+        );
+
+        this.oCREngineFactory = new DelegatingOCREngineFactory(issueHandler);
+
         this.amountMoneyExchangeRateRetriever = new FailsafeAmountMoneyExchangeRateRetriever(documentScannerConf.getAmountMoneyExchangeRateRetrieverFileCacheDir(),
                 documentScannerConf.getAmountMoneyExchangeRateRetrieverExpirationMillis());
 
@@ -417,7 +422,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         this.entryStorageFactory = new DocumentScannerFileQueryHistoryEntryStorageFactory(documentScannerConf.getQueryHistoryEntryStorageFile(),
                 Constants.ENTITY_CLASSES,
                 false,
-                messageHandler);
+                issueHandler);
         this.entryStorage = entryStorageFactory.create();
 
         StorageConf storageConf = documentScannerConf.getStorageConf();
@@ -429,7 +434,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
 
         OCREngineConf oCREngineConf = documentScannerConf.getoCREngineConf();
         this.oCREngine = oCREngineFactory.create(oCREngineConf);
-        this.documentController = new DocumentController();
+        this.documentController = new DocumentController(issueHandler);
 
         this.initComponents();
 
@@ -454,12 +459,14 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
 
         this.queryComponentFieldInitializer = new ReflectionFieldInitializer(fieldRetriever) {
             @Override
+            @SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
             protected boolean initializeField(Field field) {
                 boolean retValue;
                 try {
                     retValue = !field.equals(Document.class.getDeclaredField("scanData"));
                         //skip Document.scanData in query components
                 } catch (NoSuchFieldException | SecurityException ex) {
+                    issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                     throw new RuntimeException(ex);
                 }
                 return retValue;
@@ -586,6 +593,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
      * configuration). Callers have to make sure that this is invoked only once.
      * @see #close()
      */
+    @SuppressWarnings("PMD.AvoidCatchingThrowable")
     private void shutdownHook() {
         try {
             LOGGER.info(String.format("running shutdown hooks in %s", DocumentScanner.class));
@@ -615,7 +623,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             close();
             shutdownHookThreads();
             LOGGER.info(String.format("shutdown hooks in %s finished", DocumentScanner.class));
-        }catch(Exception ex) {
+        }catch(Throwable ex) {
             issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
         }
         this.issueHandler.shutdown();
@@ -861,7 +869,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         this.dispose();
     }//GEN-LAST:event_exitMenuItemActionPerformed
 
-    @SuppressWarnings("PMD.UnusedFormalParameter")
+    @SuppressWarnings({"PMD.UnusedFormalParameter", "PMD.AvoidCatchingThrowable"})
     private void scanMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_scanMenuItemActionPerformed
         try {
             this.scan();
@@ -877,7 +885,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         ScannerSelectionDialog scannerSelectionDialog;
         try {
             scannerSelectionDialog = new ScannerSelectionDialog(this,
-                    messageHandler,
+                    issueHandler,
                     this.documentScannerConf,
                     documentController);
         } catch (IOException | SaneException ex) {
@@ -902,7 +910,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                     DocumentScannerConf.SCANNER_SANE_ADDRESS_DEFAULT,
                     documentScannerConf.getResolutionWish());
         } catch (IOException | SaneException ex) {
-            throw new RuntimeException(ex);
+            issueHandler.handle(new ExceptionMessage(ex));
+            return;
         }
         afterScannerSelection();
     }//GEN-LAST:event_selectScannerMenuItemActionPerformed
@@ -916,7 +925,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                     issueHandler,
                     confirmMessageHandler);
         } catch (IOException | StorageConfValidationException | StorageConfPanelCreationException ex) {
-            throw new RuntimeException(ex);
+            messageHandler.handle(new ExceptionMessage(ex));
+            return;
         }
         StorageConf storageConfCopy;
         try {
@@ -943,13 +953,14 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 LOGGER.debug("creating new storage based on changed configuration");
                 this.storage = delegatingStorageFactory.create(selectedStorageConf);
             } catch (StorageCreationException ex) {
-                throw new RuntimeException(ex);
+                issueHandler.handle(new ExceptionMessage(ex));
+                return;
             }
             mainPanel.setStorage(this.storage);
         }
     }//GEN-LAST:event_storageSelectionMenuItemActionPerformed
 
-    @SuppressWarnings("PMD.UnusedFormalParameter")
+    @SuppressWarnings({"PMD.UnusedFormalParameter", "PMD.AvoidCatchingThrowable"})
     private void oCRMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_oCRMenuItemActionPerformed
         try {
             DocumentScannerConf documentScannerConf0 = new DocumentScannerConf(documentScannerConf);
@@ -966,7 +977,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             this.documentScannerConf = documentScannerConf1;
             this.oCREngine = oCREngineFactory.create(documentScannerConf.getoCREngineConf());
             mainPanel.setoCREngine(oCREngine);
-        }catch(Exception ex) {
+        }catch(Throwable ex) {
             handleUnexpectedException(ex,
                     "Exception during OCR Engine configuration",
                     "An unexpected exception during OCR engine configuration occured: %s");
@@ -988,7 +999,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         try {
             List<ImageWrapper> images = Tools.retrieveImages(selectedFile,
                     this,
-                    documentScannerConf.getImageWrapperStorageDir());
+                    documentScannerConf.getImageWrapperStorageDir(),
+                    issueHandler);
             if(images == null) {
                 LOGGER.debug("image retrieval has been canceled, discontinuing adding document");
                 return;
@@ -1002,7 +1014,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
     }//GEN-LAST:event_openMenuItemActionPerformed
 
-    @SuppressWarnings("PMD.UnusedFormalParameter")
+    @SuppressWarnings({"PMD.UnusedFormalParameter", "PMD.AvoidCatchingThrowable"})
     private void optionsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_optionsMenuItemActionPerformed
         try {
             DocumentScannerConfDialog documentScannerConfDialog = new DocumentScannerConfDialog(this,
@@ -1016,7 +1028,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
     }//GEN-LAST:event_optionsMenuItemActionPerformed
 
-    @SuppressWarnings("PMD.UnusedFormalParameter")
+    @SuppressWarnings({"PMD.UnusedFormalParameter", "PMD.AvoidCatchingThrowable"})
     private void editEntryMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_editEntryMenuItemActionPerformed
         try {
             EntityEditingDialog entityEditingDialog = new EntityEditingDialog(this,
@@ -1057,7 +1069,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
     }//GEN-LAST:event_editEntryMenuItemActionPerformed
 
-    @SuppressWarnings("PMD.UnusedFormalParameter")
+    @SuppressWarnings({"PMD.UnusedFormalParameter", "PMD.AvoidCatchingThrowable"})
     private void openSelectionMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openSelectionMenuItemActionPerformed
         try {
             JFileChooser chooser = new JFileChooser();
@@ -1072,7 +1084,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             try {
                 List<ImageWrapper> images = Tools.retrieveImages(selectedFile,
                         this,
-                        documentScannerConf.getImageWrapperStorageDir());
+                        documentScannerConf.getImageWrapperStorageDir(),
+                        issueHandler);
                 if(images == null) {
                     LOGGER.debug("image retrieval has been canceled, discontinuing adding document");
                     return;
@@ -1170,7 +1183,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
     }//GEN-LAST:event_exportMenuItemActionPerformed
 
-    @SuppressWarnings("PMD.UnusedFormalParameter")
+    @SuppressWarnings({"PMD.UnusedFormalParameter", "PMD.AvoidCatchingThrowable"})
     private void valueDetectionMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_valueDetectionMenuItemActionPerformed
         try {
             ValueDetectionServiceConfDialog serviceConfDialog = new ValueDetectionServiceConfDialog(this,
@@ -1195,7 +1208,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
     }//GEN-LAST:event_valueDetectionMenuItemActionPerformed
 
-    @SuppressWarnings("PMD.UnusedFormalParameter")
+    @SuppressWarnings({"PMD.UnusedFormalParameter", "PMD.AvoidCatchingThrowable"})
     private void scanResultsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_scanResultsMenuItemActionPerformed
         try {
             try {
@@ -1242,7 +1255,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             try {
                 amountMoneyExchangeRetrieverInitThread.join();
             } catch (InterruptedException ex) {
-                throw new RuntimeException(ex);
+                issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+                return;
             }
         }
         this.mainPanel.addDocument(images,
@@ -1257,7 +1271,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             try {
                 amountMoneyExchangeRetrieverInitThread.join();
             } catch (InterruptedException ex) {
-                throw new RuntimeException(ex);
+                issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+                return;
             }
         }
         this.mainPanel.addDocument(entityToEdit);
@@ -1371,7 +1386,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                     documentSourcePair.getKey(),
                     this.documentScannerConf.getImageWrapperStorageDir(),
                     documentSourcePair.getValue(),
-                    messageHandler);
+                    issueHandler);
             ScanJobFinishCallback scanJobFinishCallback = imagesUnmodifiable -> {
                 SwingUtilities.invokeLater(() -> {
                     try {
@@ -1539,6 +1554,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             @Override
+            @SuppressWarnings("PMD.AvoidCatchingThrowable")
             public void run() {
                 DocumentScanner documentScanner = null;
                 DocumentScannerConf documentScannerConf = null;
@@ -1560,7 +1576,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         try {
                             documentScannerConf = (DocumentScannerConf)xStream.fromXML(new FileInputStream(documentScannerConf.getConfigFile()));
                         } catch (FileNotFoundException ex) {
-                            throw new RuntimeException(ex);
+                            messageHandler.handle(new ExceptionMessage(ex));
+                            return;
                         }
                         List<URL> classLoaderURLs = new LinkedList<>();
                         for(String valueDetectionServiceJARPath : documentScannerConf.getValueDetectionServiceJARPaths()) {
@@ -1622,7 +1639,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         documentScanner.shutdownHook();
                         documentScanner.dispose();
                     }
-                } catch(Exception ex) {
+                } catch(Throwable ex) {
                     LOGGER.error("An unexpected exception occured, see nested exception for details", ex);
                     if(documentScanner != null
                             && documentScanner.getIssueHandler() != null) {

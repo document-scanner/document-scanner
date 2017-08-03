@@ -45,6 +45,7 @@ import richtercloud.document.scanner.valuedetectionservice.ValueDetectionResult;
 import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.Message;
+import richtercloud.reflection.form.builder.ResetException;
 import richtercloud.reflection.form.builder.Tools;
 import richtercloud.reflection.form.builder.TransformationException;
 import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
@@ -54,7 +55,6 @@ import richtercloud.reflection.form.builder.jpa.JPAReflectionFormBuilder;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
 import richtercloud.reflection.form.builder.jpa.idapplier.IdApplier;
 import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
-import richtercloud.validation.tools.FieldRetrievalException;
 
 /**
  * The value of the Auto OCR value detection could be set on the field, but then
@@ -122,7 +122,14 @@ public class ValueDetectionReflectionFormBuilder extends JPAReflectionFormBuilde
     protected JComponent getClassComponent(final Field field,
             Class<?> entityClass,
             final Object instance,
-            FieldHandler fieldHandler) throws IllegalAccessException, FieldHandlingException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, InstantiationException, FieldRetrievalException {
+            FieldHandler fieldHandler) throws IllegalAccessException,
+            FieldHandlingException,
+            IllegalArgumentException,
+            InvocationTargetException,
+            NoSuchMethodException,
+            InstantiationException,
+            NoSuchFieldException,
+            ResetException {
         final JComponent classComponent = super.getClassComponent(field,
                 entityClass,
                 instance,
@@ -201,8 +208,9 @@ public class ValueDetectionReflectionFormBuilder extends JPAReflectionFormBuilde
                     }
                     try {
                         valueSetter.setValue(detectionResult.getValue(), classComponent);
-                    } catch (TransformationException | FieldRetrievalException ex) {
+                    } catch (TransformationException | NoSuchFieldException | ResetException ex) {
                         getIssueHandler().handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+                        return;
                     }
 
                     //set the combobox back to null in order to avoid the

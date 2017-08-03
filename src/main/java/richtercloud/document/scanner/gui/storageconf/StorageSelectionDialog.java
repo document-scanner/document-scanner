@@ -26,6 +26,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.message.handler.ConfirmMessageHandler;
+import richtercloud.message.handler.ExceptionMessage;
 import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.Message;
 import richtercloud.reflection.form.builder.storage.StorageConf;
@@ -238,7 +239,8 @@ public class StorageSelectionDialog extends javax.swing.JDialog {
     @SuppressWarnings("PMD.UnusedFormalParameter")
     private void storageDialogNewButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_storageDialogNewButtonActionPerformed
         StorageCreateDialog storageCreateDialog = new StorageCreateDialog(this,
-                storageConfPanelFactory);
+                storageConfPanelFactory,
+                issueHandler);
         storageCreateDialog.setLocationRelativeTo(this);
         storageCreateDialog.setVisible(true);
         StorageConf createdStorageConf = storageCreateDialog.getCreatedStorageConf();
@@ -255,7 +257,8 @@ public class StorageSelectionDialog extends javax.swing.JDialog {
         try {
             storageConfPanel = this.storageConfPanelFactory.create(selectedStorageConf);
         } catch (StorageConfPanelCreationException ex) {
-            throw new RuntimeException(ex);
+            issueHandler.handle(new ExceptionMessage(ex));
+            return;
         }
         assert storageConfPanel != null;
         StorageEditDialog storageEditDialog = new StorageEditDialog(this,

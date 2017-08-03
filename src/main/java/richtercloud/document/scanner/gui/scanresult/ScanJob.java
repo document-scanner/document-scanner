@@ -26,8 +26,8 @@ import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.scanner.DocumentSource;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.model.imagewrapper.CachingImageWrapper;
+import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.Message;
-import richtercloud.message.handler.MessageHandler;
 
 /**
  *
@@ -45,7 +45,7 @@ public class ScanJob extends DocumentJob implements Runnable {
     private final DocumentSource selectedDocumentSource;
     private final File imageWrapperStorageDir;
     private final Integer pageCount;
-    private final MessageHandler messageHandler;
+    private final IssueHandler issueHandler;
     private final DocumentController documentController;
     private ScanJobFinishCallback finishCallback;
 
@@ -59,14 +59,14 @@ public class ScanJob extends DocumentJob implements Runnable {
      * @param pageCount the number of pages to scan at most ({@code null} means
      * scan all pages from ADF)
      * @param scanJobLock
-     * @param messageHandler
+     * @param issueHandler
      */
     public ScanJob(DocumentController documentController,
             SaneDevice scannerDevice,
             DocumentSource selectedDocumentSource,
             File imageWrapperStorageDir,
             Integer pageCount,
-            MessageHandler messageHandler,
+            IssueHandler issueHandler,
             int jobNumber) {
         super(false,
                 jobNumber);
@@ -75,7 +75,7 @@ public class ScanJob extends DocumentJob implements Runnable {
         this.selectedDocumentSource = selectedDocumentSource;
         this.imageWrapperStorageDir = imageWrapperStorageDir;
         this.pageCount = pageCount;
-        this.messageHandler = messageHandler;
+        this.issueHandler = issueHandler;
     }
 
     public void setFinishCallback(ScanJobFinishCallback finishCallback) {
@@ -97,7 +97,8 @@ public class ScanJob extends DocumentJob implements Runnable {
                 //and doesn't avoid SaneException at every following call to
                 //scannerDevice.acquireImage
                 ImageWrapper imageWrapper = new CachingImageWrapper(imageWrapperStorageDir,
-                        scannedImage);
+                        scannedImage,
+                        issueHandler);
                 getImages().add(imageWrapper);
             }else {
                 //ADF or duplex ADF
@@ -111,7 +112,8 @@ public class ScanJob extends DocumentJob implements Runnable {
                         try {
                             BufferedImage scannedImage = scannerDevice.acquireImage();
                             ImageWrapper imageWrapper = new CachingImageWrapper(imageWrapperStorageDir,
-                                    scannedImage);
+                                    scannedImage,
+                                    issueHandler);
                             getImages().add(imageWrapper);
                         } catch (SaneException e) {
                             if (e.getStatus() == SaneStatus.STATUS_NO_DOCS) {
@@ -131,7 +133,8 @@ public class ScanJob extends DocumentJob implements Runnable {
                         try {
                             BufferedImage scannedImage = scannerDevice.acquireImage();
                             ImageWrapper imageWrapper = new CachingImageWrapper(imageWrapperStorageDir,
-                                    scannedImage);
+                                    scannedImage,
+                                    issueHandler);
                             getImages().add(imageWrapper);
                         } catch (SaneException e) {
                             if (e.getStatus() == SaneStatus.STATUS_NO_DOCS) {
@@ -150,7 +153,7 @@ public class ScanJob extends DocumentJob implements Runnable {
             }
             this.setFinished(true);
         }catch(IOException | SaneException ex) {
-            messageHandler.handle(new Message(ex.getCause(), JOptionPane.ERROR_MESSAGE));
+            issueHandler.handle(new Message(ex.getCause(), JOptionPane.ERROR_MESSAGE));
         }finally {
             documentController.getScanJobLock().unlock();
             LOGGER.debug("scan job lock released");

@@ -21,6 +21,8 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.ifaces.OCREngineRecognitionException;
+import richtercloud.message.handler.ExceptionMessage;
+import richtercloud.message.handler.IssueHandler;
 
 /**
  *
@@ -54,12 +56,14 @@ public abstract class ProcessOCREngine<C extends ProcessOCREngineConf> extends C
         }
     }
 
-    public static void checkBinaryAvailableExceptions(String binary) throws BinaryNotFoundException {
+    public static void checkBinaryAvailableExceptions(String binary,
+            IssueHandler issueHandler) throws BinaryNotFoundException {
         IOException exception;
         try {
             exception = checkBinaryAvailable(binary);
         } catch (InterruptedException ex) {
-            throw new RuntimeException(String.format("An unexpected exception occured during the search of the binary '%s' because the process has been interrupted (see nested exception for details)", binary), ex);
+            issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+            return;
         }
         if(exception != null) {
             throw new BinaryNotFoundException(binary, exception);
@@ -67,9 +71,16 @@ public abstract class ProcessOCREngine<C extends ProcessOCREngineConf> extends C
     }
 
     private Set<Process> binaryProcesses = new HashSet<>();
+    private final IssueHandler issueHandler;
 
-    public ProcessOCREngine(C oCREngineConf) {
+    public ProcessOCREngine(C oCREngineConf,
+            IssueHandler issueHandler) {
         super(oCREngineConf);
+        this.issueHandler = issueHandler;
+    }
+
+    public IssueHandler getIssueHandler() {
+        return issueHandler;
     }
 
     public Set<Process> getBinaryProcesses() {
@@ -86,9 +97,11 @@ public abstract class ProcessOCREngine<C extends ProcessOCREngineConf> extends C
             throw new IllegalArgumentException("image mustn't be null");
         }
         try {
-            checkBinaryAvailableExceptions(this.getoCREngineConf().getBinary());
+            checkBinaryAvailableExceptions(this.getoCREngineConf().getBinary(),
+                    issueHandler);
         }catch(BinaryNotFoundException ex) {
-            throw new RuntimeException("tesseract not available (see nested exception for details)", ex);
+            throw new OCREngineRecognitionException("tesseract not available (see nested exception for details)",
+                    ex);
         }
         LOGGER.debug("tesseract binary '{}' found and executable", this.getoCREngineConf().getBinary());
         return recognizeImage1(image);

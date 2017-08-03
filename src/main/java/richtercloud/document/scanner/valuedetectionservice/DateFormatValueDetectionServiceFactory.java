@@ -14,15 +14,22 @@
  */
 package richtercloud.document.scanner.valuedetectionservice;
 
+import richtercloud.message.handler.IssueHandler;
+
 /**
  *
  * @author richter
  */
 public class DateFormatValueDetectionServiceFactory implements ValueDetectionServiceFactory<DateFormatValueDetectionService, DateFormatValueDetectionServiceConf> {
+    private final IssueHandler issueHandler;
+
+    public DateFormatValueDetectionServiceFactory(IssueHandler issueHandler) {
+        this.issueHandler = issueHandler;
+    }
 
     @Override
     public DateFormatValueDetectionService createService(DateFormatValueDetectionServiceConf serviceConf) {
-        DateFormatValueDetectionService retValue = new DateFormatValueDetectionService();
+        DateFormatValueDetectionService retValue = new DateFormatValueDetectionService(issueHandler);
         return retValue;
     }
 }

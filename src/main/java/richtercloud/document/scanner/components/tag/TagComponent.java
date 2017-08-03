@@ -23,6 +23,9 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.gui.DocumentScanner;
+import richtercloud.message.handler.ExceptionMessage;
+import richtercloud.message.handler.IssueHandler;
+import richtercloud.reflection.form.builder.ResetException;
 
 /**
  *
@@ -35,14 +38,20 @@ public class TagComponent extends JPanel {
     private final DefaultListModel selectedListModel = new DefaultListModel();
     private final Set<TagComponentUpdateListener> updateListeners = new HashSet<>();
     private final Set<String> initialValues;
+    private final IssueHandler issueHandler;
 
     /**
      * Creates new form TagComponent
      */
     public TagComponent(TagStorage tagStorage,
-            Set<String> initialValues) {
+            Set<String> initialValues,
+            IssueHandler issueHandler) throws ResetException {
         this.tagStorage = tagStorage;
         this.initialValues = initialValues;
+        if(issueHandler == null) {
+            throw new IllegalArgumentException("issueHandler mustn't be null");
+        }
+        this.issueHandler = issueHandler;
         initComponents();
         reset0();
     }
@@ -55,12 +64,17 @@ public class TagComponent extends JPanel {
         this.updateListeners.remove(updateListener);
     }
 
-    public void reset() {
+    public void reset() throws ResetException {
         reset0();
     }
 
-    private void reset0() {
-        Set<String> availableTags = tagStorage.getAvailableTags();
+    private void reset0() throws ResetException {
+        Set<String> availableTags;
+        try {
+            availableTags = tagStorage.getAvailableTags();
+        } catch (TagRetrievalException ex) {
+            throw new ResetException(ex);
+        }
         for(String tag : availableTags) {
             if(!initialValues.contains(tag)) {
                 availableListModel.addElement(tag);
@@ -212,18 +226,22 @@ public class TagComponent extends JPanel {
 
     @SuppressWarnings("PMD.UnusedFormalParameter")
     private void availableListFilterTextFieldKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_availableListFilterTextFieldKeyPressed
-        Set<String> tags = tagStorage.getAvailableTags();
-        if(availableListFilterTextField.getText().isEmpty()) {
-            this.availableListModel.clear();
+        try {
+            Set<String> tags = tagStorage.getAvailableTags();
+            if(availableListFilterTextField.getText().isEmpty()) {
+                this.availableListModel.clear();
+                for(String tag : tags) {
+                    this.availableListModel.addElement(tag);
+                }
+                return;
+            }
             for(String tag : tags) {
-                this.availableListModel.addElement(tag);
+                if(tag.contains(this.availableListFilterTextField.getText())) {
+                    this.availableListModel.addElement(tag);
+                }
             }
-            return;
-        }
-        for(String tag : tags) {
-            if(tag.contains(this.availableListFilterTextField.getText())) {
-                this.availableListModel.addElement(tag);
-            }
+        } catch (TagRetrievalException ex) {
+            issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
         }
     }//GEN-LAST:event_availableListFilterTextFieldKeyPressed
 
@@ -256,29 +274,34 @@ public class TagComponent extends JPanel {
     @SuppressWarnings("PMD.UnusedFormalParameter")
     private void addButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addButtonActionPerformed
         TagComponentCreateDialog dialog = new TagComponentCreateDialog(SwingUtilities.getWindowAncestor(this),
-                tagStorage);
+                tagStorage,
+                issueHandler);
         dialog.setVisible(true);
         if(dialog.getNewTag() != null) {
             this.availableListModel.addElement(dialog.getNewTag());
         }
     }//GEN-LAST:event_addButtonActionPerformed
 
-    @SuppressWarnings("PMD.UnusedFormalParameter")
+    @SuppressWarnings({"PMD.UnusedFormalParameter", "PMD.AvoidCatchingThrowable"})
     private void deleteButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteButtonActionPerformed
-        if(availableList.getSelectedIndex() == -1) {
-            return;
-        }
-        String selectedTag = availableList.getSelectedValue();
-        int answer = JOptionPane.showConfirmDialog(this,
-                String.format("Do you want to delete the tag '%s'?", selectedTag),
-                DocumentScanner.generateApplicationWindowTitle("Delete tag",
-                        Constants.APP_NAME,
-                        Constants.APP_VERSION),
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.WARNING_MESSAGE);
-        if(answer == JOptionPane.YES_OPTION) {
-            this.tagStorage.removeTag(selectedTag);
-            this.availableListModel.remove(availableList.getSelectedIndex());
+        try {
+            if(availableList.getSelectedIndex() == -1) {
+                return;
+            }
+            String selectedTag = availableList.getSelectedValue();
+            int answer = JOptionPane.showConfirmDialog(this,
+                    String.format("Do you want to delete the tag '%s'?", selectedTag),
+                    DocumentScanner.generateApplicationWindowTitle("Delete tag",
+                            Constants.APP_NAME,
+                            Constants.APP_VERSION),
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE);
+            if(answer == JOptionPane.YES_OPTION) {
+                this.tagStorage.removeTag(selectedTag);
+                this.availableListModel.remove(availableList.getSelectedIndex());
+            }
+        }catch(Throwable ex) {
+            issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
         }
     }//GEN-LAST:event_deleteButtonActionPerformed
 

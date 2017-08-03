@@ -53,6 +53,7 @@ import richtercloud.document.scanner.model.WorkflowItem;
 import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.IssueHandler;
 import richtercloud.reflection.form.builder.ComponentHandler;
+import richtercloud.reflection.form.builder.ResetException;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyUsageStatisticsStorage;
@@ -75,7 +76,6 @@ import richtercloud.reflection.form.builder.jpa.typehandler.ElementCollectionTyp
 import richtercloud.reflection.form.builder.jpa.typehandler.ToManyTypeHandler;
 import richtercloud.reflection.form.builder.jpa.typehandler.ToOneTypeHandler;
 import richtercloud.reflection.form.builder.typehandler.TypeHandler;
-import richtercloud.validation.tools.FieldRetrievalException;
 import richtercloud.validation.tools.FieldRetriever;
 
 /**
@@ -97,13 +97,13 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
     };
     private final static ComponentHandler<WorkflowItemTreePanel> COMMUNICATION_TREE_PANEL_COMPONENT_HANDLER = new ComponentHandler<WorkflowItemTreePanel>() {
         @Override
-        public void reset(WorkflowItemTreePanel component) throws FieldRetrievalException {
+        public void reset(WorkflowItemTreePanel component) throws ResetException {
             component.reset();
         }
     };
     private final static ComponentHandler<TagComponent> TAG_COMPONENT_HANDLER = new ComponentHandler<TagComponent>() {
         @Override
-        public void reset(TagComponent component) {
+        public void reset(TagComponent component) throws ResetException {
             component.reset();
         }
     };
@@ -171,7 +171,8 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
                 amountMoneyExchangeRateRetriever,
                 issueHandler);
         FieldHandler embeddableFieldHandler = new MappingFieldHandler(embeddableFieldHandlerFactory.generateClassMapping(),
-                embeddableFieldHandlerFactory.generatePrimitiveMapping());
+                embeddableFieldHandlerFactory.generatePrimitiveMapping(),
+                issueHandler);
         ElementCollectionTypeHandler elementCollectionTypeHandler = new ElementCollectionTypeHandler(typeHandlerMapping,
                 typeHandlerMapping,
                 issueHandler,
@@ -275,7 +276,8 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
             InvocationTargetException,
             NoSuchMethodException,
             InstantiationException,
-            FieldRetrievalException {
+            NoSuchFieldException,
+            ResetException {
         if(field == null) {
             throw new IllegalArgumentException("field mustn't be null");
         }
@@ -352,7 +354,9 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
         }
         if(field.getAnnotation(Tags.class) != null) {
             Set<String> fieldValue = (Set<String>) field.get(instance);
-            TagComponent retValue = new TagComponent(tagStorage, fieldValue);
+            TagComponent retValue = new TagComponent(tagStorage,
+                    fieldValue,
+                    getIssueHandler());
             retValue.addUpdateListener(new TagComponentUpdateListener() {
                 @Override
                 public void onUpdate(TagComponentUpdateEvent updateEvent) {

@@ -30,6 +30,7 @@ import javax.cache.configuration.FactoryBuilder;
 import javax.cache.configuration.MutableConfiguration;
 import javax.cache.expiry.AccessedExpiryPolicy;
 import javax.cache.expiry.Duration;
+import richtercloud.message.handler.IssueHandler;
 
 /**
  * Improvement of {@link DefaultImageWrapper} which caches image previews
@@ -79,8 +80,12 @@ public class CachingImageWrapper extends DefaultImageWrapper {
     */
     private final static Lock STREAM_CACHE_LOCK = new ReentrantLock();
 
-    public CachingImageWrapper(File storageDir, BufferedImage image) throws IOException {
-        super(storageDir, image);
+    public CachingImageWrapper(File storageDir,
+            BufferedImage image,
+            IssueHandler issueHandler) throws IOException {
+        super(storageDir,
+                image,
+                issueHandler);
         synchronized(this) {
             this.cacheId = cacheIdCounter;
             cacheIdCounter += 1;

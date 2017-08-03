@@ -28,6 +28,8 @@ import org.jscience.physics.amount.Amount;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.FormatUtils;
+import richtercloud.message.handler.ExceptionMessage;
+import richtercloud.message.handler.IssueHandler;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorageException;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
@@ -73,7 +75,9 @@ public class CurrencyFormatValueDetectionService extends AbstractFormatValueDete
     private final AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever;
 
     public CurrencyFormatValueDetectionService(AmountMoneyCurrencyStorage amountMoneyCurrencyStorage,
-            AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever) {
+            AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever,
+            IssueHandler issueHandler) {
+        super(issueHandler);
         this.amountMoneyCurrencyStorage = amountMoneyCurrencyStorage;
         this.amountMoneyExchangeRateRetriever = amountMoneyExchangeRateRetriever;
     }
@@ -91,6 +95,7 @@ public class CurrencyFormatValueDetectionService extends AbstractFormatValueDete
      * @param index
      */
     @Override
+    @SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
     protected List<ValueDetectionResult<Amount<Money>>> checkResult(String inputSub,
             List<String> inputSplits,
             int index) {
@@ -130,6 +135,7 @@ public class CurrencyFormatValueDetectionService extends AbstractFormatValueDete
             }catch(ParseException ex) {
                 //skip to next format
             } catch (AmountMoneyCurrencyStorageException | AmountMoneyExchangeRateRetrieverException ex) {
+                getIssueHandler().handleUnexpectedException(new ExceptionMessage(ex));
                 throw new RuntimeException(ex);
             }
         }

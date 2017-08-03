@@ -26,6 +26,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.message.handler.IssueHandler;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorageException;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
@@ -49,9 +50,11 @@ public class TrieCurrencyFormatValueDetectionServiceTest {
         AmountMoneyCurrencyStorage amountMoneyCurrencyStorage = new MemoryAmountMoneyCurrencyStorage();
         amountMoneyCurrencyStorage.saveCurrency(Currency.EUR);
         AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever = mock(AmountMoneyExchangeRateRetriever.class);
+        IssueHandler issueHandler = mock(IssueHandler.class);
         when(amountMoneyExchangeRateRetriever.getSupportedCurrencies()).thenReturn(new HashSet<>(Arrays.asList(Currency.EUR)));
         TrieCurrencyFormatValueDetectionService instance = new TrieCurrencyFormatValueDetectionService(amountMoneyCurrencyStorage,
-                amountMoneyExchangeRateRetriever);
+                amountMoneyExchangeRateRetriever,
+                issueHandler);
         LOGGER.debug(String.format("running with currency symbol without space with input '%s'", input));
         LinkedHashSet<ValueDetectionResult<Amount<Money>>> result = instance.fetchResults0(input,
                 null //languageIdentifier

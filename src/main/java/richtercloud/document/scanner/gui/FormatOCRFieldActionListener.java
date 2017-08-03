@@ -146,6 +146,7 @@ public class FormatOCRFieldActionListener extends OCRFieldActionListener {
     }
 
     @Override
+    @SuppressWarnings("PMD.AvoidCatchingThrowable")
     public void actionPerformed(ActionEvent e) {
         ValueDetectionPanel comp = (ValueDetectionPanel) retrieveComponent();
             //in document-scanner we can assume that all field components are
@@ -156,7 +157,7 @@ public class FormatOCRFieldActionListener extends OCRFieldActionListener {
         try {
             valueSetter.setOCRResult(oCRSelection,
                     comp.getClassComponent());
-        } catch (Exception ex) {
+        } catch (Throwable ex) {
             LOGGER.error("An exception during setting the OCR value on " + "component occured", ex);
             getMessageHandler().handle(new Message(String.format("The " + "following exception occured while setting the " + "selected value on the field: %s", ExceptionUtils.getRootCauseMessage(ex)), JOptionPane.ERROR_MESSAGE, "Exception occured"));
         }

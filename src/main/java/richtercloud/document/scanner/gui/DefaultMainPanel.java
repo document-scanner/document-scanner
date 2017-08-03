@@ -94,7 +94,6 @@ import richtercloud.reflection.form.builder.jpa.typehandler.ElementCollectionTyp
 import richtercloud.reflection.form.builder.jpa.typehandler.ToManyTypeHandler;
 import richtercloud.reflection.form.builder.jpa.typehandler.ToOneTypeHandler;
 import richtercloud.reflection.form.builder.typehandler.TypeHandler;
-import richtercloud.validation.tools.FieldRetrievalException;
 import richtercloud.validation.tools.FieldRetriever;
 
 /**
@@ -367,15 +366,7 @@ public class DefaultMainPanel extends MainPanel {
      */
     @Override
     public void addDocument(Object entityToEdit) throws DocumentAddException, IOException {
-        List<Field> entityClassFields;
-        try {
-            entityClassFields = reflectionFormBuilderFieldRetriever.retrieveRelevantFields(entityToEdit.getClass());
-        } catch (FieldRetrievalException ex) {
-            LOGGER.error("unexpected exception during retrieval of fields",
-                    ex);
-            this.issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
-            return;
-        }
+        List<Field> entityClassFields = reflectionFormBuilderFieldRetriever.retrieveRelevantFields(entityToEdit.getClass());
         Field entityToEditScanResultField = null;
         for(Field entityClassField : entityClassFields) {
             ScanResult scanResult = entityClassField.getAnnotation(ScanResult.class);
@@ -527,6 +518,7 @@ public class DefaultMainPanel extends MainPanel {
      * @return the created pair of {@link OCRSelectComponent} and
      * {@link EntityPanel}
      */
+    @SuppressWarnings("PMD.AvoidCatchingThrowable")
     private Pair<OCRSelectComponent, EntityPanel> addDocumentRoutine(List<ImageWrapper> images,
             File documentFile,
             Object entityToEdit,
@@ -538,7 +530,8 @@ public class DefaultMainPanel extends MainPanel {
                 for (ImageWrapper image : images) {
                     @SuppressWarnings("serial")
                     OCRSelectPanel panel = new DefaultOCRSelectPanel(image,
-                            documentScannerConf.getPreferredOCRSelectPanelWidth()) {
+                            documentScannerConf.getPreferredOCRSelectPanelWidth(),
+                            issueHandler) {
                         @Override
                         public void mouseReleased(MouseEvent evt) {
                             try {
@@ -550,7 +543,7 @@ public class DefaultMainPanel extends MainPanel {
                                         issueHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
                                     }
                                 }
-                            }catch(RuntimeException ex) {
+                            }catch(Throwable ex) {
                                 LOGGER.error("an unexpected exception occured during mouse release", ex);
                                 issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                             }
@@ -571,7 +564,8 @@ public class DefaultMainPanel extends MainPanel {
                     amountMoneyExchangeRateRetriever,
                     issueHandler);
             FieldHandler embeddableFieldHandler = new MappingFieldHandler(embeddableFieldHandlerFactory.generateClassMapping(),
-                    embeddableFieldHandlerFactory.generatePrimitiveMapping());
+                    embeddableFieldHandlerFactory.generatePrimitiveMapping(),
+                    issueHandler);
             ElementCollectionTypeHandler elementCollectionTypeHandler = new ElementCollectionTypeHandler(typeHandlerMapping,
                     typeHandlerMapping,
                     issueHandler,
@@ -665,7 +659,8 @@ public class DefaultMainPanel extends MainPanel {
                     oCREngine,
                     documentScannerConf,
                     reflectionFormBuilder.getValueDetectionPanels(),
-                    documentFile);
+                    documentFile,
+                    issueHandler);
             reflectionFormPanelTabbedPane.addReflectionFormPanelTabbedPaneListener((reflectionFormPanel) -> {
                 entityPanel.valueDetectionGUI();
             });

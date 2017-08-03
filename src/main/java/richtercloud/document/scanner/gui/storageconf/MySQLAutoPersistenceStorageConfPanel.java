@@ -332,7 +332,7 @@ public class MySQLAutoPersistenceStorageConfPanel extends StorageConfPanel<MySQL
         return retValue;
     }
 
-    @SuppressWarnings("PMD.UnusedFormalParameter")
+    @SuppressWarnings({"PMD.UnusedFormalParameter", "PMD.AvoidCatchingThrowable"})
     private void downloadButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_downloadButtonActionPerformed
         try {
             DownloadCombi downloadCombi = getDownloadCombi();

@@ -14,6 +14,7 @@
  */
 package richtercloud.document.scanner.valuedetectionservice;
 
+import richtercloud.message.handler.IssueHandler;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
 
@@ -24,17 +25,21 @@ import richtercloud.reflection.form.builder.components.money.AmountMoneyExchange
 public class CurrencyFormatValueDetectionServiceFactory implements ValueDetectionServiceFactory<CurrencyFormatValueDetectionService, CurrencyFormatValueDetectionServiceConf> {
     private final AmountMoneyCurrencyStorage amountMoneyCurrencyStorage;
     private final AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever;
+    private final IssueHandler issueHandler;
 
     public CurrencyFormatValueDetectionServiceFactory(AmountMoneyCurrencyStorage amountMoneyCurrencyStorage,
-            AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever) {
+            AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever,
+            IssueHandler issueHandler) {
         this.amountMoneyCurrencyStorage = amountMoneyCurrencyStorage;
         this.amountMoneyExchangeRateRetriever = amountMoneyExchangeRateRetriever;
+        this.issueHandler = issueHandler;
     }
 
     @Override
     public CurrencyFormatValueDetectionService createService(CurrencyFormatValueDetectionServiceConf serviceConf) {
         CurrencyFormatValueDetectionService retValue = new CurrencyFormatValueDetectionService(amountMoneyCurrencyStorage,
-                amountMoneyExchangeRateRetriever);
+                amountMoneyExchangeRateRetriever,
+                issueHandler);
         return retValue;
     }
 }

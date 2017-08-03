@@ -27,6 +27,8 @@ import java.util.Set;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.ifaces.OCRSelectPanel;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelSelectionListener;
+import richtercloud.message.handler.ExceptionMessage;
+import richtercloud.message.handler.IssueHandler;
 
 /**
  * A panel which represents one single PDF or image page/scan. Will most likely
@@ -48,6 +50,7 @@ public class DefaultOCRSelectPanel extends OCRSelectPanel implements MouseListen
     private float zoomLevel = 1;
     private final int preferredWidth;
     private boolean debugGraphics = false;
+    private final IssueHandler issueHandler;
 
     /**
      * Creates a {@code DefaultOCRSelectPanel} from the {@code image} with the
@@ -59,9 +62,14 @@ public class DefaultOCRSelectPanel extends OCRSelectPanel implements MouseListen
      * @throws IOException
      */
     public DefaultOCRSelectPanel(ImageWrapper image,
-            int preferredWidth) throws IOException {
+            int preferredWidth,
+            IssueHandler issueHandler) throws IOException {
         this.image = image;
         this.preferredWidth = preferredWidth;
+        if(issueHandler == null) {
+            throw new IllegalArgumentException("issueHandler mustn't be null");
+        }
+        this.issueHandler = issueHandler;
         updatePreferredSize();
         this.init0();
     }
@@ -154,6 +162,7 @@ public class DefaultOCRSelectPanel extends OCRSelectPanel implements MouseListen
     }
 
     @Override
+    @SuppressWarnings("PMD.AvoidCatchingThrowable")
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         try {
@@ -180,8 +189,8 @@ public class DefaultOCRSelectPanel extends OCRSelectPanel implements MouseListen
                     g.drawLine(0, j*100, getPreferredSize().width, j*100);
                 }
             }
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
+        } catch (Throwable ex) {
+            issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
         }
     }
 

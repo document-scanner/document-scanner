@@ -25,6 +25,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.message.handler.ExceptionMessage;
+import richtercloud.message.handler.IssueHandler;
 
 /**
  * Wraps the {@link ValueDetectionService} interface around multiple instances
@@ -44,9 +46,12 @@ public class DelegatingValueDetectionService<T> extends AbstractValueDetectionSe
     private final Map<ValueDetectionService<?>, Integer> progressWordNumberMap = new HashMap<>();
     private final List<ValueDetectionResult<T>> progressResults = new LinkedList<>();
     private final Map<ValueDetectionService<?>, Boolean> progressFinishedMap = new HashMap<>();
+    private final IssueHandler issueHandler;
 
-    public DelegatingValueDetectionService(Set<ValueDetectionService<T>> valueDetectionServices) {
+    public DelegatingValueDetectionService(Set<ValueDetectionService<T>> valueDetectionServices,
+            IssueHandler issueHandler) {
         this.valueDetectionServices = valueDetectionServices;
+        this.issueHandler = issueHandler;
         //simply do like the progress would be the quotient of the sum of all
         //word count and the sum of all word numbers
         valueDetectionServices.forEach(valueDetectionService -> {
@@ -89,6 +94,7 @@ public class DelegatingValueDetectionService<T> extends AbstractValueDetectionSe
     }
 
     @Override
+    @SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
     public LinkedHashSet<ValueDetectionResult<T>> fetchResults0(final String input,
             String languageIdentifier) {
         progressWordCountMap.clear();
@@ -116,6 +122,7 @@ public class DelegatingValueDetectionService<T> extends AbstractValueDetectionSe
         try {
             executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
         } catch (InterruptedException ex) {
+            issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
             throw new RuntimeException(ex);
         }
         return retValue;

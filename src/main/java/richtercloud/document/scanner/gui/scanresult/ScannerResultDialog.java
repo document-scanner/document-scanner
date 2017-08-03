@@ -69,7 +69,7 @@ import richtercloud.document.scanner.gui.scanner.DocumentSource;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.message.handler.BugHandler;
 import richtercloud.message.handler.ExceptionMessage;
-import richtercloud.message.handler.JavaFXDialogMessageHandler;
+import richtercloud.message.handler.JavaFXDialogIssueHandler;
 import richtercloud.message.handler.Message;
 
 /**
@@ -156,7 +156,7 @@ public class ScannerResultDialog extends JDialog {
      */
     private final SaneDevice scannerDevice;
     private final File imageWrapperStorageDir;
-    private final JavaFXDialogMessageHandler messageHandler;
+    private final JavaFXDialogIssueHandler issueHandler;
     private final BugHandler bugHandler;
     private final Window openDocumentWaitDialogParent;
     private final DocumentController documentController;
@@ -173,17 +173,21 @@ public class ScannerResultDialog extends JDialog {
      * only PDFs be opened, which then causes a warning to be displayed when the
      * "Scan more" button is pressed)
      * @param imageWrapperStorageDir
-     * @param messageHandler
+     * @param issueHandler
      * @param bugHandler
      * @param openDocumentWaitDialogParent
      * @throws IOException
      */
+    @SuppressWarnings("PMD.AvoidCatchingThrowable")
+        //very broad here, figure out how to annotate lambda, asked
+        //https://stackoverflow.com/questions/45470841/where-to-put-suppresswarnings-in-a-one-liner-involving-runnable-lambda-as-argum
+        //for input
     public ScannerResultDialog(Window owner,
             int preferredScanResultPanelWidth,
             DocumentController documentController,
             SaneDevice scannerDevice,
             File imageWrapperStorageDir,
-            JavaFXDialogMessageHandler messageHandler,
+            JavaFXDialogIssueHandler issueHandler,
             BugHandler bugHandler,
             Window openDocumentWaitDialogParent) throws IOException {
         super(owner,
@@ -200,10 +204,10 @@ public class ScannerResultDialog extends JDialog {
             throw new IllegalArgumentException("imageWrapperStorageDir mustn't be null");
         }
         this.imageWrapperStorageDir = imageWrapperStorageDir;
-        if(messageHandler == null) {
+        if(issueHandler == null) {
             throw new IllegalArgumentException("messageHandler mustn't be null");
         }
-        this.messageHandler = messageHandler;
+        this.issueHandler = issueHandler;
         this.bugHandler = bugHandler;
 
         mainPanel.setPreferredSize(new Dimension(initialWidth, initialHeight));
@@ -212,7 +216,7 @@ public class ScannerResultDialog extends JDialog {
                 Constants.APP_NAME,
                 Constants.APP_VERSION));
 
-        this.documentPane = new DocumentPane();
+        this.documentPane = new DocumentPane(issueHandler);
         this.documentPaneScrollPane = new ScrollPane(documentPane);
         documentPaneScrollPane.setFitToWidth(true);
         this.splitPane = new SplitPane();
@@ -281,7 +285,8 @@ public class ScannerResultDialog extends JDialog {
                                     scanResultPane,
                                     scanResultPane.getSelectedScanResults());
                         } catch (IOException ex) {
-                            throw new RuntimeException(ex);
+                            issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+                            return;
                         }
                     }
                     //...remove the document...
@@ -327,14 +332,10 @@ public class ScannerResultDialog extends JDialog {
                         //should be avoided by dis- and enabling of addImagesButton
                     for(ScanResultViewPane selectedScanResult : selectedScanResults) {
                         //...and add to selected document in document pane
-                        try {
-                            //ImageViewPanes in the scan result pane only have one
-                            //ScanResult
-                            documentPane.getSelectedDocument().addScanResult(selectedScanResult.getImageWrapper(),
-                                    panelWidth);
-                        } catch (IOException ex) {
-                            throw new RuntimeException(ex);
-                        }
+                        //ImageViewPanes in the scan result pane only have one
+                        //ScanResult
+                        documentPane.getSelectedDocument().addScanResult(selectedScanResult.getImageWrapper(),
+                                panelWidth);
                     }
                     int selectedScanResultOffsetX = scanResultPane.getSelectedScanResults().stream().mapToInt((value) -> (int)value.getLayoutX()).min().getAsInt();
                     int selectedScanResultOffsetY = scanResultPane.getSelectedScanResults().stream().mapToInt((value) -> (int)value.getLayoutY()).min().getAsInt();
@@ -489,7 +490,7 @@ public class ScannerResultDialog extends JDialog {
                     if(this.scannerDevice == null) {
                         //this is allowed since the dialog ought to be usable to
                         //display opened PDFs without a set up scanner
-                        this.messageHandler.handle(new Message("No scanner has been selected and configured yet",
+                        this.issueHandler.handle(new Message("No scanner has been selected and configured yet",
                                 JOptionPane.ERROR_MESSAGE,
                                 "No scanner selected and configured"));
                         return;
@@ -502,7 +503,7 @@ public class ScannerResultDialog extends JDialog {
                             documentSourcePair.getKey(),
                             this.imageWrapperStorageDir,
                             documentSourcePair.getValue(),
-                            this.messageHandler);
+                            this.issueHandler);
                     final DocumentJobToggleButton scanJobToggleButton = new DocumentJobToggleButton(scanJob //scanJob
                     );
                     ScanJobFinishCallback scanJobFinishCallback = imagesUnmodifiable -> {
@@ -524,7 +525,8 @@ public class ScannerResultDialog extends JDialog {
                                             scanResultPane,
                                             scanResultPane.getSelectedScanResults());
                                 } catch (IOException ex) {
-                                    throw new RuntimeException(ex);
+                                    issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+                                    return;
                                 }
                             }
                         });
@@ -544,7 +546,7 @@ public class ScannerResultDialog extends JDialog {
                         //notes of class for details
                     scanJobThread.start();
                 } catch (SaneException | IOException ex) {
-                    messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+                    issueHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
                 } catch(DocumentSourceOptionMissingException ex) {
                     this.bugHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
@@ -563,14 +565,15 @@ public class ScannerResultDialog extends JDialog {
                 FutureTask<List<ImageWrapper>> swingTask = new FutureTask<>(() -> {
                     List<ImageWrapper> images0 = Tools.retrieveImages(selectedFile,
                             this.openDocumentWaitDialogParent,
-                            this.imageWrapperStorageDir);
+                            this.imageWrapperStorageDir,
+                            issueHandler);
                     return images0;
                 });
                 SwingUtilities.invokeLater(swingTask);
                 try {
                     newImages = swingTask.get();
                 } catch (InterruptedException | ExecutionException ex) {
-                    messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+                    issueHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
                     return;
                 }
                 if(newImages == null) {
@@ -583,7 +586,8 @@ public class ScannerResultDialog extends JDialog {
                                 scanResultPane,
                                 scanResultPane.getSelectedScanResults());
                     } catch (IOException ex) {
-                        throw new RuntimeException(ex);
+                        issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+                        return;
                     }
                 }
             });
@@ -717,7 +721,8 @@ public class ScannerResultDialog extends JDialog {
             ScanResultPane scanResultPane,
             List<ScanResultViewPane> selectedScanResults) throws IOException {
         ScanResultViewPane scanResultImageViewPane = new ScanResultViewPane(scanResult,
-                panelWidth);
+                panelWidth,
+                issueHandler);
         scanResultPane.addScanResultPane(scanResultImageViewPane);
         scanResultImageViewPane.getImageView().addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
             @Override
@@ -748,7 +753,8 @@ public class ScannerResultDialog extends JDialog {
             int panelWidth,
             int panelHeight) {
         DocumentViewPane retValue = new DocumentViewPane(panelWidth,
-                panelHeight
+                panelHeight,
+                issueHandler
         );
         retValue.addEventHandler(MouseEvent.MOUSE_CLICKED,
             (MouseEvent event) -> {
@@ -787,7 +793,8 @@ public class ScannerResultDialog extends JDialog {
                         scanResultPane,
                         scanResultPane.getSelectedScanResults());
             } catch (IOException ex) {
-                throw new RuntimeException(ex);
+                issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+                return;
             }
         }
         documentJobImageMapping.put(documentJob,

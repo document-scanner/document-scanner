@@ -15,9 +15,9 @@
 package richtercloud.document.scanner.setter;
 
 import richtercloud.document.scanner.gui.ocrresult.OCRResult;
+import richtercloud.reflection.form.builder.ResetException;
 import richtercloud.reflection.form.builder.TransformationException;
 import richtercloud.reflection.form.builder.jpa.panels.EmbeddableListPanel;
-import richtercloud.validation.tools.FieldRetrievalException;
 
 /**
  *
@@ -32,7 +32,9 @@ public class EmbeddableListPanelSetter implements ValueSetter<Object, Embeddable
 
     @Override
     public void setValue(Object value,
-            EmbeddableListPanel comp) throws TransformationException, FieldRetrievalException {
+            EmbeddableListPanel comp) throws TransformationException,
+            NoSuchFieldException,
+            ResetException {
         comp.addValue(value);
     }
 

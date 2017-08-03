@@ -218,7 +218,7 @@ public class OCREngineSelectDialog extends javax.swing.JDialog {
         setVisible(false);
     }//GEN-LAST:event_oCRDialogCancelButtonActionPerformed
 
-    @SuppressWarnings("PMD.UnusedFormalParameter")
+    @SuppressWarnings({"PMD.UnusedFormalParameter", "PMD.AvoidCatchingThrowable"})
     private void oCRDialogSaveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_oCRDialogSaveButtonActionPerformed
         try {
             OCREngineConf oCREngineConf = this.oCRDialogEngineComboBox.getItemAt(this.oCRDialogEngineComboBox.getSelectedIndex());
@@ -227,7 +227,7 @@ public class OCREngineSelectDialog extends javax.swing.JDialog {
             currentOCREngineConfPanel.save();
             OCREngineConf selectedOCREngineConf0 = currentOCREngineConfPanel.getOCREngineConf();
             try {
-                selectedOCREngineConf0.validate();
+                selectedOCREngineConf0.validate(issueHandler);
             }catch(OCREngineConfValidationException ex) {
                 issueHandler.handle(new Message(ex));
                 return;

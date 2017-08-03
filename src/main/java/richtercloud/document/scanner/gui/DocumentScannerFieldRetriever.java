@@ -20,7 +20,6 @@ import java.util.ListIterator;
 import richtercloud.document.scanner.components.annotations.Invisible;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.reflection.form.builder.jpa.OrderedJPACachedFieldRetriever;
-import richtercloud.validation.tools.FieldRetrievalException;
 
 /**
  * A {@link FieldRetriever} which removes fields annotated with
@@ -36,7 +35,7 @@ public class DocumentScannerFieldRetriever extends OrderedJPACachedFieldRetrieve
     }
 
     @Override
-    public List<Field> retrieveRelevantFields(Class<?> entityClass) throws FieldRetrievalException {
+    public List<Field> retrieveRelevantFields(Class<?> entityClass) {
         List<Field> retValue = super.retrieveRelevantFields(entityClass);
         ListIterator<Field> retValueItr = retValue.listIterator();
         while(retValueItr.hasNext()) {

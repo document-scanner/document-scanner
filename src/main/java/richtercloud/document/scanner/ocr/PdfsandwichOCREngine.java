@@ -21,6 +21,8 @@ import java.io.InputStream;
 import javax.imageio.ImageIO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.message.handler.ExceptionMessage;
+import richtercloud.message.handler.IssueHandler;
 
 /**
  *
@@ -29,8 +31,10 @@ import org.slf4j.LoggerFactory;
 public class PdfsandwichOCREngine extends ProcessOCREngine<PdfsandwichOCREngineConf> {
     private final static Logger LOGGER = LoggerFactory.getLogger(PdfsandwichOCREngine.class);
 
-    public PdfsandwichOCREngine(PdfsandwichOCREngineConf oCREngineConf) {
-        super(oCREngineConf);
+    public PdfsandwichOCREngine(PdfsandwichOCREngineConf oCREngineConf,
+            IssueHandler issueHandler) {
+        super(oCREngineConf,
+                issueHandler);
     }
 
     /**
@@ -42,6 +46,7 @@ public class PdfsandwichOCREngine extends ProcessOCREngine<PdfsandwichOCREngineC
      * @return
      */
     @Override
+    @SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
     protected String recognizeImage1(BufferedImage image) {
         try {
             LOGGER.debug(String.format("using prefix '%s' for pdfsandwich input temp file name", this.getoCREngineConf().getInputTempFilePrefix()));
@@ -71,12 +76,13 @@ public class PdfsandwichOCREngine extends ProcessOCREngine<PdfsandwichOCREngineC
             if(ex.getMessage().equals("Stream closed")) {
                 return null; //result of Process.destroy
             }
+            getIssueHandler().handleUnexpectedException(new ExceptionMessage(ex));
             throw new RuntimeException(ex);
         }
     }
 
     @Override
     protected String recognizeImageStream0(InputStream inputStream) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

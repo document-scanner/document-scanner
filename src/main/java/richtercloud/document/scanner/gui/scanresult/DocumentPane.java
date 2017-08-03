@@ -22,6 +22,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.StackPane;
+import richtercloud.message.handler.IssueHandler;
 
 /**
  * The pane which contains the documents containing the pages sorted
@@ -33,15 +34,18 @@ import javafx.scene.layout.StackPane;
 public class DocumentPane extends FlowPane {
     private final List<DocumentViewPane> documentNodes = new LinkedList<>();
     private DocumentViewPane selectedDocument;
+    private final IssueHandler issueHandler;
 
-    public DocumentPane() {
+    public DocumentPane(IssueHandler issueHandler) {
         super(Orientation.HORIZONTAL);
+        this.issueHandler = issueHandler;
     }
 
     public void addScanResults(List<ScanResultViewPane> scanResults,
             int imageWidth) throws IOException {
         DocumentViewPane newNode = new DocumentViewPane(scanResults.stream().map(p -> p.getImageWrapper()).collect(Collectors.toList()),
-                imageWidth);
+                imageWidth,
+                issueHandler);
         getChildren().add(newNode);
         documentNodes.add(newNode);
     }

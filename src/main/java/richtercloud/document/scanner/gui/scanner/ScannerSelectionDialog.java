@@ -37,8 +37,8 @@ import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.gui.DocumentScanner;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.gui.scanresult.DocumentController;
+import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.Message;
-import richtercloud.message.handler.MessageHandler;
 
 /**
  * Allows displaying all SANE devices at an address and to view and edit its
@@ -153,7 +153,7 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
      * search.
      */
     private String address;
-    private final MessageHandler messageHandler;
+    private final IssueHandler issueHandler;
     private final DocumentScannerConf documentScannerConf;
     private final DocumentController documentController;
 
@@ -163,11 +163,11 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
      * retrieved from {@code documentScannerConf}.
      *
      * @param parent
-     * @param messageHandler
+     * @param issueHandler
      * @param documentScannerConf
      */
     public ScannerSelectionDialog(java.awt.Frame parent,
-            MessageHandler messageHandler,
+            IssueHandler issueHandler,
             DocumentScannerConf documentScannerConf,
             DocumentController documentController) throws UnknownHostException, IOException, SaneException {
         super(parent,
@@ -176,10 +176,10 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
                         Constants.APP_VERSION),
                 true //modal
         );
-        if(messageHandler == null) {
+        if(issueHandler == null) {
             throw new IllegalArgumentException("messageHandler mustn't be null");
         }
-        this.messageHandler = messageHandler;
+        this.issueHandler = issueHandler;
         if(documentScannerConf == null) {
             throw new IllegalArgumentException("documentScannerConf mustn't be null");
         }
@@ -400,11 +400,11 @@ public class ScannerSelectionDialog extends javax.swing.JDialog {
                 device,
                 scannerConf,
                 documentScannerConf.getResolutionWish(),
-                this.messageHandler);
+                this.issueHandler);
             scannerEditDialog.setVisible(true);
         } catch (IOException | SaneException ex) {
             LOGGER.error("Exception during scanner configuration", ex);
-            this.messageHandler.handle(new Message(String.format("Exception during scanner configuration: %s", ExceptionUtils.getRootCauseMessage(ex)),
+            this.issueHandler.handle(new Message(String.format("Exception during scanner configuration: %s", ExceptionUtils.getRootCauseMessage(ex)),
                     JOptionPane.ERROR_MESSAGE,
                     "Exception occured"));
         }

@@ -25,8 +25,10 @@ import java.util.Set;
 import org.apache.commons.lang.RandomStringUtils;
 import static org.junit.Assert.*;
 import org.junit.Test;
+import static org.mockito.Mockito.mock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.message.handler.IssueHandler;
 
 /**
  *
@@ -94,7 +96,8 @@ public class DateFormatValueDetectionServiceTest {
         }
         String input = inputBuilder.toString();
         LOGGER.debug(String.format("Testing single date with input '%s'", input));
-        DateFormatValueDetectionService instance = new DateFormatValueDetectionService();
+        IssueHandler issueHandler = mock(IssueHandler.class);
+        DateFormatValueDetectionService instance = new DateFormatValueDetectionService(issueHandler);
         List<ValueDetectionResult<Date>> results = instance.fetchResults(input,
                 null //languageIdentifier
         );
@@ -135,7 +138,7 @@ public class DateFormatValueDetectionServiceTest {
         }
         input = inputBuilder.toString();
         LOGGER.debug(String.format("Test multiple dates (%d) with input '%s'", dateCount, input));
-        instance = new DateFormatValueDetectionService();
+        instance = new DateFormatValueDetectionService(issueHandler);
         results = instance.fetchResults(input,
                 null //languageIdentifier
         );
@@ -150,7 +153,7 @@ public class DateFormatValueDetectionServiceTest {
         assertTrue(dateFound);
 
         //Special test
-        instance = new DateFormatValueDetectionService();
+        instance = new DateFormatValueDetectionService(issueHandler);
         results = instance.fetchResults("27.10.2015 ",
                 null //languageIdentifier
         );

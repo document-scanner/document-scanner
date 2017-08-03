@@ -23,6 +23,8 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -38,7 +40,7 @@ public class FileTagStorage implements TagStorage {
     }
 
     @Override
-    public Set<String> getAvailableTags() {
+    public Set<String> getAvailableTags() throws TagRetrievalException {
         Set<String> retValue = new HashSet<>();
         if(!file.exists()) {
             return retValue;
@@ -55,34 +57,36 @@ public class FileTagStorage implements TagStorage {
         } catch(EOFException ex) {
             //expected EOF
         } catch (IOException ex) {
-            throw new RuntimeException(ex);
+            throw new TagRetrievalException(ex);
         }
         return retValue;
     }
 
     @Override
-    public void addTag(String tag) {
+    public void addTag(String tag) throws TagRetrievalException {
         Set<String> tags = getAvailableTags();
         tags.add(tag);
-        storeTags(tags);
+        try {
+            storeTags(tags);
+        } catch (IOException ex) {
+            throw new TagRetrievalException(ex);
+        }
     }
 
     @Override
-    public void removeTag(String tag) {
+    public void removeTag(String tag) throws TagRetrievalException {
         Set<String> tags = getAvailableTags();
         tags.remove(tag);
-        storeTags(tags);
+        try {
+            storeTags(tags);
+        } catch (IOException ex) {
+            throw new TagRetrievalException(ex);
+        }
     }
 
-    private void storeTags(Set<String> tags) {
+    private void storeTags(Set<String> tags) throws IOException {
         if(!file.exists()) {
-            try {
-                if(!file.createNewFile()) {
-                    throw new IOException();
-                }
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
+            Files.createFile(Paths.get(file.toURI()));
         }
         try (
             OutputStream outputStream = new FileOutputStream(file);
@@ -91,8 +95,6 @@ public class FileTagStorage implements TagStorage {
             for(String tag0 : tags) {
                 objectOutputStream.writeUTF(tag0);
             }
-        } catch (IOException ex) {
-            throw new RuntimeException();
         }
     }
 }

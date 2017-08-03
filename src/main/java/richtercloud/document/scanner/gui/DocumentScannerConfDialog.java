@@ -24,7 +24,6 @@ import javax.swing.JScrollPane;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.gui.conf.FieldOrderPanel;
 import richtercloud.reflection.form.builder.ClassInfo;
-import richtercloud.validation.tools.FieldRetrievalException;
 import richtercloud.validation.tools.FieldRetriever;
 
 /**
@@ -54,7 +53,7 @@ public class DocumentScannerConfDialog extends javax.swing.JDialog {
     public DocumentScannerConfDialog(java.awt.Frame parent,
             DocumentScannerConf documentScannerConf,
             Set<Class<?>> entityClasses,
-            FieldRetriever fieldRetriever) throws FieldRetrievalException {
+            FieldRetriever fieldRetriever) {
         super(parent,
                 true //always modal
         );

@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Objects;
 import org.apache.commons.io.IOUtils;
 import richtercloud.document.scanner.ifaces.OCREngineConfValidationException;
+import richtercloud.message.handler.IssueHandler;
 
 /**
  *
@@ -116,9 +117,10 @@ public class TesseractOCREngineConf extends ProcessOCREngineConf {
     }
 
     @Override
-    public void validate() throws OCREngineConfValidationException {
+    public void validate(IssueHandler issueHandler) throws OCREngineConfValidationException {
         try {
-            ProcessOCREngine.checkBinaryAvailableExceptions(this.getBinary());
+            ProcessOCREngine.checkBinaryAvailableExceptions(this.getBinary(),
+                    issueHandler);
         } catch (BinaryNotFoundException ex) {
             throw new OCREngineConfValidationException(ex);
         }

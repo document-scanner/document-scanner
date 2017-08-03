@@ -31,15 +31,16 @@ import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
 import richtercloud.document.scanner.ifaces.Constants;
 import richtercloud.message.handler.ConfirmMessageHandler;
+import richtercloud.message.handler.ExceptionMessage;
 import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.Message;
 import richtercloud.reflection.form.builder.ClassInfo;
+import richtercloud.reflection.form.builder.ResetException;
 import richtercloud.reflection.form.builder.jpa.panels.QueryHistoryEntryStorage;
 import richtercloud.reflection.form.builder.jpa.panels.QueryPanel;
 import richtercloud.reflection.form.builder.jpa.storage.FieldInitializer;
 import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 import richtercloud.reflection.form.builder.storage.StorageException;
-import richtercloud.validation.tools.FieldRetrievalException;
 import richtercloud.validation.tools.FieldRetriever;
 
 /**
@@ -143,12 +144,17 @@ public class EntityEditingDialog extends javax.swing.JDialog {
             Class<?> primaryClassSelection) {
         this.entityEditingClassComboBox.addItemListener(new ItemListener() {
             @Override
+            @SuppressWarnings("PMD.AvoidCatchingThrowable")
             public void itemStateChanged(ItemEvent e) {
-                //don't recreate QueryPanel instances, but cache them in order
-                //to keep custom queries managed in QueryPanel
-                if(EntityEditingDialog.this.entityEditingQueryPanel != null) {
-                    Class<?> selectedEntityClass = (Class<?>) e.getItem();
-                    handleEntityEditingQueryPanelUpdate(selectedEntityClass);
+                try {
+                    //don't recreate QueryPanel instances, but cache them in order
+                    //to keep custom queries managed in QueryPanel
+                    if(EntityEditingDialog.this.entityEditingQueryPanel != null) {
+                        Class<?> selectedEntityClass = (Class<?>) e.getItem();
+                        handleEntityEditingQueryPanelUpdate(selectedEntityClass);
+                    }
+                }catch(Throwable ex) {
+                    issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             }
         });
@@ -159,7 +165,7 @@ public class EntityEditingDialog extends javax.swing.JDialog {
         this.entityEditingClassComboBox.setSelectedItem(primaryClassSelection);
     }
 
-    private void handleEntityEditingQueryPanelUpdate(Class<?> selectedEntityClass) {
+    private void handleEntityEditingQueryPanelUpdate(Class<?> selectedEntityClass) throws ResetException {
         entityEditingQueryPanel = this.entityEditingQueryPanelCache.get(selectedEntityClass);
         if(entityEditingQueryPanel == null) {
             try {
@@ -173,8 +179,9 @@ public class EntityEditingDialog extends javax.swing.JDialog {
                         fieldInitializer,
                         entryStorage
                 );
-            } catch (IllegalArgumentException | IllegalAccessException | FieldRetrievalException ex) {
-                throw new RuntimeException(ex);
+            } catch (IllegalArgumentException | IllegalAccessException ex) {
+                issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+                return;
             }
             entityEditingQueryPanelCache.put(selectedEntityClass, entityEditingQueryPanel);
         }
@@ -289,8 +296,12 @@ public class EntityEditingDialog extends javax.swing.JDialog {
 
     @SuppressWarnings("PMD.UnusedFormalParameter")
     private void entityEditingClassComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_entityEditingClassComboBoxActionPerformed
-        Class<?> selectedEntityClass = (Class<?>) entityEditingClassComboBox.getSelectedItem();
-        handleEntityEditingQueryPanelUpdate(selectedEntityClass);
+        try {
+            Class<?> selectedEntityClass = (Class<?>) entityEditingClassComboBox.getSelectedItem();
+            handleEntityEditingQueryPanelUpdate(selectedEntityClass);
+        } catch (ResetException ex) {
+            issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+        }
     }//GEN-LAST:event_entityEditingClassComboBoxActionPerformed
 
     @SuppressWarnings("PMD.UnusedFormalParameter")

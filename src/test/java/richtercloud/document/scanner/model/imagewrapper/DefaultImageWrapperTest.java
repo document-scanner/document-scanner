@@ -26,8 +26,10 @@ import java.nio.file.Files;
 import javax.imageio.ImageIO;
 import org.junit.Ignore;
 import org.junit.Test;
+import static org.mockito.Mockito.mock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.message.handler.IssueHandler;
 
 /**
  *
@@ -47,8 +49,10 @@ public class DefaultImageWrapperTest {
         InputStream instanceInputStream = DefaultImageWrapperTest.class.getResourceAsStream("/File_CC-BY-SA_3_icon_88x31.png");
         BufferedImage instanceImage = ImageIO.read(instanceInputStream);
         File storageDir = Files.createTempDirectory(DefaultImageWrapperTest.class.getSimpleName()).toFile();
+        IssueHandler issueHandler = mock(IssueHandler.class);
         DefaultImageWrapper instance = new DefaultImageWrapper(storageDir,
-                instanceImage);
+                instanceImage,
+                issueHandler);
         objectOutputStream.writeObject(instance);
         ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
         ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);

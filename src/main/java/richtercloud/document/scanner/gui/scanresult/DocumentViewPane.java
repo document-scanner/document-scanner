@@ -24,6 +24,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.Text;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
+import richtercloud.message.handler.IssueHandler;
 
 /**
  *
@@ -33,22 +34,29 @@ public class DocumentViewPane extends ImageViewPane {
     private final List<ImageWrapper> imageWrappers;
 
     public DocumentViewPane(int imageWidth,
-            int imageHeight) {
+            int imageHeight,
+            IssueHandler issueHandler) {
         super(imageWidth,
-                imageHeight);
+                imageHeight,
+                issueHandler);
         this.imageWrappers = new LinkedList<>();
     }
 
     public DocumentViewPane(ImageWrapper scanResult,
-            int imageWidth) throws IOException {
+            int imageWidth,
+            IssueHandler issueHandler) throws IOException {
         super(scanResult,
-                imageWidth);
+                imageWidth,
+                issueHandler);
         this.imageWrappers = new LinkedList<>(Arrays.asList(scanResult));
     }
 
     public DocumentViewPane(List<ImageWrapper> scanResults,
-            int imageWidth) throws IOException {
-        super(scanResults.get(0), imageWidth);
+            int imageWidth,
+            IssueHandler issueHandler) throws IOException {
+        super(scanResults.get(0),
+                imageWidth,
+                issueHandler);
         this.imageWrappers = scanResults;
     }
 

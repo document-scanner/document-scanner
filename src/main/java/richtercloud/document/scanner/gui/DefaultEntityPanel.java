@@ -146,13 +146,15 @@ public class DefaultEntityPanel extends EntityPanel {
     @Override
     public void applyValueDetectionServiceSelection() throws ValueDetectionServiceCreationException {
         ValueDetectionServiceFactory valueDetectionServiceConfFactory = new DelegatingValueDetectionServiceFactory(amountMoneyAdditionalCurrencyStorage,
-                amountMoneyExchangeRateRetriever);
+                amountMoneyExchangeRateRetriever,
+                issueHandler);
         Set<ValueDetectionService<?>> valueDetectionServices = new HashSet<>();
         for(ValueDetectionServiceConf serviceConf : documentScannerConf.getSelectedValueDetectionServiceConfs()) {
             ValueDetectionService<?> valueDetectionService = valueDetectionServiceConfFactory.createService(serviceConf);
             valueDetectionServices.add(valueDetectionService);
         }
-        this.valueDetectionService = new DelegatingValueDetectionService(valueDetectionServices);
+        this.valueDetectionService = new DelegatingValueDetectionService(valueDetectionServices,
+                issueHandler);
     }
 
     public ValueDetectionService<?> getValueDetectionService() {
@@ -165,6 +167,7 @@ public class DefaultEntityPanel extends EntityPanel {
     }
 
     @Override
+    @SuppressWarnings("PMD.AvoidCatchingThrowable")
     public void valueDetection(OCRSelectPanelPanelFetcher oCRSelectPanelPanelFetcher,
             boolean forceRenewal) {
         for(Pair<Class, Field> pair : this.reflectionFormBuilder.getComboBoxModelMap().keySet()) {
@@ -177,7 +180,7 @@ public class DefaultEntityPanel extends EntityPanel {
                 SwingUtilities.invokeLater(() -> {
                     try {
                         valueDetectionGUI();
-                    }catch(Exception ex) {
+                    }catch(Throwable ex) {
                         LOGGER.error("unexpected exception during fetching of "
                                 + "auto-OCR-detection values", ex);
                         issueHandler.handleUnexpectedException(new ExceptionMessage(ex));

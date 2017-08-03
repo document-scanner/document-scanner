@@ -23,6 +23,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.message.handler.ExceptionMessage;
+import richtercloud.message.handler.IssueHandler;
 
 /**
  * A {@link ValueDetectionService} which simply splits input at
@@ -46,6 +48,11 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class AbstractFormatValueDetectionService<T> extends AbstractValueDetectionService<T> {
     private final static Logger LOGGER = LoggerFactory.getLogger(AbstractFormatValueDetectionService.class);
+    private final IssueHandler issueHandler;
+
+    public AbstractFormatValueDetectionService(IssueHandler issueHandler) {
+        this.issueHandler = issueHandler;
+    }
 
     protected abstract int getMaxWords();
 
@@ -79,6 +86,7 @@ public abstract class AbstractFormatValueDetectionService<T> extends AbstractVal
      * @return
      */
     @Override
+    @SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
     public LinkedHashSet<ValueDetectionResult<T>> fetchResults0(String input,
             String languageIdentifier) {
         final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() //2 threads per processor cause only 50 % CPU usage, 1 per CPU reaches 80-90 %
@@ -124,8 +132,13 @@ public abstract class AbstractFormatValueDetectionService<T> extends AbstractVal
         try {
             executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
         } catch (InterruptedException ex) {
+            issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
             throw new RuntimeException(ex);
         }
         return retValues;
+    }
+
+    public IssueHandler getIssueHandler() {
+        return issueHandler;
     }
 }

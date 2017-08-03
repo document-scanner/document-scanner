@@ -39,6 +39,8 @@ import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
+import richtercloud.message.handler.ExceptionMessage;
+import richtercloud.message.handler.IssueHandler;
 
 /**
  * Quite bad implementation of {@link ImageWrapper} which loads every request
@@ -95,12 +97,15 @@ public class DefaultImageWrapper implements ImageWrapper {
     private final int initialWidth;
     private final int initialHeight;
     private double rotationDegrees;
+    private final IssueHandler issueHandler;
 
     public DefaultImageWrapper(File storageDir,
-            BufferedImage image) throws IOException {
+            BufferedImage image,
+            IssueHandler issueHandler) throws IOException {
         assert storageDir.exists();
         assert storageDir.isDirectory();
         this.storageDir = storageDir;
+        this.issueHandler = issueHandler;
         this.storageFile = createStorageFile(storageDir);
         assert !storageFile.exists();
         FileUtils.touch(storageFile);
@@ -161,6 +166,7 @@ public class DefaultImageWrapper implements ImageWrapper {
     internal implementation notes:
     - This is exposed in order to allow subclasses to cache the generated files.
     */
+    @SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
     protected File getOriginalImageStream0(String formatName) throws IOException {
         File tmpFile = File.createTempFile("image-wrapper", null);
         LOGGER.debug(String.format("using '%s' as temporary file",
@@ -178,6 +184,7 @@ public class DefaultImageWrapper implements ImageWrapper {
         try {
             rotatedImage = javaFXTask.get();
         } catch (InterruptedException | ExecutionException ex) {
+            issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
             throw new RuntimeException(ex);
         }
         assert rotatedImage != null;
@@ -216,6 +223,7 @@ public class DefaultImageWrapper implements ImageWrapper {
     }
 
     @Override
+    @SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
     public BufferedImage getImagePreview(int width) throws IOException {
         BufferedImage original = getOriginalImage();
         if(width == initialWidth && rotationDegrees/360 == 0) {
@@ -240,6 +248,7 @@ public class DefaultImageWrapper implements ImageWrapper {
         try {
             image = javaFXTask.get();
         }catch(InterruptedException | ExecutionException ex) {
+            issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
             throw new RuntimeException(ex);
         }
         return image;

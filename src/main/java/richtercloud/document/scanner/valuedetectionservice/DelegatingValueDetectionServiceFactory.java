@@ -17,6 +17,7 @@ package richtercloud.document.scanner.valuedetectionservice;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import richtercloud.document.scanner.valuedetectionservice.annotations.Factory;
+import richtercloud.message.handler.IssueHandler;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
 
@@ -31,13 +32,16 @@ public class DelegatingValueDetectionServiceFactory implements ValueDetectionSer
     private final DateFormatValueDetectionServiceFactory dateFormatValueDetectionServiceConfFactory;
 
     public DelegatingValueDetectionServiceFactory(AmountMoneyCurrencyStorage amountMoneyCurrencyStorage,
-            AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever) {
+            AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever,
+            IssueHandler issueHandler) {
         this.contactValueDetectionServiceConfFactory = new ContactValueDetectionServiceFactory();
         this.currencyFormatValueDetectionServiceConfFactory = new CurrencyFormatValueDetectionServiceFactory(amountMoneyCurrencyStorage,
-                amountMoneyExchangeRateRetriever);
+                amountMoneyExchangeRateRetriever,
+                issueHandler);
         this.trieCurrencyFormatValueDetectionServiceConfFactory = new TrieCurrencyFormatValueDetectionServiceFactory(amountMoneyCurrencyStorage,
-                amountMoneyExchangeRateRetriever);
-        this.dateFormatValueDetectionServiceConfFactory = new DateFormatValueDetectionServiceFactory();
+                amountMoneyExchangeRateRetriever,
+                issueHandler);
+        this.dateFormatValueDetectionServiceConfFactory = new DateFormatValueDetectionServiceFactory(issueHandler);
     }
 
     @Override
@@ -61,10 +65,10 @@ public class DelegatingValueDetectionServiceFactory implements ValueDetectionSer
                         ValueDetectionServiceFactory serviceConfFactory = serviceConfFactoryClassConstructor.newInstance();
                         retValue = serviceConfFactory.createService(serviceConf);
                     } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
-                        throw new RuntimeException(ex);
+                        throw new ValueDetectionServiceCreationException(ex);
                     }
                 } catch (NoSuchMethodException | SecurityException ex) {
-                    throw new RuntimeException(ex);
+                    throw new ValueDetectionServiceCreationException(ex);
                 }
             }else {
                 throw new IllegalArgumentException(String.format("service "

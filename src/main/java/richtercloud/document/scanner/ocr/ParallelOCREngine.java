@@ -111,7 +111,7 @@ public abstract class ParallelOCREngine<C extends OCREngineConf> implements OCRE
         for(Map.Entry<ImageWrapper, InputStream> imageStream : imageStreams.entrySet()) {
             FutureTask<String> task = new FutureTask<>(new Callable<String>() {
                 @Override
-                public String call() throws Exception {
+                public String call() throws OCREngineRecognitionException {
                     String oCRResult = recognizeImageStream(imageStream.getKey(),
                             imageStream.getValue());
                     return oCRResult;
@@ -129,7 +129,7 @@ public abstract class ParallelOCREngine<C extends OCREngineConf> implements OCRE
         for(BufferedImage image : images) {
             FutureTask<String> task = new FutureTask<>(new Callable<String>() {
                 @Override
-                public String call() throws Exception {
+                public String call() throws OCREngineRecognitionException {
                     String oCRResult = recognizeImage(image);
                     return oCRResult;
                 }

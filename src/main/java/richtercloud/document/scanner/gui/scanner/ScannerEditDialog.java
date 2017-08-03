@@ -34,8 +34,9 @@ import javax.swing.event.ListSelectionListener;
 import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.gui.DocumentScanner;
 import richtercloud.document.scanner.gui.scanresult.DocumentController;
+import richtercloud.message.handler.ExceptionMessage;
+import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.Message;
-import richtercloud.message.handler.MessageHandler;
 
 /**
  * Provides configuration for scan mode and resolution of SANE device with GUI
@@ -51,7 +52,7 @@ public class ScannerEditDialog extends javax.swing.JDialog {
     private MutableComboBoxModel<String> modeComboBoxModel = new DefaultComboBoxModel<>();
     private MutableComboBoxModel<Integer> resolutionComboBoxModel = new DefaultComboBoxModel<>();
     private MutableComboBoxModel<String> documentSourceComboBoxModel = new DefaultComboBoxModel<>();
-    private final MessageHandler messageHandler;
+    private final IssueHandler issueHandler;
     public final static String MODE_OPTION_NAME = "mode";
     public final static String RESOLUTION_OPTION_NAME = "resolution";
     public final static String DOCUMENT_SOURCE_OPTION_NAME = "source";
@@ -68,7 +69,7 @@ public class ScannerEditDialog extends javax.swing.JDialog {
             final SaneDevice device,
             ScannerConf scannerConf,
             int resolutionWish,
-            MessageHandler messageHandler) throws IOException, SaneException {
+            IssueHandler issueHandler) throws IOException, SaneException {
         super(parent,
                 true //modal
         );
@@ -76,11 +77,11 @@ public class ScannerEditDialog extends javax.swing.JDialog {
             throw new IllegalArgumentException("documentController mustn't be null");
         }
         this.documentController = documentController;
-        if(messageHandler == null) {
+        if(issueHandler == null) {
             throw new IllegalArgumentException("messageHandler mustn't be null");
         }
         this.scannerConf = scannerConf;
-        this.messageHandler = messageHandler;
+        this.issueHandler = issueHandler;
         init(device,
                 scannerConf,
                 resolutionWish);
@@ -91,7 +92,7 @@ public class ScannerEditDialog extends javax.swing.JDialog {
      * @param parent
      * @param device
      * @param scannerConf
-     * @param messageHandler
+     * @param issueHandler
      * @throws java.io.IOException if {@link SaneDevice#open() } fails
      * @throws au.com.southsky.jfreesane.SaneException if
      * {@link SaneDevice#open() } fails
@@ -101,7 +102,7 @@ public class ScannerEditDialog extends javax.swing.JDialog {
             final SaneDevice device,
             ScannerConf scannerConf,
             int resolutionWish,
-            MessageHandler messageHandler) throws IOException, SaneException {
+            IssueHandler issueHandler) throws IOException, SaneException {
         super(parent,
                 DocumentScanner.generateApplicationWindowTitle(String.format("Editing scanner settings of %s", device.toString()),
                         Constants.APP_NAME,
@@ -112,11 +113,11 @@ public class ScannerEditDialog extends javax.swing.JDialog {
             throw new IllegalArgumentException("documentController mustn't be null");
         }
         this.documentController = documentController;
-        if(messageHandler == null) {
+        if(issueHandler == null) {
             throw new IllegalArgumentException("messageHandler mustn't be null");
         }
         this.scannerConf = scannerConf;
-        this.messageHandler = messageHandler;
+        this.issueHandler = issueHandler;
         init(device,
                 scannerConf,
                 resolutionWish);
@@ -185,10 +186,9 @@ public class ScannerEditDialog extends javax.swing.JDialog {
                             mode);
                     scannerConf.setMode(mode);
                 } catch(IllegalArgumentException ex) {
-                    messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+                    issueHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
                 } catch (IOException | SaneException ex) {
-                    //not supposed to happen
-                    throw new RuntimeException(ex);
+                    issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             }
         });
@@ -201,10 +201,9 @@ public class ScannerEditDialog extends javax.swing.JDialog {
                     documentController.setResolution(device, resolution);
                     scannerConf.setResolution(resolution);
                 } catch(IllegalArgumentException ex) {
-                    messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+                    issueHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
                 } catch (IOException | SaneException ex) {
-                    //not supposed to happen
-                    throw new RuntimeException(ex);
+                    issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             }
         });
@@ -218,9 +217,9 @@ public class ScannerEditDialog extends javax.swing.JDialog {
                             documentSource);
                     scannerConf.setSource(documentSource);
                 } catch(IllegalArgumentException ex) {
-                    messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+                    issueHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
                 } catch (IOException | SaneException ex) {
-                    throw new RuntimeException(ex);
+                    issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             }
         });
@@ -235,9 +234,9 @@ public class ScannerEditDialog extends javax.swing.JDialog {
                             selectedFormat.getHeight());
                     scannerConf.setPaperFormat(selectedFormat);
                 } catch(IllegalArgumentException ex) {
-                    messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+                    issueHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
                 } catch (IOException | SaneException ex) {
-                    throw new RuntimeException(ex);
+                    issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             }
         });
@@ -391,7 +390,7 @@ public class ScannerEditDialog extends javax.swing.JDialog {
     private void paperFormatAddButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_paperFormatAddButtonActionPerformed
         ScannerConfPaperFormat paperFormat = new ScannerConfPaperFormat();
         ScannerConfPaperFormatDialog paperFormatDialog = new ScannerConfPaperFormatDialog(this,
-                messageHandler,
+                issueHandler,
                 paperFormat);
         paperFormatDialog.setVisible(true);
     }//GEN-LAST:event_paperFormatAddButtonActionPerformed
@@ -399,7 +398,7 @@ public class ScannerEditDialog extends javax.swing.JDialog {
     @SuppressWarnings("PMD.UnusedFormalParameter")
     private void paperFormatEditButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_paperFormatEditButtonActionPerformed
         ScannerConfPaperFormatDialog paperFormatDialog = new ScannerConfPaperFormatDialog(this,
-                messageHandler,
+                issueHandler,
                 scannerConf.getPaperFormat());
         paperFormatDialog.setVisible(true);
     }//GEN-LAST:event_paperFormatEditButtonActionPerformed

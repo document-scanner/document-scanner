@@ -41,6 +41,8 @@ import org.jscience.physics.amount.Amount;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.FormatUtils;
+import richtercloud.message.handler.ExceptionMessage;
+import richtercloud.message.handler.IssueHandler;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorageException;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
@@ -67,14 +69,18 @@ public class TrieCurrencyFormatValueDetectionService extends AbstractValueDetect
      * the exchange rate is unknown, i.e. hasn't been set by the user.
      */
     private final AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever;
+    private final IssueHandler issueHandler;
 
     public TrieCurrencyFormatValueDetectionService(AmountMoneyCurrencyStorage amountMoneyCurrencyStorage,
-            AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever) {
+            AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever,
+            IssueHandler issueHandler) {
         this.amountMoneyCurrencyStorage = amountMoneyCurrencyStorage;
         this.amountMoneyExchangeRateRetriever = amountMoneyExchangeRateRetriever;
+        this.issueHandler = issueHandler;
     }
 
     @Override
+    @SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
     protected LinkedHashSet<ValueDetectionResult<Amount<Money>>> fetchResults0(String input,
             String languageIdentifier) {
         final LinkedHashSet<ValueDetectionResult<Amount<Money>>> retValue = new LinkedHashSet<>();
@@ -202,7 +208,7 @@ public class TrieCurrencyFormatValueDetectionService extends AbstractValueDetect
                                         ));
                                     }
                                 } catch (AmountMoneyCurrencyStorageException | AmountMoneyExchangeRateRetrieverException ex) {
-                                    throw new RuntimeException(ex);
+                                    issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                                 }
                             }
 
@@ -221,6 +227,7 @@ public class TrieCurrencyFormatValueDetectionService extends AbstractValueDetect
         try {
             executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
         } catch (InterruptedException ex) {
+            issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
             throw new RuntimeException(ex);
         }
         return retValue;
