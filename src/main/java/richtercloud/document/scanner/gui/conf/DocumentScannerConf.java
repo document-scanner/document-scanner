@@ -273,7 +273,22 @@ public class DocumentScannerConf implements Serializable {
      * Allows to save ordering of field for specific classes. {@code null}
      * indicates that no ordering has been configured, yet.
      */
-    private Map<Class<?>, List<Field>> fieldOrderMap = null;
+    /*
+    internal implementation notes:
+    - Making the initial value null in order to indicate that field ordering
+    hasn't been configured yet is tricky because then the initialization needs
+    to be done in DocumentScannerFieldRetriever before calling super which can't
+    access super methods and fill the map -> use an empty map and let it be
+    filled by OrderedJPACachedFieldRetriever which is the superclass of
+    DocumentScannerFieldRetriever
+    - Initializing and filling the field order map here doesn't seem to be
+    necessary and is tricky because there's need for a reference to a
+    FieldRetriever which means that either the parameterless creation would be
+    abandoned which is inacceptable or a different FieldRetriever instance than
+    the one created in caller, i.e. DocumentScanner, would be used which isn't
+    very intuitive.
+    */
+    private Map<Class<?>, List<Field>> fieldOrderMap = new HashMap<>();
 
     /**
      * Creates an configuration with default values.

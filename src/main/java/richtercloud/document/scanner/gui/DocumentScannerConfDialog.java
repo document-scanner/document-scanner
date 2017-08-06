@@ -15,7 +15,6 @@
 package richtercloud.document.scanner.gui;
 
 import java.lang.reflect.Field;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -65,16 +64,14 @@ public class DocumentScannerConfDialog extends javax.swing.JDialog {
         this.autoOCRValueDetectionCheckBox.setSelected(documentScannerConf.isAutoOCRValueDetection());
         this.rememberTrimWhitespaceCheckBox.setSelected(documentScannerConf.isRememberTrimWhitespace());
         assert documentScannerConf.getFieldOrderMap() != null;
-        if(documentScannerConf.getFieldOrderMap() == null) {
-            fieldOrderMap = new HashMap<>();
-            for(Class<?> entityClass : entityClasses) {
-                List<Field> classFields = fieldRetriever.retrieveRelevantFields(entityClass);
+        assert documentScannerConf.getFieldOrderMap().keySet().equals(entityClasses);
+        this.fieldOrderMap = documentScannerConf.getFieldOrderMap();
+        for(Class<?> entityClass : entityClasses) {
+            if(!fieldOrderMap.containsKey(entityClass)) {
+                List<Field> entityClassRelevantFields = fieldRetriever.retrieveRelevantFields(entityClass);
                 fieldOrderMap.put(entityClass,
-                        classFields);
+                        entityClassRelevantFields);
             }
-        }else {
-            assert documentScannerConf.getFieldOrderMap().keySet().equals(entityClasses);
-            fieldOrderMap = new HashMap<>(documentScannerConf.getFieldOrderMap());
         }
         List<Class<?>> fieldOrderMapKeys = new LinkedList<>(fieldOrderMap.keySet());
         fieldOrderMapKeys.sort((Class<?> o1, Class<?> o2) -> {
