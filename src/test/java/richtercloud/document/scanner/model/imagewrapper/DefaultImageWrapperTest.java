@@ -23,8 +23,8 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.file.Files;
+import javafx.embed.swing.JFXPanel;
 import javax.imageio.ImageIO;
-import org.junit.Ignore;
 import org.junit.Test;
 import static org.mockito.Mockito.mock;
 import org.slf4j.Logger;
@@ -41,26 +41,34 @@ public class DefaultImageWrapperTest {
     @Test
     //@Category(JavaFXGUITests.class) //Doesn't work, but should (see pom.xml
     //for details
-    @Ignore //needs initialized JavaFX which can't be initialize in a headless
-    //environment
     public void testSerialize() throws IOException, ClassNotFoundException {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream);
-        InputStream instanceInputStream = DefaultImageWrapperTest.class.getResourceAsStream("/File_CC-BY-SA_3_icon_88x31.png");
-        BufferedImage instanceImage = ImageIO.read(instanceInputStream);
-        File storageDir = Files.createTempDirectory(DefaultImageWrapperTest.class.getSimpleName()).toFile();
-        IssueHandler issueHandler = mock(IssueHandler.class);
-        DefaultImageWrapper instance = new DefaultImageWrapper(storageDir,
-                instanceImage,
-                issueHandler);
-        objectOutputStream.writeObject(instance);
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
-        ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
-        DefaultImageWrapper result = (DefaultImageWrapper) objectInputStream.readObject();
-        File controlFile = File.createTempFile(DefaultImageWrapperTest.class.getSimpleName(),
-                "result" //suffix
-        );
-        ImageIO.write(result.getOriginalImage(), "png", controlFile);
-        LOGGER.info(String.format("control file is %s", controlFile.getAbsolutePath()));
+        try {
+            new JFXPanel();
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream);
+            InputStream instanceInputStream = DefaultImageWrapperTest.class.getResourceAsStream("/File_CC-BY-SA_3_icon_88x31.png");
+            BufferedImage instanceImage = ImageIO.read(instanceInputStream);
+            File storageDir = Files.createTempDirectory(DefaultImageWrapperTest.class.getSimpleName()).toFile();
+            IssueHandler issueHandler = mock(IssueHandler.class);
+            DefaultImageWrapper instance = new DefaultImageWrapper(storageDir,
+                    instanceImage,
+                    issueHandler);
+            objectOutputStream.writeObject(instance);
+            ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+            ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
+            DefaultImageWrapper result = (DefaultImageWrapper) objectInputStream.readObject();
+            File controlFile = File.createTempFile(DefaultImageWrapperTest.class.getSimpleName(),
+                    "result" //suffix
+            );
+            ImageIO.write(result.getOriginalImage(), "png", controlFile);
+            LOGGER.info(String.format("control file is %s", controlFile.getAbsolutePath()));
+        }catch(UnsupportedOperationException ex) {
+            //`new JFXPanel()` for JavaFX toolkit initialization causes
+            //`java.lang.UnsupportedOperationException: Unable to open DISPLAY`
+            //instead of HeadlessException (which is a subclass of
+            //UnsupportedOperationException
+            LOGGER.warn("UnsupportedOperationException indicates that the test is run on a headless machine, e.g. a CI service",
+                    ex);
+        }
     }
 }

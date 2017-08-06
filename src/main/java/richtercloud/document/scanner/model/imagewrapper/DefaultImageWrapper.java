@@ -97,7 +97,7 @@ public class DefaultImageWrapper implements ImageWrapper {
     private final int initialWidth;
     private final int initialHeight;
     private double rotationDegrees;
-    private final IssueHandler issueHandler;
+    private final transient IssueHandler issueHandler;
 
     public DefaultImageWrapper(File storageDir,
             BufferedImage image,
