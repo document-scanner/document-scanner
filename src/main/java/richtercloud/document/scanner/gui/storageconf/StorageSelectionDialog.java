@@ -83,7 +83,8 @@ public class StorageSelectionDialog extends javax.swing.JDialog {
 
         this.storageConfPanelFactory = new DefaultStorageConfPanelFactory(issueHandler,
                 confirmMessageHandler,
-                documentScannerConf.isSkipMD5SumCheck());
+                documentScannerConf.isSkipMD5SumCheck(),
+                documentScannerConf);
         for(StorageConf availableStorageConf : this.documentScannerConf.getAvailableStorageConfs()) {
             this.storageListModel.addElement(availableStorageConf);
         }

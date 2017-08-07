@@ -17,41 +17,54 @@
     <DimensionLayout dim="0">
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" attributes="0">
-              <EmptySpace min="-2" max="-2" attributes="0"/>
+              <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="postgresBinaryPathTextFieldLabel" min="-2" max="-2" attributes="0"/>
-                  <Component id="databaseNameTextFieldLabel" alignment="0" min="-2" max="-2" attributes="0"/>
-                  <Component id="hostnameTextFieldLabel" alignment="0" min="-2" max="-2" attributes="0"/>
-                  <Component id="usernameLabel" alignment="0" min="-2" max="-2" attributes="0"/>
-                  <Component id="passwordLabel" alignment="0" min="-2" max="-2" attributes="0"/>
-                  <Component id="databaseDirTextFieldLabel" alignment="0" min="-2" max="-2" attributes="0"/>
-                  <Component id="portSpinnerLabel" alignment="0" min="-2" max="-2" attributes="0"/>
-                  <Component id="initdbBinaryPathTextFieldLabel" alignment="0" min="-2" max="-2" attributes="0"/>
-                  <Component id="baseDirectoryTextFieldLabel" alignment="0" min="-2" max="-2" attributes="0"/>
+                  <Group type="102" alignment="0" attributes="0">
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Component id="portSpinnerLabel" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="hostnameTextFieldLabel" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="databaseDirTextFieldLabel" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="databaseNameTextFieldLabel" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="usernameLabel" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="passwordLabel" alignment="0" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Component id="databaseNameTextField" alignment="0" max="32767" attributes="0"/>
+                          <Component id="databaseDirTextField" alignment="0" max="32767" attributes="0"/>
+                          <Component id="hostnameTextField" alignment="0" max="32767" attributes="0"/>
+                          <Component id="portSpinner" alignment="0" max="32767" attributes="0"/>
+                          <Component id="usernameTextField" alignment="0" max="32767" attributes="0"/>
+                          <Component id="passwordPasswordField" alignment="0" pref="601" max="32767" attributes="0"/>
+                      </Group>
+                      <EmptySpace max="-2" attributes="0"/>
+                  </Group>
+                  <Group type="102" attributes="0">
+                      <Component id="directorySeparator" max="32767" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
+                  </Group>
+                  <Group type="102" alignment="1" attributes="0">
+                      <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
+                      <Component id="downloadButton" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace min="12" pref="12" max="-2" attributes="0"/>
+                  </Group>
+                  <Group type="102" alignment="0" attributes="0">
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Component id="postgresBinaryPathTextFieldLabel" min="-2" max="-2" attributes="0"/>
+                          <Component id="initdbBinaryPathTextFieldLabel" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="baseDirTextFieldLabel" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="createdbBinaryPathTextFieldLabel" alignment="0" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                      <EmptySpace type="separate" max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Component id="createdbBinaryPathTextField" alignment="1" max="32767" attributes="0"/>
+                          <Component id="initdbBinaryPathTextField" alignment="0" max="32767" attributes="0"/>
+                          <Component id="postgresBinaryPathTextField" alignment="0" max="32767" attributes="0"/>
+                          <Component id="baseDirTextField" alignment="0" max="32767" attributes="0"/>
+                      </Group>
+                      <EmptySpace max="-2" attributes="0"/>
+                  </Group>
               </Group>
-              <EmptySpace type="separate" max="-2" attributes="0"/>
-              <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="initdbBinaryPathTextField" alignment="0" max="32767" attributes="0"/>
-                  <Component id="postgresBinaryPathTextField" alignment="0" max="32767" attributes="0"/>
-                  <Component id="baseDirectoryTextField" alignment="0" max="32767" attributes="0"/>
-                  <Component id="databaseNameTextField" alignment="0" max="32767" attributes="0"/>
-                  <Component id="databaseDirTextField" alignment="0" max="32767" attributes="0"/>
-                  <Component id="hostnameTextField" alignment="0" max="32767" attributes="0"/>
-                  <Component id="portSpinner" alignment="0" max="32767" attributes="0"/>
-                  <Component id="usernameTextField" alignment="0" max="32767" attributes="0"/>
-                  <Component id="passwordPasswordField" alignment="0" max="32767" attributes="0"/>
-              </Group>
-              <EmptySpace min="-2" max="-2" attributes="0"/>
-          </Group>
-          <Group type="102" attributes="0">
-              <EmptySpace min="12" pref="12" max="-2" attributes="0"/>
-              <Component id="directorySeparator" max="32767" attributes="0"/>
-              <EmptySpace min="12" pref="12" max="-2" attributes="0"/>
-          </Group>
-          <Group type="102" alignment="1" attributes="0">
-              <EmptySpace pref="655" max="32767" attributes="0"/>
-              <Component id="downloadButton" min="-2" max="-2" attributes="0"/>
-              <EmptySpace min="12" pref="12" max="-2" attributes="0"/>
           </Group>
       </Group>
     </DimensionLayout>
@@ -60,8 +73,8 @@
           <Group type="102" alignment="0" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
-                  <Component id="baseDirectoryTextField" alignment="3" min="-2" max="-2" attributes="0"/>
-                  <Component id="baseDirectoryTextFieldLabel" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="baseDirTextField" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="baseDirTextFieldLabel" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
               <Component id="downloadButton" min="-2" max="-2" attributes="0"/>
@@ -74,6 +87,11 @@
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="postgresBinaryPathTextField" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="postgresBinaryPathTextFieldLabel" alignment="3" min="-2" max="-2" attributes="0"/>
+              </Group>
+              <EmptySpace max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="3" attributes="0">
+                  <Component id="createdbBinaryPathTextField" alignment="3" min="-2" max="-2" attributes="0"/>
+                  <Component id="createdbBinaryPathTextFieldLabel" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
               <Component id="directorySeparator" min="-2" pref="10" max="-2" attributes="0"/>
@@ -176,15 +194,25 @@
       <Properties>
         <Property name="text" type="java.lang.String" value="Download"/>
       </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="downloadButtonActionPerformed"/>
+      </Events>
     </Component>
-    <Component class="javax.swing.JTextField" name="baseDirectoryTextField">
+    <Component class="javax.swing.JTextField" name="baseDirTextField">
     </Component>
-    <Component class="javax.swing.JLabel" name="baseDirectoryTextFieldLabel">
+    <Component class="javax.swing.JLabel" name="baseDirTextFieldLabel">
       <Properties>
         <Property name="text" type="java.lang.String" value="Base directory"/>
       </Properties>
     </Component>
     <Component class="javax.swing.JSeparator" name="directorySeparator">
+    </Component>
+    <Component class="javax.swing.JTextField" name="createdbBinaryPathTextField">
+    </Component>
+    <Component class="javax.swing.JLabel" name="createdbBinaryPathTextFieldLabel">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="createdb binary path"/>
+      </Properties>
     </Component>
   </SubComponents>
 </Form>

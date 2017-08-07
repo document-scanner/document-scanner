@@ -127,6 +127,8 @@ public class DocumentScannerConf implements Serializable {
     private final static long SCANNER_OPEN_WAIT_TIME_DEFAULT = 15;
     private final static TimeUnit SCANNER_OPEN_WAIT_TIME_UNIT_DEFAULT = TimeUnit.SECONDS;
     private final static String TEXT_LANGUAGE_IDENTIFIER_DEFAULT = ValueDetectionService.retrieveLanguageIdentifier(LOCALE_DEFAULT);
+    private final static File BINARY_DOWNLOAD_DIR_DEFAULT = new File(CONFIG_DIR_DEFAULT,
+            "binaries");
     /**
      * The file the this configuration has been loaded from. Might be
      * {@code null} if no initial configuration file has been specified.
@@ -289,6 +291,13 @@ public class DocumentScannerConf implements Serializable {
     very intuitive.
     */
     private Map<Class<?>, List<Field>> fieldOrderMap = new HashMap<>();
+    /**
+     * A directory where to download binaries or source tarballs for extraction
+     * or building. Note that the base dir of the extracted binaries or the
+     * installation prefix after the build process should be set in specific
+     * configurations (like storage configurations).
+     */
+    private File binaryDownloadDir = BINARY_DOWNLOAD_DIR_DEFAULT;
 
     /**
      * Creates an configuration with default values.
@@ -397,7 +406,8 @@ public class DocumentScannerConf implements Serializable {
             boolean trimWhitespace,
             boolean rememberTrimWhitespace,
             String textLanguageIdentifier,
-            Map<Class<?>, List<Field>> fieldOrderMap
+            Map<Class<?>, List<Field>> fieldOrderMap,
+            File binariesDownloadDir
     ) {
         this.configFile = configFile;
         this.scannerName = scannerName;
@@ -445,6 +455,7 @@ public class DocumentScannerConf implements Serializable {
         this.rememberTrimWhitespace = rememberTrimWhitespace;
         this.textLanguageIdentifier = textLanguageIdentifier;
         this.fieldOrderMap = fieldOrderMap;
+        this.binaryDownloadDir = binariesDownloadDir;
     }
 
     /**
@@ -497,8 +508,17 @@ public class DocumentScannerConf implements Serializable {
                 documentScannerConf.isTrimWhitespace(),
                 documentScannerConf.isRememberTrimWhitespace(),
                 documentScannerConf.getTextLanguageIdentifier(),
-                documentScannerConf.getFieldOrderMap()
+                documentScannerConf.getFieldOrderMap(),
+                documentScannerConf.getBinaryDownloadDir()
         );
+    }
+
+    public File getBinaryDownloadDir() {
+        return binaryDownloadDir;
+    }
+
+    public void setBinaryDownloadDir(File binaryDownloadDir) {
+        this.binaryDownloadDir = binaryDownloadDir;
     }
 
     public Map<Class<?>, List<Field>> getFieldOrderMap() {

@@ -15,6 +15,7 @@
 package richtercloud.document.scanner.gui.storageconf;
 
 import java.io.IOException;
+import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.IssueHandler;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyEmbeddedPersistenceStorageConf;
@@ -31,13 +32,16 @@ public class DefaultStorageConfPanelFactory implements StorageConfPanelFactory {
     private final IssueHandler issueHandler;
     private final ConfirmMessageHandler confirmMessageHandler;
     private final boolean skipMD5SumCheck;
+    private final DocumentScannerConf documentScannerConf;
 
     public DefaultStorageConfPanelFactory(IssueHandler issueHandler,
             ConfirmMessageHandler confirmMessageHandler,
-            boolean skipMD5SumCheck) {
+            boolean skipMD5SumCheck,
+            DocumentScannerConf documentScannerConf) {
         this.issueHandler = issueHandler;
         this.confirmMessageHandler = confirmMessageHandler;
         this.skipMD5SumCheck = skipMD5SumCheck;
+        this.documentScannerConf = documentScannerConf;
     }
 
     @Override
@@ -48,7 +52,9 @@ public class DefaultStorageConfPanelFactory implements StorageConfPanelFactory {
         }else if(storageConf instanceof DerbyNetworkPersistenceStorageConf) {
             retValue = new DerbyNetworkPersistenceStorageConfPanel((DerbyNetworkPersistenceStorageConf) storageConf);
         }else if(storageConf instanceof PostgresqlAutoPersistenceStorageConf) {
-            retValue = new PostgresqlAutoPersistenceStorageConfPanel((PostgresqlAutoPersistenceStorageConf) storageConf);
+            retValue = new PostgresqlAutoPersistenceStorageConfPanel((PostgresqlAutoPersistenceStorageConf) storageConf,
+                    documentScannerConf,
+                    issueHandler);
         }else if(storageConf instanceof MySQLAutoPersistenceStorageConf) {
             try {
                 retValue = new MySQLAutoPersistenceStorageConfPanel((MySQLAutoPersistenceStorageConf) storageConf,

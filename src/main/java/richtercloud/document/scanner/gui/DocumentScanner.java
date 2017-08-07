@@ -946,19 +946,23 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
         if(storageConfCopy.equals(selectedStorageConf)) {
             LOGGER.info("no changes made to storage configuration");
-        }else{
-            //type of StorageConf changed
+            return;
+        }
+        //type of StorageConf changed
+        try {
+            LOGGER.debug("storage configuration changes, shutting down current storage");
+            this.storage.shutdown();
+            LOGGER.debug("creating new storage based on changed configuration");
+            this.storage = delegatingStorageFactory.create(selectedStorageConf);
+            //only set references to new storage and its configuration if
+            //successfully changed
             this.documentScannerConf.setStorageConf(selectedStorageConf);
-            try {
-                LOGGER.debug("storage configuration changes, shutting down current storage");
-                this.storage.shutdown();
-                LOGGER.debug("creating new storage based on changed configuration");
-                this.storage = delegatingStorageFactory.create(selectedStorageConf);
-            } catch (StorageCreationException ex) {
-                issueHandler.handle(new ExceptionMessage(ex));
-                return;
-            }
             mainPanel.setStorage(this.storage);
+        } catch (StorageCreationException ex) {
+            LOGGER.warn("exception during creation of storage after change of "
+                    + "storage configuration occured",
+                    ex);
+            issueHandler.handle(new ExceptionMessage(ex));
         }
     }//GEN-LAST:event_storageSelectionMenuItemActionPerformed
 
