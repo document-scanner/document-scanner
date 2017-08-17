@@ -21,13 +21,22 @@ import javax.persistence.ManyToOne;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import richtercloud.document.scanner.gui.Constants;
 import richtercloud.reflection.form.builder.FieldInfo;
+import richtercloud.reflection.form.builder.retriever.FieldGroup;
+import richtercloud.reflection.form.builder.retriever.FieldGroups;
+import richtercloud.reflection.form.builder.retriever.FieldPosition;
 
 /**
  *
  * @author richter
  */
 @MappedSuperclass
+@FieldGroups(fieldGroups = {@FieldGroup(name = Constants.LOCATION_AND_FORM_FIELD_GROUP_NAME,
+        beforeGroups = {Constants.TAGS_FIELD_GROUP_NAME, Constants.ID_FIELD_GROUP_NAME,
+                Constants.WORKFLOW_ITEM_FIELD_GROUP_NAME},
+        afterGroups = {Constants.TO_FROM_FIELD_GROUP_NAME,
+                Constants.COMMUNICATION_ITEM_DATE_FIELD_GROUP_NAME})})
 public abstract class AbstractDocument extends WorkflowItem {
     private static final long serialVersionUID = 1L;
     /**
@@ -37,6 +46,7 @@ public abstract class AbstractDocument extends WorkflowItem {
     @Temporal(TemporalType.TIMESTAMP)
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Received", description = "The date of the reception")
+    @FieldPosition(fieldGroup = Constants.COMMUNICATION_ITEM_DATE_FIELD_GROUP_NAME)
     private Date receptionDate;
     /**
      * Where the document can be found. {@code null} indicates that the location
@@ -44,6 +54,7 @@ public abstract class AbstractDocument extends WorkflowItem {
      */
     @ManyToOne(fetch = FetchType.EAGER)
     @FieldInfo(name = "Original location", description = "A pointer to the location of the original document")
+    @FieldPosition(fieldGroup = Constants.LOCATION_AND_FORM_FIELD_GROUP_NAME)
     private Location originalLocation = null;
     /**
      * Whether the original is definitely lost. The original location might be
@@ -53,6 +64,7 @@ public abstract class AbstractDocument extends WorkflowItem {
      */
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Original lost", description = "A flag indicating that the original is lost")
+    @FieldPosition(fieldGroup = Constants.LOCATION_AND_FORM_FIELD_GROUP_NAME)
     private boolean originalLost = false;
     /**
      * Whether this is a digital document only.
@@ -60,6 +72,7 @@ public abstract class AbstractDocument extends WorkflowItem {
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Digital only", description = "A flag indicating that "
             + "the document initially exists in digital form only")
+    @FieldPosition(fieldGroup = Constants.LOCATION_AND_FORM_FIELD_GROUP_NAME)
     private boolean digitalOnly = false;
 
     protected AbstractDocument() {

@@ -20,8 +20,12 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Inheritance;
 import javax.persistence.OneToMany;
+import richtercloud.document.scanner.gui.Constants;
 import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.reflection.form.builder.FieldInfo;
+import richtercloud.reflection.form.builder.retriever.FieldGroup;
+import richtercloud.reflection.form.builder.retriever.FieldGroups;
+import richtercloud.reflection.form.builder.retriever.FieldPosition;
 
 /**
  *
@@ -30,11 +34,14 @@ import richtercloud.reflection.form.builder.FieldInfo;
 @Entity
 @Inheritance
 @ClassInfo(name="Workflow")
+@FieldGroups(fieldGroups = @FieldGroup(name = Constants.WORKFLOW_FIELD_GROUP_NAME,
+        beforeGroups = {Constants.TAGS_FIELD_GROUP_NAME, Constants.ID_FIELD_GROUP_NAME}))
 public class Workflow extends Identifiable {
     private static final long serialVersionUID = 1L;
     @OneToMany(fetch = FetchType.EAGER)
     @FieldInfo(name = "Items", description = "The items which make up this "
             + "workflow")
+    @FieldPosition(fieldGroup = Constants.WORKFLOW_FIELD_GROUP_NAME)
     private List<WorkflowItem> items = new LinkedList<>();
 
     protected Workflow() {

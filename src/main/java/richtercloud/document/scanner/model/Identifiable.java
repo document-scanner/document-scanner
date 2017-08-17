@@ -30,8 +30,12 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import richtercloud.document.scanner.components.annotations.Invisible;
 import richtercloud.document.scanner.components.annotations.Tags;
+import richtercloud.document.scanner.gui.Constants;
 import richtercloud.reflection.form.builder.FieldInfo;
 import richtercloud.reflection.form.builder.jpa.annotations.UsedUpdate;
+import richtercloud.reflection.form.builder.retriever.FieldGroup;
+import richtercloud.reflection.form.builder.retriever.FieldGroups;
+import richtercloud.reflection.form.builder.retriever.FieldPosition;
 
 /**
  * A superclass for all entities which allows management of {@link Id} annotated
@@ -67,11 +71,16 @@ and only there.
 */
 @MappedSuperclass
 @Inheritance
+@FieldGroups(fieldGroups = {
+    @FieldGroup(name = Constants.ID_FIELD_GROUP_NAME),
+    @FieldGroup(name = Constants.TAGS_FIELD_GROUP_NAME,
+            beforeGroups = Constants.ID_FIELD_GROUP_NAME)})
 public abstract class Identifiable implements Serializable {
 
     private static final long serialVersionUID = 1L;
     @Id
     @FieldInfo(name = "ID", description = "The unique ID used for storage in the database (automatic and save generation is supported by components)")
+    @FieldPosition(fieldGroup = Constants.ID_FIELD_GROUP_NAME)
     /*
     internal implementation notes:
     - there should be no need for a @NotNull annotation because JPA provider
@@ -82,6 +91,7 @@ public abstract class Identifiable implements Serializable {
     private Long id;
     @Tags
     @FieldInfo(name="Tags", description = "A list of tags which can be freely associated with the entity")
+    @FieldPosition(fieldGroup = Constants.TAGS_FIELD_GROUP_NAME)
     @ElementCollection(fetch = FetchType.EAGER)
     /*
     internal implementation notes:

@@ -20,9 +20,13 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Inheritance;
 import javax.persistence.OneToOne;
+import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.reflection.form.builder.FieldInfo;
+import richtercloud.reflection.form.builder.retriever.FieldGroup;
+import richtercloud.reflection.form.builder.retriever.FieldGroups;
+import richtercloud.reflection.form.builder.retriever.FieldPosition;
 
 /**
  * Wraps the relationship between {@link Employment} and {@link Document}.
@@ -31,11 +35,14 @@ import richtercloud.reflection.form.builder.FieldInfo;
 @Entity
 @Inheritance
 @ClassInfo(name="Withdrawal")
+@FieldGroups(fieldGroups = @FieldGroup(name = Constants.WITHDRAWAL_FIELD_GROUP_NAME,
+        beforeGroups = {Constants.TAGS_FIELD_GROUP_NAME, Constants.ID_FIELD_GROUP_NAME}))
 public class Withdrawal extends Document {
     private static final long serialVersionUID = 1L;
     @OneToOne(fetch = FetchType.EAGER)
     @FieldInfo(name = "Employment", description = "The employment which has "
             + "been ended through this withdrawal")
+    @FieldPosition(fieldGroup = Constants.WITHDRAWAL_FIELD_GROUP_NAME)
     private Employment employment;
 
     protected Withdrawal() {

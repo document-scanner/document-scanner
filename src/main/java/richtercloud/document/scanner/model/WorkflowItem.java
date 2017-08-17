@@ -22,8 +22,12 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.ManyToMany;
 import richtercloud.document.scanner.components.annotations.CommunicationTree;
+import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.model.validator.ValidWorkflowItem;
 import richtercloud.reflection.form.builder.FieldInfo;
+import richtercloud.reflection.form.builder.retriever.FieldGroup;
+import richtercloud.reflection.form.builder.retriever.FieldGroups;
+import richtercloud.reflection.form.builder.retriever.FieldPosition;
 
 /**
  * In order to facilitate a lot of calculation and data managing the
@@ -42,12 +46,15 @@ not investigated further
 */
 @Entity
 @ValidWorkflowItem
+@FieldGroups(fieldGroups = {@FieldGroup(name = Constants.WORKFLOW_ITEM_FIELD_GROUP_NAME,
+        beforeGroups = {Constants.TAGS_FIELD_GROUP_NAME, Constants.ID_FIELD_GROUP_NAME})})
 public abstract class WorkflowItem extends CommunicationItem {
     private static final long serialVersionUID = 1L;
     @ManyToMany(fetch = FetchType.EAGER, mappedBy = "followingItems", cascade = CascadeType.PERSIST)
     @CommunicationTree
     @FieldInfo(name = "Previous items", description="Communication items to "
             + "which this item is a reply")
+    @FieldPosition(fieldGroup = Constants.WORKFLOW_ITEM_FIELD_GROUP_NAME)
     private List<WorkflowItem> previousItems = new LinkedList<>();
     @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
     //@CommunicationTree //there's no need to a second communication tree
@@ -55,6 +62,7 @@ public abstract class WorkflowItem extends CommunicationItem {
         //parameter of ManyToMany on previousItems
     @FieldInfo(name = "Following Items", description="Communication items "
             + "which have been sent before this list of replies")
+    @FieldPosition(fieldGroup = Constants.WORKFLOW_ITEM_FIELD_GROUP_NAME)
     private List<WorkflowItem> followingItems = new LinkedList<>();
 
     protected WorkflowItem() {

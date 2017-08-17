@@ -24,8 +24,10 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
+import richtercloud.document.scanner.gui.Constants;
 import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.reflection.form.builder.FieldInfo;
+import richtercloud.reflection.form.builder.retriever.FieldPosition;
 
 /**
  *
@@ -40,13 +42,16 @@ public class TelephoneCall extends WorkflowItem {
     @NotNull
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "End", description="The date and time of the end of the call")
+    @FieldPosition(fieldGroup = Constants.COMMUNICATION_ITEM_DATE_FIELD_GROUP_NAME)
     private Date theEnd;
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Transcription", description = "The transcription of the call")
+    @FieldPosition(fieldGroup = Constants.DATA_FIELD_GROUP_NAME)
     private String transcription;
     @NotNull
     @ManyToOne(fetch = FetchType.EAGER)
     @FieldInfo(name = "Telephone number", description = "The telephone number used for the call")
+    @FieldPosition(fieldGroup = Constants.TO_FROM_FIELD_GROUP_NAME)
     private TelephoneNumber telephoneNumber;
 
     protected TelephoneCall() {

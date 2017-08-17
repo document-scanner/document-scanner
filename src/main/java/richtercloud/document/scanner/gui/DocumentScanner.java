@@ -122,7 +122,6 @@ import richtercloud.reflection.form.builder.components.money.FailsafeAmountMoney
 import richtercloud.reflection.form.builder.components.money.FileAmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.jpa.IdGenerationException;
 import richtercloud.reflection.form.builder.jpa.IdGenerator;
-import richtercloud.reflection.form.builder.jpa.JPACachedFieldRetriever;
 import richtercloud.reflection.form.builder.jpa.JPAFieldRetriever;
 import richtercloud.reflection.form.builder.jpa.SequentialIdGenerator;
 import richtercloud.reflection.form.builder.jpa.WarningHandler;
@@ -141,13 +140,13 @@ import richtercloud.reflection.form.builder.jpa.storage.ReflectionFieldInitializ
 import richtercloud.reflection.form.builder.jpa.storage.copy.DelegatingStorageConfCopyFactory;
 import richtercloud.reflection.form.builder.jpa.typehandler.JPAEntityListTypeHandler;
 import richtercloud.reflection.form.builder.jpa.typehandler.factory.JPAAmountMoneyMappingTypeHandlerFactory;
+import richtercloud.reflection.form.builder.retriever.FieldOrderValidationException;
 import richtercloud.reflection.form.builder.storage.StorageConf;
 import richtercloud.reflection.form.builder.storage.StorageConfValidationException;
 import richtercloud.reflection.form.builder.storage.StorageCreationException;
 import richtercloud.reflection.form.builder.storage.copy.StorageConfCopyException;
 import richtercloud.reflection.form.builder.storage.copy.StorageConfCopyFactory;
 import richtercloud.reflection.form.builder.typehandler.TypeHandler;
-import richtercloud.validation.tools.FieldRetriever;
 
 /**
  * <h2>Status bar</h2>
@@ -242,7 +241,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     public static String generateApplicationWindowTitle(String title, String applicationName, String applicationVersion) {
         return String.format("%s - %s %s", title, applicationName, applicationVersion);
     }
-    private final FieldRetriever fieldRetriever = new JPACachedFieldRetriever();
     /*
     internal implementation notes:
     - can't be final because it's initialized in init because it depends on
@@ -268,8 +266,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private final StorageConfCopyFactory storageConfCopyFactory = new DelegatingStorageConfCopyFactory();
     private final QueryHistoryEntryStorageFactory entryStorageFactory;
     private final QueryHistoryEntryStorage entryStorage;
-    private final JPAFieldRetriever reflectionFormBuilderFieldRetriever;
-    private final FieldRetriever readOnlyFieldRetriever = new JPACachedFieldRetriever();
+    private final JPAFieldRetriever fieldRetriever;
     /**
      * Start to fetch results and warm up the cache after start.
      */
@@ -295,7 +292,13 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     internal implementation notes:
     - resources are opened in init methods only (see https://richtercloud.de:446/doku.php?id=programming:java#resource_handling for details)
     */
-    public DocumentScanner(DocumentScannerConf documentScannerConf) throws BinaryNotFoundException, IOException, StorageCreationException, ImageWrapperStorageDirExistsException, QueryHistoryEntryStorageCreationException, IdGenerationException {
+    public DocumentScanner(DocumentScannerConf documentScannerConf) throws BinaryNotFoundException,
+            IOException,
+            StorageCreationException,
+            ImageWrapperStorageDirExistsException,
+            QueryHistoryEntryStorageCreationException,
+            IdGenerationException,
+            FieldOrderValidationException {
         this.documentScannerConf = documentScannerConf;
 
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
@@ -318,8 +321,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         fileAppender.start();
         rootLogger.addAppender(fileAppender);
         LOGGER.info(String.format("logging to file '%s'", documentScannerConf.getLogFilePath()));
-
-        this.reflectionFormBuilderFieldRetriever = new DocumentScannerFieldRetriever(documentScannerConf);
 
         //check whether user allowed automatic bug tracking
         if(!documentScannerConf.isSkipUserAllowedAutoBugTrackingQuestion()) {
@@ -354,6 +355,9 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
         this.issueHandler = new DefaultIssueHandler(messageHandler,
                 bugHandler);
+
+        this.fieldRetriever = new DocumentScannerFieldRetriever(documentScannerConf,
+                Constants.ENTITY_AND_EMBEDDABLE_CLASSES);
 
         this.delegatingStorageFactory = new DelegatingPersistenceStorageFactory("richtercloud_document-scanner_jar_1.0-SNAPSHOTPU",
                 24, //@TODo: low limit no longer necessary after ImageWrapper is
@@ -456,7 +460,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         JPAAmountMoneyMappingTypeHandlerFactory fieldHandlerFactory = new JPAAmountMoneyMappingTypeHandlerFactory(storage,
                 Constants.INITIAL_QUERY_LIMIT_DEFAULT,
                 issueHandler,
-                readOnlyFieldRetriever);
+                fieldRetriever);
         this.typeHandlerMapping = fieldHandlerFactory.generateTypeHandlerMapping();
 
         this.queryComponentFieldInitializer = new ReflectionFieldInitializer(fieldRetriever) {
@@ -485,7 +489,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                     Constants.BIDIRECTIONAL_HELP_DIALOG_TITLE,
                     queryComponentFieldInitializer,
                     entryStorage,
-                    readOnlyFieldRetriever));
+                    fieldRetriever));
         //listen to window close button (x)
         this.addWindowListener(new WindowAdapter() {
             @Override
@@ -526,8 +530,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 warningHandlers,
                 queryComponentFieldInitializer,
                 entryStorage,
-                reflectionFormBuilderFieldRetriever,
-                readOnlyFieldRetriever
+                fieldRetriever
         );
         mainPanelPanel.add(this.mainPanel);
     }
@@ -1045,7 +1048,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                     confirmMessageHandler,
                     queryComponentFieldInitializer,
                     entryStorage,
-                    readOnlyFieldRetriever);
+                    fieldRetriever);
             entityEditingDialog.setVisible(true); //blocks
             List<Object> selectedEntities = entityEditingDialog.getSelectedEntities();
             if(selectedEntities.size() > Constants.SELECTED_ENTITIES_EDIT_WARNING) {
@@ -1616,12 +1619,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                     LOGGER.warn("aborting application start because user wants "
                             + "to investigate existing files in image storage "
                             + "directory");
-                    if(documentScanner != null) {
-                        documentScanner.setVisible(false);
-                        documentScanner.close();
-                        documentScanner.shutdownHook();
-                        documentScanner.dispose();
-                    }
+                    handleDocumentScannerShutdown(documentScanner);
                 } catch (BinaryNotFoundException ex) {
                     String message = "The tesseract binary isn't available. Install it on your system and make sure it's executable (in doubt check if tesseract runs on the console)";
                     LOGGER.error(message);
@@ -1629,22 +1627,22 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                             message,
                             JOptionPane.ERROR_MESSAGE,
                             "tesseract binary missing"));
-                    if(documentScanner != null) {
-                        documentScanner.setVisible(false);
-                        documentScanner.close();
-                        documentScanner.shutdownHook();
-                        documentScanner.dispose();
-                    }
+                    handleDocumentScannerShutdown(documentScanner);
                 } catch(StorageConfValidationException | StorageCreationException ex) {
                     LOGGER.error("An unexpected exception during initialization of storage occured, see nested exception for details", ex);
                     messageHandler.handle(new Message(ex,
                             JOptionPane.ERROR_MESSAGE));
-                    if(documentScanner != null) {
-                        documentScanner.setVisible(false);
-                        documentScanner.close();
-                        documentScanner.shutdownHook();
-                        documentScanner.dispose();
-                    }
+                    handleDocumentScannerShutdown(documentScanner);
+                } catch(FieldOrderValidationException ex) {
+                    String message = String.format("The underlying entity model "
+                            + "used for storage contains errors: %s",
+                            ExceptionUtils.getRootCauseMessage(ex));
+                    LOGGER.error(message,
+                            ex);
+                    messageHandler.handle(new Message(message,
+                            JOptionPane.ERROR_MESSAGE,
+                            "Entity model validation error"));
+                    handleDocumentScannerShutdown(documentScanner);
                 } catch(Throwable ex) {
                     LOGGER.error("An unexpected exception occured, see nested exception for details", ex);
                     if(documentScanner != null
@@ -1653,12 +1651,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                     }else {
                         handleExceptionInEventQueueThread(ex);
                     }
-                    if(documentScanner != null) {
-                        documentScanner.setVisible(false);
-                        documentScanner.close();
-                        documentScanner.shutdownHook();
-                        documentScanner.dispose();
-                    }
+                    handleDocumentScannerShutdown(documentScanner);
                     System.exit(SYSTEM_EXIT_ERROR_GENERAL);
                         //calling System.exit is the only way to be able to
                         //close DocumentScanner resources which have been
@@ -1667,6 +1660,15 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 }
             }
         });
+    }
+
+    private static void handleDocumentScannerShutdown(DocumentScanner documentScanner) {
+        if(documentScanner != null) {
+            documentScanner.setVisible(false);
+            documentScanner.close();
+            documentScanner.shutdownHook();
+            documentScanner.dispose();
+        }
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

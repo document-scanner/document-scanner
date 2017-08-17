@@ -23,23 +23,42 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
 import javax.validation.groups.Default;
+import richtercloud.document.scanner.gui.Constants;
 import richtercloud.reflection.form.builder.FieldInfo;
 import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
+import richtercloud.reflection.form.builder.retriever.FieldGroup;
+import richtercloud.reflection.form.builder.retriever.FieldGroups;
+import richtercloud.reflection.form.builder.retriever.FieldPosition;
 
 /**
  *
  * @author richter
  */
 @MappedSuperclass
+@FieldGroups(fieldGroups = {
+    @FieldGroup(name = Constants.TO_FROM_FIELD_GROUP_NAME, beforeGroups = {Constants.COMMUNICATION_ITEM_DATE_FIELD_GROUP_NAME,
+            Constants.DATA_FIELD_GROUP_NAME,
+            Constants.WORKFLOW_ITEM_FIELD_GROUP_NAME,
+            Constants.TAGS_FIELD_GROUP_NAME,
+            Constants.ID_FIELD_GROUP_NAME}),
+    @FieldGroup(name = Constants.COMMUNICATION_ITEM_DATE_FIELD_GROUP_NAME, beforeGroups = {Constants.WORKFLOW_ITEM_FIELD_GROUP_NAME,
+            Constants.TAGS_FIELD_GROUP_NAME,
+            Constants.ID_FIELD_GROUP_NAME}),
+    @FieldGroup(name = Constants.DATA_FIELD_GROUP_NAME, beforeGroups = {Constants.WORKFLOW_ITEM_FIELD_GROUP_NAME,
+            Constants.TAGS_FIELD_GROUP_NAME,
+            Constants.TAGS_FIELD_GROUP_NAME,
+            Constants.ID_FIELD_GROUP_NAME})})
 public abstract class CommunicationItem extends Identifiable  {
     private static final long serialVersionUID = 1L;
     @ManyToOne(fetch = FetchType.EAGER)
     @NotNull(groups = {Default.class, IdGenerationValidation.class})
     @FieldInfo(name = "Sender", description = "A reference to the sender")
+    @FieldPosition(fieldGroup = Constants.TO_FROM_FIELD_GROUP_NAME)
     private Company sender;
     @ManyToOne(fetch = FetchType.EAGER)
     @NotNull(groups = {Default.class, IdGenerationValidation.class})
     @FieldInfo(name = "Recipient", description = "A reference to the recipient")
+    @FieldPosition(fieldGroup = Constants.TO_FROM_FIELD_GROUP_NAME)
     private Company recipient;
     /**
      * The data and time (timestamp) indicated on the document. {@code null} if
@@ -48,6 +67,7 @@ public abstract class CommunicationItem extends Identifiable  {
     @Temporal(TemporalType.TIMESTAMP)
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Date", description = "The date indicated on the document")
+    @FieldPosition(fieldGroup = Constants.COMMUNICATION_ITEM_DATE_FIELD_GROUP_NAME)
     private Date theDate;
 
     protected CommunicationItem() {

@@ -25,10 +25,14 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.validation.constraints.NotNull;
 import javax.validation.groups.Default;
+import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.model.validator.ValidFinanceAccount;
 import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.reflection.form.builder.FieldInfo;
 import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
+import richtercloud.reflection.form.builder.retriever.FieldGroup;
+import richtercloud.reflection.form.builder.retriever.FieldGroups;
+import richtercloud.reflection.form.builder.retriever.FieldPosition;
 
 /**
  * Represents a financial account which either has the {@code iban} property
@@ -40,11 +44,14 @@ import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
 @Inheritance
 @ValidFinanceAccount(groups = {Default.class, IdGenerationValidation.class})
 @ClassInfo(name="Finance account")
+@FieldGroups(fieldGroups = @FieldGroup(name = Constants.FINANCE_ACCOUNT_FIELD_GROUP_NAME,
+        beforeGroups = {Constants.TAGS_FIELD_GROUP_NAME, Constants.ID_FIELD_GROUP_NAME}))
 public class FinanceAccount extends Identifiable {
     private static final long serialVersionUID = 1L;
     @ManyToOne(fetch = FetchType.EAGER)
     @NotNull
     @FieldInfo(name = "Owner", description = "The owner of the account")
+    @FieldPosition(fieldGroup = Constants.FINANCE_ACCOUNT_FIELD_GROUP_NAME)
     private Company owner;
     /**
      * Can be {@code null} if the BIC isn't necessary for the transfer for the
@@ -52,19 +59,24 @@ public class FinanceAccount extends Identifiable {
      */
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "BIC", description = "The Business Identifier Code (BIC) of the business where the account is managed")
+    @FieldPosition(fieldGroup = Constants.FINANCE_ACCOUNT_FIELD_GROUP_NAME)
     private String bic;
     @NotNull
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "IBAN", description = "The International Bank Account Number (IBAN) of the account")
+    @FieldPosition(fieldGroup = Constants.FINANCE_ACCOUNT_FIELD_GROUP_NAME)
     private String iban;
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "BLZ", description = "The german Bankleitzahl (in case BIC is omitted)")
+    @FieldPosition(fieldGroup = Constants.FINANCE_ACCOUNT_FIELD_GROUP_NAME)
     private String blz;
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Number", description = "The account number (in case IBAN is omitted)")
+    @FieldPosition(fieldGroup = Constants.FINANCE_ACCOUNT_FIELD_GROUP_NAME)
     private String number;
     @OneToMany(fetch = FetchType.EAGER)
     @FieldInfo(name = "Payments", description = "A list of payments sent and received with this account")
+    @FieldPosition(fieldGroup = Constants.FINANCE_ACCOUNT_FIELD_GROUP_NAME)
     private List<Payment> payments = new LinkedList<>();
 
     protected FinanceAccount() {

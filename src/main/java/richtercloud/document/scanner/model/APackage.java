@@ -22,8 +22,12 @@ import javax.persistence.Inheritance;
 import javax.persistence.ManyToOne;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import richtercloud.document.scanner.gui.Constants;
 import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.reflection.form.builder.FieldInfo;
+import richtercloud.reflection.form.builder.retriever.FieldGroup;
+import richtercloud.reflection.form.builder.retriever.FieldGroups;
+import richtercloud.reflection.form.builder.retriever.FieldPosition;
 
 /**
  * Describes part of a {@link Shipping} and is not itself a
@@ -37,6 +41,11 @@ internal implementation notes:
 @Entity
 @Inheritance
 @ClassInfo(name="Package")
+@FieldGroups(fieldGroups = {
+    @FieldGroup(name = Constants.DATE_FIELD_GROUP_NAME,
+            beforeGroups = {Constants.TAGS_FIELD_GROUP_NAME, Constants.ID_FIELD_GROUP_NAME}),
+    @FieldGroup(name = Constants.PACKAGE_FIELD_GROUP_NAME,
+            beforeGroups = {Constants.TAGS_FIELD_GROUP_NAME, Constants.ID_FIELD_GROUP_NAME})})
 public class APackage extends Identifiable {
     private static final long serialVersionUID = 1L;
     /**
@@ -50,12 +59,14 @@ public class APackage extends Identifiable {
     @Temporal(TemporalType.TIMESTAMP)
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Delivery", description = "The date of the delivery as specified by the delivery service")
+    @FieldPosition(fieldGroup = Constants.DATE_FIELD_GROUP_NAME)
     private Date deliveryDate;
     /**
      * The shipping reference this package belong to.
      */
     @ManyToOne(fetch = FetchType.EAGER)
     @FieldInfo(name = "Shipping", description = "The shipping of the package")
+    @FieldPosition(fieldGroup = Constants.PACKAGE_FIELD_GROUP_NAME)
     private Shipping shipping;
 
     protected APackage() {

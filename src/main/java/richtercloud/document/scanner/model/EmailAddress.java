@@ -24,10 +24,14 @@ import javax.persistence.FetchType;
 import javax.persistence.Inheritance;
 import javax.validation.constraints.NotNull;
 import javax.validation.groups.Default;
+import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.model.validator.ValidEmailAddress;
 import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.reflection.form.builder.FieldInfo;
 import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
+import richtercloud.reflection.form.builder.retriever.FieldGroup;
+import richtercloud.reflection.form.builder.retriever.FieldGroups;
+import richtercloud.reflection.form.builder.retriever.FieldPosition;
 
 /**
  *
@@ -36,15 +40,19 @@ import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
 @Entity
 @Inheritance
 @ClassInfo(name = "Email address")
+@FieldGroups(fieldGroups = @FieldGroup(name = Constants.EMAIL_ADDRESS_FIELD_GROUP_NAME,
+        beforeGroups = {Constants.TAGS_FIELD_GROUP_NAME, Constants.ID_FIELD_GROUP_NAME}))
 public class EmailAddress extends Identifiable {
     private static final long serialVersionUID = 1L;
     @NotNull(groups = {Default.class, IdGenerationValidation.class})
     @ValidEmailAddress
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Address", description = "The email address")
+    @FieldPosition(fieldGroup = Constants.EMAIL_ADDRESS_FIELD_GROUP_NAME)
     private String address;
     @ElementCollection(fetch = FetchType.EAGER)
     @FieldInfo(name = "PGP key IDs", description = "A list of PGP key IDs")
+    @FieldPosition(fieldGroup = Constants.EMAIL_ADDRESS_FIELD_GROUP_NAME)
     private List<String> pgpKeyIds = new LinkedList<>();
 
     protected EmailAddress() {

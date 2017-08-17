@@ -22,8 +22,12 @@ import javax.persistence.FetchType;
 import javax.persistence.Inheritance;
 import org.jscience.economics.money.Money;
 import org.jscience.physics.amount.Amount;
+import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.reflection.form.builder.FieldInfo;
+import richtercloud.reflection.form.builder.retriever.FieldGroup;
+import richtercloud.reflection.form.builder.retriever.FieldGroups;
+import richtercloud.reflection.form.builder.retriever.FieldPosition;
 
 /**
  * Encapsulates a bill. The date when the bill has been paid is indicated by the
@@ -32,6 +36,14 @@ import richtercloud.reflection.form.builder.FieldInfo;
  */
 @Entity
 @Inheritance
+@FieldGroups(fieldGroups = @FieldGroup(name = Constants.BILL_AMOUNT_FIELD_GROUP_NAME,
+        beforeGroups = {Constants.TAGS_FIELD_GROUP_NAME, Constants.ID_FIELD_GROUP_NAME,
+                Constants.MONEY_FIELD_GROUP_NAME,
+                Constants.WORKFLOW_ITEM_FIELD_GROUP_NAME,
+                Constants.LOCATION_AND_FORM_FIELD_GROUP_NAME,
+                Constants.COMMUNICATION_ITEM_DATE_FIELD_GROUP_NAME,
+                Constants.DATA_FIELD_GROUP_NAME},
+        afterGroups = Constants.IDENTIFIER_FIELD_GROUP_NAME))
 public class Bill extends Document {
     private static final long serialVersionUID = 1L;
     /**
@@ -41,6 +53,7 @@ public class Bill extends Document {
      */
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Amount", description = "The amount and currency of the bill")
+    @FieldPosition(fieldGroup = Constants.BILL_AMOUNT_FIELD_GROUP_NAME)
     private Amount<Money> amount;
 
     protected Bill() {

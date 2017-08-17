@@ -23,8 +23,12 @@ import javax.persistence.Inheritance;
 import javax.persistence.ManyToMany;
 import javax.validation.constraints.Size;
 import javax.validation.groups.Default;
+import richtercloud.document.scanner.gui.Constants;
 import richtercloud.reflection.form.builder.FieldInfo;
 import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
+import richtercloud.reflection.form.builder.retriever.FieldGroup;
+import richtercloud.reflection.form.builder.retriever.FieldGroups;
+import richtercloud.reflection.form.builder.retriever.FieldPosition;
 
 /**
  *
@@ -32,11 +36,14 @@ import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
  */
 @Entity
 @Inheritance
+@FieldGroups(fieldGroups = @FieldGroup(name = Constants.TRANSPORT_FIELD_GROUP_NAME,
+        beforeGroups = {Constants.TAGS_FIELD_GROUP_NAME, Constants.ID_FIELD_GROUP_NAME}))
 public class Transport extends Identifiable {
     private static final long serialVersionUID = 1L;
     @ManyToMany(fetch = FetchType.EAGER)
     @Size(min = 1, groups = {Default.class, IdGenerationValidation.class}) //otherwise creating a Transport doesn't make sense; used for id generation
     @FieldInfo(name = "Tickets", description = "A list of tickets which make up this transport")
+    @FieldPosition(fieldGroup = Constants.TRANSPORT_FIELD_GROUP_NAME)
     private List<TransportTicket> tickets = new LinkedList<>();
 
     protected Transport() {

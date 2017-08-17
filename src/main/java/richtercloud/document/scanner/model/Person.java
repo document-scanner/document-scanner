@@ -22,10 +22,12 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Inheritance;
 import javax.validation.groups.Default;
+import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.model.validator.NoEmptyEntriesList;
 import richtercloud.document.scanner.model.validator.ValidPerson;
 import richtercloud.reflection.form.builder.FieldInfo;
 import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
+import richtercloud.reflection.form.builder.retriever.FieldPosition;
 
 /**
  *
@@ -39,10 +41,12 @@ public class Person extends Company {
     @ElementCollection(fetch = FetchType.EAGER)
     @FieldInfo(name = "Firstnames", description = "All firstnames of the contact")
     @NoEmptyEntriesList
+    @FieldPosition(fieldGroup = Constants.COMPANY_FIELD_GROUP_NAME)
     private List<String> firstnames = new LinkedList<>();
     @ElementCollection(fetch = FetchType.EAGER)
     @FieldInfo(name = "Lastnames", description = "All lastnames of the contact")
     @NoEmptyEntriesList
+    @FieldPosition(fieldGroup = Constants.COMPANY_FIELD_GROUP_NAME)
     private List<String> lastnames = new LinkedList<>();
 
     protected Person() {

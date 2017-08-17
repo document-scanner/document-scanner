@@ -28,9 +28,13 @@ import javax.validation.constraints.Size;
 import javax.validation.groups.Default;
 import org.jscience.economics.money.Money;
 import org.jscience.physics.amount.Amount;
+import richtercloud.document.scanner.gui.Constants;
 import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.reflection.form.builder.FieldInfo;
 import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
+import richtercloud.reflection.form.builder.retriever.FieldGroup;
+import richtercloud.reflection.form.builder.retriever.FieldGroups;
+import richtercloud.reflection.form.builder.retriever.FieldPosition;
 
 /**
  * Is a {@link Bill} mainly in order to reuse information, but in order to be
@@ -49,6 +53,7 @@ import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
 @Entity
 @Inheritance
 @ClassInfo(name = "Transport ticket")
+@FieldGroups(fieldGroups = {@FieldGroup(name = Constants.TRANSPORT_TICKET_FIELD_GROUP_NAME)})
 public class TransportTicket extends Bill {
     private static final long serialVersionUID = 1L;
     @Size(min=1, groups = {Default.class, IdGenerationValidation.class})
@@ -57,6 +62,7 @@ public class TransportTicket extends Bill {
 //    @NoEmptyEntriesList(groups = {Default.class, IdGenerationValidation.class})
     @ElementCollection(fetch = FetchType.EAGER)
     @FieldInfo(name = "Waypoints", description = "A list of waypoints of the ticket (stations, cities, coordinates")
+    @FieldPosition(fieldGroup = Constants.TRANSPORT_TICKET_FIELD_GROUP_NAME)
     private List<String> waypoints = new LinkedList<>();
     /**
      * The date of the journey.
@@ -64,6 +70,7 @@ public class TransportTicket extends Bill {
     @Temporal(TemporalType.DATE)
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Journey date", description="The date of journey (if different from the date of buying the ticket)")
+    @FieldPosition(fieldGroup = Constants.COMMUNICATION_ITEM_DATE_FIELD_GROUP_NAME)
     /*
     internal implementation notes:
     - is allowed to be null because there might be small tickets without date

@@ -27,7 +27,11 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import richtercloud.document.scanner.gui.Constants;
 import richtercloud.reflection.form.builder.FieldInfo;
+import richtercloud.reflection.form.builder.retriever.FieldGroup;
+import richtercloud.reflection.form.builder.retriever.FieldGroups;
+import richtercloud.reflection.form.builder.retriever.FieldPosition;
 
 /**
  *
@@ -35,10 +39,13 @@ import richtercloud.reflection.form.builder.FieldInfo;
  */
 @Entity
 @Inheritance
+@FieldGroups(fieldGroups = {
+    @FieldGroup(name = Constants.SHIPPING_FIELD_GROUP_NAME)})
 public class Shipping extends WorkflowItem {
     private static final long serialVersionUID = 1L;
     @Size(min = 1) //otherwise creating a shipping doesn't make sense
     @FieldInfo(name = "Packages", description = "A list of packages which make this shipping")
+    @FieldPosition(fieldGroup = Constants.SHIPPING_FIELD_GROUP_NAME)
     @OneToMany(mappedBy = "shipping", fetch = FetchType.EAGER)
     private List<APackage> packages = new LinkedList<>();
     /**
@@ -49,6 +56,7 @@ public class Shipping extends WorkflowItem {
     @NotNull
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Delivery", description = "The date of the delivery as specified by the delivery service")
+    @FieldPosition(fieldGroup = Constants.SHIPPING_FIELD_GROUP_NAME)
     private Date deliveryDate;
 
     protected Shipping() {

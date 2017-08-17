@@ -30,9 +30,13 @@ import javax.validation.constraints.NotNull;
 import javax.validation.groups.Default;
 import richtercloud.document.scanner.components.annotations.OCRResult;
 import richtercloud.document.scanner.components.annotations.ScanResult;
+import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.reflection.form.builder.FieldInfo;
 import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
+import richtercloud.reflection.form.builder.retriever.FieldGroup;
+import richtercloud.reflection.form.builder.retriever.FieldGroups;
+import richtercloud.reflection.form.builder.retriever.FieldPosition;
 
 /**
  *
@@ -40,10 +44,25 @@ import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
  */
 @Entity
 @Inheritance
+@FieldGroups(fieldGroups = {
+        @FieldGroup(name = Constants.MONEY_FIELD_GROUP_NAME,
+                beforeGroups = {Constants.ID_FIELD_GROUP_NAME, Constants.TAGS_FIELD_GROUP_NAME,
+                        Constants.WORKFLOW_ITEM_FIELD_GROUP_NAME},
+                afterGroups = Constants.DATA_FIELD_GROUP_NAME),
+        @FieldGroup(name = Constants.IDENTIFIER_FIELD_GROUP_NAME,
+                beforeGroups = {Constants.ID_FIELD_GROUP_NAME, Constants.TAGS_FIELD_GROUP_NAME,
+                        Constants.MONEY_FIELD_GROUP_NAME,
+                        Constants.WORKFLOW_ITEM_FIELD_GROUP_NAME,
+                        Constants.LOCATION_AND_FORM_FIELD_GROUP_NAME,
+                        Constants.COMMUNICATION_ITEM_DATE_FIELD_GROUP_NAME,
+                        Constants.DATA_FIELD_GROUP_NAME,
+                        Constants.TO_FROM_FIELD_GROUP_NAME})})
 public class Document extends AbstractDocument {
     private static final long serialVersionUID = 1L;
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Comment", description = "An optional comment about the document or its reception")
+    @FieldPosition(fieldGroup = Constants.IDENTIFIER_FIELD_GROUP_NAME,
+            afterFields = {"identifier"})
     private String comment;
     /**
      * a name for the document or a few words describing the context
@@ -51,6 +70,7 @@ public class Document extends AbstractDocument {
     @NotNull(groups = {Default.class, IdGenerationValidation.class})
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Identifier", description = "A name for the document or a few words describing it (choosen by the user)")
+    @FieldPosition(fieldGroup = Constants.IDENTIFIER_FIELD_GROUP_NAME)
     private String identifier;
     @ScanResult
     @Lob //avoids `org.postgresql.util.PSQLException: ERROR: value too long for type character varying(255)` in PostgreSQL
@@ -59,6 +79,7 @@ public class Document extends AbstractDocument {
         //- Using ElementCollection instead of Basic because it might bring
         //advantages in speed of lazy fetching
     @FieldInfo(name = "Scan data", description = "The binary data of the scan")
+    @FieldPosition(fieldGroup = Constants.DATA_FIELD_GROUP_NAME)
     /*
     internal implementation notes:
     - using a java.sql.Blob doesn't seem to make sense because there's no
@@ -75,9 +96,11 @@ public class Document extends AbstractDocument {
     //to avoid a truncation error where any type (VARCHAR, CLOB, etc.) is cut to
     //length 255 which is the default
     @FieldInfo(name= "Scan OCR text", description = "The text which has been retrieved by OCR")
+    @FieldPosition(fieldGroup = Constants.DATA_FIELD_GROUP_NAME)
     private String scanOCRText;
     @ManyToMany(mappedBy = "documents", fetch = FetchType.EAGER)
     @FieldInfo(name = "Payments", description = "A list of payments associated with this document")
+    @FieldPosition(fieldGroup = Constants.MONEY_FIELD_GROUP_NAME)
     private List<Payment> payments = new LinkedList<>();
 
     protected Document() {

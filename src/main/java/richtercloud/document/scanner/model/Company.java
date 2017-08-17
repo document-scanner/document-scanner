@@ -26,9 +26,13 @@ import javax.persistence.OneToMany;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.validation.groups.Default;
+import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.model.validator.NoEmptyEntriesList;
 import richtercloud.reflection.form.builder.FieldInfo;
 import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
+import richtercloud.reflection.form.builder.retriever.FieldGroup;
+import richtercloud.reflection.form.builder.retriever.FieldGroups;
+import richtercloud.reflection.form.builder.retriever.FieldPosition;
 
 /**
  *
@@ -36,6 +40,8 @@ import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
  */
 @Entity
 @Inheritance
+@FieldGroups(fieldGroups = {@FieldGroup(name = Constants.COMPANY_FIELD_GROUP_NAME,
+        beforeGroups = {Constants.TAGS_FIELD_GROUP_NAME, Constants.ID_FIELD_GROUP_NAME})})
 public class Company extends Identifiable {
     private static final long serialVersionUID = 1L;
     @FieldInfo(name = "Name", description = "A name for the contact "
@@ -46,17 +52,20 @@ public class Company extends Identifiable {
     @NotNull(groups = {Default.class, IdGenerationValidation.class})
     @Size(min = 1)
     @Basic(fetch = FetchType.EAGER)
+    @FieldPosition(fieldGroup = Constants.COMPANY_FIELD_GROUP_NAME)
     private String name;
     @FieldInfo(name = "Complete name list", description = "A list of all names "
             + "associated with this contact")
     @ElementCollection(fetch = FetchType.EAGER)
     @NoEmptyEntriesList
+    @FieldPosition(fieldGroup = Constants.COMPANY_FIELD_GROUP_NAME)
     private List<String> allNames = new LinkedList<>();
     @FieldInfo(name = "Addresses", description = "Multiple contacts can have "
             + "the same address (shared office) and a contact can have multiple "
             + "addresses.")
     @ElementCollection(fetch = FetchType.EAGER)
     @NoEmptyEntriesList
+    @FieldPosition(fieldGroup = Constants.COMPANY_FIELD_GROUP_NAME)
     private List<Address> addresses = new LinkedList<>();
     @FieldInfo(name = "Email addresses", description = "One company can have "
             + "multiple email addresses.")
@@ -66,16 +75,19 @@ public class Company extends Identifiable {
     - It's very unlikely that two contacts share the same email address.
     */
     @NoEmptyEntriesList
+    @FieldPosition(fieldGroup = Constants.COMPANY_FIELD_GROUP_NAME)
     private List<EmailAddress> emails = new LinkedList<>();
     @FieldInfo(name = "Finance accounts", description = "A list of finance "
             + "accounts owned by the contact or somehow associated with it.")
     @OneToMany(fetch = FetchType.EAGER)
     @NoEmptyEntriesList
+    @FieldPosition(fieldGroup = Constants.COMPANY_FIELD_GROUP_NAME)
     private List<FinanceAccount> accounts = new LinkedList<>();
     @FieldInfo(name = "Telephone numbers", description = "A list of telephone "
             + "numbers owned by the contact or somehow associated with it.")
     @OneToMany(fetch = FetchType.EAGER)
     @NoEmptyEntriesList
+    @FieldPosition(fieldGroup = Constants.COMPANY_FIELD_GROUP_NAME)
     private List<TelephoneNumber> telephoneNumbers = new LinkedList<>();
 
     protected Company() {

@@ -20,8 +20,12 @@ import javax.persistence.FetchType;
 import javax.persistence.Inheritance;
 import javax.validation.constraints.NotNull;
 import javax.validation.groups.Default;
+import richtercloud.document.scanner.gui.Constants;
 import richtercloud.reflection.form.builder.FieldInfo;
 import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
+import richtercloud.reflection.form.builder.retriever.FieldGroup;
+import richtercloud.reflection.form.builder.retriever.FieldGroups;
+import richtercloud.reflection.form.builder.retriever.FieldPosition;
 
 /**
  *
@@ -29,12 +33,14 @@ import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
  */
 @Entity
 @Inheritance
+@FieldGroups(fieldGroups = @FieldGroup(name = Constants.LOCATION_FIELD_GROUP_NAME))
 public class Location extends Identifiable {
     private static final long serialVersionUID = 1L;
     @NotNull(groups = {Default.class, IdGenerationValidation.class}) //used for
             //id generation
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Description", description = "A description of the location identifying the location uniquely")
+    @FieldPosition(fieldGroup = Constants.LOCATION_FIELD_GROUP_NAME)
     private String description;
 
     protected Location() {

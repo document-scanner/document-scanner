@@ -24,8 +24,12 @@ import javax.persistence.Inheritance;
 import javax.persistence.ManyToOne;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
+import richtercloud.document.scanner.gui.Constants;
 import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.reflection.form.builder.FieldInfo;
+import richtercloud.reflection.form.builder.retriever.FieldGroup;
+import richtercloud.reflection.form.builder.retriever.FieldGroups;
+import richtercloud.reflection.form.builder.retriever.FieldPosition;
 
 /**
  *
@@ -42,6 +46,8 @@ number isn't essential and can be queried easily
 @Entity
 @Inheritance
 @ClassInfo(name = "Telephone number")
+@FieldGroups(fieldGroups = @FieldGroup(name = Constants.TELEPHONE_NUMBER_FIELD_GROUP_NAME,
+        beforeGroups = {Constants.TAGS_FIELD_GROUP_NAME, Constants.ID_FIELD_GROUP_NAME}))
 public class TelephoneNumber extends Identifiable {
     private static final long serialVersionUID = 1L;
     public final static int TYPE_LANDLINE = 1;
@@ -57,6 +63,7 @@ public class TelephoneNumber extends Identifiable {
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Country code", description = "The country code of the "
             + "telephone number")
+    @FieldPosition(fieldGroup = Constants.TELEPHONE_NUMBER_FIELD_GROUP_NAME)
     private int countryCode;
     /**
      * The prefix of the phone number which has different meaning in different
@@ -67,6 +74,7 @@ public class TelephoneNumber extends Identifiable {
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Prefix", description = "The prefix of the number (can "
             + "have different meaning for different countries)")
+    @FieldPosition(fieldGroup = Constants.TELEPHONE_NUMBER_FIELD_GROUP_NAME)
     private int thePrefix;
     /**
      * The part of the number after the thePrefix which can include room numbers
@@ -78,6 +86,7 @@ public class TelephoneNumber extends Identifiable {
     @FieldInfo(name = "Number", description = "The remaining part of the "
             + "number after the prefix (including room numbers or prefix and "
             + "suffix in USA)")
+    @FieldPosition(fieldGroup = Constants.TELEPHONE_NUMBER_FIELD_GROUP_NAME)
     private int number;
     /**
      * A contact representing a telephone service provider. Might be
@@ -86,6 +95,7 @@ public class TelephoneNumber extends Identifiable {
     @ManyToOne(fetch = FetchType.EAGER)
     @FieldInfo(name = "Provider", description = "The provider which services "
             + "this telephone number")
+    @FieldPosition(fieldGroup = Constants.TELEPHONE_NUMBER_FIELD_GROUP_NAME)
     private Company provider;
     /**
      * One of {@link #TYPE_FAX}, {@link #TYPE_LANDLINE} or {@link #TYPE_VOIP} to
@@ -93,6 +103,7 @@ public class TelephoneNumber extends Identifiable {
      */
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Type", description =  "The type of the telephone number")
+    @FieldPosition(fieldGroup = Constants.TELEPHONE_NUMBER_FIELD_GROUP_NAME)
     private int type;
 
     protected TelephoneNumber() {

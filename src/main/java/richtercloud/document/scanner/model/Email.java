@@ -22,8 +22,12 @@ import javax.persistence.FetchType;
 import javax.persistence.Inheritance;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import richtercloud.document.scanner.gui.Constants;
 import richtercloud.reflection.form.builder.ClassInfo;
 import richtercloud.reflection.form.builder.FieldInfo;
+import richtercloud.reflection.form.builder.retriever.FieldGroup;
+import richtercloud.reflection.form.builder.retriever.FieldGroups;
+import richtercloud.reflection.form.builder.retriever.FieldPosition;
 
 /**
  *
@@ -32,16 +36,22 @@ import richtercloud.reflection.form.builder.FieldInfo;
 @Entity
 @Inheritance
 @ClassInfo(name="Email")
+@FieldGroups(fieldGroups = {@FieldGroup(name = Constants.EMAIL_FIELD_GROUP_NAME,
+        beforeGroups = {Constants.TAGS_FIELD_GROUP_NAME, Constants.ID_FIELD_GROUP_NAME,
+                Constants.WORKFLOW_ITEM_FIELD_GROUP_NAME})})
 public class Email extends WorkflowItem {
     private static final long serialVersionUID = 1L;
     @ManyToOne(fetch = FetchType.EAGER)
     @FieldInfo(name = "Sender address", description = "The email address of the sender")
+    @FieldPosition(fieldGroup = Constants.EMAIL_FIELD_GROUP_NAME)
     private EmailAddress senderAddress;
     @OneToMany(fetch = FetchType.EAGER)
     @FieldInfo(name = "CC recipients", description = "The email addresses of CC recipients")
+    @FieldPosition(fieldGroup = Constants.EMAIL_FIELD_GROUP_NAME)
     private List<EmailAddress> ccRecipientAddresses = new LinkedList<>();
     @OneToMany(fetch = FetchType.EAGER)
     @FieldInfo(name = "BCC recipients", description = "The email addresses of BCC recipients")
+    @FieldPosition(fieldGroup = Constants.EMAIL_FIELD_GROUP_NAME)
     private List<EmailAddress> bccRecipientAddresses = new LinkedList<>();
 
     protected Email() {

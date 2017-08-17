@@ -24,8 +24,12 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
 import javax.validation.groups.Default;
+import richtercloud.document.scanner.gui.Constants;
 import richtercloud.reflection.form.builder.FieldInfo;
 import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
+import richtercloud.reflection.form.builder.retriever.FieldGroup;
+import richtercloud.reflection.form.builder.retriever.FieldGroups;
+import richtercloud.reflection.form.builder.retriever.FieldPosition;
 
 /**
  *
@@ -33,21 +37,26 @@ import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
  */
 @Entity
 @Inheritance
+@FieldGroups(fieldGroups = @FieldGroup(name = Constants.EMPLOYMENT_FIELD_GROUP_NAME,
+        beforeGroups = {Constants.TAGS_FIELD_GROUP_NAME, Constants.ID_FIELD_GROUP_NAME}))
 public class Employment extends Identifiable {
     private static final long serialVersionUID = 1L;
     @ManyToOne(fetch = FetchType.EAGER)
     @NotNull(groups = {Default.class, IdGenerationValidation.class})
     @FieldInfo(name = "Company", description = "The company where the employment took place")
+    @FieldPosition(fieldGroup = Constants.EMPLOYMENT_FIELD_GROUP_NAME)
     private Company company;
     @Temporal(TemporalType.TIMESTAMP)
     @NotNull(groups = {Default.class, IdGenerationValidation.class})
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Begin", description = "The date of the beginning of the employment")
+    @FieldPosition(fieldGroup = Constants.EMPLOYMENT_FIELD_GROUP_NAME)
     private Date theBegin;
     @Temporal(TemporalType.TIMESTAMP)
     @NotNull(groups = {Default.class, IdGenerationValidation.class})
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "End", description = "The date of the end of the employment")
+    @FieldPosition(fieldGroup = Constants.EMPLOYMENT_FIELD_GROUP_NAME)
     private Date theEnd;
 
     protected Employment() {

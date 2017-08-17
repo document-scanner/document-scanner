@@ -17,9 +17,11 @@ package richtercloud.document.scanner.gui;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Set;
 import richtercloud.document.scanner.components.annotations.Invisible;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
-import richtercloud.reflection.form.builder.jpa.OrderedJPACachedFieldRetriever;
+import richtercloud.reflection.form.builder.jpa.retriever.JPAOrderedCachedFieldRetriever;
+import richtercloud.reflection.form.builder.retriever.FieldOrderValidationException;
 
 /**
  * A {@link FieldRetriever} which removes fields annotated with
@@ -28,10 +30,13 @@ import richtercloud.reflection.form.builder.jpa.OrderedJPACachedFieldRetriever;
  *
  * @author richter
  */
-public class DocumentScannerFieldRetriever extends OrderedJPACachedFieldRetriever {
+public class DocumentScannerFieldRetriever extends JPAOrderedCachedFieldRetriever {
 
-    public DocumentScannerFieldRetriever(DocumentScannerConf documentScannerConf) {
-        super(documentScannerConf.getFieldOrderMap());
+    public DocumentScannerFieldRetriever(DocumentScannerConf documentScannerConf,
+            Set<Class<?>> entityClasses) throws FieldOrderValidationException {
+        super(documentScannerConf.getFieldOrderMap(),
+                entityClasses,
+                true);
     }
 
     @Override

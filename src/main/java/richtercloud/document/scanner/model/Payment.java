@@ -31,8 +31,12 @@ import javax.validation.constraints.NotNull;
 import javax.validation.groups.Default;
 import org.jscience.economics.money.Money;
 import org.jscience.physics.amount.Amount;
+import richtercloud.document.scanner.gui.Constants;
 import richtercloud.reflection.form.builder.FieldInfo;
 import richtercloud.reflection.form.builder.jpa.panels.IdGenerationValidation;
+import richtercloud.reflection.form.builder.retriever.FieldGroup;
+import richtercloud.reflection.form.builder.retriever.FieldGroups;
+import richtercloud.reflection.form.builder.retriever.FieldPosition;
 
 /**
  *
@@ -47,12 +51,14 @@ sender and recipient properties.
 */
 @Entity
 @Inheritance
+@FieldGroups(fieldGroups = @FieldGroup(name = Constants.PAYMENT_FIELD_GROUP_NAME))
 public class Payment extends Identifiable {
     private static final long serialVersionUID = 1L;
     @NotNull
     @Basic(fetch = FetchType.EAGER)
     @FieldInfo(name = "Amount", description = "The amount and currency of the payment")
     @Column(length = 8191) //avoid truncation error
+    @FieldPosition(fieldGroup = Constants.PAYMENT_FIELD_GROUP_NAME)
     private Amount<Money> amount;
     /**
      * The exact date and time of (the transfer) of the payment.
@@ -66,6 +72,7 @@ public class Payment extends Identifiable {
     @Temporal(TemporalType.TIMESTAMP)
     @NotNull(groups = {Default.class, IdGenerationValidation.class})
     @FieldInfo(name = "Date", description = "The date of the payment")
+    @FieldPosition(fieldGroup = Constants.PAYMENT_FIELD_GROUP_NAME)
     private Date theDate;
     /**
      * The sender to the payment.
@@ -78,6 +85,7 @@ public class Payment extends Identifiable {
     @OneToOne(fetch = FetchType.EAGER)
     @NotNull(groups = {Default.class, IdGenerationValidation.class})
     @FieldInfo(name = "Sender", description = "The account from which the payment has been sent")
+    @FieldPosition(fieldGroup = Constants.PAYMENT_FIELD_GROUP_NAME)
     private FinanceAccount sender;
     /**
      * The recipient of the payment.
@@ -90,12 +98,15 @@ public class Payment extends Identifiable {
     @OneToOne(fetch = FetchType.EAGER)
     @NotNull(groups = {Default.class, IdGenerationValidation.class})
     @FieldInfo(name = "Recipient", description = "The account to which the payment has been sent")
+    @FieldPosition(fieldGroup = Constants.PAYMENT_FIELD_GROUP_NAME,
+            afterFields = "sender")
     private FinanceAccount recipient;
     /**
      * where the payment is associated in
      */
     @ManyToMany(fetch = FetchType.EAGER)
     @FieldInfo(name = "Documents", description = "A list of associated documents")
+    @FieldPosition(fieldGroup = Constants.PAYMENT_FIELD_GROUP_NAME)
     private List<Document> documents = new LinkedList<>();
 
     protected Payment() {
