@@ -21,6 +21,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.gui.Constants;
+import richtercloud.document.scanner.gui.DocumentScanner;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.jhbuild.java.wrapper.ActionOnMissingBinary;
 import richtercloud.jhbuild.java.wrapper.ArchitectureNotRecognizedException;
@@ -28,7 +30,10 @@ import richtercloud.jhbuild.java.wrapper.BuildFailureException;
 import richtercloud.jhbuild.java.wrapper.ExtractionException;
 import richtercloud.jhbuild.java.wrapper.JHBuildJavaWrapper;
 import richtercloud.jhbuild.java.wrapper.MissingSystemBinary;
+import richtercloud.jhbuild.java.wrapper.ModuleBuildFailureException;
 import richtercloud.jhbuild.java.wrapper.OSNotRecognizedException;
+import richtercloud.jhbuild.java.wrapper.download.Downloader;
+import richtercloud.jhbuild.java.wrapper.download.GUIDownloader;
 import richtercloud.message.handler.ExceptionMessage;
 import richtercloud.message.handler.IssueHandler;
 import richtercloud.reflection.form.builder.jpa.storage.PostgresqlAutoPersistenceStorageConf;
@@ -258,11 +263,18 @@ public class PostgresqlAutoPersistenceStorageConfPanel extends StorageConfPanel<
                     INSTALL_PREFIX_DIR_NAME);
             File downloadDir = new File(documentScannerConf.getBinaryDownloadDir(),
                     DOWNLOAD_DIR_NAME);
+            Downloader downloader = new GUIDownloader(SwingUtilities.getWindowAncestor(this),
+                DocumentScanner.generateApplicationWindowTitle("Downloading MySQL",
+                        Constants.APP_NAME,
+                        Constants.APP_VERSION), //downloadDialogTitle
+                "Downloading MySQL", //labelText
+                "Downloading MySQL" //progressBarText
+            );
             JHBuildJavaWrapper jHBuildJavaWrapper = new JHBuildJavaWrapper(installationPrefixDir,
                     downloadDir,
                     ActionOnMissingBinary.DOWNLOAD,
                     ActionOnMissingBinary.DOWNLOAD,
-                    SwingUtilities.getWindowAncestor(this), //downloadDialogParent
+                    downloader, //downloader
                     false, //skipMD5Check
                     false, //silenceStdout
                     false, //silenceStderr
@@ -280,7 +292,14 @@ public class PostgresqlAutoPersistenceStorageConfPanel extends StorageConfPanel<
                         jHBuildJavaWrapper.installModuleset("postgresql-9.5.7" //moduleName
                         );
                         return true;
-                    } catch (OSNotRecognizedException | ArchitectureNotRecognizedException | IOException | ExtractionException | InterruptedException | MissingSystemBinary | BuildFailureException ex) {
+                    } catch (OSNotRecognizedException
+                            | ArchitectureNotRecognizedException
+                            | IOException
+                            | ExtractionException
+                            | InterruptedException
+                            | MissingSystemBinary
+                            | BuildFailureException
+                            | ModuleBuildFailureException ex) {
                         //all not critical
                         issueHandler.handle(new ExceptionMessage(ex));
                         return false;

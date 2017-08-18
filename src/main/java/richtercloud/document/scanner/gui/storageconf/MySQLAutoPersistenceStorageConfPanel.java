@@ -27,14 +27,16 @@ import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.gui.DocumentScanner;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.jhbuild.java.wrapper.ArchitectureNotRecognizedException;
-import richtercloud.jhbuild.java.wrapper.DownloadCombi;
-import richtercloud.jhbuild.java.wrapper.DownloadFailureCallbackReation;
-import richtercloud.jhbuild.java.wrapper.DownloadTools;
 import richtercloud.jhbuild.java.wrapper.ExtractionException;
 import richtercloud.jhbuild.java.wrapper.ExtractionMode;
 import richtercloud.jhbuild.java.wrapper.MD5SumCheckUnequalsCallbackReaction;
 import richtercloud.jhbuild.java.wrapper.OSNotRecognizedException;
 import richtercloud.jhbuild.java.wrapper.SupportedOS;
+import richtercloud.jhbuild.java.wrapper.download.DownloadCombi;
+import richtercloud.jhbuild.java.wrapper.download.DownloadFailureCallbackReation;
+import richtercloud.jhbuild.java.wrapper.download.DownloadTools;
+import richtercloud.jhbuild.java.wrapper.download.Downloader;
+import richtercloud.jhbuild.java.wrapper.download.GUIDownloader;
 import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.ExceptionMessage;
 import richtercloud.message.handler.IssueHandler;
@@ -351,13 +353,14 @@ public class MySQLAutoPersistenceStorageConfPanel extends StorageConfPanel<MySQL
     }//GEN-LAST:event_downloadButtonActionPerformed
 
     protected boolean mySQLDownload(DownloadCombi downloadCombi) throws IOException, ExtractionException {
-        boolean retValue = DownloadTools.downloadFile(downloadCombi,
-                SwingUtilities.getWindowAncestor(this), //downloadDialogParent
+        Downloader downloader = new GUIDownloader(SwingUtilities.getWindowAncestor(this), //downloadDialogParent
                 DocumentScanner.generateApplicationWindowTitle("Downloading MySQL",
                         Constants.APP_NAME,
                         Constants.APP_VERSION), //downloadDialogTitle
                 "Downloading MySQL", //labelText
-                "Downloading MySQL", //progressBarText
+                "Downloading MySQL" //progressBarText
+        );
+        boolean retValue = downloader.downloadFile(downloadCombi,
                 skipMD5SumCheck,
             ex -> {
                 DownloadFailureCallbackReation answer = confirmMessageHandler.confirm(new Message(String.format(
