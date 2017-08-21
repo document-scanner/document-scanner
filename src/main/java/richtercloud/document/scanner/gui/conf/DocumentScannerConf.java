@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.jscience.economics.money.Currency;
 import richtercloud.document.scanner.components.DateOCRResultFormatter;
 import richtercloud.document.scanner.components.OCRResultFormatter;
@@ -310,7 +310,7 @@ public class DocumentScannerConf implements Serializable {
         this.availableStorageConfs.add(new DerbyNetworkPersistenceStorageConf(Constants.ENTITY_CLASSES,
                 HOSTNAME_DEFAULT,
                 SCHEME_CHECKSUM_FILE_DEFAULT));
-        Pair<String, String> bestInitialPostgresqlBasePathPair = PostgresqlAutoPersistenceStorageConf.findBestInitialPostgresqlBasePath();
+        Triple<String, String, String> bestInitialPostgresqlBasePathPair = PostgresqlAutoPersistenceStorageConf.findBestInitialPostgresqlBasePath();
         this.availableStorageConfs.add(new PostgresqlAutoPersistenceStorageConf(Constants.ENTITY_CLASSES,
                 LOCALHOST_TEMPLATE, //hostname
                 "document-scanner",
@@ -319,14 +319,16 @@ public class DocumentScannerConf implements Serializable {
                 "document-scanner", //databaseName
                 SCHEME_CHECKSUM_FILE_DEFAULT,
                 POSTGRESQL_DATABASE_DIR_DEFAULT,
-                bestInitialPostgresqlBasePathPair.getKey(),
-                bestInitialPostgresqlBasePathPair.getValue(),
+                bestInitialPostgresqlBasePathPair.getLeft(),
+                bestInitialPostgresqlBasePathPair.getMiddle(),
+                bestInitialPostgresqlBasePathPair.getRight(),
                 "createdb" //createdbBinaryPath
         ));
         this.availableStorageConfs.add(new MySQLAutoPersistenceStorageConf(Constants.ENTITY_CLASSES,
                 LOCALHOST_TEMPLATE, //hostname
-                "document-scanner",
-                MYSQL_DATABASE_DIR_DEFAULT,
+                "document-scanner", //username
+                DATABASE_NAME_DEFAULT, //databaseName
+                MYSQL_DATABASE_DIR_DEFAULT, //databaseDir
                 SCHEME_CHECKSUM_FILE_DEFAULT
         ));
         this.oCREngineConf = OCR_ENGINE_CONF_DEFAULT;
