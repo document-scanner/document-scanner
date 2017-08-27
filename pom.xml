@@ -20,6 +20,8 @@
         <richtercloud.document.scanner.version>1.0-beta4</richtercloud.document.scanner.version>
             <!-- for izpack plugin below (property for better visibility) -->
         <richtercloud.document.scanner.tika.version>1.16</richtercloud.document.scanner.tika.version>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
     <repositories>
         <repository>
@@ -277,6 +279,11 @@
             <artifactId>mockito-all</artifactId>
             <version>1.10.19</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+            <version>1.1</version>
         </dependency>
     </dependencies>
     <build>

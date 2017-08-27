@@ -20,6 +20,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComboBox;
@@ -36,8 +37,9 @@ import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.ifaces.EntityPanel;
 import richtercloud.document.scanner.ifaces.OCREngineRecognitionException;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanelFetcher;
-import richtercloud.document.scanner.valuedetectionservice.DelegatingValueDetectionService;
+import richtercloud.document.scanner.valuedetectionservice.DefaultValueDetectionServiceExecutor;
 import richtercloud.document.scanner.valuedetectionservice.DelegatingValueDetectionServiceFactory;
+import richtercloud.document.scanner.valuedetectionservice.ResultFetchingException;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionResult;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionService;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceConf;
@@ -49,6 +51,7 @@ import richtercloud.message.handler.Message;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
 import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
+import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 
 /**
  *
@@ -57,7 +60,7 @@ import richtercloud.reflection.form.builder.fieldhandler.FieldHandler;
 public class DefaultEntityPanel extends EntityPanel {
     private static final long serialVersionUID = 1L;
     private final static Logger LOGGER = LoggerFactory.getLogger(DefaultEntityPanel.class);
-    private DelegatingValueDetectionService valueDetectionService;
+    private DefaultValueDetectionServiceExecutor valueDetectionServiceExecutor;
     private final ValueDetectionReflectionFormBuilder reflectionFormBuilder;
     private final IssueHandler issueHandler;
     private final DocumentScannerConf documentScannerConf;
@@ -70,7 +73,7 @@ public class DefaultEntityPanel extends EntityPanel {
      * which one might display without retrieving them again from the OCR
      * result.
      */
-    private List<ValueDetectionResult<?>> detectionResults;
+    private Map<ValueDetectionService, List<ValueDetectionResult>> detectionResults;
     /**
      * The Apache Tika language detector used for value detection.
      */
@@ -82,6 +85,7 @@ public class DefaultEntityPanel extends EntityPanel {
     thread-safety of LanguageDetector
     */
     private final LanguageDetector languageDetector;
+    private final PersistenceStorage<Long> storage;
 
     /**
      * Creates new form EntityPanel.
@@ -97,7 +101,8 @@ public class DefaultEntityPanel extends EntityPanel {
             FieldHandler fieldHandler,
             IssueHandler issueHandler,
             DocumentScannerConf documentScannerConf,
-            ReflectionFormPanelTabbedPane reflectionFormPanelTabbedPane) throws InstantiationException,
+            ReflectionFormPanelTabbedPane reflectionFormPanelTabbedPane,
+            PersistenceStorage<Long> storage) throws InstantiationException,
             IllegalAccessException,
             IllegalArgumentException,
             InvocationTargetException,
@@ -132,6 +137,7 @@ public class DefaultEntityPanel extends EntityPanel {
             //clarification at https://issues.apache.org/jira/browse/TIKA-2439
             //- takes a long time, so languageDetector should be initialized in
             //constructor
+        this.storage = storage;
         applyValueDetectionServiceSelection();
     }
 
@@ -147,23 +153,25 @@ public class DefaultEntityPanel extends EntityPanel {
     public void applyValueDetectionServiceSelection() throws ValueDetectionServiceCreationException {
         ValueDetectionServiceFactory valueDetectionServiceConfFactory = new DelegatingValueDetectionServiceFactory(amountMoneyAdditionalCurrencyStorage,
                 amountMoneyExchangeRateRetriever,
-                issueHandler);
+                issueHandler,
+                storage);
         Set<ValueDetectionService<?>> valueDetectionServices = new HashSet<>();
         for(ValueDetectionServiceConf serviceConf : documentScannerConf.getSelectedValueDetectionServiceConfs()) {
             ValueDetectionService<?> valueDetectionService = valueDetectionServiceConfFactory.createService(serviceConf);
             valueDetectionServices.add(valueDetectionService);
         }
-        this.valueDetectionService = new DelegatingValueDetectionService(valueDetectionServices,
+        this.valueDetectionServiceExecutor = new DefaultValueDetectionServiceExecutor(valueDetectionServices,
                 issueHandler);
     }
 
-    public ValueDetectionService<?> getValueDetectionService() {
-        return valueDetectionService;
+    @Override
+    public DefaultValueDetectionServiceExecutor<?> getValueDetectionServiceExecutor() {
+        return valueDetectionServiceExecutor;
     }
 
     @Override
-    public List<ValueDetectionResult<?>> getDetectionResults() {
-        return Collections.unmodifiableList(detectionResults);
+    public Map<ValueDetectionService, List<ValueDetectionResult>> getDetectionResults() {
+        return Collections.unmodifiableMap(detectionResults);
     }
 
     @Override
@@ -197,7 +205,7 @@ public class DefaultEntityPanel extends EntityPanel {
     }
 
     private void valueDetectionNonGUI(OCRSelectPanelPanelFetcher oCRSelectPanelPanelFetcher,
-            boolean forceRenewal) {
+            boolean forceRenewal) throws ResultFetchingException {
         if(detectionResults == null || forceRenewal == true) {
             final String oCRResult;
             try {
@@ -229,7 +237,7 @@ public class DefaultEntityPanel extends EntityPanel {
                     languageIdentifier = languageResults.get(0).getLanguage();
                     assert languageIdentifier != null && !languageIdentifier.isEmpty();
                 }
-                detectionResults = valueDetectionService.fetchResults(oCRResult,
+                detectionResults = valueDetectionServiceExecutor.execute(oCRResult,
                         languageIdentifier);
             }
         }
@@ -248,8 +256,11 @@ public class DefaultEntityPanel extends EntityPanel {
                 Field field = pair.getValue();
                 comboBoxModel.removeAllElements();
                 comboBoxModel.addElement(null);
-                for(ValueDetectionResult<?> detectionResult : detectionResults) {
-                    if(detectionResult.getValue().getClass().isAssignableFrom(field.getType())) {
+                for(ValueDetectionService valueDetectionService : detectionResults.keySet()) {
+                    if(!valueDetectionService.supportsField(field)) {
+                        continue;
+                    }
+                    for(ValueDetectionResult detectionResult : detectionResults.get(valueDetectionService)) {
                         comboBoxModel.addElement(detectionResult);
                     }
                 }

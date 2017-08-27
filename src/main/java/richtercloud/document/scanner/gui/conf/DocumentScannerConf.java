@@ -40,6 +40,7 @@ import richtercloud.document.scanner.ocr.TesseractOCREngineConf;
 import richtercloud.document.scanner.valuedetectionservice.ContactValueDetectionServiceConf;
 import richtercloud.document.scanner.valuedetectionservice.CurrencyFormatValueDetectionServiceConf;
 import richtercloud.document.scanner.valuedetectionservice.DateFormatValueDetectionServiceConf;
+import richtercloud.document.scanner.valuedetectionservice.IdentifierValueDetectionServiceConf;
 import richtercloud.document.scanner.valuedetectionservice.TrieCurrencyFormatValueDetectionServiceConf;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionService;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceConf;
@@ -337,6 +338,7 @@ public class DocumentScannerConf implements Serializable {
         this.selectedValueDetectionServiceConfs.add(new TrieCurrencyFormatValueDetectionServiceConf());
         this.selectedValueDetectionServiceConfs.add(new CurrencyFormatValueDetectionServiceConf());
         this.selectedValueDetectionServiceConfs.add(new DateFormatValueDetectionServiceConf());
+        this.selectedValueDetectionServiceConfs.add(new IdentifierValueDetectionServiceConf());
     }
 
     public void validate() {

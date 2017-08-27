@@ -72,7 +72,7 @@ public class DateFormatValueDetectionServiceTest {
      * Test of getResults method, of class DateFormatValueDetectionService.
      */
     @Test
-    public void testGetResults() {
+    public void testGetResults() throws ResultFetchingException {
         System.out.println("getResults");
         Date date = new Date();
         Calendar calendar = Calendar.getInstance();

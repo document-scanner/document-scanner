@@ -153,7 +153,7 @@ public class DefaultMainPanel extends MainPanel {
     private final Set<Class<?>> entityClasses;
     private final Class<?> primaryClassSelection;
     private final Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping;
-    private PersistenceStorage storage;
+    private PersistenceStorage<Long> storage;
     private final IssueHandler issueHandler;
     private final ConfirmMessageHandler confirmMessageHandler;
     private final AmountMoneyCurrencyStorage amountMoneyCurrencyStorage;
@@ -181,7 +181,7 @@ public class DefaultMainPanel extends MainPanel {
 
     public DefaultMainPanel(Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
-            PersistenceStorage storage,
+            PersistenceStorage<Long> storage,
             AmountMoneyCurrencyStorage amountMoneyAdditionalCurrencyStorage,
             AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever,
             IssueHandler issueHandler,
@@ -219,7 +219,7 @@ public class DefaultMainPanel extends MainPanel {
     public DefaultMainPanel(Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
             Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping,
-            PersistenceStorage storage,
+            PersistenceStorage<Long> storage,
             AmountMoneyCurrencyStorage amountMoneyCurrencyStorage,
             AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever,
             IssueHandler issueHandler,
@@ -647,7 +647,8 @@ public class DefaultMainPanel extends MainPanel {
                     fieldHandler,
                     issueHandler,
                     documentScannerConf,
-                    reflectionFormPanelTabbedPane);
+                    reflectionFormPanelTabbedPane,
+                    storage);
             OCRSelectComponent oCRSelectComponent = new DefaultOCRSelectComponent(oCRSelectPanelPanel,
                     entityPanel,
                     oCREngine,

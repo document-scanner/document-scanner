@@ -22,6 +22,10 @@ import java.util.List;
  * {@link #handle0(java.util.List, java.util.List, int) } is invoked on each of
  * them.
  *
+ * This class allows easy sharing of code between
+ * {@link AbstractFormatValueDetectionService} and
+ * {@link TrieCurrencyFormatValueDetectionService} and possibly others.
+ *
  * @author richter
  */
 public abstract class InputSplitHandler {
@@ -48,7 +52,8 @@ public abstract class InputSplitHandler {
      * @param index the index of the outer loop representing the progress of the
      * processing
      */
-    protected abstract void handle0(List<String> inputSplitsSubs, List<String> inputSplits, int index);
+    protected abstract void handle0(List<String> inputSplitsSubs,
+            List<String> inputSplits, int index);
 
     protected abstract int getMaxWords();
 }

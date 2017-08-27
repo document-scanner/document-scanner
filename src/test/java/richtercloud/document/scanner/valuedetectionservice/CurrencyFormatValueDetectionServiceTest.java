@@ -60,7 +60,9 @@ public class CurrencyFormatValueDetectionServiceTest {
      * Test of checkResult method, of class CurrencyFormatValueDetectionService.
      */
     @Test
-    public void testCheckResult() throws AmountMoneyCurrencyStorageException, AmountMoneyExchangeRateRetrieverException {
+    public void testCheckResult() throws AmountMoneyCurrencyStorageException,
+            AmountMoneyExchangeRateRetrieverException,
+            ResultFetchingException {
         String inputSub = "1,2 €";
         List<String> inputSplits = new LinkedList<>(Arrays.asList(inputSub));
         int i = 0;

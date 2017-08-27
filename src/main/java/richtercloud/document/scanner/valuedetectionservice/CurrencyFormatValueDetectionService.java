@@ -14,6 +14,7 @@
  */
 package richtercloud.document.scanner.valuedetectionservice;
 
+import java.lang.reflect.Field;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.LinkedList;
@@ -28,7 +29,6 @@ import org.jscience.physics.amount.Amount;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.FormatUtils;
-import richtercloud.message.handler.ExceptionMessage;
 import richtercloud.message.handler.IssueHandler;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorageException;
@@ -98,7 +98,7 @@ public class CurrencyFormatValueDetectionService extends AbstractFormatValueDete
     @SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
     protected List<ValueDetectionResult<Amount<Money>>> checkResult(String inputSub,
             List<String> inputSplits,
-            int index) {
+            int index) throws ResultFetchingException {
         List<ValueDetectionResult<Amount<Money>>> retValue = new LinkedList<>();
         for(Map.Entry<NumberFormat, Set<Locale>> currencyFormat : FormatUtils.getDisjointCurrencyFormatsEntySet()) {
             try {
@@ -135,10 +135,7 @@ public class CurrencyFormatValueDetectionService extends AbstractFormatValueDete
             }catch(ParseException ex) {
                 //skip to next format
             } catch (AmountMoneyCurrencyStorageException | AmountMoneyExchangeRateRetrieverException ex) {
-                LOGGER.error("unexpected exception during retrieval of money exchange rate",
-                        ex);
-                getIssueHandler().handleUnexpectedException(new ExceptionMessage(ex));
-                throw new RuntimeException(ex);
+                throw new ResultFetchingException(ex);
             }
         }
         getListeners().stream().forEach((listener) -> {
@@ -158,5 +155,11 @@ public class CurrencyFormatValueDetectionService extends AbstractFormatValueDete
     @Override
     public boolean supportsLanguage(String languageIdentifier) {
         return true;
+    }
+
+    @Override
+    public boolean supportsField(Field field) {
+        boolean retValue = Amount.class.isAssignableFrom(field.getType());
+        return retValue;
     }
 }

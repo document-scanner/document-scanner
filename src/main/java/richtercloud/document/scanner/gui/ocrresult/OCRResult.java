@@ -15,7 +15,10 @@
 package richtercloud.document.scanner.gui.ocrresult;
 
 /**
+ * This class allows to distinguish values which need formatting and those which
+ * don't.
  *
+ * @see FormatOCRResult
  * @author richter
  */
 public class OCRResult {
@@ -26,6 +29,11 @@ public class OCRResult {
     }
 
     public String getoCRResult() {
+        return oCRResult;
+    }
+
+    @Override
+    public String toString() {
         return oCRResult;
     }
 }

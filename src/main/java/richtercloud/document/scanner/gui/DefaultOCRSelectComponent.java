@@ -35,7 +35,7 @@ import richtercloud.document.scanner.ifaces.OCREngine;
 import richtercloud.document.scanner.ifaces.OCRSelectComponent;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanel;
 import richtercloud.document.scanner.ifaces.ProgressButton;
-import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceListener;
+import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceExecutorListener;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceUpdateEvent;
 import richtercloud.message.handler.ExceptionMessage;
 import richtercloud.message.handler.IssueHandler;
@@ -258,7 +258,7 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
                 }
             }
         });
-        entityPanel.getValueDetectionService().addListener(new ValueDetectionServiceListener() {
+        entityPanel.getValueDetectionServiceExecutor().addListener(new ValueDetectionServiceExecutorListener() {
             @Override
             public void onUpdate(ValueDetectionServiceUpdateEvent updateEvent) {
                 float progress = updateEvent.getWordNumber()/(float)updateEvent.getWordCount();

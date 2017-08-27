@@ -14,6 +14,7 @@
  */
 package richtercloud.document.scanner.valuedetectionservice;
 
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -165,5 +166,11 @@ public class ContactValueDetectionService extends AbstractValueDetectionService<
     @Override
     public boolean supportsLanguage(String languageIdentifier) {
         return true;
+    }
+
+    @Override
+    public boolean supportsField(Field field) {
+        boolean retValue = Company.class.isAssignableFrom(field.getType());
+        return retValue;
     }
 }

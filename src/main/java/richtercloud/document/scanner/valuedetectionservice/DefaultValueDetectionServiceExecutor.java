@@ -15,11 +15,12 @@
 package richtercloud.document.scanner.valuedetectionservice;
 
 import java.util.HashMap;
-import java.util.LinkedHashSet;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -29,14 +30,22 @@ import richtercloud.message.handler.ExceptionMessage;
 import richtercloud.message.handler.IssueHandler;
 
 /**
- * Wraps the {@link ValueDetectionService} interface around multiple instances
- * which allows to track a common progress of multiple services.
+ * Allows to execute a set of {@link ValueDetectionService}s and track their
+ * common, i.e. average, progress.
  *
  * @author richter
  * @param <T> the type of {@link ValueDetectionResult} to enforce
  */
-public class DelegatingValueDetectionService<T> extends AbstractValueDetectionService<T> {
-    private final static Logger LOGGER = LoggerFactory.getLogger(DelegatingValueDetectionService.class);
+/*
+internal implementation notes:
+- This class was a ValueDetectionService before called
+DelegatingValueDetectionService which allowed to reuse the progress listener
+interface, but caused trouble when ValueDetectionService.supportsField was
+introduced because it callers might want to know which value detection service
+detected the value and this requires unintuitive changes to the interface.
+*/
+public class DefaultValueDetectionServiceExecutor<T> implements ValueDetectionServiceExecutor<T> {
+    private final static Logger LOGGER = LoggerFactory.getLogger(DefaultValueDetectionServiceExecutor.class);
     private final Set<ValueDetectionService<T>> valueDetectionServices;
     /**
      * Used for mapping {@code wordCount} and {@code wordNumber} properties of
@@ -47,8 +56,9 @@ public class DelegatingValueDetectionService<T> extends AbstractValueDetectionSe
     private final List<ValueDetectionResult<T>> progressResults = new LinkedList<>();
     private final Map<ValueDetectionService<?>, Boolean> progressFinishedMap = new HashMap<>();
     private final IssueHandler issueHandler;
+    private final Set<ValueDetectionServiceExecutorListener<T>> listeners = new HashSet<>();
 
-    public DelegatingValueDetectionService(Set<ValueDetectionService<T>> valueDetectionServices,
+    public DefaultValueDetectionServiceExecutor(Set<ValueDetectionService<T>> valueDetectionServices,
             IssueHandler issueHandler) {
         this.valueDetectionServices = valueDetectionServices;
         this.issueHandler = issueHandler;
@@ -67,7 +77,7 @@ public class DelegatingValueDetectionService<T> extends AbstractValueDetectionSe
                         LOGGER.error(String.format("wordNumber > wordCount for value detection service %s", valueDetectionService));
                         return;
                     }
-                    getListeners().forEach(listener -> {
+                    listeners.forEach(listener -> {
                         listener.onUpdate(new ValueDetectionServiceUpdateEvent<>(progressResults,
                                 wordCount,
                                 wordNumber));
@@ -77,7 +87,7 @@ public class DelegatingValueDetectionService<T> extends AbstractValueDetectionSe
                 @Override
                 public void onFinished() {
                     progressFinishedMap.put(valueDetectionService, true);
-                    for(ValueDetectionService<?> valueDetectionService : DelegatingValueDetectionService.this.valueDetectionServices) {
+                    for(ValueDetectionService<?> valueDetectionService : DefaultValueDetectionServiceExecutor.this.valueDetectionServices) {
                         if(!progressFinishedMap.containsKey(valueDetectionService)
                             //check whether key is contained is sufficient
                             //because only true is ever put in the map
@@ -85,7 +95,7 @@ public class DelegatingValueDetectionService<T> extends AbstractValueDetectionSe
                             return;
                         }
                     }
-                    getListeners().forEach(listener -> {
+                    listeners.forEach(listener -> {
                         listener.onFinished();
                     });
                 }
@@ -94,27 +104,39 @@ public class DelegatingValueDetectionService<T> extends AbstractValueDetectionSe
     }
 
     @Override
-    @SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
-    public LinkedHashSet<ValueDetectionResult<T>> fetchResults0(final String input,
-            String languageIdentifier) {
+    public void addListener(ValueDetectionServiceExecutorListener<T> listener) {
+        listeners.add(listener);
+    }
+
+    @Override
+    public void removeListener(ValueDetectionServiceExecutorListener<T> listener) {
+        listeners.remove(listener);
+    }
+
+    protected Set<ValueDetectionServiceExecutorListener<T>> getListeners() {
+        return listeners;
+    }
+
+    @Override
+    public Map<ValueDetectionService<T>, List<ValueDetectionResult<T>>> execute(final String input,
+            String languageIdentifier) throws ResultFetchingException {
         progressWordCountMap.clear();
         progressWordNumberMap.clear();
         progressFinishedMap.clear();
         progressResults.clear();
-        final LinkedHashSet<ValueDetectionResult<T>> retValue = new LinkedHashSet<>();
+        final Map<ValueDetectionService<T>, List<ValueDetectionResult<T>>> retValue = new HashMap<>();
         ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         for(final ValueDetectionService<T> valueDetectionService : valueDetectionServices) {
-            Runnable runnable = new Runnable() {
-                @Override
-                public void run() {
-                    List<ValueDetectionResult<T>> serviceResults = valueDetectionService.fetchResults(input,
-                            languageIdentifier);
-                    //not necessary to prevent values to get added to retValue because
-                    //retValue after cancelation isn't specified
-                    synchronized(retValue) {
-                        retValue.addAll(serviceResults);
-                    }
+            Callable<Void> runnable = () -> {
+                List<ValueDetectionResult<T>> serviceResults = valueDetectionService.fetchResults(input,
+                        languageIdentifier);
+                //not necessary to prevent values to get added to retValue because
+                //retValue after cancelation isn't specified
+                synchronized(retValue) {
+                    retValue.put(valueDetectionService,
+                            serviceResults);
                 }
+                return null;
             };
             executorService.submit(runnable);
         }
@@ -122,30 +144,16 @@ public class DelegatingValueDetectionService<T> extends AbstractValueDetectionSe
         try {
             executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
         } catch (InterruptedException ex) {
-            LOGGER.error("unexpected exception during fetching of value detection results",
-                    ex);
             issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
-            throw new RuntimeException(ex);
+            throw new ResultFetchingException(ex);
         }
         return retValue;
     }
 
     @Override
-    public void cancelFetch() {
-        super.cancelFetch();
+    public void cancelExecute() {
         for(ValueDetectionService<?> valueDetectionService : valueDetectionServices) {
             valueDetectionService.cancelFetch();
         }
-    }
-
-    /**
-     * Supports all languages.
-     *
-     * @param languageIdentifier an arbitrary language identifier can be passed
-     * @return always {@code true}
-     */
-    @Override
-    public boolean supportsLanguage(String languageIdentifier) {
-        return true;
     }
 }

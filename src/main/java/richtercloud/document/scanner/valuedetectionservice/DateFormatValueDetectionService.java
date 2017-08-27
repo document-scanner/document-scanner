@@ -14,6 +14,7 @@
  */
 package richtercloud.document.scanner.valuedetectionservice;
 
+import java.lang.reflect.Field;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.Date;
@@ -105,5 +106,11 @@ public class DateFormatValueDetectionService extends AbstractFormatValueDetectio
     @Override
     public boolean supportsLanguage(String languageIdentifier) {
         return true;
+    }
+
+    @Override
+    public boolean supportsField(Field field) {
+        boolean retValue = Date.class.isAssignableFrom(field.getType());
+        return retValue;
     }
 }

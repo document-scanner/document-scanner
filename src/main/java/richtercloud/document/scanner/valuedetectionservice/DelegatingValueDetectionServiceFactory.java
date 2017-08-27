@@ -20,6 +20,7 @@ import richtercloud.document.scanner.valuedetectionservice.annotations.Factory;
 import richtercloud.message.handler.IssueHandler;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyCurrencyStorage;
 import richtercloud.reflection.form.builder.components.money.AmountMoneyExchangeRateRetriever;
+import richtercloud.reflection.form.builder.jpa.storage.PersistenceStorage;
 
 /**
  *
@@ -30,10 +31,12 @@ public class DelegatingValueDetectionServiceFactory implements ValueDetectionSer
     private final CurrencyFormatValueDetectionServiceFactory currencyFormatValueDetectionServiceConfFactory;
     private final TrieCurrencyFormatValueDetectionServiceFactory trieCurrencyFormatValueDetectionServiceConfFactory;
     private final DateFormatValueDetectionServiceFactory dateFormatValueDetectionServiceConfFactory;
+    private final IdentifierValueDetectionServiceFactory identifierValueDetectionServiceFactory;
 
     public DelegatingValueDetectionServiceFactory(AmountMoneyCurrencyStorage amountMoneyCurrencyStorage,
             AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever,
-            IssueHandler issueHandler) {
+            IssueHandler issueHandler,
+            PersistenceStorage<Long> storage) {
         this.contactValueDetectionServiceConfFactory = new ContactValueDetectionServiceFactory();
         this.currencyFormatValueDetectionServiceConfFactory = new CurrencyFormatValueDetectionServiceFactory(amountMoneyCurrencyStorage,
                 amountMoneyExchangeRateRetriever,
@@ -42,6 +45,8 @@ public class DelegatingValueDetectionServiceFactory implements ValueDetectionSer
                 amountMoneyExchangeRateRetriever,
                 issueHandler);
         this.dateFormatValueDetectionServiceConfFactory = new DateFormatValueDetectionServiceFactory(issueHandler);
+        this.identifierValueDetectionServiceFactory = new IdentifierValueDetectionServiceFactory(issueHandler,
+                storage);
     }
 
     @Override
@@ -55,6 +60,8 @@ public class DelegatingValueDetectionServiceFactory implements ValueDetectionSer
             retValue = trieCurrencyFormatValueDetectionServiceConfFactory.createService((TrieCurrencyFormatValueDetectionServiceConf) serviceConf);
         }else if(serviceConf instanceof DateFormatValueDetectionServiceConf) {
             retValue = dateFormatValueDetectionServiceConfFactory.createService((DateFormatValueDetectionServiceConf) serviceConf);
+        }else if(serviceConf instanceof IdentifierValueDetectionServiceConf) {
+            retValue = identifierValueDetectionServiceFactory.createService((IdentifierValueDetectionServiceConf) serviceConf);
         }else {
             Factory confFactory = serviceConf.getClass().getAnnotation(Factory.class);
             if(confFactory != null) {

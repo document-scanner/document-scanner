@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -75,7 +76,7 @@ public abstract class AbstractFormatValueDetectionService<T> extends AbstractVal
     */
     protected abstract List<ValueDetectionResult<T>> checkResult(String inputSub,
             List<String> inputSplits,
-            int index);
+            int index) throws ResultFetchingException;
 
     /**
      * Might return different {@link ValueDetectionResult}s with
@@ -86,38 +87,35 @@ public abstract class AbstractFormatValueDetectionService<T> extends AbstractVal
      * @return
      */
     @Override
-    @SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
-    public LinkedHashSet<ValueDetectionResult<T>> fetchResults0(String input,
-            String languageIdentifier) {
+    protected LinkedHashSet<ValueDetectionResult<T>> fetchResults0(String input,
+            String languageIdentifier) throws ResultFetchingException {
         final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() //2 threads per processor cause only 50 % CPU usage, 1 per CPU reaches 80-90 %
                 );
             //Executors.newCachedThreadPool() causes OutOfMemeoryException
         final LinkedHashSet<ValueDetectionResult<T>> retValues = new LinkedHashSet<>();
-        final List<String> inputSplits = new ArrayList<>(Arrays.asList(input.split("[\\s]+")));
+        final List<String> inputSplits = generateInputSplits(input);
         InputSplitHandler inputSplitHandler = new InputSplitHandler() {
             @Override
             protected void handle0(final List<String> inputSplitsSubs,
                     final List<String> inputSplits,
                     final int index) {
                 final String inputSub = String.join(" ", inputSplitsSubs);
-                Runnable thread = new Runnable() {
-                    @Override
-                    public void run() {
-                        if(isCanceled()) {
-                            //not necessary to use canceled in synchronized
-                            //block because it doesn't matter if one thread more
-                            //or less is started
-                            LOGGER.info(String.format("skipping work on input substring '%s' because operation has been canceled", inputSub));
-                            return;
-                        }
-                        LOGGER.trace(String.format("working on input substring '%s'", inputSub));
-                        List<ValueDetectionResult<T>> results = checkResult(inputSub, inputSplits, index);
-                        if(!results.isEmpty()) {
-                            synchronized(retValues) {
-                                retValues.addAll(results);
-                            }
+                Callable<Void> thread = () -> {
+                    if(isCanceled()) {
+                        //not necessary to use canceled in synchronized
+                        //block because it doesn't matter if one thread more
+                        //or less is started
+                        LOGGER.info(String.format("skipping work on input substring '%s' because operation has been canceled", inputSub));
+                        return null;
+                    }
+                    LOGGER.trace(String.format("working on input substring '%s'", inputSub));
+                    List<ValueDetectionResult<T>> results = checkResult(inputSub, inputSplits, index);
+                    if(!results.isEmpty()) {
+                        synchronized(retValues) {
+                            retValues.addAll(results);
                         }
                     }
+                    return null;
                 };
                 executor.submit(thread);
             }
@@ -135,12 +133,17 @@ public abstract class AbstractFormatValueDetectionService<T> extends AbstractVal
             LOGGER.error("unexpected exception during fetching of value detection results",
                     ex);
             issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
-            throw new RuntimeException(ex);
+            throw new ResultFetchingException(ex);
         }
         return retValues;
     }
 
     public IssueHandler getIssueHandler() {
         return issueHandler;
+    }
+
+    protected List<String> generateInputSplits(String input) {
+        List<String> retValue = new ArrayList<>(Arrays.asList(input.split("[\\s]+")));
+        return retValue;
     }
 }

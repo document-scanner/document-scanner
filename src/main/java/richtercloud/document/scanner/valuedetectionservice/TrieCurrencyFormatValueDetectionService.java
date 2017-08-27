@@ -19,6 +19,7 @@ import com.googlecode.concurrenttrees.common.PrettyPrinter;
 import com.googlecode.concurrenttrees.radix.node.NodeFactory;
 import com.googlecode.concurrenttrees.radix.node.concrete.DefaultCharSequenceNodeFactory;
 import com.googlecode.concurrenttrees.suffix.ConcurrentSuffixTree;
+import java.lang.reflect.Field;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.HashSet;
@@ -246,5 +247,11 @@ public class TrieCurrencyFormatValueDetectionService extends AbstractValueDetect
     @Override
     public boolean supportsLanguage(String languageIdentifier) {
         return true;
+    }
+
+    @Override
+    public boolean supportsField(Field field) {
+        boolean retValue = Amount.class.isAssignableFrom(field.getType());
+        return retValue;
     }
 }
