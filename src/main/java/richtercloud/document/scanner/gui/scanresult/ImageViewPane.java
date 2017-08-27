@@ -25,8 +25,6 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
-import richtercloud.message.handler.ExceptionMessage;
-import richtercloud.message.handler.IssueHandler;
 
 /**
  * A wrapper around {@link ImageView} which provides a {@link Pane} to be
@@ -65,14 +63,11 @@ public abstract class ImageViewPane extends GridPane {
      * The topmost {@link ImageView}.
      */
     private final ImageView imageView;
-    private final IssueHandler issueHandler;
 
     public ImageViewPane(int imageWidth,
-            int imageHeight,
-            IssueHandler issueHandler) {
+            int imageHeight) {
         this(new WritableImage(imageWidth,
-                imageHeight),
-                issueHandler);
+                imageHeight));
     }
 
     /**
@@ -84,16 +79,12 @@ public abstract class ImageViewPane extends GridPane {
      * calculate the height while preserving width-height ratio
      */
     public ImageViewPane(ImageWrapper scanResult,
-            int imageWidth,
-            IssueHandler issueHandler) throws IOException {
-        this(scanResult.getImagePreviewFX(imageWidth),
-                issueHandler);
+            int imageWidth) throws IOException {
+        this(scanResult.getImagePreviewFX(imageWidth));
     }
 
-    private ImageViewPane(WritableImage image,
-            IssueHandler issueHandler) {
+    private ImageViewPane(WritableImage image) {
         this.imageView = new ImageView(image);
-        this.issueHandler = issueHandler;
         add(this.imageView,
                 0, //columnIndex
                 0 //rowIndex
@@ -118,7 +109,7 @@ public abstract class ImageViewPane extends GridPane {
      * {@code image} property with new preview.
      * @param newWidth the externally calculated width
      */
-    public void changeZoom(int newWidth) {
+    public void changeZoom(int newWidth) throws IOException {
         //Can't set fitWidth on imageView since that causes bad quality image
         //when zooming in -> retrieve "fresh" preview from ImageWrapper
         if(getTopMostImageWrapper() == null) {
@@ -129,11 +120,7 @@ public abstract class ImageViewPane extends GridPane {
             this.imageView.setFitHeight(newHeight);
                 //need to set fitHeight as well if the ImageView is empty
         }else {
-            try {
-                this.imageView.setImage(getTopMostImageWrapper().getImagePreviewFX(newWidth));
-            } catch (IOException ex) {
-                issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
-            }
+            this.imageView.setImage(getTopMostImageWrapper().getImagePreviewFX(newWidth));
         }
         int oldWidth = (int) this.getWidth();
         int newHeight = (int) (this.getHeight()*newWidth/oldWidth);
@@ -142,28 +129,24 @@ public abstract class ImageViewPane extends GridPane {
     }
 
     private void turn(int rotationDegreesDiff,
-            int width) {
+            int width) throws IOException {
         //not necessary to set rotation of ImageView or ImageViewPane because
         //they adjust automatically to the newly set image
         if(getTopMostImageWrapper() == null) {
             this.imageView.setRotate(this.imageView.getRotate()+90);
         }else {
             getTopMostImageWrapper().setRotationDegrees(getTopMostImageWrapper().getRotationDegrees()+rotationDegreesDiff);
-            try {
-                WritableImage newImage = getTopMostImageWrapper().getImagePreviewFX(width);
-                this.imageView.setImage(newImage);
-            } catch (IOException ex) {
-                issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
-            }
+            WritableImage newImage = getTopMostImageWrapper().getImagePreviewFX(width);
+            this.imageView.setImage(newImage);
         }
     }
 
-    public void turnRight(int width) {
+    public void turnRight(int width) throws IOException {
         turn(90,
                 width);
     }
 
-    public void turnLeft(int width) {
+    public void turnLeft(int width) throws IOException {
         turn(-90,
                 width);
     }

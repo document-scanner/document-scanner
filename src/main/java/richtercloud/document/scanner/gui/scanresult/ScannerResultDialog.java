@@ -67,7 +67,6 @@ import richtercloud.document.scanner.gui.DocumentSourceOptionMissingException;
 import richtercloud.document.scanner.gui.Tools;
 import richtercloud.document.scanner.gui.scanner.DocumentSource;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
-import richtercloud.message.handler.BugHandler;
 import richtercloud.message.handler.ExceptionMessage;
 import richtercloud.message.handler.JavaFXDialogIssueHandler;
 import richtercloud.message.handler.Message;
@@ -157,7 +156,6 @@ public class ScannerResultDialog extends JDialog {
     private final SaneDevice scannerDevice;
     private final File imageWrapperStorageDir;
     private final JavaFXDialogIssueHandler issueHandler;
-    private final BugHandler bugHandler;
     private final Window openDocumentWaitDialogParent;
     private final DocumentController documentController;
     private Map<DocumentJob, List<ImageWrapper>> documentJobImageMapping = new HashMap<>();
@@ -188,7 +186,6 @@ public class ScannerResultDialog extends JDialog {
             SaneDevice scannerDevice,
             File imageWrapperStorageDir,
             JavaFXDialogIssueHandler issueHandler,
-            BugHandler bugHandler,
             Window openDocumentWaitDialogParent) throws IOException {
         super(owner,
                 ModalityType.APPLICATION_MODAL);
@@ -208,7 +205,6 @@ public class ScannerResultDialog extends JDialog {
             throw new IllegalArgumentException("messageHandler mustn't be null");
         }
         this.issueHandler = issueHandler;
-        this.bugHandler = bugHandler;
 
         mainPanel.setPreferredSize(new Dimension(initialWidth, initialHeight));
 
@@ -216,7 +212,7 @@ public class ScannerResultDialog extends JDialog {
                 Constants.APP_NAME,
                 Constants.APP_VERSION));
 
-        this.documentPane = new DocumentPane(issueHandler);
+        this.documentPane = new DocumentPane();
         this.documentPaneScrollPane = new ScrollPane(documentPane);
         documentPaneScrollPane.setFitToWidth(true);
         this.splitPane = new SplitPane();
@@ -285,6 +281,8 @@ public class ScannerResultDialog extends JDialog {
                                     scanResultPane,
                                     scanResultPane.getSelectedScanResults());
                         } catch (IOException ex) {
+                            LOGGER.error("unexpected exception during adding of scan result",
+                                    ex);
                             issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                             return;
                         }
@@ -370,8 +368,9 @@ public class ScannerResultDialog extends JDialog {
                         }
                     }
                 }catch(Throwable ex) {
-                    LOGGER.error("an unexpected exception during adding of images occured", ex);
-                    this.bugHandler.handleUnexpectedException(new ExceptionMessage(ex));
+                    LOGGER.error("an unexpected exception during adding of images occured",
+                            ex);
+                    this.issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             });
 
@@ -525,6 +524,8 @@ public class ScannerResultDialog extends JDialog {
                                             scanResultPane,
                                             scanResultPane.getSelectedScanResults());
                                 } catch (IOException ex) {
+                                    LOGGER.error("unexpected exception during adding of scan result",
+                                            ex);
                                     issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                                     return;
                                 }
@@ -548,7 +549,9 @@ public class ScannerResultDialog extends JDialog {
                 } catch (SaneException | IOException ex) {
                     issueHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
                 } catch(DocumentSourceOptionMissingException ex) {
-                    this.bugHandler.handleUnexpectedException(new ExceptionMessage(ex));
+                    LOGGER.error("unexpected exception during scanning occured",
+                            ex);
+                    this.issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             });
             openDocumentButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (event) -> {
@@ -586,6 +589,8 @@ public class ScannerResultDialog extends JDialog {
                                 scanResultPane,
                                 scanResultPane.getSelectedScanResults());
                     } catch (IOException ex) {
+                        LOGGER.error("unexpected exception during adding of scan result occured",
+                                ex);
                         issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                         return;
                     }
@@ -615,12 +620,24 @@ public class ScannerResultDialog extends JDialog {
             });
             turnRightButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent event) -> {
                 for(ImageViewPane selectedScanResult : scanResultPane.getSelectedScanResults()) {
-                    selectedScanResult.turnRight(panelWidth);
+                    try {
+                        selectedScanResult.turnRight(panelWidth);
+                    } catch (IOException ex) {
+                        LOGGER.error("unexpected exception during turning of image",
+                                ex);
+                        issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+                    }
                 }
             });
             turnLeftButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent event) -> {
                 for(ImageViewPane selectedScanResult : scanResultPane.getSelectedScanResults()) {
-                    selectedScanResult.turnLeft(panelWidth);
+                    try {
+                        selectedScanResult.turnLeft(panelWidth);
+                    } catch (IOException ex) {
+                        LOGGER.error("unexpected exception during turning of image",
+                                ex);
+                        issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+                    }
                 }
             });
             rightPane.setBottom(buttonPaneRight);
@@ -708,10 +725,22 @@ public class ScannerResultDialog extends JDialog {
                 panelWidth,
                 newWidth));
         for(ImageViewPane imageViewPane : imageViewPanes) {
-            imageViewPane.changeZoom(newWidth);
+            try {
+                imageViewPane.changeZoom(newWidth);
+            } catch (IOException ex) {
+                LOGGER.error("unexpected exception during changing of zoom",
+                        ex);
+                issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+            }
         }
         for(ImageViewPane documentNode : documentPane.getDocumentNodes()) {
-            documentNode.changeZoom(newWidth);
+            try {
+                documentNode.changeZoom(newWidth);
+            } catch (IOException ex) {
+                LOGGER.error("unexpected exception during changing of zoom",
+                        ex);
+                issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+            }
         }
         panelWidth = newWidth;
         panelHeight = (int)(panelHeight/oldZoomLevel*newZoomLevel);
@@ -721,8 +750,7 @@ public class ScannerResultDialog extends JDialog {
             ScanResultPane scanResultPane,
             List<ScanResultViewPane> selectedScanResults) throws IOException {
         ScanResultViewPane scanResultImageViewPane = new ScanResultViewPane(scanResult,
-                panelWidth,
-                issueHandler);
+                panelWidth);
         scanResultPane.addScanResultPane(scanResultImageViewPane);
         scanResultImageViewPane.getImageView().addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
             @Override
@@ -753,8 +781,7 @@ public class ScannerResultDialog extends JDialog {
             int panelWidth,
             int panelHeight) {
         DocumentViewPane retValue = new DocumentViewPane(panelWidth,
-                panelHeight,
-                issueHandler
+                panelHeight
         );
         retValue.addEventHandler(MouseEvent.MOUSE_CLICKED,
             (MouseEvent event) -> {
@@ -793,6 +820,8 @@ public class ScannerResultDialog extends JDialog {
                         scanResultPane,
                         scanResultPane.getSelectedScanResults());
             } catch (IOException ex) {
+                LOGGER.error("unexpected exception during adding of scan result occured",
+                        ex);
                 issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 return;
             }

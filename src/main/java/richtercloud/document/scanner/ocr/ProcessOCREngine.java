@@ -62,6 +62,8 @@ public abstract class ProcessOCREngine<C extends ProcessOCREngineConf> extends C
         try {
             exception = checkBinaryAvailable(binary);
         } catch (InterruptedException ex) {
+            LOGGER.error("unexpected exception during availability check of process binary",
+                    ex);
             issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
             return;
         }

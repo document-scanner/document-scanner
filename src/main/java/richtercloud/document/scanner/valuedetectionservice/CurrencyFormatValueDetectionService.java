@@ -135,6 +135,8 @@ public class CurrencyFormatValueDetectionService extends AbstractFormatValueDete
             }catch(ParseException ex) {
                 //skip to next format
             } catch (AmountMoneyCurrencyStorageException | AmountMoneyExchangeRateRetrieverException ex) {
+                LOGGER.error("unexpected exception during retrieval of money exchange rate",
+                        ex);
                 getIssueHandler().handleUnexpectedException(new ExceptionMessage(ex));
                 throw new RuntimeException(ex);
             }

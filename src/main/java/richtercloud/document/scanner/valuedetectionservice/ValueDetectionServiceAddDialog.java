@@ -378,6 +378,8 @@ public class ValueDetectionServiceAddDialog extends JDialog {
                     createdConf);
             this.setVisible(false);
         }catch(Throwable ex) {
+            LOGGER.error("unexpected exception during saving occured",
+                    ex);
             issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
         }
     }//GEN-LAST:event_saveButtonActionPerformed

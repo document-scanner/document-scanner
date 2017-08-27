@@ -29,6 +29,8 @@ import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.ifaces.Constants;
 import richtercloud.message.handler.ConfirmMessageHandler;
 import richtercloud.message.handler.ExceptionMessage;
@@ -56,6 +58,7 @@ open them in MainPanel.
 */
 public class EntityEditingDialog extends javax.swing.JDialog {
     private static final long serialVersionUID = 1L;
+    private final static Logger LOGGER = LoggerFactory.getLogger(EntityEditingDialog.class);
     private final ListCellRenderer<Object> entityEditingClassComboBoxRenderer = new DefaultListCellRenderer() {
         private static final long serialVersionUID = 1L;
         @Override
@@ -154,6 +157,8 @@ public class EntityEditingDialog extends javax.swing.JDialog {
                         handleEntityEditingQueryPanelUpdate(selectedEntityClass);
                     }
                 }catch(Throwable ex) {
+                    LOGGER.error("unexpected exception during handling of query panel update",
+                            ex);
                     issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             }
@@ -180,6 +185,8 @@ public class EntityEditingDialog extends javax.swing.JDialog {
                         entryStorage
                 );
             } catch (IllegalArgumentException | IllegalAccessException ex) {
+                LOGGER.error("unexpected exception during query panel creation",
+                        ex);
                 issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 return;
             }
@@ -300,6 +307,8 @@ public class EntityEditingDialog extends javax.swing.JDialog {
             Class<?> selectedEntityClass = (Class<?>) entityEditingClassComboBox.getSelectedItem();
             handleEntityEditingQueryPanelUpdate(selectedEntityClass);
         } catch (ResetException ex) {
+            LOGGER.error("unexpected exception during resetting of component",
+                    ex);
             issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
         }
     }//GEN-LAST:event_entityEditingClassComboBoxActionPerformed

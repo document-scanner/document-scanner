@@ -21,6 +21,8 @@ import javax.swing.DefaultListModel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.gui.DocumentScanner;
 import richtercloud.message.handler.ExceptionMessage;
@@ -33,6 +35,7 @@ import richtercloud.reflection.form.builder.ResetException;
  */
 public class TagComponent extends JPanel {
     private static final long serialVersionUID = 1L;
+    private final static Logger LOGGER = LoggerFactory.getLogger(TagComponent.class);
     private final TagStorage tagStorage;
     private final DefaultListModel availableListModel = new DefaultListModel();
     private final DefaultListModel selectedListModel = new DefaultListModel();
@@ -241,6 +244,8 @@ public class TagComponent extends JPanel {
                 }
             }
         } catch (TagRetrievalException ex) {
+            LOGGER.error("unexpected exception during retrieval of tags",
+                    ex);
             issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
         }
     }//GEN-LAST:event_availableListFilterTextFieldKeyPressed
@@ -301,6 +306,8 @@ public class TagComponent extends JPanel {
                 this.availableListModel.remove(availableList.getSelectedIndex());
             }
         }catch(Throwable ex) {
+            LOGGER.error("unexpected exception during deletion of tag",
+                    ex);
             issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
         }
     }//GEN-LAST:event_deleteButtonActionPerformed

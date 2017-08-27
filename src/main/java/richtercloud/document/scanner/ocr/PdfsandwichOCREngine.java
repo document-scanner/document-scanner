@@ -76,6 +76,8 @@ public class PdfsandwichOCREngine extends ProcessOCREngine<PdfsandwichOCREngineC
             if(ex.getMessage().equals("Stream closed")) {
                 return null; //result of Process.destroy
             }
+            LOGGER.error("unexpected exception during image recognition",
+                    ex);
             getIssueHandler().handleUnexpectedException(new ExceptionMessage(ex));
             throw new RuntimeException(ex);
         }

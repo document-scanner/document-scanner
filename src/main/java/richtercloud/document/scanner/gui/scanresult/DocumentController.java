@@ -200,6 +200,8 @@ public class DocumentController {
                 }else if(ex.getCause() instanceof DocumentAddException) {
                     throw (DocumentAddException)ex.getCause();
                 }
+                LOGGER.error("unexpected exception during opening of scanner device",
+                        ex);
                 issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
             }finally {
                 LOGGER.trace(String.format("removing opening-in-progress marker for device '%s'",

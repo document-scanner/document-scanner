@@ -24,6 +24,8 @@ import java.awt.event.MouseMotionListener;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.ifaces.OCRSelectPanel;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelSelectionListener;
@@ -43,6 +45,7 @@ equals or hashCode
 */
 public class DefaultOCRSelectPanel extends OCRSelectPanel implements MouseListener, MouseMotionListener {
     private static final long serialVersionUID = 1L;
+    private final static Logger LOGGER = LoggerFactory.getLogger(DefaultOCRSelectPanel.class);
     private Point dragStart;
     private Point dragEnd;
     private final ImageWrapper image;
@@ -190,6 +193,8 @@ public class DefaultOCRSelectPanel extends OCRSelectPanel implements MouseListen
                 }
             }
         } catch (Throwable ex) {
+            LOGGER.error("unexpected exception during painting",
+                    ex);
             issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
         }
     }

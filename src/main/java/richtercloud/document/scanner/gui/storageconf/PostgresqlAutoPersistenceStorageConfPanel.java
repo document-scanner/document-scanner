@@ -320,6 +320,8 @@ public class PostgresqlAutoPersistenceStorageConfPanel extends StorageConfPanel<
             try {
                 downloadWorker.get();
             } catch (InterruptedException | ExecutionException ex) {
+                LOGGER.error("unexpected exception during download of PostgreSQL occured",
+                        ex);
                 issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
             }
             baseDirTextField.setText(installationPrefixDir.getAbsolutePath());
@@ -327,7 +329,7 @@ public class PostgresqlAutoPersistenceStorageConfPanel extends StorageConfPanel<
             postgresBinaryPathTextField.setText(new File(installationPrefixDir, String.join(File.separator, "bin", "postgres")).getAbsolutePath());
             createdbBinaryPathTextField.setText(new File(installationPrefixDir, String.join(File.separator, "bin", "createdb")).getAbsolutePath());
         }catch(Throwable ex) {
-            LOGGER.error("unexpected exception during download of MySQL occured",
+            LOGGER.error("unexpected exception during download of PostgreSQL occured",
                     ex);
             issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
         }

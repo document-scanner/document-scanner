@@ -31,6 +31,8 @@ import javax.swing.JOptionPane;
 import javax.swing.MutableComboBoxModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.gui.DocumentScanner;
 import richtercloud.document.scanner.gui.scanresult.DocumentController;
@@ -49,6 +51,7 @@ import richtercloud.message.handler.Message;
  */
 public class ScannerEditDialog extends javax.swing.JDialog {
     private static final long serialVersionUID = 1L;
+    private final static Logger LOGGER = LoggerFactory.getLogger(ScannerEditDialog.class);
     private MutableComboBoxModel<String> modeComboBoxModel = new DefaultComboBoxModel<>();
     private MutableComboBoxModel<Integer> resolutionComboBoxModel = new DefaultComboBoxModel<>();
     private MutableComboBoxModel<String> documentSourceComboBoxModel = new DefaultComboBoxModel<>();
@@ -188,6 +191,8 @@ public class ScannerEditDialog extends javax.swing.JDialog {
                 } catch(IllegalArgumentException ex) {
                     issueHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
                 } catch (IOException | SaneException ex) {
+                    LOGGER.error("unexpected exception during mode change",
+                            ex);
                     issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             }
@@ -203,6 +208,8 @@ public class ScannerEditDialog extends javax.swing.JDialog {
                 } catch(IllegalArgumentException ex) {
                     issueHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
                 } catch (IOException | SaneException ex) {
+                    LOGGER.error("unexpected exception during resolution change",
+                            ex);
                     issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             }
@@ -219,6 +226,8 @@ public class ScannerEditDialog extends javax.swing.JDialog {
                 } catch(IllegalArgumentException ex) {
                     issueHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
                 } catch (IOException | SaneException ex) {
+                    LOGGER.error("unexpected exception during document source change",
+                            ex);
                     issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             }
@@ -236,6 +245,8 @@ public class ScannerEditDialog extends javax.swing.JDialog {
                 } catch(IllegalArgumentException ex) {
                     issueHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
                 } catch (IOException | SaneException ex) {
+                    LOGGER.error("unexpected exception during paper format change",
+                            ex);
                     issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             }

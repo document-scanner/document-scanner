@@ -27,6 +27,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JToolBar;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.ifaces.EntityPanel;
 import richtercloud.document.scanner.ifaces.OCREngine;
@@ -49,6 +51,7 @@ import richtercloud.message.handler.IssueHandler;
  */
 public class DefaultOCRSelectComponent extends OCRSelectComponent {
     private static final long serialVersionUID = 1L;
+    private final static Logger LOGGER = LoggerFactory.getLogger(DefaultOCRSelectComponent.class);
     private final OCRSelectPanelPanel oCRSelectPanelPanel;
     /*private ToolBar toolbar;
     private Button zoomInButton;
@@ -228,6 +231,8 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
                         documentScannerConf.setPreferredOCRSelectPanelWidth(preferredOCRSelectPanelWidthNew);
                     }
                 } catch (Throwable ex) {
+                    LOGGER.error("unexpected exception during zooming in",
+                            ex);
                     issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             }
@@ -247,6 +252,8 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
                         documentScannerConf.setPreferredOCRSelectPanelWidth(preferredOCRSelectPanelWidthNew);
                     }
                 } catch (IOException ex) {
+                    LOGGER.error("unexpected exception during zooming out",
+                            ex);
                     issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             }

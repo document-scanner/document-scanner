@@ -375,6 +375,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 }
             } catch (AmountMoneyExchangeRateRetrieverException ex) {
                 //all parts of FailsafeAmountMoneyExchangeRateRetriever failed
+                LOGGER.error("unexpected exception during retrieval of exchange rate",
+                        ex);
                 issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
             }
         },
@@ -387,6 +389,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                     //to minimize delay when initializing the first
                     //CachingImageWrapper
             } catch (ClassNotFoundException ex) {
+                LOGGER.error("unexpected exception during initialization of caching image wrapper class",
+                        ex);
                 issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
             }
         },
@@ -472,6 +476,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                     retValue = !field.equals(Document.class.getDeclaredField("scanData"));
                         //skip Document.scanData in query components
                 } catch (NoSuchFieldException | SecurityException ex) {
+                    LOGGER.error("unexpected exception during field initialization",
+                            ex);
                     issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                     throw new RuntimeException(ex);
                 }
@@ -629,6 +635,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             shutdownHookThreads();
             LOGGER.info(String.format("shutdown hooks in %s finished", DocumentScanner.class));
         }catch(Throwable ex) {
+            LOGGER.error("unexpected exception during shutdown hook",
+                    ex);
             issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
         }
         this.issueHandler.shutdown();
@@ -1114,7 +1122,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         scannerDevice,
                         documentScannerConf.getImageWrapperStorageDir(),
                         javaFXDialogMessageHandler,
-                        issueHandler,
                         this //openDocumentWaitDialogParent
                 );
                 scannerResultDialog.setLocationRelativeTo(this);
@@ -1228,7 +1235,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         scannerDevice,
                         documentScannerConf.getImageWrapperStorageDir(),
                         javaFXDialogMessageHandler,
-                        issueHandler,
                         this //openDocumentWaitDialogParent
                 );
                 scannerResultDialog.setLocationRelativeTo(this);
@@ -1264,6 +1270,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             try {
                 amountMoneyExchangeRetrieverInitThread.join();
             } catch (InterruptedException ex) {
+                LOGGER.error("unexpected exception during waiting for exchange rate retriever initialization",
+                        ex);
                 issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 return;
             }
@@ -1280,6 +1288,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             try {
                 amountMoneyExchangeRetrieverInitThread.join();
             } catch (InterruptedException ex) {
+                LOGGER.error("unexpected exception during waiting for exchange rate retriever initialization",
+                        ex);
                 issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 return;
             }
@@ -1419,7 +1429,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                                     scannerDevice,
                                     documentScannerConf.getImageWrapperStorageDir(),
                                     javaFXDialogMessageHandler,
-                                    issueHandler,
                                     DocumentScanner.this //openDocumentWaitDialogParent
                             );
                             scannerResultDialog.setLocationRelativeTo(DocumentScanner.this);

@@ -20,6 +20,8 @@ import java.awt.event.ItemListener;
 import java.lang.reflect.InvocationTargetException;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.MutableComboBoxModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import richtercloud.message.handler.ExceptionMessage;
 import richtercloud.message.handler.IssueHandler;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyEmbeddedPersistenceStorageConf;
@@ -32,6 +34,7 @@ import richtercloud.reflection.form.builder.storage.StorageConfValidationExcepti
  */
 public class StorageCreateDialog extends javax.swing.JDialog {
     private static final long serialVersionUID = 1L;
+    private final static Logger LOGGER = LoggerFactory.getLogger(StorageCreateDialog.class);
     private MutableComboBoxModel<Class<? extends StorageConf>> storageCreateDialogTypeComboBoxModel = new DefaultComboBoxModel<>();
     /**
      * Reference to the created {@link StorageConf}. {@code null} indicates that
@@ -60,7 +63,14 @@ public class StorageCreateDialog extends javax.swing.JDialog {
                 Class<? extends StorageConf> clazz = (Class<? extends StorageConf>) e.getItem();
                 try {
                     clazz.getDeclaredConstructor().newInstance();
-                } catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+                } catch (NoSuchMethodException
+                        | SecurityException
+                        | InstantiationException
+                        | IllegalAccessException
+                        | IllegalArgumentException
+                        | InvocationTargetException ex) {
+                    LOGGER.error("unexpected exception during storage initialization",
+                            ex);
                     issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                     return;
                 }

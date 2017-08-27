@@ -15,6 +15,8 @@
 package richtercloud.document.scanner.components.tag;
 
 import java.awt.Window;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import richtercloud.message.handler.ExceptionMessage;
 import richtercloud.message.handler.IssueHandler;
 
@@ -25,6 +27,7 @@ import richtercloud.message.handler.IssueHandler;
 public class TagComponentCreateDialog extends javax.swing.JDialog {
 
     private static final long serialVersionUID = 1L;
+    private final static Logger LOGGER = LoggerFactory.getLogger(TagComponentCreateDialog.class);
     private final TagStorage tagStorage;
     private String newTag;
     private final IssueHandler issueHandler;
@@ -131,6 +134,8 @@ public class TagComponentCreateDialog extends javax.swing.JDialog {
             this.tagStorage.addTag(newTag);
             setVisible(false);
         } catch (TagRetrievalException ex) {
+            LOGGER.error("unexpected exception during retrieval of tags",
+                    ex);
             issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
         }
     }//GEN-LAST:event_saveButtonActionPerformed

@@ -132,6 +132,8 @@ public abstract class AbstractFormatValueDetectionService<T> extends AbstractVal
         try {
             executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
         } catch (InterruptedException ex) {
+            LOGGER.error("unexpected exception during fetching of value detection results",
+                    ex);
             issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
             throw new RuntimeException(ex);
         }

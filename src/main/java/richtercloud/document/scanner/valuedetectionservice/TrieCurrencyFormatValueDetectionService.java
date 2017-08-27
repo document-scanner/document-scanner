@@ -208,6 +208,8 @@ public class TrieCurrencyFormatValueDetectionService extends AbstractValueDetect
                                         ));
                                     }
                                 } catch (AmountMoneyCurrencyStorageException | AmountMoneyExchangeRateRetrieverException ex) {
+                                    LOGGER.error("unexpected exception during retrieval of money exchange rate",
+                                            ex);
                                     issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                                 }
                             }
@@ -227,6 +229,8 @@ public class TrieCurrencyFormatValueDetectionService extends AbstractValueDetect
         try {
             executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
         } catch (InterruptedException ex) {
+            LOGGER.error("unexpected exception during fetching of value detection results",
+                    ex);
             issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
             throw new RuntimeException(ex);
         }

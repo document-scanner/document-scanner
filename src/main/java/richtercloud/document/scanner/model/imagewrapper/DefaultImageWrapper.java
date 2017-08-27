@@ -184,6 +184,8 @@ public class DefaultImageWrapper implements ImageWrapper {
         try {
             rotatedImage = javaFXTask.get();
         } catch (InterruptedException | ExecutionException ex) {
+            LOGGER.error("unexpected exception during rotation of image",
+                    ex);
             issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
             throw new RuntimeException(ex);
         }
@@ -248,6 +250,8 @@ public class DefaultImageWrapper implements ImageWrapper {
         try {
             image = javaFXTask.get();
         }catch(InterruptedException | ExecutionException ex) {
+            LOGGER.error("unexpected exception during retrieval of image preview",
+                    ex);
             issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
             throw new RuntimeException(ex);
         }
