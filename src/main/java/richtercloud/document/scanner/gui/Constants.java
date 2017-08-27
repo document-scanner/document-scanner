@@ -77,10 +77,10 @@ public class Constants {
                     WorkflowItem.class)));
     public final static Set<Class<?>> EMBEDDABLE_CLASSES = Collections.unmodifiableSet(new HashSet<Class<?>>(
             Arrays.asList(Address.class)));
-    public final static Set<Class<?>> ENTITY_AND_EMBEDDABLE_CLASSES = ImmutableSet.<Class<?>>builder()
+    public final static Set<Class<?>> ENTITY_AND_EMBEDDABLE_CLASSES = Collections.unmodifiableSet(ImmutableSet.<Class<?>>builder()
             .addAll(ENTITY_CLASSES)
             .addAll(EMBEDDABLE_CLASSES)
-            .build();
+            .build());
     public final static Class<?> PRIMARY_CLASS_SELECTION = Document.class;
     public final static int INITIAL_QUERY_LIMIT_DEFAULT = 20;
     public final static String BIDIRECTIONAL_HELP_DIALOG_TITLE = "Bidirectional relations help";
