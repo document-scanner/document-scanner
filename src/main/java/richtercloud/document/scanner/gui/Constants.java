@@ -73,12 +73,21 @@ public class Constants {
                     Transport.class,
                     TransportTicket.class,
                     Withdrawal.class,
-                    Workflow.class,
-                    WorkflowItem.class)));
+                    Workflow.class)));
+        //WorkflowItem (and other abstract entity classes) can't be added here
+        //because ReflectionFormBuilder will try to initialize an instance
+    /**
+     * All classes which need to queryablein components, but not necessarily
+     * instantiable.
+     */
+    public final static Set<Class<?>> QUERYABLE_CLASSES = Collections.unmodifiableSet(ImmutableSet.<Class<?>>builder()
+            .addAll(ENTITY_CLASSES)
+            .add(WorkflowItem.class)
+            .build());
     public final static Set<Class<?>> EMBEDDABLE_CLASSES = Collections.unmodifiableSet(new HashSet<Class<?>>(
             Arrays.asList(Address.class)));
-    public final static Set<Class<?>> ENTITY_AND_EMBEDDABLE_CLASSES = Collections.unmodifiableSet(ImmutableSet.<Class<?>>builder()
-            .addAll(ENTITY_CLASSES)
+    public final static Set<Class<?>> QUERYABLE_AND_EMBEDDABLE_CLASSES = Collections.unmodifiableSet(ImmutableSet.<Class<?>>builder()
+            .addAll(QUERYABLE_CLASSES)
             .addAll(EMBEDDABLE_CLASSES)
             .build());
     public final static Class<?> PRIMARY_CLASS_SELECTION = Document.class;

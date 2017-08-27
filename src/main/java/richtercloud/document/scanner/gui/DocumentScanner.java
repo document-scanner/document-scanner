@@ -357,7 +357,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 bugHandler);
 
         this.fieldRetriever = new DocumentScannerFieldRetriever(documentScannerConf,
-                Constants.ENTITY_AND_EMBEDDABLE_CLASSES);
+                Constants.QUERYABLE_AND_EMBEDDABLE_CLASSES);
 
         this.delegatingStorageFactory = new DelegatingPersistenceStorageFactory("richtercloud_document-scanner_jar_1.0-SNAPSHOTPU",
                 24, //@TODo: low limit no longer necessary after ImageWrapper is
