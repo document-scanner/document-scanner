@@ -90,8 +90,16 @@ public class DocumentScannerConf implements Serializable {
     private final static File SCHEME_CHECKSUM_FILE_DEFAULT = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT,
             SCHEME_CHECKSUM_FILE_NAME_DEFAULT);
     public static final String DATABASE_DIR_NAME_DEFAULT = "databases";
-    public final static String DATABASE_NAME_DEFAULT = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT,
+    public final static String DATABASE_NAME_DEFAULT = "document-scanner";
+    public final static String DATABASE_USERNAME_DEFAULT = "document-scanner";
+    /**
+     * Derby database names are equals to the directory (names which are not
+     * absolute paths are interpreted as paths relative to the current working
+     * directory).
+     */
+    public final static String DERBY_DATABASE_NAME_DEFAULT = new File(DocumentScannerConf.CONFIG_DIR_DEFAULT,
             DATABASE_DIR_NAME_DEFAULT).getAbsolutePath();
+    public final static String MYSQL_DATABASE_NAME_DEFAULT = DATABASE_NAME_DEFAULT;
     public final static int PREFERRED_SCAN_RESULT_PANEL_WIDTH_DEFAULT = 600;
         //300 is pretty small for an average screen
     public final static int PREFERRED_OCR_SELECT_PANEL_WIDTH = 600;
@@ -106,6 +114,7 @@ public class DocumentScannerConf implements Serializable {
     private final static String IMAGE_WRAPPER_STORAGE_FILE_NAME_DEFAULT = "image-storage";
     private final static File IMAGE_WRAPPER_STORAGE_DIR = new File(CONFIG_DIR_DEFAULT, IMAGE_WRAPPER_STORAGE_FILE_NAME_DEFAULT);
     private final static String HOSTNAME_DEFAULT = LOCALHOST_TEMPLATE;
+    public final static String POSTGRESQL_DATABASE_NAME_DEFAULT = DATABASE_NAME_DEFAULT;
     private final static String POSTGRESQL_DATABASE_DIR_DEFAULT = new File(CONFIG_DIR_DEFAULT, "databases-postgresql").getAbsolutePath();
     private final static String MYSQL_DATABASE_DIR_DEFAULT = new File(CONFIG_DIR_DEFAULT, "databases-mysql").getAbsolutePath();
     public final static String LOG_FILE_PATH_DEFAULT = new File(CONFIG_DIR_DEFAULT, "document-scanner.log").getAbsolutePath();
@@ -305,7 +314,7 @@ public class DocumentScannerConf implements Serializable {
      */
     public DocumentScannerConf() throws IOException {
         this.storageConf = new DerbyEmbeddedPersistenceStorageConf(Constants.ENTITY_CLASSES,
-            DATABASE_NAME_DEFAULT,
+            DERBY_DATABASE_NAME_DEFAULT,
             SCHEME_CHECKSUM_FILE_DEFAULT);
         this.availableStorageConfs.add(this.storageConf);
         this.availableStorageConfs.add(new DerbyNetworkPersistenceStorageConf(Constants.ENTITY_CLASSES,
@@ -314,10 +323,10 @@ public class DocumentScannerConf implements Serializable {
         Triple<String, String, String> bestInitialPostgresqlBasePathPair = PostgresqlAutoPersistenceStorageConf.findBestInitialPostgresqlBasePath();
         this.availableStorageConfs.add(new PostgresqlAutoPersistenceStorageConf(Constants.ENTITY_CLASSES,
                 LOCALHOST_TEMPLATE, //hostname
-                "document-scanner",
+                DATABASE_USERNAME_DEFAULT,
                 null, //password (specification by user enforced through
                     //validation)
-                "document-scanner", //databaseName
+                POSTGRESQL_DATABASE_NAME_DEFAULT, //databaseName
                 SCHEME_CHECKSUM_FILE_DEFAULT,
                 POSTGRESQL_DATABASE_DIR_DEFAULT,
                 bestInitialPostgresqlBasePathPair.getLeft(),
@@ -327,8 +336,8 @@ public class DocumentScannerConf implements Serializable {
         ));
         this.availableStorageConfs.add(new MySQLAutoPersistenceStorageConf(Constants.ENTITY_CLASSES,
                 LOCALHOST_TEMPLATE, //hostname
-                "document-scanner", //username
-                DATABASE_NAME_DEFAULT, //databaseName
+                DATABASE_USERNAME_DEFAULT, //username
+                MYSQL_DATABASE_NAME_DEFAULT, //databaseName
                 MYSQL_DATABASE_DIR_DEFAULT, //databaseDir
                 SCHEME_CHECKSUM_FILE_DEFAULT
         ));
