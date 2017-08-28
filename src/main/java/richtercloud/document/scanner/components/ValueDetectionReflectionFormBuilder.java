@@ -39,10 +39,13 @@ import javax.swing.JPanel;
 import javax.swing.ListCellRenderer;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.setter.ValueSetter;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionResult;
 import richtercloud.message.handler.ConfirmMessageHandler;
+import richtercloud.message.handler.ExceptionMessage;
 import richtercloud.message.handler.IssueHandler;
 import richtercloud.message.handler.Message;
 import richtercloud.reflection.form.builder.ResetException;
@@ -73,6 +76,7 @@ order to be able to call EntityPanel.valueDetectionGUI, so do that in the
 MainPanel implementation
 */
 public class ValueDetectionReflectionFormBuilder extends JPAReflectionFormBuilder {
+    private final static Logger LOGGER = LoggerFactory.getLogger(ValueDetectionReflectionFormBuilder.class);
     /**
      * The association of the field of each class (used in order to avoid
      * confusion between the same field used in (super) classes and subclasses)
@@ -198,26 +202,33 @@ public class ValueDetectionReflectionFormBuilder extends JPAReflectionFormBuilde
         });
         comboBox.addItemListener(new ItemListener() {
             @Override
+            @SuppressWarnings("PMD.AvoidCatchingThrowable")
             public void itemStateChanged(ItemEvent e) {
-                if(e.getStateChange() == ItemEvent.SELECTED) {
-                    //other state changes aren't interesting
-                    ValueDetectionResult<?> detectionResult = (ValueDetectionResult<?>) e.getItem();
-                    ValueSetter valueSetter = valueSetterMapping.get(classComponent.getClass());
-                    if(valueSetter == null) {
-                        throw new IllegalArgumentException(String.format("no %s mapped to component class %s", ValueSetter.class, classComponent.getClass()));
-                    }
-                    try {
-                        valueSetter.setValue(detectionResult.getValue(), classComponent);
-                    } catch (TransformationException | NoSuchFieldException | ResetException ex) {
-                        getIssueHandler().handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
-                        return;
-                    }
+                try {
+                    if(e.getStateChange() == ItemEvent.SELECTED) {
+                        //other state changes aren't interesting
+                        ValueDetectionResult<?> detectionResult = (ValueDetectionResult<?>) e.getItem();
+                        ValueSetter valueSetter = valueSetterMapping.get(classComponent.getClass());
+                        if(valueSetter == null) {
+                            throw new IllegalArgumentException(String.format("no %s mapped to component class %s", ValueSetter.class, classComponent.getClass()));
+                        }
+                        try {
+                            valueSetter.setValue(detectionResult.getValue(), classComponent);
+                        } catch (TransformationException | NoSuchFieldException | ResetException ex) {
+                            getIssueHandler().handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+                            return;
+                        }
 
-                    //set the combobox back to null in order to avoid the
-                    //impression that it reflects the state of the component
-                    //(it's just used to select auto detection values and copy
-                    //them onto the component)
-                    comboBoxModel.setSelectedItem(null);
+                        //set the combobox back to null in order to avoid the
+                        //impression that it reflects the state of the component
+                        //(it's just used to select auto detection values and copy
+                        //them onto the component)
+                        comboBoxModel.setSelectedItem(null);
+                    }
+                }catch(Throwable ex) {
+                    LOGGER.error("unexpected exception during change of value detection item",
+                            ex);
+                    getIssueHandler().handleUnexpectedException(new ExceptionMessage(ex));
                 }
             }
         });
