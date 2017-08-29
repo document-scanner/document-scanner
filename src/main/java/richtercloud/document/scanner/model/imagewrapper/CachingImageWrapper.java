@@ -79,6 +79,8 @@ public class CachingImageWrapper extends DefaultImageWrapper {
     initialization
     */
     private final static Lock STREAM_CACHE_LOCK = new ReentrantLock();
+    private final static Lock PREVIEW_CACHE_LOCK = new ReentrantLock();
+    private final static Lock PREVIEW_FX_CACHE_LOCK = new ReentrantLock();
 
     public CachingImageWrapper(File storageDir,
             BufferedImage image,
@@ -94,32 +96,42 @@ public class CachingImageWrapper extends DefaultImageWrapper {
 
     @Override
     public BufferedImage getImagePreview(int width) throws IOException {
-        Map<Integer, BufferedImage> wrapperCacheEntry = CACHE.get(cacheId);
-        if(wrapperCacheEntry == null) {
-            wrapperCacheEntry = new HashMap<>();
-            CACHE.put(cacheId, wrapperCacheEntry);
+        PREVIEW_CACHE_LOCK.lock();
+        try {
+            Map<Integer, BufferedImage> wrapperCacheEntry = CACHE.get(cacheId);
+            if(wrapperCacheEntry == null) {
+                wrapperCacheEntry = new HashMap<>();
+                CACHE.put(cacheId, wrapperCacheEntry);
+            }
+            BufferedImage imagePreview = wrapperCacheEntry.get(width);
+            if(imagePreview == null) {
+                imagePreview = super.getImagePreview(width);
+                wrapperCacheEntry.put(width, imagePreview);
+            }
+            return imagePreview;
+        }finally {
+            PREVIEW_CACHE_LOCK.unlock();
         }
-        BufferedImage imagePreview = wrapperCacheEntry.get(width);
-        if(imagePreview == null) {
-            imagePreview = super.getImagePreview(width);
-            wrapperCacheEntry.put(width, imagePreview);
-        }
-        return imagePreview;
     }
 
     @Override
     public WritableImage getImagePreviewFX(int width) throws IOException {
-        Map<Integer, WritableImage> wrapperCacheEntry = JAVAFX_CACHE.get(cacheId);
-        if(wrapperCacheEntry == null) {
-            wrapperCacheEntry = new HashMap<>();
-            JAVAFX_CACHE.put(cacheId, wrapperCacheEntry);
+        PREVIEW_FX_CACHE_LOCK.lock();
+        try {
+            Map<Integer, WritableImage> wrapperCacheEntry = JAVAFX_CACHE.get(cacheId);
+            if(wrapperCacheEntry == null) {
+                wrapperCacheEntry = new HashMap<>();
+                JAVAFX_CACHE.put(cacheId, wrapperCacheEntry);
+            }
+            WritableImage imagePreview = wrapperCacheEntry.get(width);
+            if(imagePreview == null) {
+                imagePreview = super.getImagePreviewFX(width);
+                wrapperCacheEntry.put(width, imagePreview);
+            }
+            return imagePreview;
+        }finally {
+            PREVIEW_FX_CACHE_LOCK.unlock();
         }
-        WritableImage imagePreview = wrapperCacheEntry.get(width);
-        if(imagePreview == null) {
-            imagePreview = super.getImagePreviewFX(width);
-            wrapperCacheEntry.put(width, imagePreview);
-        }
-        return imagePreview;
     }
 
     @Override
