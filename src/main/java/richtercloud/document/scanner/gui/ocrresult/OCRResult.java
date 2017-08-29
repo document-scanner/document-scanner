@@ -14,6 +14,8 @@
  */
 package richtercloud.document.scanner.gui.ocrresult;
 
+import java.util.Objects;
+
 /**
  * This class allows to distinguish values which need formatting and those which
  * don't.
@@ -35,5 +37,30 @@ public class OCRResult {
     @Override
     public String toString() {
         return oCRResult;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 3;
+        hash = 23 * hash + Objects.hashCode(this.oCRResult);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final OCRResult other = (OCRResult) obj;
+        if (!Objects.equals(this.oCRResult, other.oCRResult)) {
+            return false;
+        }
+        return true;
     }
 }
