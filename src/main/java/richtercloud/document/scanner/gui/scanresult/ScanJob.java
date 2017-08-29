@@ -20,14 +20,13 @@ import au.com.southsky.jfreesane.SaneStatus;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import javax.swing.JOptionPane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.scanner.DocumentSource;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.model.imagewrapper.CachingImageWrapper;
+import richtercloud.message.handler.ExceptionMessage;
 import richtercloud.message.handler.IssueHandler;
-import richtercloud.message.handler.Message;
 
 /**
  *
@@ -153,7 +152,7 @@ public class ScanJob extends DocumentJob implements Runnable {
             }
             this.setFinished(true);
         }catch(IOException | SaneException ex) {
-            issueHandler.handle(new Message(ex.getCause(), JOptionPane.ERROR_MESSAGE));
+            issueHandler.handle(new ExceptionMessage(ex));
         }finally {
             documentController.getScanJobLock().unlock();
             LOGGER.debug("scan job lock released");
