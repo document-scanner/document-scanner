@@ -63,7 +63,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.gui.DocumentScanner;
-import richtercloud.document.scanner.gui.DocumentSourceOptionMissingException;
 import richtercloud.document.scanner.gui.Tools;
 import richtercloud.document.scanner.gui.scanner.DocumentSource;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
@@ -554,7 +553,9 @@ public class ScannerResultDialog extends JDialog {
                     scanJobThread.start();
                 } catch (SaneException | IOException ex) {
                     issueHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
-                } catch(DocumentSourceOptionMissingException ex) {
+                } catch(Throwable ex) {
+                    //also catches DocumentSourceOptionMissingException which is
+                    //interesting to investigate for developers
                     LOGGER.error("unexpected exception during scanning occured",
                             ex);
                     this.issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
