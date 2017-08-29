@@ -14,33 +14,69 @@
  */
 package richtercloud.document.scanner.gui;
 
+import java.awt.Toolkit;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.io.IOException;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DocumentFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.ifaces.MainPanel;
+import richtercloud.message.handler.ExceptionMessage;
+import richtercloud.message.handler.IssueHandler;
 
 /**
  *
  * @author richter
  */
 public class TrimDocumentFilter extends DocumentFilter {
+    private final static Logger LOGGER = LoggerFactory.getLogger(TrimDocumentFilter.class);
     private final DocumentFilter documentFilterDelegate;
     private final MainPanel mainPanel;
+    private final IssueHandler issueHandler;
 
-    public TrimDocumentFilter(DocumentFilter documentFilterDelegate, MainPanel mainPanel) {
+    public TrimDocumentFilter(DocumentFilter documentFilterDelegate,
+            MainPanel mainPanel,
+            IssueHandler issueHandler) {
         this.documentFilterDelegate = documentFilterDelegate;
         this.mainPanel = mainPanel;
+        this.issueHandler = issueHandler;
     }
 
+    /**
+     * Checks whether the trim-whitespace-checkbox of the associated
+     * {@code mainPanel} is checked and whether {@code text} is the current
+     * entry in the clipboard which allows distinction between typed and pasted
+     * changes (see https://stackoverflow.com/questions/45928597/how-to-manipulate-text-pasted-into-a-jtextfield-but-not-typed-input
+     * for details).
+     *
+     * @param text the text to trim or leave
+     * @return the trimmed or untouched text
+     */
     private String trim(String text) {
-        boolean trimWhiteSpace = mainPanel.getDocumentSwitchingMap().get(mainPanel.getoCRSelectComponent()).getKey().getTrimWhitespaceCheckBox().isSelected();
-        String text0;
-        if (trimWhiteSpace) {
-            text0 = text.trim();
-        } else {
-            text0 = text;
+        try {
+            Object currentClipboardObject = Toolkit.getDefaultToolkit().getSystemClipboard().getContents(null).getTransferData(DataFlavor.stringFlavor);
+            assert currentClipboardObject instanceof String;
+            String currentClipboardString = (String) currentClipboardObject;
+            boolean trimWhiteSpace = mainPanel.getDocumentSwitchingMap().get(mainPanel.getoCRSelectComponent()).getKey().getTrimWhitespaceCheckBox().isSelected()
+                    && currentClipboardString.equals(text);
+                //only pasted changes ought to be trimmed
+            String text0;
+            if (trimWhiteSpace) {
+                text0 = text.trim();
+            } else {
+                text0 = text;
+            }
+            return text0;
+        }catch(UnsupportedFlavorException
+                | IOException ex) {
+            LOGGER.error("unexpected exception during retrieval of clipboard data occured",
+                    ex);
+            issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+            return null;
         }
-        return text0;
     }
 
     @Override
