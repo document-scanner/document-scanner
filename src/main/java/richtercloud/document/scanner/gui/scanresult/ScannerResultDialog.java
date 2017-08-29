@@ -31,7 +31,6 @@ import java.util.concurrent.FutureTask;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.embed.swing.JFXPanel;
-import javafx.event.EventHandler;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -252,9 +251,8 @@ public class ScannerResultDialog extends JDialog {
             buttonPaneLeft.add(addImagesButton, 2, 0);
             leftPane.setBottom(buttonPaneLeft);
             addImagesButton.setDisable(true);
-            addDocumentButton.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
-                @Override
-                public void handle(MouseEvent event) {
+            addDocumentButton.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
+                try {
                     DocumentViewPane addedDocument = addNewDocument(documentPane,
                             panelWidth,
                             panelHeight);
@@ -266,11 +264,14 @@ public class ScannerResultDialog extends JDialog {
                             false //enableAddImagesButton
                     );
                     documentPane.setSelectedDocument(addedDocument);
+                }catch(Throwable ex) {
+                    LOGGER.error("unexpected exception during adding of document",
+                            ex);
+                    issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             });
-            removeDocumentButton.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
-                @Override
-                public void handle(MouseEvent event) {
+            removeDocumentButton.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
+                try {
                     //enqueue the scan results which were grouped in the document
                     //back into the scan result pane...
                     List<ImageWrapper> selectedDocumentImageWrappers = documentPane.getSelectedDocument().getImageWrappers();
@@ -296,9 +297,13 @@ public class ScannerResultDialog extends JDialog {
                             documentJobPane,
                             scanResultPane,
                             documentJobToggleButton);
+                }catch(Throwable ex) {
+                    LOGGER.error("unexpected exception during removal of document",
+                            ex);
+                    issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             });
-            addImagesButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent event) -> {
+            addImagesButton.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
                 try {
                     if(documentPane.getChildrenUnmodifiable().isEmpty()) {
                         DocumentViewPane addedDocument = addNewDocument(documentPane,
@@ -401,8 +406,14 @@ public class ScannerResultDialog extends JDialog {
             });
             scanResultAddModeComboBox.setButtonCell(new ScanResultAddModeComboBoxCell());
             scanResultAddModeComboBox.valueProperty().setValue(scanResultAddMode);
-            scanResultAddModeComboBox.valueProperty().addListener((event) -> {
-                scanResultAddMode = (int) scanResultAddModeComboBox.valueProperty().get();
+            scanResultAddModeComboBox.valueProperty().addListener(event -> {
+                try {
+                    scanResultAddMode = (int) scanResultAddModeComboBox.valueProperty().get();
+                }catch(Throwable ex) {
+                    LOGGER.error("unexpected exception during value change",
+                            ex);
+                    issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+                }
             });
             buttonPaneTop.setHgap(5);
             buttonPaneTop.setPadding(new Insets(5));
@@ -467,27 +478,33 @@ public class ScannerResultDialog extends JDialog {
                     6, //columnIndex
                     0 //rowIndex
             );
-            zoomInButton.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
-                @Override
-                public void handle(MouseEvent event) {
+            zoomInButton.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
+                try {
                     float oldZoomLevel = ScannerResultDialog.this.zoomLevel;
                     ScannerResultDialog.this.zoomLevel = ScannerResultDialog.this.zoomLevel*(1+ScannerResultDialog.this.zoomMultiplicator);
                     handleZoomChange(scanResultPane.getScanResultPanes(),
                             oldZoomLevel,
                             ScannerResultDialog.this.zoomLevel);
+                }catch(Throwable ex) {
+                    LOGGER.error("unexpected exception during zooming in",
+                            ex);
+                    issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             });
-            zoomOutButton.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
-                @Override
-                public void handle(MouseEvent event) {
+            zoomOutButton.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
+                try {
                     float oldZoomLevel = zoomLevel;
                     ScannerResultDialog.this.zoomLevel = ScannerResultDialog.this.zoomLevel*(1-ScannerResultDialog.this.zoomMultiplicator);
                     handleZoomChange(scanResultPane.getScanResultPanes(),
                             oldZoomLevel,
                             ScannerResultDialog.this.zoomLevel);
+                }catch(Throwable ex) {
+                    LOGGER.error("unexpected exception during zooming out",
+                            ex);
+                    issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             });
-            scanMoreButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (event) -> {
+            scanMoreButton.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
                 try {
                     if(this.scannerDevice == null) {
                         //this is allowed since the dialog ought to be usable to
@@ -561,90 +578,114 @@ public class ScannerResultDialog extends JDialog {
                     this.issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             });
-            openDocumentButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (event) -> {
-                JFileChooser chooser = new JFileChooser();
-                FileNameExtensionFilter filter = new FileNameExtensionFilter(
-                        "PDF files", "pdf");
-                chooser.setFileFilter(filter);
-                int returnVal = chooser.showOpenDialog(this);
-                final File selectedFile = chooser.getSelectedFile();
-                if (returnVal != JFileChooser.APPROVE_OPTION) {
-                    return;
-                }
-                List<ImageWrapper> newImages;
-                FutureTask<List<ImageWrapper>> swingTask = new FutureTask<>(() -> {
-                    List<ImageWrapper> images0 = Tools.retrieveImages(selectedFile,
-                            this.openDocumentWaitDialogParent,
-                            this.imageWrapperStorageDir,
-                            issueHandler);
-                    return images0;
-                });
-                SwingUtilities.invokeLater(swingTask);
+            openDocumentButton.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
                 try {
-                    newImages = swingTask.get();
-                } catch (InterruptedException | ExecutionException ex) {
-                    issueHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
-                    return;
-                }
-                if(newImages == null) {
-                    LOGGER.debug("image retrieval has been canceled, discontinuing adding document");
-                    return;
-                }
-                for(ImageWrapper newImage : newImages) {
-                    try {
-                        addScanResult(newImage,
-                                scanResultPane,
-                                scanResultPane.getSelectedScanResults());
-                    } catch (IOException ex) {
-                        LOGGER.error("unexpected exception during adding of scan result occured",
-                                ex);
-                        issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+                    JFileChooser chooser = new JFileChooser();
+                    FileNameExtensionFilter filter = new FileNameExtensionFilter(
+                            "PDF files", "pdf");
+                    chooser.setFileFilter(filter);
+                    int returnVal = chooser.showOpenDialog(this);
+                    final File selectedFile = chooser.getSelectedFile();
+                    if (returnVal != JFileChooser.APPROVE_OPTION) {
                         return;
                     }
+                    List<ImageWrapper> newImages;
+                    FutureTask<List<ImageWrapper>> swingTask = new FutureTask<>(() -> {
+                        List<ImageWrapper> images0 = Tools.retrieveImages(selectedFile,
+                                this.openDocumentWaitDialogParent,
+                                this.imageWrapperStorageDir,
+                                issueHandler);
+                        return images0;
+                    });
+                    SwingUtilities.invokeLater(swingTask);
+                    try {
+                        newImages = swingTask.get();
+                    } catch (InterruptedException | ExecutionException ex) {
+                        issueHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
+                        return;
+                    }
+                    if(newImages == null) {
+                        LOGGER.debug("image retrieval has been canceled, discontinuing adding document");
+                        return;
+                    }
+                    for(ImageWrapper newImage : newImages) {
+                        try {
+                            addScanResult(newImage,
+                                    scanResultPane,
+                                    scanResultPane.getSelectedScanResults());
+                        } catch (IOException ex) {
+                            LOGGER.error("unexpected exception during adding of scan result occured",
+                                    ex);
+                            issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+                            return;
+                        }
+                    }
+                } catch(Throwable ex) {
+                    LOGGER.error("unexpected exception during opening of document",
+                            ex);
+                    issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             });
-            deletePageButton.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
-                @Override
-                public void handle(MouseEvent event) {
+            deletePageButton.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
+                try {
                     scanResultPane.removeScanResultPanes(scanResultPane.getSelectedScanResults());
                     if(scanResultPane.getSelectedScanResults().isEmpty()) {
                         //is most likely always empty, but adding this simple
                         //check might avoid trouble in the future
                         addImagesButton.setDisable(true);
                     }
+                }catch(Throwable ex) {
+                    LOGGER.error("unexpected exception during page deletion",
+                            ex);
+                    issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             });
-            selectAllButton.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
-                @Override
-                public void handle(MouseEvent event) {
+            selectAllButton.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
+                try {
                     handleScanResultSelection(scanResultPane.getScanResultPanes(),
                             scanResultPane.getScanResultPanes(),
                             true //enableAddImagesButton
                     );
                     scanResultPane.getSelectedScanResults().clear();
                     scanResultPane.getSelectedScanResults().addAll(scanResultPane.getScanResultPanes());
+                }catch(Throwable ex) {
+                    LOGGER.error("unexpected exception during selection of all pages",
+                            ex);
+                    issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             });
-            turnRightButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent event) -> {
-                for(ImageViewPane selectedScanResult : scanResultPane.getSelectedScanResults()) {
-                    try {
-                        selectedScanResult.turnRight(panelWidth);
-                    } catch (IOException ex) {
-                        LOGGER.error("unexpected exception during turning of image",
-                                ex);
-                        issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+            turnRightButton.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
+                try {
+                    for(ImageViewPane selectedScanResult : scanResultPane.getSelectedScanResults()) {
+                        try {
+                            selectedScanResult.turnRight(panelWidth);
+                        } catch (IOException ex) {
+                            LOGGER.error("unexpected exception during turning right of image",
+                                    ex);
+                            issueHandler.handle(new ExceptionMessage(ex));
+                        }
                     }
+                }catch(Throwable ex) {
+                    LOGGER.error("unexpected exception during turning right of image",
+                            ex);
+                    issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             });
             turnLeftButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent event) -> {
-                for(ImageViewPane selectedScanResult : scanResultPane.getSelectedScanResults()) {
-                    try {
-                        selectedScanResult.turnLeft(panelWidth);
-                    } catch (IOException ex) {
-                        LOGGER.error("unexpected exception during turning of image",
-                                ex);
-                        issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+                try {
+                    for(ImageViewPane selectedScanResult : scanResultPane.getSelectedScanResults()) {
+                        try {
+                            selectedScanResult.turnLeft(panelWidth);
+                        } catch (IOException ex) {
+                            LOGGER.error("unexpected exception during turning left of image",
+                                    ex);
+                            issueHandler.handle(new ExceptionMessage(ex));
+                        }
                     }
+                }catch(Throwable ex) {
+                    LOGGER.error("unexpected exception during turning left of image",
+                            ex);
+                    issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
                 }
             });
             rightPane.setBottom(buttonPaneRight);
@@ -682,10 +723,16 @@ public class ScannerResultDialog extends JDialog {
         pack();
 
         this.cancelButton.addActionListener((event) -> this.setVisible(false));
-        this.openButton.addActionListener((event) -> {
-            this.sortedDocuments = new LinkedList<>();
-            this.documentPane.getDocumentNodes().forEach((DocumentViewPane imageViewPane) -> this.sortedDocuments.add(imageViewPane.getImageWrappers()));
-            this.setVisible(false);
+        this.openButton.addActionListener(event -> {
+            try {
+                this.sortedDocuments = new LinkedList<>();
+                this.documentPane.getDocumentNodes().forEach((DocumentViewPane imageViewPane) -> this.sortedDocuments.add(imageViewPane.getImageWrappers()));
+                this.setVisible(false);
+            }catch(Throwable ex) {
+                LOGGER.error("unexpected exception during opening of documents",
+                        ex);
+                issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+            }
         });
     }
 
@@ -753,15 +800,15 @@ public class ScannerResultDialog extends JDialog {
         panelHeight = (int)(panelHeight/oldZoomLevel*newZoomLevel);
     }
 
+    @SuppressWarnings("PMD.AvoidCatchingThrowable")
     private void addScanResult(ImageWrapper scanResult,
             ScanResultPane scanResultPane,
             List<ScanResultViewPane> selectedScanResults) throws IOException {
         ScanResultViewPane scanResultImageViewPane = new ScanResultViewPane(scanResult,
                 panelWidth);
         scanResultPane.addScanResultPane(scanResultImageViewPane);
-        scanResultImageViewPane.getImageView().addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent event) {
+        scanResultImageViewPane.getImageView().addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
+            try {
                 if(!event.isControlDown()) {
                     selectedScanResults.clear();
                 }
@@ -770,6 +817,10 @@ public class ScannerResultDialog extends JDialog {
                         scanResultPane.getScanResultPanes(),
                         true //enableAddImagesButton
                 );
+            }catch(Throwable ex) {
+                LOGGER.error("unexpected exception during processing of click on image",
+                        ex);
+                issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
             }
         });
     }
@@ -784,6 +835,7 @@ public class ScannerResultDialog extends JDialog {
      * @param selectedDocument
      * @return the added document image pane
      */
+    @SuppressWarnings("PMD.AvoidCatchingThrowable")
     private DocumentViewPane addNewDocument(DocumentPane documentPane,
             int panelWidth,
             int panelHeight) {
@@ -791,13 +843,19 @@ public class ScannerResultDialog extends JDialog {
                 panelHeight
         );
         retValue.addEventHandler(MouseEvent.MOUSE_CLICKED,
-            (MouseEvent event) -> {
-                handleScanResultSelection(new LinkedList<>(Arrays.asList(retValue)),
-                        documentPane.getDocumentNodes(),
-                        false //enableAddImagesButton (no need to enable if a
-                            //document is selected)
-                );
-                documentPane.setSelectedDocument(retValue);
+            event -> {
+                try {
+                    handleScanResultSelection(new LinkedList<>(Arrays.asList(retValue)),
+                            documentPane.getDocumentNodes(),
+                            false //enableAddImagesButton (no need to enable if a
+                                //document is selected)
+                    );
+                    documentPane.setSelectedDocument(retValue);
+                }catch(Throwable ex) {
+                    LOGGER.error("unexpected exception during processing of click on document",
+                            ex);
+                    issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+                }
             });
             //if ImageViewPane is created with empty WritableImage, the listener
             //has to be added to the containing pane rather than the ImageView
@@ -839,6 +897,7 @@ public class ScannerResultDialog extends JDialog {
         );
     }
 
+    @SuppressWarnings("PMD.AvoidCatchingThrowable")
     private void addDocumentJobToggleButton(DocumentJob documentJob,
             Pane documentJobPane,
             ScanResultPane scanResultPane,
@@ -849,15 +908,21 @@ public class ScannerResultDialog extends JDialog {
         //documentJobToggleButton.setDisable(!documentJob.isFinished());
             //re-enabling doesn't work, see internal implementation notes of
             //class for details
-        documentJobToggleButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent event) -> {
-            //move images from selection pane to job list where they can
-            //be moved back from if the button is toggled again
-            if(documentJobToggleButton.isSelected()) {
-                handleDocumentJobToggleButtonPressed(documentJob,
-                        scanResultPane);
-            }else {
-                //documentJobToggleButton not pressed
-                scanResultPane.removeScanResultViewPanesOf(documentJob.getImagesUnmodifiable());
+        documentJobToggleButton.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
+            try {
+                //move images from selection pane to job list where they can
+                //be moved back from if the button is toggled again
+                if(documentJobToggleButton.isSelected()) {
+                    handleDocumentJobToggleButtonPressed(documentJob,
+                            scanResultPane);
+                }else {
+                    //documentJobToggleButton not pressed
+                    scanResultPane.removeScanResultViewPanesOf(documentJob.getImagesUnmodifiable());
+                }
+            }catch(Throwable ex) {
+                LOGGER.error("unexpected exception during processing click on document job button",
+                        ex);
+                issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
             }
         });
         if(documentJob.isFinished()) {
