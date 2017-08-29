@@ -292,9 +292,11 @@ public class ScannerResultDialog extends JDialog {
                     //...and create a new scan job for them in order to increase
                     //overview
                     DocumentJob documentJob = documentController.addDocumentJob(selectedDocumentImageWrappers);
+                    DocumentJobToggleButton documentJobToggleButton = new DocumentJobToggleButton(documentJob);
                     addDocumentJobToggleButton(documentJob,
                             documentJobPane,
-                            scanResultPane);
+                            scanResultPane,
+                            documentJobToggleButton);
                 }
             });
             addImagesButton.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent event) -> {
@@ -430,9 +432,11 @@ public class ScannerResultDialog extends JDialog {
                     0 //rowIndex
             );
             for(DocumentJob documentJob : documentController.getDocumentJobs()) {
+                DocumentJobToggleButton documentJobToggleButton = new DocumentJobToggleButton(documentJob);
                 addDocumentJobToggleButton(documentJob,
                         documentJobPane,
-                        scanResultPane);
+                        scanResultPane,
+                        documentJobToggleButton);
                 handleDocumentJobToggleButtonPressed(documentJob,
                         scanResultPane);
                     //- handling event firing programmatically is painful
@@ -507,9 +511,10 @@ public class ScannerResultDialog extends JDialog {
                     );
                     ScanJobFinishCallback scanJobFinishCallback = imagesUnmodifiable -> {
                         Platform.runLater(() -> {
-                            if(imagesUnmodifiable == null) {
-                                //dialog has been canceled
-                                buttonPaneTop.getChildren().remove(scanJobToggleButton);
+                            if(imagesUnmodifiable == null
+                                    || imagesUnmodifiable.isEmpty()) {
+                                //dialog has been canceled or the ADF was empty
+                                documentJobPane.getChildren().remove(scanJobToggleButton);
                                     //remove toggle button for canceled job
                                 return;
                             }
@@ -541,7 +546,8 @@ public class ScannerResultDialog extends JDialog {
                                     documentController.getDocumentJobCount().intValue()+1));
                     addDocumentJobToggleButton(scanJob,
                             documentJobPane,
-                            scanResultPane);
+                            scanResultPane,
+                            scanJobToggleButton);
                     scanJobToggleButton.setDisable(true);
                         //re-enabling doesn't work, see internal implementation
                         //notes of class for details
@@ -834,8 +840,8 @@ public class ScannerResultDialog extends JDialog {
 
     private void addDocumentJobToggleButton(DocumentJob documentJob,
             Pane documentJobPane,
-            ScanResultPane scanResultPane) {
-        DocumentJobToggleButton documentJobToggleButton = new DocumentJobToggleButton(documentJob);
+            ScanResultPane scanResultPane,
+            DocumentJobToggleButton documentJobToggleButton) {
         documentJobToggleButtonMapping.put(documentJob,
                 documentJobToggleButton);
         documentJobPane.getChildren().add(documentJobToggleButton);
