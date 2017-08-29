@@ -85,6 +85,15 @@ public class IdentifierValueDetectionService extends AbstractFormatValueDetectio
     protected List<ValueDetectionResult<OCRResult>> checkResult(String inputSub,
             List<String> inputSplits,
             int index) throws ResultFetchingException {
+        List<ValueDetectionResult<OCRResult>> retValue = new LinkedList<>();
+        //check whether an identifier is exactly contained into the inputSub
+        for(String identifier : identifiers) {
+            if(inputSub.contains(identifier)) {
+                retValue.add(new ValueDetectionResult<>(inputSub,
+                        new OCRResult(identifier)));
+            }
+        }
+        //check with levenshtein distance
         int levenshteinDistanceMin = Integer.MAX_VALUE;
         String levenshteinDistanceMinIdentifier = null;
         for(String identifier : identifiers) {
@@ -96,7 +105,6 @@ public class IdentifierValueDetectionService extends AbstractFormatValueDetectio
                 levenshteinDistanceMinIdentifier = identifier;
             }
         }
-        List<ValueDetectionResult<OCRResult>> retValue = new LinkedList<>();
         if(levenshteinDistanceMinIdentifier != null) {
             retValue.add(new ValueDetectionResult<>(inputSub,
                     new OCRResult(levenshteinDistanceMinIdentifier)));
