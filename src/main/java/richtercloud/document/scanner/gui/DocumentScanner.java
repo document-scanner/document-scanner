@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javax.cache.Caching;
@@ -612,6 +613,10 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private void shutdownHook() {
         try {
             LOGGER.info(String.format("running shutdown hooks in %s", DocumentScanner.class));
+            mainPanel.getDocumentSwitchingMap().values().stream()
+                    .map(oCRSelectComponentPair -> oCRSelectComponentPair.getValue())
+                    .collect(Collectors.toList())
+                    .forEach(entityPanel -> entityPanel.getValueDetectionServiceExecutor().cancelExecute());
             if (this.documentScannerConf != null) {
                 try {
                     XStream xStream = new XStream();
