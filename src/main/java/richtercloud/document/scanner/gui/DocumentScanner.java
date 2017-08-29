@@ -93,6 +93,7 @@ import richtercloud.document.scanner.ocr.OCREngineSelectDialog;
 import richtercloud.document.scanner.setter.AmountMoneyPanelSetter;
 import richtercloud.document.scanner.setter.EmbeddableListPanelSetter;
 import richtercloud.document.scanner.setter.LongIdPanelSetter;
+import richtercloud.document.scanner.setter.QueryPanelSetter;
 import richtercloud.document.scanner.setter.SpinnerSetter;
 import richtercloud.document.scanner.setter.StringAutoCompletePanelSetter;
 import richtercloud.document.scanner.setter.TextFieldSetter;
@@ -131,6 +132,7 @@ import richtercloud.reflection.form.builder.jpa.panels.LongIdPanel;
 import richtercloud.reflection.form.builder.jpa.panels.QueryHistoryEntryStorage;
 import richtercloud.reflection.form.builder.jpa.panels.QueryHistoryEntryStorageCreationException;
 import richtercloud.reflection.form.builder.jpa.panels.QueryHistoryEntryStorageFactory;
+import richtercloud.reflection.form.builder.jpa.panels.QueryPanel;
 import richtercloud.reflection.form.builder.jpa.panels.StringAutoCompletePanel;
 import richtercloud.reflection.form.builder.jpa.storage.AbstractPersistenceStorageConf;
 import richtercloud.reflection.form.builder.jpa.storage.DelegatingPersistenceStorageFactory;
@@ -220,6 +222,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 UtilDatePickerSetter.getInstance());
         valueSetterMappingDefault.put(EmbeddableListPanel.class,
                 EmbeddableListPanelSetter.getInstance());
+        valueSetterMappingDefault.put(QueryPanel.class,
+                QueryPanelSetter.getInstance());
         VALUE_SETTER_MAPPING_DEFAULT = Collections.unmodifiableMap(valueSetterMappingDefault);
     }
     private final AmountMoneyCurrencyStorage amountMoneyCurrencyStorage;
