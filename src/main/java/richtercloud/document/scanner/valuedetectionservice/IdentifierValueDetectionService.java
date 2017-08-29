@@ -18,6 +18,7 @@ import java.lang.reflect.Field;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,7 +89,7 @@ public class IdentifierValueDetectionService extends AbstractFormatValueDetectio
         List<ValueDetectionResult<OCRResult>> retValue = new LinkedList<>();
         //check whether an identifier is exactly contained into the inputSub
         for(String identifier : identifiers) {
-            if(inputSub.contains(identifier)) {
+            if(StringUtils.containsIgnoreCase(inputSub, identifier)) {
                 retValue.add(new ValueDetectionResult<>(inputSub,
                         new OCRResult(identifier)));
             }
