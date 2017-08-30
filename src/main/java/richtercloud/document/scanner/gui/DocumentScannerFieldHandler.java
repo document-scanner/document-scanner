@@ -379,8 +379,7 @@ public class DocumentScannerFieldHandler extends JPAMappingFieldHandler<Object, 
             AbstractDocument retValueCastEditorTextFieldDocument = (AbstractDocument)retValueCastEditorTextField.getDocument();
             DocumentFilter documentFilterGlazedLists = retValueCastEditorTextFieldDocument.getDocumentFilter();
             retValueCastEditorTextFieldDocument.setDocumentFilter(new TrimDocumentFilter(documentFilterGlazedLists,
-                    mainPanel,
-                    getIssueHandler()));
+                    mainPanel));
             return retValue;
         }
         return super.handle0(field, instance, updateListener, reflectionFormBuilder);
