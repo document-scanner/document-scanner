@@ -894,7 +894,17 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     @SuppressWarnings({"PMD.UnusedFormalParameter", "PMD.AvoidCatchingThrowable"})
     private void scanMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_scanMenuItemActionPerformed
         try {
-            this.scan();
+            if(documentController.getScanJobLock().tryLock()) {
+                try {
+                    this.scan();
+                }finally {
+                    documentController.getScanJobLock().unlock();
+                }
+            }else {
+                messageHandler.handle(new Message("A scan job is already in progress",
+                        JOptionPane.ERROR_MESSAGE,
+                        "Scan job already in progress"));
+            }
         }catch(Throwable ex) {
             handleUnexpectedException(ex,
                     "Exception occured during scanning",
