@@ -17,7 +17,6 @@ package richtercloud.document.scanner.gui;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.io.IOException;
 import java.util.Set;
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
@@ -31,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.ifaces.EntityPanel;
+import richtercloud.document.scanner.ifaces.ImageWrapperException;
 import richtercloud.document.scanner.ifaces.OCREngine;
 import richtercloud.document.scanner.ifaces.OCRSelectComponent;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanel;
@@ -251,7 +251,7 @@ public class DefaultOCRSelectComponent extends OCRSelectComponent {
                         int preferredOCRSelectPanelWidthNew = (int) (documentScannerConf.getPreferredOCRSelectPanelWidth()*zoomLevel/zoomLevelOld);
                         documentScannerConf.setPreferredOCRSelectPanelWidth(preferredOCRSelectPanelWidthNew);
                     }
-                } catch (IOException ex) {
+                } catch (ImageWrapperException ex) {
                     LOGGER.error("unexpected exception during zooming out",
                             ex);
                     issueHandler.handleUnexpectedException(new ExceptionMessage(ex));

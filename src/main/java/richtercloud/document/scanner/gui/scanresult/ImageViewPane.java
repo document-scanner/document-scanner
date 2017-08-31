@@ -14,7 +14,6 @@
  */
 package richtercloud.document.scanner.gui.scanresult;
 
-import java.io.IOException;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.Border;
@@ -25,6 +24,7 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
+import richtercloud.document.scanner.ifaces.ImageWrapperException;
 
 /**
  * A wrapper around {@link ImageView} which provides a {@link Pane} to be
@@ -70,20 +70,7 @@ public abstract class ImageViewPane extends GridPane {
                 imageHeight));
     }
 
-    /**
-     * Creates a {@code ImageViewPane} containing {@code scanResult} on top
-     * which is scaled down first.
-     * @param scanResult if {@code null} creates an empty {@link ImageView}
-     * which allows it to be selectable
-     * @param imageWidth the preferred width of the image which is used to
-     * calculate the height while preserving width-height ratio
-     */
-    public ImageViewPane(ImageWrapper scanResult,
-            int imageWidth) throws IOException {
-        this(scanResult.getImagePreviewFX(imageWidth));
-    }
-
-    private ImageViewPane(WritableImage image) {
+    public ImageViewPane(WritableImage image) {
         this.imageView = new ImageView(image);
         add(this.imageView,
                 0, //columnIndex
@@ -109,7 +96,7 @@ public abstract class ImageViewPane extends GridPane {
      * {@code image} property with new preview.
      * @param newWidth the externally calculated width
      */
-    public void changeZoom(int newWidth) throws IOException {
+    public void changeZoom(int newWidth) throws ImageWrapperException {
         //Can't set fitWidth on imageView since that causes bad quality image
         //when zooming in -> retrieve "fresh" preview from ImageWrapper
         if(getTopMostImageWrapper() == null) {
@@ -120,7 +107,12 @@ public abstract class ImageViewPane extends GridPane {
             this.imageView.setFitHeight(newHeight);
                 //need to set fitHeight as well if the ImageView is empty
         }else {
-            this.imageView.setImage(getTopMostImageWrapper().getImagePreviewFX(newWidth));
+            WritableImage imagePreview = getTopMostImageWrapper().getImagePreviewFX(newWidth);
+            if(imagePreview == null) {
+                //cache has been shut down
+                return;
+            }
+            this.imageView.setImage(imagePreview);
         }
         int oldWidth = (int) this.getWidth();
         int newHeight = (int) (this.getHeight()*newWidth/oldWidth);
@@ -129,7 +121,7 @@ public abstract class ImageViewPane extends GridPane {
     }
 
     private void turn(int rotationDegreesDiff,
-            int width) throws IOException {
+            int width) throws ImageWrapperException {
         //not necessary to set rotation of ImageView or ImageViewPane because
         //they adjust automatically to the newly set image
         if(getTopMostImageWrapper() == null) {
@@ -137,16 +129,20 @@ public abstract class ImageViewPane extends GridPane {
         }else {
             getTopMostImageWrapper().setRotationDegrees(getTopMostImageWrapper().getRotationDegrees()+rotationDegreesDiff);
             WritableImage newImage = getTopMostImageWrapper().getImagePreviewFX(width);
+            if(newImage == null) {
+                //cache has been shut down
+                return;
+            }
             this.imageView.setImage(newImage);
         }
     }
 
-    public void turnRight(int width) throws IOException {
+    public void turnRight(int width) throws ImageWrapperException {
         turn(90,
                 width);
     }
 
-    public void turnLeft(int width) throws IOException {
+    public void turnLeft(int width) throws ImageWrapperException {
         turn(-90,
                 width);
     }

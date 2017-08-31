@@ -52,7 +52,10 @@ public class OCRResultPanel extends CancelablePanel<OCRResultPanelPanel, String>
         String oCRResult;
         try {
             oCRResult = oCRResultPanelFetcher.fetch();
-            assert oCRResult != null;
+            if(oCRResult == null) {
+                //cache has been shut down
+                return null;
+            }
         } catch (OCREngineRecognitionException ex) {
             messageHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
             return null;

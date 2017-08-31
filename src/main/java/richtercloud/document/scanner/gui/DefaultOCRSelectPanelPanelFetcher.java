@@ -14,7 +14,6 @@
  */
 package richtercloud.document.scanner.gui;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
 import java.util.List;
@@ -22,6 +21,7 @@ import java.util.Set;
 import org.apache.commons.collections4.OrderedMap;
 import org.apache.commons.collections4.map.LinkedMap;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
+import richtercloud.document.scanner.ifaces.ImageWrapperException;
 import richtercloud.document.scanner.ifaces.OCREngine;
 import richtercloud.document.scanner.ifaces.OCREngineProgressEvent;
 import richtercloud.document.scanner.ifaces.OCREngineProgressListener;
@@ -66,9 +66,12 @@ public class DefaultOCRSelectPanelPanelFetcher implements OCRSelectPanelPanelFet
         for (final OCRSelectPanel imagePanel : imagePanels) {
             try {
                 InputStream imageStream = imagePanel.getImage().getOriginalImageStream();
+                if(imageStream == null) {
+                    return null;
+                }
                 imageStreams.put(imagePanel.getImage(),
                         imageStream);
-            } catch (IOException ex) {
+            } catch (ImageWrapperException ex) {
                 throw new OCREngineRecognitionException(ex);
             }
         }

@@ -43,6 +43,7 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SplitPane;
+import javafx.scene.image.WritableImage;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
@@ -65,6 +66,7 @@ import richtercloud.document.scanner.gui.DocumentScanner;
 import richtercloud.document.scanner.gui.Tools;
 import richtercloud.document.scanner.gui.scanner.DocumentSource;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
+import richtercloud.document.scanner.ifaces.ImageWrapperException;
 import richtercloud.message.handler.ExceptionMessage;
 import richtercloud.message.handler.JavaFXDialogIssueHandler;
 import richtercloud.message.handler.Message;
@@ -280,7 +282,7 @@ public class ScannerResultDialog extends JDialog {
                             addScanResult(selectedDocumentScanResult,
                                     scanResultPane,
                                     scanResultPane.getSelectedScanResults());
-                        } catch (IOException ex) {
+                        } catch (ImageWrapperException ex) {
                             LOGGER.error("unexpected exception during adding of scan result",
                                     ex);
                             issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
@@ -535,7 +537,7 @@ public class ScannerResultDialog extends JDialog {
                                     addScanResult(newImage,
                                             scanResultPane,
                                             scanResultPane.getSelectedScanResults());
-                                } catch (IOException ex) {
+                                } catch (ImageWrapperException ex) {
                                     LOGGER.error("unexpected exception during adding of scan result",
                                             ex);
                                     issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
@@ -604,7 +606,7 @@ public class ScannerResultDialog extends JDialog {
                             addScanResult(newImage,
                                     scanResultPane,
                                     scanResultPane.getSelectedScanResults());
-                        } catch (IOException ex) {
+                        } catch (ImageWrapperException ex) {
                             LOGGER.error("unexpected exception during adding of scan result occured",
                                     ex);
                             issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
@@ -652,7 +654,7 @@ public class ScannerResultDialog extends JDialog {
                     for(ImageViewPane selectedScanResult : scanResultPane.getSelectedScanResults()) {
                         try {
                             selectedScanResult.turnRight(panelWidth);
-                        } catch (IOException ex) {
+                        } catch (ImageWrapperException ex) {
                             LOGGER.error("unexpected exception during turning right of image",
                                     ex);
                             issueHandler.handle(new ExceptionMessage(ex));
@@ -669,7 +671,7 @@ public class ScannerResultDialog extends JDialog {
                     for(ImageViewPane selectedScanResult : scanResultPane.getSelectedScanResults()) {
                         try {
                             selectedScanResult.turnLeft(panelWidth);
-                        } catch (IOException ex) {
+                        } catch (ImageWrapperException ex) {
                             LOGGER.error("unexpected exception during turning left of image",
                                     ex);
                             issueHandler.handle(new ExceptionMessage(ex));
@@ -774,7 +776,7 @@ public class ScannerResultDialog extends JDialog {
         for(ImageViewPane imageViewPane : imageViewPanes) {
             try {
                 imageViewPane.changeZoom(newWidth);
-            } catch (IOException ex) {
+            } catch (ImageWrapperException ex) {
                 LOGGER.error("unexpected exception during changing of zoom",
                         ex);
                 issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
@@ -783,7 +785,7 @@ public class ScannerResultDialog extends JDialog {
         for(ImageViewPane documentNode : documentPane.getDocumentNodes()) {
             try {
                 documentNode.changeZoom(newWidth);
-            } catch (IOException ex) {
+            } catch (ImageWrapperException ex) {
                 LOGGER.error("unexpected exception during changing of zoom",
                         ex);
                 issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
@@ -796,9 +798,14 @@ public class ScannerResultDialog extends JDialog {
     @SuppressWarnings("PMD.AvoidCatchingThrowable")
     private void addScanResult(ImageWrapper scanResult,
             ScanResultPane scanResultPane,
-            List<ScanResultViewPane> selectedScanResults) throws IOException {
+            List<ScanResultViewPane> selectedScanResults) throws ImageWrapperException {
+        WritableImage scanResultScaled=  scanResult.getImagePreviewFX(panelWidth);
+        if(scanResultScaled == null) {
+            //cache has been shut down
+            return;
+        }
         ScanResultViewPane scanResultImageViewPane = new ScanResultViewPane(scanResult,
-                panelWidth);
+                scanResultScaled);
         scanResultPane.addScanResultPane(scanResultImageViewPane);
         scanResultImageViewPane.getImageView().addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
             try {
@@ -877,7 +884,7 @@ public class ScannerResultDialog extends JDialog {
                 addScanResult(scanResultImage,
                         scanResultPane,
                         scanResultPane.getSelectedScanResults());
-            } catch (IOException ex) {
+            } catch (ImageWrapperException ex) {
                 LOGGER.error("unexpected exception during adding of scan result occured",
                         ex);
                 issueHandler.handleUnexpectedException(new ExceptionMessage(ex));

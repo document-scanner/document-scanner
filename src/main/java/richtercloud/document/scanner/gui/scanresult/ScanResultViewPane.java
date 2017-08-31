@@ -14,8 +14,9 @@
  */
 package richtercloud.document.scanner.gui.scanresult;
 
-import java.io.IOException;
+import javafx.scene.image.WritableImage;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
+import richtercloud.document.scanner.ifaces.ImageWrapperException;
 
 /**
  * Wraps an {@link ImageWrapper} and uses selection highlighting and zoom code
@@ -27,9 +28,8 @@ public class ScanResultViewPane extends ImageViewPane {
     private final ImageWrapper imageWrapper;
 
     public ScanResultViewPane(ImageWrapper scanResult,
-            int imageWidth) throws IOException {
-        super(scanResult,
-                imageWidth);
+            WritableImage scanResultScaled) throws ImageWrapperException {
+        super(scanResultScaled);
         this.imageWrapper = scanResult;
     }
 

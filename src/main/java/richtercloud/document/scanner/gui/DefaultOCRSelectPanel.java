@@ -21,12 +21,13 @@ import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.io.IOException;
+import java.awt.image.BufferedImage;
 import java.util.HashSet;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
+import richtercloud.document.scanner.ifaces.ImageWrapperException;
 import richtercloud.document.scanner.ifaces.OCRSelectPanel;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelSelectionListener;
 import richtercloud.message.handler.ExceptionMessage;
@@ -66,7 +67,7 @@ public class DefaultOCRSelectPanel extends OCRSelectPanel implements MouseListen
      */
     public DefaultOCRSelectPanel(ImageWrapper image,
             int preferredWidth,
-            IssueHandler issueHandler) throws IOException {
+            IssueHandler issueHandler) throws ImageWrapperException {
         this.image = image;
         this.preferredWidth = preferredWidth;
         if(issueHandler == null) {
@@ -77,13 +78,18 @@ public class DefaultOCRSelectPanel extends OCRSelectPanel implements MouseListen
         this.init0();
     }
 
-    private void updatePreferredSize() throws IOException {
+    private void updatePreferredSize() throws ImageWrapperException {
         int width, height;
+        BufferedImage imagePreview = image.getImagePreview((int) (preferredWidth*zoomLevel));
+        if(imagePreview == null) {
+            //cache has been shut down
+            return;
+        }
         if(image.getRotationDegrees()/90%2 == 0) {
             width = (int)(preferredWidth*zoomLevel);
-            height = image.getImagePreview((int) (preferredWidth*zoomLevel)).getHeight();
+            height = imagePreview.getHeight();
         }else {
-            width = image.getImagePreview((int) (preferredWidth*zoomLevel)).getWidth();
+            width = imagePreview.getWidth();
             height = (int)(preferredWidth*zoomLevel);
         }
         this.setPreferredSize(new Dimension(width,
@@ -171,6 +177,10 @@ public class DefaultOCRSelectPanel extends OCRSelectPanel implements MouseListen
         try {
             int width = (int) (preferredWidth*zoomLevel);
             Image drawImage = this.image.getImagePreview(width);
+            if(drawImage == null) {
+                //cache has been shut down
+                return;
+            }
             g.drawImage(drawImage,
                     0, //x
                     0, //y
@@ -254,7 +264,7 @@ public class DefaultOCRSelectPanel extends OCRSelectPanel implements MouseListen
     }
 
     @Override
-    public void setZoomLevel(float zoomLevel) throws IOException {
+    public void setZoomLevel(float zoomLevel) throws ImageWrapperException {
         this.zoomLevel = zoomLevel;
         updatePreferredSize();
     }

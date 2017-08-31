@@ -48,7 +48,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
-import javax.cache.Caching;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
@@ -80,6 +79,7 @@ import richtercloud.document.scanner.gui.storageconf.StorageConfPanelCreationExc
 import richtercloud.document.scanner.gui.storageconf.StorageSelectionDialog;
 import richtercloud.document.scanner.ifaces.DocumentAddException;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
+import richtercloud.document.scanner.ifaces.ImageWrapperException;
 import richtercloud.document.scanner.ifaces.MainPanel;
 import richtercloud.document.scanner.ifaces.OCREngine;
 import richtercloud.document.scanner.ifaces.OCREngineConf;
@@ -653,7 +653,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     }
 
     private static void shutdownHookThreads() {
-        Caching.getCachingProvider().close();
+        CachingImageWrapper.shutdown();
         Platform.exit();
             //necessary in order to prevent hanging after all shutdown hooks
             //have been processed
@@ -1213,7 +1213,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         try {
             this.mainPanel.exportActiveDocument(selectedFile,
                     MainPanel.EXPORT_FORMAT_PDF);
-        } catch (IOException ex) {
+        } catch (IOException | ImageWrapperException ex) {
             messageHandler.handle(new Message(ex,
                     JOptionPane.ERROR_MESSAGE));
         }

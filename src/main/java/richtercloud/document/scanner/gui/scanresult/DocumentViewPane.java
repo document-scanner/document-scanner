@@ -14,16 +14,17 @@
  */
 package richtercloud.document.scanner.gui.scanresult;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import javafx.geometry.Insets;
 import javafx.scene.image.Image;
+import javafx.scene.image.WritableImage;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.Text;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
+import richtercloud.document.scanner.ifaces.ImageWrapperException;
 
 /**
  *
@@ -39,17 +40,15 @@ public class DocumentViewPane extends ImageViewPane {
         this.imageWrappers = new LinkedList<>();
     }
 
-    public DocumentViewPane(ImageWrapper scanResult,
-            int imageWidth) throws IOException {
-        super(scanResult,
-                imageWidth);
+    public DocumentViewPane(WritableImage scanResultScaled,
+            ImageWrapper scanResult) throws ImageWrapperException {
+        super(scanResultScaled);
         this.imageWrappers = new LinkedList<>(Arrays.asList(scanResult));
     }
 
-    public DocumentViewPane(List<ImageWrapper> scanResults,
-            int imageWidth) throws IOException {
-        super(scanResults.get(0),
-                imageWidth);
+    public DocumentViewPane(WritableImage topMostScanResultScaled,
+            List<ImageWrapper> scanResults) throws ImageWrapperException {
+        super(topMostScanResultScaled);
         this.imageWrappers = scanResults;
     }
 
@@ -70,9 +69,13 @@ public class DocumentViewPane extends ImageViewPane {
      * @param scanResult
      */
     public void addScanResult(ImageWrapper scanResultImageView,
-            int imageWidth) throws IOException {
+            int imageWidth) throws ImageWrapperException {
         this.imageWrappers.add(scanResultImageView);
         Image newImage = scanResultImageView.getImagePreviewFX(imageWidth);
+        if(newImage == null) {
+            //cache has been shut down
+            return;
+        }
         this.getImageView().setImage(newImage);
         GridPane.setMargin(this.getImageView(), new Insets(5));
         getChildren().clear();

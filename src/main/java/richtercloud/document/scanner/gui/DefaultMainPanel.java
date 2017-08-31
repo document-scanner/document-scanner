@@ -19,6 +19,7 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -61,6 +62,7 @@ import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.ifaces.DocumentAddException;
 import richtercloud.document.scanner.ifaces.EntityPanel;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
+import richtercloud.document.scanner.ifaces.ImageWrapperException;
 import richtercloud.document.scanner.ifaces.MainPanel;
 import richtercloud.document.scanner.ifaces.MainPanelDockingManager;
 import richtercloud.document.scanner.ifaces.OCREngine;
@@ -312,7 +314,8 @@ public class DefaultMainPanel extends MainPanel {
 
     @Override
     public void exportActiveDocument(OutputStream out,
-            int exportFormat) throws IOException {
+            int exportFormat) throws IOException,
+            ImageWrapperException{
         if(exportFormat == EXPORT_FORMAT_PDF) {
             //There seems to be no PNG support in Apache PDFBox, but
             //transforming into JPEG isn't too much of an effort and allows to
@@ -326,7 +329,12 @@ public class DefaultMainPanel extends MainPanel {
                 //@TODO: figure out how to create PDImageXObject from stream
                 //since this was possible in 1.8 and it's unlikely that there's
                 //such a severe regression
-                BufferedImage awtImage = ImageIO.read(imageWrapper.getOriginalImageStream());
+                InputStream inputStream = imageWrapper.getOriginalImageStream();
+                if(inputStream == null) {
+                    //cache has been shut down
+                    return;
+                }
+                BufferedImage awtImage = ImageIO.read(inputStream);
                 PDImageXObject  pdImageXObject = LosslessFactory.createFromImage(document, awtImage);
                 PDPageContentStream contentStream = new PDPageContentStream(document, page);
                 contentStream.drawImage(pdImageXObject,
@@ -533,7 +541,7 @@ public class DefaultMainPanel extends MainPanel {
                                 if (this.getDragStart() != null && !this.getDragStart().equals(this.getDragEnd())) {
                                     try {
                                         DefaultMainPanel.this.handleOCRSelection();
-                                    } catch (IOException ex) {
+                                    } catch (ImageWrapperException ex) {
                                         issueHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
                                     }
                                 }
@@ -685,10 +693,11 @@ public class DefaultMainPanel extends MainPanel {
         return retValue;
     }
 
-    private void handleOCRSelection() throws IOException {
+    private void handleOCRSelection() throws ImageWrapperException {
         BufferedImage imageSelection = oCRSelectComponent.getoCRSelectPanelPanel().getSelection();
         if(imageSelection == null) {
-            //image panels only contain selections of width or height <= 0 -> skip silently
+            //image panels only contain selections of width or height <= 0 ->
+            //skip silently or cache has been shutdown
             return;
         }
         String oCRResult;

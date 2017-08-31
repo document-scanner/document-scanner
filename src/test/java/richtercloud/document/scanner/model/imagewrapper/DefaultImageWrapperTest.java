@@ -29,6 +29,7 @@ import org.junit.Test;
 import static org.mockito.Mockito.mock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.ifaces.ImageWrapperException;
 import richtercloud.message.handler.IssueHandler;
 
 /**
@@ -41,7 +42,7 @@ public class DefaultImageWrapperTest {
     @Test
     //@Category(JavaFXGUITests.class) //Doesn't work, but should (see pom.xml
     //for details
-    public void testSerialize() throws IOException, ClassNotFoundException {
+    public void testSerialize() throws IOException, ImageWrapperException, ClassNotFoundException {
         try {
             new JFXPanel();
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();

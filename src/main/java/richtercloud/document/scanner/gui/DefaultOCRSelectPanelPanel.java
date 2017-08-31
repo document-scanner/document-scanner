@@ -19,7 +19,6 @@ import java.awt.FlowLayout;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -28,6 +27,7 @@ import javax.swing.Scrollable;
 import javax.swing.SwingConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import richtercloud.document.scanner.ifaces.ImageWrapperException;
 import richtercloud.document.scanner.ifaces.OCRSelectPanel;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanel;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelSelectionListener;
@@ -135,7 +135,7 @@ public class DefaultOCRSelectPanelPanel extends OCRSelectPanelPanel implements S
      * @return the selected image or {@code null} if all image panels contain selections with width or height <= 0
      */
     @Override
-    public BufferedImage getSelection() throws IOException {
+    public BufferedImage getSelection() throws ImageWrapperException {
         for(OCRSelectPanel panel : this.oCRSelectPanels) {
             if(panel.getDragStart() != null && panel.getDragEnd() != null) {
                 int width = panel.dragSelectionWidth();
@@ -165,6 +165,10 @@ public class DefaultOCRSelectPanelPanel extends OCRSelectPanelPanel implements S
                 int subimageHeight = height*panel.getImage().getInitialHeight()/panel.getPreferredSize().height;
                 assert subimageHeight > 0;
                 BufferedImage preview = panel.getImage().getImagePreview(panel.getImage().getInitialWidth());
+                if(preview == null) {
+                    //cache has been shut down
+                    return null;
+                }
                 BufferedImage imageSelection = preview.getSubimage(subimageX, //x
                         subimageY, //y
                         subimageWidth, //width
@@ -231,7 +235,7 @@ public class DefaultOCRSelectPanelPanel extends OCRSelectPanelPanel implements S
      * @param zoomLevel the zoom level
      */
     @Override
-    public void setZoomLevels(float zoomLevel) throws IOException {
+    public void setZoomLevels(float zoomLevel) throws ImageWrapperException {
         LOGGER.trace(String.format("changing zoom level to %f", zoomLevel));
         for(OCRSelectPanel oCRSelectPanel : this.oCRSelectPanels) {
             oCRSelectPanel.setZoomLevel(zoomLevel);

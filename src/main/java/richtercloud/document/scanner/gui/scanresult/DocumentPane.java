@@ -14,14 +14,15 @@
  */
 package richtercloud.document.scanner.gui.scanresult;
 
-import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
+import javafx.scene.image.WritableImage;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.StackPane;
+import richtercloud.document.scanner.ifaces.ImageWrapperException;
 
 /**
  * The pane which contains the documents containing the pages sorted
@@ -39,9 +40,14 @@ public class DocumentPane extends FlowPane {
     }
 
     public void addScanResults(List<ScanResultViewPane> scanResults,
-            int imageWidth) throws IOException {
-        DocumentViewPane newNode = new DocumentViewPane(scanResults.stream().map(p -> p.getImageWrapper()).collect(Collectors.toList()),
-                imageWidth);
+            int imageWidth) throws ImageWrapperException {
+        WritableImage topMostScanResultScaled = scanResults.get(0).getImageWrapper().getImagePreviewFX(imageWidth);
+        if(topMostScanResultScaled == null) {
+            //cache has been shut down
+            return;
+        }
+        DocumentViewPane newNode = new DocumentViewPane(topMostScanResultScaled,
+                scanResults.stream().map(p -> p.getImageWrapper()).collect(Collectors.toList()));
         getChildren().add(newNode);
         documentNodes.add(newNode);
     }

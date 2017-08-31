@@ -210,6 +210,10 @@ public class DefaultEntityPanel extends EntityPanel {
             final String oCRResult;
             try {
                 oCRResult = oCRSelectPanelPanelFetcher.fetch();
+                if(oCRResult == null) {
+                    //cache has been shut down
+                    return;
+                }
             } catch (OCREngineRecognitionException ex) {
                 LOGGER.error("unexpected exception during fetching of "
                         + "auto-OCR-detection values", ex);

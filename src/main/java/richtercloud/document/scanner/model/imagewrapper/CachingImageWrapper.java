@@ -30,6 +30,7 @@ import javax.cache.configuration.FactoryBuilder;
 import javax.cache.configuration.MutableConfiguration;
 import javax.cache.expiry.AccessedExpiryPolicy;
 import javax.cache.expiry.Duration;
+import richtercloud.document.scanner.ifaces.ImageWrapperException;
 import richtercloud.message.handler.IssueHandler;
 
 /**
@@ -68,6 +69,30 @@ public class CachingImageWrapper extends DefaultImageWrapper {
                 streamConfig);
     }
     private static Long cacheIdCounter = 0L;
+    private static boolean shutdown = false;
+
+    /**
+     * Avoids <pre>java.lang.IllegalStateException: null
+     *     at org.ehcache.jcache.JCache.checkNotClosed(JCache.java:763) ~[jcache-1.0.1.jar:na]</pre>
+     */
+    /*
+    internal implementation notes:
+    - this might close JCaches in other classes as well which might be
+    troublesome, so if other classes use JCache as well, introduce a shared
+    shutdown lock
+    - the possibility that shutdown doesn't get this lock before the next thread
+    invoking getOriginalImageStream0 exists and can only be avoid with a
+    prioritizable lock like it's used in reflection-form-builder-jpa
+    */
+    public static void shutdown() {
+        STREAM_CACHE_LOCK.lock();
+        try {
+            Caching.getCachingProvider().close();
+            shutdown = true;
+        }finally {
+            STREAM_CACHE_LOCK.unlock();
+        }
+    }
     private final long cacheId;
     /**
      * The lock for writing to and reading from the stream cache.
@@ -94,10 +119,21 @@ public class CachingImageWrapper extends DefaultImageWrapper {
         }
     }
 
+    /**
+     * {@inheritDoc }
+     *
+     * @param width
+     * @return the generated or cached preview or {@code null} if the generation
+     * has been abort if the cache was shut down
+     * @throws ImageWrapperException
+     */
     @Override
-    public BufferedImage getImagePreview(int width) throws IOException {
+    public BufferedImage getImagePreview(int width) throws ImageWrapperException {
         PREVIEW_CACHE_LOCK.lock();
         try {
+            if(shutdown) {
+                return null;
+            }
             Map<Integer, BufferedImage> wrapperCacheEntry = CACHE.get(cacheId);
             if(wrapperCacheEntry == null) {
                 wrapperCacheEntry = new HashMap<>();
@@ -106,6 +142,10 @@ public class CachingImageWrapper extends DefaultImageWrapper {
             BufferedImage imagePreview = wrapperCacheEntry.get(width);
             if(imagePreview == null) {
                 imagePreview = super.getImagePreview(width);
+                if(imagePreview == null) {
+                    //cache has been shut down
+                    return null;
+                }
                 wrapperCacheEntry.put(width, imagePreview);
             }
             return imagePreview;
@@ -115,9 +155,12 @@ public class CachingImageWrapper extends DefaultImageWrapper {
     }
 
     @Override
-    public WritableImage getImagePreviewFX(int width) throws IOException {
+    public WritableImage getImagePreviewFX(int width) throws ImageWrapperException {
         PREVIEW_FX_CACHE_LOCK.lock();
         try {
+            if(shutdown) {
+                return null;
+            }
             Map<Integer, WritableImage> wrapperCacheEntry = JAVAFX_CACHE.get(cacheId);
             if(wrapperCacheEntry == null) {
                 wrapperCacheEntry = new HashMap<>();
@@ -126,6 +169,9 @@ public class CachingImageWrapper extends DefaultImageWrapper {
             WritableImage imagePreview = wrapperCacheEntry.get(width);
             if(imagePreview == null) {
                 imagePreview = super.getImagePreviewFX(width);
+                if(imagePreview == null) {
+                    return null;
+                }
                 wrapperCacheEntry.put(width, imagePreview);
             }
             return imagePreview;
@@ -135,9 +181,12 @@ public class CachingImageWrapper extends DefaultImageWrapper {
     }
 
     @Override
-    public File getOriginalImageStream0(String formatName) throws IOException {
+    public File getOriginalImageStream0(String formatName) throws ImageWrapperException {
         STREAM_CACHE_LOCK.lock();
         try {
+            if(shutdown) {
+                return null;
+            }
             File streamSource = STREAM_CACHE.get(cacheId);
             if(streamSource == null) {
                 streamSource = super.getOriginalImageStream0(formatName);
@@ -150,10 +199,18 @@ public class CachingImageWrapper extends DefaultImageWrapper {
     }
 
     @Override
-    public void setRotationDegrees(double rotationDegrees) {
-        super.setRotationDegrees(rotationDegrees);
-        CACHE.remove(cacheId);
-        JAVAFX_CACHE.remove(cacheId);
-        STREAM_CACHE.remove(cacheId);
+    public void setRotationDegrees(double rotationDegrees) throws ImageWrapperException{
+        STREAM_CACHE_LOCK.lock();
+        try {
+            if(shutdown) {
+                return;
+            }
+            super.setRotationDegrees(rotationDegrees);
+            CACHE.remove(cacheId);
+            JAVAFX_CACHE.remove(cacheId);
+            STREAM_CACHE.remove(cacheId);
+        }finally {
+            STREAM_CACHE_LOCK.unlock();
+        }
     }
 }

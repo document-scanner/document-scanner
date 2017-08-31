@@ -39,6 +39,7 @@ import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
+import richtercloud.document.scanner.ifaces.ImageWrapperException;
 import richtercloud.message.handler.ExceptionMessage;
 import richtercloud.message.handler.IssueHandler;
 
@@ -130,7 +131,7 @@ public class DefaultImageWrapper implements ImageWrapper {
     }
 
     @Override
-    public void setRotationDegrees(double rotationDegrees) {
+    public void setRotationDegrees(double rotationDegrees) throws ImageWrapperException{
         this.rotationDegrees = rotationDegrees;
     }
 
@@ -148,10 +149,18 @@ public class DefaultImageWrapper implements ImageWrapper {
     rotating asynchronously.
     */
     @Override
-    public InputStream getOriginalImageStream(String formatName) throws IOException {
-        File tmpFile = getOriginalImageStream0(formatName);
-        InputStream retValue = new BufferedInputStream(new FileInputStream(tmpFile));
-        return retValue;
+    public InputStream getOriginalImageStream(String formatName) throws ImageWrapperException {
+        try {
+            File tmpFile = getOriginalImageStream0(formatName);
+            if(tmpFile == null) {
+                //cache has been shut down
+                return null;
+            }
+            InputStream retValue = new BufferedInputStream(new FileInputStream(tmpFile));
+            return retValue;
+        } catch (IOException ex) {
+            throw new ImageWrapperException(ex);
+        }
     }
 
     /**
@@ -167,44 +176,48 @@ public class DefaultImageWrapper implements ImageWrapper {
     - This is exposed in order to allow subclasses to cache the generated files.
     */
     @SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
-    protected File getOriginalImageStream0(String formatName) throws IOException {
-        File tmpFile = File.createTempFile("image-wrapper", null);
-        LOGGER.debug(String.format("using '%s' as temporary file",
-                tmpFile));
-        FutureTask<Image> javaFXTask = new FutureTask<>(() -> {
-            ImageView imageView = new ImageView(this.storageFile.toURI().toURL().toString());
-            imageView.setRotate(rotationDegrees);
-            Image rotatedImage = imageView.snapshot(null, //params
-                    null //image
-            );
-            return rotatedImage;
-        });
-        Platform.runLater(javaFXTask);
-        Image rotatedImage;
+    protected File getOriginalImageStream0(String formatName) throws ImageWrapperException {
         try {
-            rotatedImage = javaFXTask.get();
-        } catch (InterruptedException | ExecutionException ex) {
-            LOGGER.error("unexpected exception during rotation of image",
-                    ex);
-            issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
-            throw new RuntimeException(ex);
+            File tmpFile = File.createTempFile("image-wrapper", null);
+            LOGGER.debug(String.format("using '%s' as temporary file",
+                    tmpFile));
+            FutureTask<Image> javaFXTask = new FutureTask<>(() -> {
+                ImageView imageView = new ImageView(this.storageFile.toURI().toURL().toString());
+                imageView.setRotate(rotationDegrees);
+                Image rotatedImage = imageView.snapshot(null, //params
+                        null //image
+                );
+                return rotatedImage;
+            });
+            Platform.runLater(javaFXTask);
+            Image rotatedImage;
+            try {
+                rotatedImage = javaFXTask.get();
+            } catch (InterruptedException | ExecutionException ex) {
+                LOGGER.error("unexpected exception during rotation of image",
+                        ex);
+                issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+                throw new RuntimeException(ex);
+            }
+            assert rotatedImage != null;
+            //There's no way to write a JavaFX image into a file without converting
+            //it into a Swing/AWT image
+            RenderedImage renderedImage = SwingFXUtils.fromFXImage(rotatedImage, null);
+            ImageIO.write(renderedImage,
+                    formatName,
+                    tmpFile);
+            return tmpFile;
+        } catch (IOException ex) {
+            throw new ImageWrapperException(ex);
         }
-        assert rotatedImage != null;
-        //There's no way to write a JavaFX image into a file without converting
-        //it into a Swing/AWT image
-        RenderedImage renderedImage = SwingFXUtils.fromFXImage(rotatedImage, null);
-        ImageIO.write(renderedImage,
-                formatName,
-                tmpFile);
-        return tmpFile;
     }
 
-    protected File getOriginalImageStream0() throws IOException {
+    protected File getOriginalImageStream0() throws ImageWrapperException {
         return getOriginalImageStream0(FORMAT_DEFAULT);
     }
 
     @Override
-    public InputStream getOriginalImageStream() throws IOException {
+    public InputStream getOriginalImageStream() throws ImageWrapperException {
         return getOriginalImageStream(FORMAT_DEFAULT);
     }
 
@@ -219,14 +232,18 @@ public class DefaultImageWrapper implements ImageWrapper {
      * @throws IOException
      */
     @Override
-    public BufferedImage getOriginalImage() throws IOException {
-        BufferedImage original = ImageIO.read(this.storageFile);
-        return original;
+    public BufferedImage getOriginalImage() throws ImageWrapperException {
+        try {
+            BufferedImage original = ImageIO.read(this.storageFile);
+            return original;
+        } catch (IOException ex) {
+            throw new ImageWrapperException(ex);
+        }
     }
 
     @Override
     @SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
-    public BufferedImage getImagePreview(int width) throws IOException {
+    public BufferedImage getImagePreview(int width) throws ImageWrapperException {
         BufferedImage original = getOriginalImage();
         if(width == initialWidth && rotationDegrees/360 == 0) {
             return original;
@@ -238,8 +255,13 @@ public class DefaultImageWrapper implements ImageWrapper {
                     //width and height doesn't cause the created image to be
                     //scaled)
         );
-        ImageView imageView = getImagePreviewFXImageView(originalImage,
-                width);
+        ImageView imageView;
+        try {
+            imageView = getImagePreviewFXImageView(originalImage,
+                    width);
+        } catch (IOException ex) {
+            throw new ImageWrapperException(ex);
+        }
         BufferedImage image;
         //this will be called form Swing EDT
         FutureTask<BufferedImage> javaFXTask = new FutureTask<>(() -> {
@@ -329,7 +351,7 @@ public class DefaultImageWrapper implements ImageWrapper {
     }
 
     @Override
-    public WritableImage getImagePreviewFX(int width) throws IOException {
+    public WritableImage getImagePreviewFX(int width) throws ImageWrapperException {
         BufferedImage image = getOriginalImage();
         WritableImage originalImage = SwingFXUtils.toFXImage(image,
                 null //wimg (specifying an existing empty image with desired
@@ -339,8 +361,13 @@ public class DefaultImageWrapper implements ImageWrapper {
         if(width == initialWidth && rotationDegrees/360 == 0) {
             return originalImage;
         }
-        ImageView imageView = getImagePreviewFXImageView(originalImage,
-                width);
+        ImageView imageView;
+        try {
+            imageView = getImagePreviewFXImageView(originalImage,
+                    width);
+        } catch (IOException ex) {
+            throw new ImageWrapperException(ex);
+        }
         WritableImage retValue = imageView.snapshot(null, null);
         return retValue;
     }
@@ -362,14 +389,23 @@ public class DefaultImageWrapper implements ImageWrapper {
     }
 
     private void writeObject(java.io.ObjectOutputStream out)
-            throws IOException {
-        out.defaultWriteObject();
-        //initialWidth and initialHeight can be reconstructed from original
-        //image
-        out.writeDouble(this.rotationDegrees);
-        out.writeUTF(this.storageDir.getAbsolutePath());
-        IOUtils.copyLarge(getOriginalImageStream(), out);
+            throws ImageWrapperException {
+        try {
+            out.defaultWriteObject();
+            //initialWidth and initialHeight can be reconstructed from original
+            //image
+            out.writeDouble(this.rotationDegrees);
+            out.writeUTF(this.storageDir.getAbsolutePath());
+            InputStream inputStream = getOriginalImageStream();
+            if(inputStream == null) {
+                //prevent invalid data being serialized
+                throw new ImageWrapperException("cache has been shut down");
+            }
+            IOUtils.copyLarge(inputStream, out);
             //see readObject for comment on buffer specification
+        } catch (IOException ex) {
+            throw new ImageWrapperException(ex);
+        }
     }
 
     private void readObject(java.io.ObjectInputStream in)
@@ -377,21 +413,21 @@ public class DefaultImageWrapper implements ImageWrapper {
         in.defaultReadObject();
         this.rotationDegrees = in.readDouble();
         String storageDirPath = in.readUTF();
-        File storageDir = new File(storageDirPath);
-        File storageFile = createStorageFile(storageDir);
+        File storageDir0 = new File(storageDirPath);
+        File storageFile0 = createStorageFile(storageDir0);
         Field storageFileField = DefaultImageWrapper.class.getDeclaredField("storageFile");
         storageFileField.setAccessible(true);
         storageFileField.set(this,
-                storageFile); //set on final field through reflection
-        OutputStream storageFileOutputStream = new BufferedOutputStream(new FileOutputStream(storageFile));
-        IOUtils.copyLarge(in, storageFileOutputStream);
+                storageFile0); //set on final field through reflection
+        try (OutputStream storageFileOutputStream = new BufferedOutputStream(new FileOutputStream(storageFile0))) {
+            IOUtils.copyLarge(in, storageFileOutputStream);
             //Buffer specification unnecessary if buffered streams are used.
             //Large buffers don't speed up I/O by more than a few percent
             //<ref>http://www.oracle.com/technetwork/articles/javase/perftuning-137844.html</ref>
-        storageFileOutputStream.flush();
-        storageFileOutputStream.close();
+            storageFileOutputStream.flush();
             //flush and close necessary in order to avoid half written image
             //files
+        }
     }
 
     @Override

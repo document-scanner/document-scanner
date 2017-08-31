@@ -30,6 +30,7 @@ import org.junit.Test;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
+import richtercloud.document.scanner.ifaces.ImageWrapperException;
 import richtercloud.document.scanner.ifaces.OCRSelectPanel;
 import richtercloud.document.scanner.ifaces.OCRSelectPanelPanel;
 import richtercloud.document.scanner.model.imagewrapper.DefaultImageWrapper;
@@ -47,7 +48,7 @@ public class MainPanelScanResultPanelFetcherTest {
     @Test
     @Ignore //needs initialized JavaFX which can't be initialize in a headless
     //environment
-    public void testFetch() throws IOException, SQLException {
+    public void testFetch() throws IOException, ImageWrapperException, SQLException {
         OCRSelectPanelPanel oCRSelectPanelPanel = mock(OCRSelectPanelPanel.class);
         OCRSelectPanel oCRSelectPanel1 = mock(OCRSelectPanel.class);
         OCRSelectPanel oCRSelectPanel2 = mock(OCRSelectPanel.class);
