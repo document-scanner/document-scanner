@@ -363,16 +363,7 @@ public class ScannerResultDialog extends JDialog {
                     addImagesButton.setDisable(true);
 
                     //handle removal of empty document jobs
-                    ListIterator<DocumentJob> documentJobItr = documentController.getDocumentJobs().listIterator();
-                    while(documentJobItr.hasNext()) {
-                        DocumentJob documentJob = documentJobItr.next();
-                        if(documentJob.getImagesUnmodifiable().stream().allMatch(imageWrapper -> documentPane.getDocumentNodes().stream().map(a -> a.getImageWrappers()).anyMatch(b -> b.contains(imageWrapper)))) {
-                            documentJobItr.remove();
-                            DocumentJobToggleButton documentJobToggleButton = documentJobToggleButtonMapping.remove(documentJob);
-                            assert documentJobToggleButton != null;
-                            documentJobPane.getChildren().remove(documentJobToggleButton);
-                        }
-                    }
+                    handleRemovalOfEmptyDocumentJobs(documentJobPane);
                 }catch(Throwable ex) {
                     LOGGER.error("an unexpected exception during adding of images occured",
                             ex);
@@ -634,6 +625,8 @@ public class ScannerResultDialog extends JDialog {
                         //check might avoid trouble in the future
                         addImagesButton.setDisable(true);
                     }
+                    //handle removal of empty document jobs
+                    handleRemovalOfEmptyDocumentJobs(documentJobPane);
                 }catch(Throwable ex) {
                     LOGGER.error("unexpected exception during page deletion",
                             ex);
@@ -932,6 +925,19 @@ public class ScannerResultDialog extends JDialog {
         }
         LOGGER.debug(String.format("added toggle button for document job %d",
                 documentJob.getJobNumber()));
+    }
+
+    private void handleRemovalOfEmptyDocumentJobs(Pane documentJobPane) {
+        ListIterator<DocumentJob> documentJobItr = documentController.getDocumentJobs().listIterator();
+        while(documentJobItr.hasNext()) {
+            DocumentJob documentJob = documentJobItr.next();
+            if(documentJob.getImagesUnmodifiable().stream().allMatch(imageWrapper -> documentPane.getDocumentNodes().stream().map(a -> a.getImageWrappers()).anyMatch(b -> b.contains(imageWrapper)))) {
+                documentJobItr.remove();
+                DocumentJobToggleButton documentJobToggleButton = documentJobToggleButtonMapping.remove(documentJob);
+                assert documentJobToggleButton != null;
+                documentJobPane.getChildren().remove(documentJobToggleButton);
+            }
+        }
     }
 
     /**
