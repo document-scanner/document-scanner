@@ -235,6 +235,25 @@ public class DocumentScannerConf implements Serializable {
      */
     private boolean skipMD5SumCheck = false;
     private String logFilePath = LOG_FILE_PATH_DEFAULT;
+    /**
+     * The mapping between third party value detection service implementations
+     * and their JAR path to load at runtime. Built-in implementations are
+     * mapped to {@code null} in order to ease validation of this configuration.
+     */
+    /*
+    internal implementation notes:
+    - Maps to String because only one JAR which is expected to contain all
+    dependencies is currently selected in the dialog where implementations are
+    added; it that should be enhanced, map to List<String> -currently it's YAGNI
+    */
+    private Map<Class<? extends ValueDetectionServiceConf>, String> valueDetectionServiceJARPathMapping = new HashMap<>();
+    /**
+     * A data structure which contains the path values of
+     * {@code valueDetectionServiceJARPathMapping} in order to be able to load
+     * them if not all ValueDetectionServiceConf subclasses are available yet
+     * (because they're in the JAR to be loaded). Callers need to keep them in
+     * sync.
+     */
     private Set<String> valueDetectionServiceJARPaths = new HashSet<>();
     private List<ValueDetectionServiceConf> availableValueDetectionServiceConfs = new LinkedList<>();
     private List<ValueDetectionServiceConf> selectedValueDetectionServiceConfs = new LinkedList<>();
@@ -403,6 +422,7 @@ public class DocumentScannerConf implements Serializable {
             boolean debug,
             boolean skipMD5SumCheck,
             String logFilePath,
+            Map<Class<? extends ValueDetectionServiceConf>, String> valueDetectionServiceJARPathMapping,
             Set<String> valueDetectionServiceJARPaths,
             List<ValueDetectionServiceConf> availableValueDetectionServiceConfs,
             List<ValueDetectionServiceConf> selectedValueDetectionServiceConfs,
@@ -451,6 +471,7 @@ public class DocumentScannerConf implements Serializable {
         this.debug = debug;
         this.skipMD5SumCheck = skipMD5SumCheck;
         this.logFilePath = logFilePath;
+        this.valueDetectionServiceJARPathMapping = valueDetectionServiceJARPathMapping;
         this.valueDetectionServiceJARPaths = valueDetectionServiceJARPaths;
         this.availableValueDetectionServiceConfs = availableValueDetectionServiceConfs;
         this.selectedValueDetectionServiceConfs = selectedValueDetectionServiceConfs;
@@ -505,6 +526,7 @@ public class DocumentScannerConf implements Serializable {
                 documentScannerConf.isDebug(),
                 documentScannerConf.isSkipMD5SumCheck(),
                 documentScannerConf.getLogFilePath(),
+                documentScannerConf.getValueDetectionServiceJARPathMapping(),
                 documentScannerConf.getValueDetectionServiceJARPaths(),
                 documentScannerConf.getAvailableValueDetectionServiceConfs(),
                 documentScannerConf.getSelectedValueDetectionServiceConfs(),
@@ -524,6 +546,14 @@ public class DocumentScannerConf implements Serializable {
                 documentScannerConf.getFieldOrderMap(),
                 documentScannerConf.getBinaryDownloadDir()
         );
+    }
+
+    public Set<String> getValueDetectionServiceJARPaths() {
+        return valueDetectionServiceJARPaths;
+    }
+
+    public void setValueDetectionServiceJARPaths(Set<String> valueDetectionServiceJARPaths) {
+        this.valueDetectionServiceJARPaths = valueDetectionServiceJARPaths;
     }
 
     public File getBinaryDownloadDir() {
@@ -646,12 +676,12 @@ public class DocumentScannerConf implements Serializable {
         this.resolutionWish = resolutionWish;
     }
 
-    public Set<String> getValueDetectionServiceJARPaths() {
-        return valueDetectionServiceJARPaths;
+    public Map<Class<? extends ValueDetectionServiceConf>, String> getValueDetectionServiceJARPathMapping() {
+        return valueDetectionServiceJARPathMapping;
     }
 
-    public void setValueDetectionServiceJARPaths(Set<String> valueDetectionServiceJARPaths) {
-        this.valueDetectionServiceJARPaths = valueDetectionServiceJARPaths;
+    public void setValueDetectionServiceJARPathMapping(Map<Class<? extends ValueDetectionServiceConf>, String> valueDetectionServiceJARPathMapping) {
+        this.valueDetectionServiceJARPathMapping = valueDetectionServiceJARPathMapping;
     }
 
     /**

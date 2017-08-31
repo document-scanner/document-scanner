@@ -17,10 +17,10 @@ package richtercloud.document.scanner.valuedetectionservice;
 import java.awt.Component;
 import java.awt.Window;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
 import javax.swing.JList;
@@ -43,7 +43,7 @@ public class ValueDetectionServiceConfDialog extends javax.swing.JDialog {
      */
     private List<ValueDetectionServiceConf> availableValueDetectionServiceConfs = new LinkedList<>();
     private List<ValueDetectionServiceConf> selectedValueDetectionServiceConfs = new LinkedList<>();
-    private Set<String> valueDetectionServiceJARPaths = new HashSet<>();
+    private Map<Class<? extends ValueDetectionServiceConf>, String> valueDetectionServiceJARPaths = new HashMap<>();
     private final ListCellRenderer valueDetectionServiceListCellRenderer = new DefaultListCellRenderer() {
         @Override
         public Component getListCellRendererComponent(JList<?> list,
@@ -68,6 +68,7 @@ public class ValueDetectionServiceConfDialog extends javax.swing.JDialog {
     public ValueDetectionServiceConfDialog(Window parent,
             List<ValueDetectionServiceConf> availableValueDetectionServiceConfs,
             List<ValueDetectionServiceConf> selectedValueDetectionServiceConfs,
+            Map<Class<? extends ValueDetectionServiceConf>, String> valueDetectionServiceJARPaths,
             IssueHandler issueHandler) {
         super(parent,
                 ModalityType.APPLICATION_MODAL);
@@ -78,6 +79,7 @@ public class ValueDetectionServiceConfDialog extends javax.swing.JDialog {
                 selectedValueDetectionServiceConfs);
         this.availableValueDetectionServiceConfs = availableValueDetectionServiceConfs;
         this.selectedValueDetectionServiceConfs = selectedValueDetectionServiceConfs;
+        this.valueDetectionServiceJARPaths = valueDetectionServiceJARPaths;
         for(ValueDetectionServiceConf availableService : availableValueDetectionServiceConfs) {
             assert availableService != null;
             availableListModel.addElement(availableService);
@@ -104,7 +106,7 @@ public class ValueDetectionServiceConfDialog extends javax.swing.JDialog {
         return selectedValueDetectionServiceConfs;
     }
 
-    public Set<String> getValueDetectionServiceJARPaths() {
+    public Map<Class<? extends ValueDetectionServiceConf>, String> getValueDetectionServiceJARPaths() {
         return valueDetectionServiceJARPaths;
     }
 
@@ -156,6 +158,11 @@ public class ValueDetectionServiceConfDialog extends javax.swing.JDialog {
         });
 
         availableRemoveButton.setText("Remove");
+        availableRemoveButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                availableRemoveButtonActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout availablePanelLayout = new javax.swing.GroupLayout(availablePanel);
         availablePanel.setLayout(availablePanelLayout);
@@ -287,7 +294,8 @@ public class ValueDetectionServiceConfDialog extends javax.swing.JDialog {
             //dialog has been canceled
             return;
         }
-        this.valueDetectionServiceJARPaths.add(createdConf.getKey());
+        this.valueDetectionServiceJARPaths.put(createdConf.getValue().getClass(),
+                createdConf.getKey());
         this.availableValueDetectionServiceConfs.add(createdConf.getValue());
         this.availableListModel.addElement(createdConf.getValue());
     }//GEN-LAST:event_availableAddButtonActionPerformed
@@ -322,6 +330,14 @@ public class ValueDetectionServiceConfDialog extends javax.swing.JDialog {
     private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveButtonActionPerformed
         this.setVisible(false);
     }//GEN-LAST:event_saveButtonActionPerformed
+
+    @SuppressWarnings("PMD.UnusedFormalParameter")
+    private void availableRemoveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_availableRemoveButtonActionPerformed
+        ValueDetectionServiceConf serviceConf = this.availableList.getSelectedValue();
+        this.valueDetectionServiceJARPaths.remove(serviceConf.getClass());
+        this.availableValueDetectionServiceConfs.remove(serviceConf);
+        this.availableListModel.removeElement(serviceConf);
+    }//GEN-LAST:event_availableRemoveButtonActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton availableAddButton;

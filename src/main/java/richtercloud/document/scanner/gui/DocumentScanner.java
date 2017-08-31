@@ -38,6 +38,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -1224,6 +1225,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             ValueDetectionServiceConfDialog serviceConfDialog = new ValueDetectionServiceConfDialog(this,
                     documentScannerConf.getAvailableValueDetectionServiceConfs(),
                     documentScannerConf.getSelectedValueDetectionServiceConfs(),
+                    documentScannerConf.getValueDetectionServiceJARPathMapping(),
                     issueHandler);
             serviceConfDialog.setLocationRelativeTo(this);
             serviceConfDialog.setVisible(true);
@@ -1234,7 +1236,29 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             }
             this.documentScannerConf.setAvailableValueDetectionServiceConfs(availalbleValueDetectionServiceConfs);
             this.documentScannerConf.setSelectedValueDetectionServiceConfs(serviceConfDialog.getSelectedValueDetectionServiceConfs());
-            this.documentScannerConf.setValueDetectionServiceJARPaths(serviceConfDialog.getValueDetectionServiceJARPaths());
+            this.documentScannerConf.getValueDetectionServiceJARPathMapping()
+                    .putAll(serviceConfDialog.getValueDetectionServiceJARPaths());
+            //delete removed 3rd-party implementations
+            List<Class<? extends ValueDetectionServiceConf>> allServices = new LinkedList<>();
+            allServices.addAll(serviceConfDialog.getAvailableValueDetectionServiceConfs().stream()
+                    .map(serviceConf -> serviceConf.getClass())
+                    .collect(Collectors.toList()));
+            allServices.addAll(serviceConfDialog.getSelectedValueDetectionServiceConfs().stream()
+                    .map(serviceConf -> serviceConf.getClass())
+                    .collect(Collectors.toList()));
+            Set<Class<? extends ValueDetectionServiceConf>> toRemoves = new HashSet<>();
+            for(Class<? extends ValueDetectionServiceConf> serviceConfClass : this.documentScannerConf.getValueDetectionServiceJARPathMapping().keySet()) {
+                if(!allServices.contains(serviceConfClass)) {
+                    assert this.documentScannerConf.getValueDetectionServiceJARPathMapping().get(serviceConfClass) != null:
+                            "built-in service ought not to be removed from runtime classloading mapping";
+                    toRemoves.add(serviceConfClass);
+                }
+            }
+            for(Class<? extends ValueDetectionServiceConf> toRemove : toRemoves) {
+                this.documentScannerConf.getValueDetectionServiceJARPathMapping().remove(toRemove);
+            }
+            this.documentScannerConf.setValueDetectionServiceJARPaths(new HashSet<>(this.documentScannerConf.getValueDetectionServiceJARPathMapping().values()));
+            //apply changes
             this.mainPanel.applyValueDetectionServiceSelection();
         }catch(Throwable ex) {
             handleUnexpectedException(ex,
@@ -1610,6 +1634,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                             //doesn't avoid com.thoughtworks.xstream.mapper.CannotResolveClassException
                         xStream.omitField(DocumentScannerConf.class, "availableValueDetectionServiceConfs");
                         xStream.omitField(DocumentScannerConf.class, "selectedValueDetectionServiceConfs");
+                        xStream.omitField(DocumentScannerConf.class, "valueDetectionServiceJARPathMapping");
                         try {
                             documentScannerConf = (DocumentScannerConf)xStream.fromXML(new FileInputStream(documentScannerConf.getConfigFile()));
                         } catch (FileNotFoundException ex) {
