@@ -1484,7 +1484,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                                 //dialog canceled
                                 return;
                             }
-                            scannerResults.addAll(scannerResultDialog.getSortedDocuments());
+                            scannerResults.addAll(dialogResult);
                             for(List<ImageWrapper> scannerResult : scannerResults) {
                                 addDocument(scannerResult,
                                         null //selectedFile
