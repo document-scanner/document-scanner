@@ -66,6 +66,7 @@ import richtercloud.document.scanner.components.ValueDetectionPanel;
 import richtercloud.document.scanner.components.tag.FileTagStorage;
 import richtercloud.document.scanner.components.tag.TagStorage;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
+import richtercloud.document.scanner.gui.conf.DocumentScannerConfValidationException;
 import richtercloud.document.scanner.gui.scanner.DocumentSource;
 import static richtercloud.document.scanner.gui.scanner.ScannerEditDialog.DOCUMENT_SOURCE_OPTION_NAME;
 import richtercloud.document.scanner.gui.scanner.ScannerPageSelectDialog;
@@ -304,7 +305,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             ImageWrapperStorageDirExistsException,
             QueryHistoryEntryStorageCreationException,
             IdGenerationException,
-            FieldOrderValidationException {
+            FieldOrderValidationException,
+            DocumentScannerConfValidationException {
         this.documentScannerConf = documentScannerConf;
 
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
@@ -361,6 +363,13 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
         this.issueHandler = new DefaultIssueHandler(messageHandler,
                 bugHandler);
+
+        //warn about difficult configuration values and validate (first warn and
+        //then validate in order to allow resetting values which have been
+        //changed accidentally which is much more comfortable then editing the
+        //configuration file)
+        documentScannerConf.warnCriticalValues(confirmMessageHandler);
+        documentScannerConf.validate();
 
         this.fieldRetriever = new DocumentScannerFieldRetriever(documentScannerConf,
                 Constants.QUERYABLE_AND_EMBEDDABLE_CLASSES);
@@ -1695,6 +1704,11 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                     messageHandler.handle(new Message(message,
                             JOptionPane.ERROR_MESSAGE,
                             "Entity model validation error"));
+                    handleDocumentScannerShutdown(documentScanner);
+                } catch(DocumentScannerConfValidationException ex) {
+                    LOGGER.error("An unexpected exception during validation of configurationo occured, see nested excception for details",
+                            ex);
+                    messageHandler.handle(new ExceptionMessage(ex));
                     handleDocumentScannerShutdown(documentScanner);
                 } catch(Throwable ex) {
                     LOGGER.error("An unexpected exception occured, see nested exception for details", ex);

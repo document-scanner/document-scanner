@@ -15,6 +15,7 @@
 package richtercloud.document.scanner.gui.conf;
 
 import com.beust.jcommander.Parameter;
+import java.awt.Toolkit;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -28,6 +29,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import javax.swing.JOptionPane;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.tuple.Triple;
 import org.jscience.economics.money.Currency;
@@ -44,6 +46,9 @@ import richtercloud.document.scanner.valuedetectionservice.IdentifierValueDetect
 import richtercloud.document.scanner.valuedetectionservice.TrieCurrencyFormatValueDetectionServiceConf;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionService;
 import richtercloud.document.scanner.valuedetectionservice.ValueDetectionServiceConf;
+import richtercloud.message.handler.ConfirmMessageHandler;
+import richtercloud.message.handler.ExceptionMessage;
+import richtercloud.message.handler.Message;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyEmbeddedPersistenceStorageConf;
 import richtercloud.reflection.form.builder.jpa.storage.DerbyNetworkPersistenceStorageConf;
 import richtercloud.reflection.form.builder.jpa.storage.MySQLAutoPersistenceStorageConf;
@@ -139,6 +144,8 @@ public class DocumentScannerConf implements Serializable {
     private final static String TEXT_LANGUAGE_IDENTIFIER_DEFAULT = ValueDetectionService.retrieveLanguageIdentifier(LOCALE_DEFAULT);
     private final static File BINARY_DOWNLOAD_DIR_DEFAULT = new File(CONFIG_DIR_DEFAULT,
             "binaries");
+    private final static String KEEP = "Keep current value";
+    private final static String RESET = "Reset value to default";
     /**
      * The file the this configuration has been loaded from. Might be
      * {@code null} if no initial configuration file has been specified.
@@ -369,24 +376,117 @@ public class DocumentScannerConf implements Serializable {
         this.selectedValueDetectionServiceConfs.add(new IdentifierValueDetectionServiceConf());
     }
 
-    public void validate() {
+    public void validate() throws DocumentScannerConfValidationException {
         if(zoomLevelMultiplier > 1.0) {
-            throw new IllegalArgumentException(String.format("The zoom level "
+            throw new DocumentScannerConfValidationException(String.format("The zoom level "
                     + "multiplier mustn't be greater than 1.0 since the "
                     + "application interprets it between %f and 1.0",
                     ZOOM_LEVEL_MIN));
         }
         if(zoomLevelMultiplier < ZOOM_LEVEL_MIN) {
-            throw new IllegalArgumentException(String.format("The zoom level "
+            throw new DocumentScannerConfValidationException(String.format("The zoom level "
                     + "multiplier mustn't be less than %f since the "
                     + "application interprets it between %f and 1.0",
                     ZOOM_LEVEL_MIN,
                     ZOOM_LEVEL_MIN));
         }
+        validatePreferredScanResultPanelWidth();
+        validatePreferredOCRSelectPanelWidth();
+    }
+
+    private void validatePreferredScanResultPanelWidth() throws DocumentScannerConfValidationException {
         if(preferredScanResultPanelWidth < 10) {
-            throw new IllegalArgumentException("A preferred width of less than "
-                    + "10 will cause severe displaying issues and will thus "
-                    + "not be supported");
+            throw new DocumentScannerConfValidationException(String.format("A "
+                    + "preferred width for scan result panels of less than 10 "
+                    + "(is %d) will cause severe displaying issues and is "
+                    + "thus not supported",
+                    preferredScanResultPanelWidth));
+        }
+    }
+
+    private void validatePreferredOCRSelectPanelWidth() throws DocumentScannerConfValidationException {
+        if(preferredOCRSelectPanelWidth < 10) {
+            throw new DocumentScannerConfValidationException(String.format("A "
+                    + "preferred width for OCR select panels of less than 10 "
+                    + "(id %d) will cause severe displaying issues and is "
+                    + "thus not supported",
+                    preferredOCRSelectPanelWidth));
+        }
+    }
+
+    /**
+     * Evaluates the sanity and practicability of certain configuration values
+     * and sends a comprehensive message about eventual trouble to the passed
+     * {@code messageHandler}. It offer resetting the values to defaults if the
+     * user requests it.
+     *
+     * @param messageHandler the message handler to handle the warnings
+     */
+    public void warnCriticalValues(ConfirmMessageHandler messageHandler) {
+        int screenWidth = Toolkit.getDefaultToolkit().getScreenSize().width;
+        if(preferredScanResultPanelWidth > screenWidth) {
+            String answer = messageHandler.confirm(new Message(String.format(
+                    "The configuration value for the preferred width of scan "
+                    + "results (preferredScanResultPanelWidth) is %d which "
+                    + "exceeds the screen width %d and indicates an "
+                    + "unnecessary high value which might be set accidentally "
+                    + "and cause high memory usage which can lead to an "
+                    + "application crash. Do you want to keep this value or "
+                    + "reset it to the default %d?",
+                    preferredScanResultPanelWidth,
+                    screenWidth,
+                    PREFERRED_SCAN_RESULT_PANEL_WIDTH_DEFAULT),
+                    JOptionPane.WARNING_MESSAGE,
+                    "Unusual configuration value"),
+                    KEEP,
+                    RESET);
+            assert answer != null && (answer.equals(KEEP) || answer.equals(RESET));
+            if(answer.equals(RESET)) {
+                preferredScanResultPanelWidth = PREFERRED_SCAN_RESULT_PANEL_WIDTH_DEFAULT;
+            }
+        }
+        if(preferredOCRSelectPanelWidth > screenWidth) {
+            String answer = messageHandler.confirm(new Message(String.format(
+                    "The configuration value for the preferred width of scan "
+                    + "results (preferredOCRSelectPanelWidth) is %d which "
+                    + "exceeds the screen width %d and indicates an "
+                    + "unnecessary high value which might be set accidentally "
+                    + "and cause high memory usage which can lead to an "
+                    + "application crash. Do you want to keep this value or "
+                    + "reset it to the default %d?",
+                    preferredOCRSelectPanelWidth,
+                    screenWidth,
+                    PREFERRED_OCR_SELECT_PANEL_WIDTH),
+                    JOptionPane.WARNING_MESSAGE,
+                    "Unusual configuration value"),
+                    KEEP,
+                    RESET);
+            assert answer != null && (answer.equals(KEEP) || answer.equals(RESET));
+            if(answer.equals(RESET)) {
+                preferredOCRSelectPanelWidth = PREFERRED_OCR_SELECT_PANEL_WIDTH;
+            }
+        }
+        try {
+            validatePreferredScanResultPanelWidth();
+        } catch (DocumentScannerConfValidationException ex) {
+            String answer = messageHandler.confirm(new ExceptionMessage(ex),
+                    KEEP,
+                    RESET);
+            assert answer != null && (answer.equals(KEEP) || answer.equals(RESET));
+            if(answer.equals(RESET)) {
+                preferredScanResultPanelWidth = PREFERRED_SCAN_RESULT_PANEL_WIDTH_DEFAULT;
+            }
+        }
+        try {
+            validatePreferredOCRSelectPanelWidth();
+        } catch (DocumentScannerConfValidationException ex) {
+            String answer = messageHandler.confirm(new ExceptionMessage(ex),
+                    KEEP,
+                    RESET);
+            assert answer != null && (answer.equals(KEEP) || answer.equals(RESET));
+            if(answer.equals(RESET)) {
+                preferredOCRSelectPanelWidth = PREFERRED_OCR_SELECT_PANEL_WIDTH;
+            }
         }
     }
 
