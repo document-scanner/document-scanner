@@ -28,6 +28,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
+import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.embed.swing.JFXPanel;
@@ -144,6 +145,7 @@ public class ScannerResultDialog extends JDialog {
     private final DocumentPane documentPane;
     private final ScrollPane documentPaneScrollPane;
     private final SplitPane splitPane;
+    private final Button removeDocumentButton = new Button("Remove document");
     /**
      * How selected scan result ought to be added.
      * @see #SCAN_RESULT_ADD_MODE_SCAN_ORDER
@@ -235,7 +237,6 @@ public class ScannerResultDialog extends JDialog {
                 //GridPane doesn't allow sufficient control over resizing
             leftPane.setPadding(new Insets(10));
             Button addDocumentButton = new Button("New document");
-            Button removeDocumentButton = new Button("Remove document");
             leftPane.setCenter(documentPaneScrollPane);
             GridPane buttonPaneTop = new GridPane();
             GridPane buttonPaneLeft = new GridPane();
@@ -290,7 +291,11 @@ public class ScannerResultDialog extends JDialog {
                         }
                     }
                     //...remove the document...
-                    documentPane.getChildren().remove(documentPane.getChildren().size()-1);
+                    documentPane.removeDocumentNode(documentPane.getSelectedDocument());
+                    addImagesButton.setDisable(true);
+                    removeDocumentButton.setDisable(true);
+                        //if the selected document has been removed the buttons
+                        //should be disabled
                     //...and create a new scan job for them in order to increase
                     //overview
                     DocumentJob documentJob = documentController.addDocumentJob(selectedDocumentImageWrappers);
@@ -365,7 +370,8 @@ public class ScannerResultDialog extends JDialog {
                     addImagesButton.setDisable(true);
 
                     //handle removal of empty document jobs
-                    handleRemovalOfEmptyDocumentJobs(documentJobPane);
+                    handleRemovalOfEmptyDocumentJobs(documentJobPane,
+                            scanResultPane);
                 }catch(Throwable ex) {
                     LOGGER.error("an unexpected exception during adding of images occured",
                             ex);
@@ -628,7 +634,8 @@ public class ScannerResultDialog extends JDialog {
                         addImagesButton.setDisable(true);
                     }
                     //handle removal of empty document jobs
-                    handleRemovalOfEmptyDocumentJobs(documentJobPane);
+                    handleRemovalOfEmptyDocumentJobs(documentJobPane,
+                            scanResultPane);
                 }catch(Throwable ex) {
                     LOGGER.error("unexpected exception during page deletion",
                             ex);
@@ -851,6 +858,8 @@ public class ScannerResultDialog extends JDialog {
                                 //document is selected)
                     );
                     documentPane.setSelectedDocument(retValue);
+                    removeDocumentButton.setDisable(false);
+                        //as soon as a document is selected it can be removed
                 }catch(Throwable ex) {
                     LOGGER.error("unexpected exception during processing of click on document",
                             ex);
@@ -934,11 +943,19 @@ public class ScannerResultDialog extends JDialog {
                 documentJob.getJobNumber()));
     }
 
-    private void handleRemovalOfEmptyDocumentJobs(Pane documentJobPane) {
+    private void handleRemovalOfEmptyDocumentJobs(Pane documentJobPane,
+            ScanResultPane scanResultPane) {
         ListIterator<DocumentJob> documentJobItr = documentController.getDocumentJobs().listIterator();
         while(documentJobItr.hasNext()) {
             DocumentJob documentJob = documentJobItr.next();
-            if(documentJob.getImagesUnmodifiable().stream().allMatch(imageWrapper -> documentPane.getDocumentNodes().stream().map(a -> a.getImageWrappers()).anyMatch(b -> b.contains(imageWrapper)))) {
+            List<ImageWrapper> scanResultPaneImageWrappers = scanResultPane.getScanResultPanes().stream()
+                    .map(documentNode -> documentNode.getImageWrapper())
+                    .collect(Collectors.toList());
+                //join a list of lists of image wrappers
+            if(documentJob.getImagesUnmodifiable().stream().noneMatch(imageWrapper -> scanResultPaneImageWrappers.contains(imageWrapper))
+                //all image wrappers of the document job are at least in one
+                //document node's list of image wrappers
+            ) {
                 documentJobItr.remove();
                 DocumentJobToggleButton documentJobToggleButton = documentJobToggleButtonMapping.remove(documentJob);
                 assert documentJobToggleButton != null;

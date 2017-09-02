@@ -60,6 +60,12 @@ public class DocumentPane extends FlowPane {
         documentNodes.add(node);
     }
 
+    public void removeDocumentNode(DocumentViewPane node) {
+        assert getChildren().contains(node);
+        getChildren().remove(node);
+        documentNodes.remove(node);
+    }
+
     public List<DocumentViewPane> getDocumentNodes() {
         return documentNodes;
     }
