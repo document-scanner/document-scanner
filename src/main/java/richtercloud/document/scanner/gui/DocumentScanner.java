@@ -1735,6 +1735,10 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             documentScanner.close();
             documentScanner.shutdownHook();
             documentScanner.dispose();
+        }else {
+            //is DocumentScanner instance isn't available at least threads with
+            //static shutdown methods can be shut down
+            shutdownHookThreads();
         }
     }
 
