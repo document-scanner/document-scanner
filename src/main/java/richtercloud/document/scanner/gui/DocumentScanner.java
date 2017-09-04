@@ -208,27 +208,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private final static String RAVEN_DSN = "https://d4001abecf704dd790bb72bb5a7e0dc8:e131224c9d3e413fa194f3210ba99751@sentry.io/131229";
     private SaneDevice scannerDevice;
     private DocumentScannerConf documentScannerConf;
-    public final static Map<Class<? extends JComponent>, ValueSetter<?,?>> VALUE_SETTER_MAPPING_DEFAULT;
-    static {
-        Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMappingDefault = new HashMap<>();
-        valueSetterMappingDefault.put(JTextField.class,
-                TextFieldSetter.getInstance());
-        valueSetterMappingDefault.put(JSpinner.class,
-                SpinnerSetter.getInstance());
-        valueSetterMappingDefault.put(LongIdPanel.class,
-                LongIdPanelSetter.getInstance());
-        valueSetterMappingDefault.put(StringAutoCompletePanel.class,
-                StringAutoCompletePanelSetter.getInstance());
-        valueSetterMappingDefault.put(AmountMoneyPanel.class,
-                AmountMoneyPanelSetter.getInstance());
-        valueSetterMappingDefault.put(UtilDatePicker.class,
-                UtilDatePickerSetter.getInstance());
-        valueSetterMappingDefault.put(EmbeddableListPanel.class,
-                EmbeddableListPanelSetter.getInstance());
-        valueSetterMappingDefault.put(QueryPanel.class,
-                QueryPanelSetter.getInstance());
-        VALUE_SETTER_MAPPING_DEFAULT = Collections.unmodifiableMap(valueSetterMappingDefault);
-    }
+    private final Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping;
     private final AmountMoneyCurrencyStorage amountMoneyCurrencyStorage;
     private final AmountMoneyExchangeRateRetriever amountMoneyExchangeRateRetriever;
     private final TagStorage tagStorage;
@@ -267,7 +247,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
      * might take a long time to open documents for all of them, so a warning is
      * displayed if more documents than this value are about to be opened.
      */
-    private PersistenceStorage storage;
+    private PersistenceStorage<Long> storage;
     private final DelegatingPersistenceStorageFactory delegatingStorageFactory;
     private final FieldInitializer queryComponentFieldInitializer;
     private final StorageConfCopyFactory storageConfCopyFactory = new DelegatingStorageConfCopyFactory();
@@ -454,6 +434,9 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         assert storageConf instanceof AbstractPersistenceStorageConf;
         this.storage = (PersistenceStorage) delegatingStorageFactory.create(storageConf);
 
+        //initialize valueSetterMapping (after storage has been created)
+        valueSetterMapping = generateValueSetterMapping(this.storage);
+
         this.idGenerator = new SequentialIdGenerator(storage);
         this.idApplier = new ValueDetectionPanelIdApplier(idGenerator);
 
@@ -537,6 +520,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
 
         this.mainPanel = new DefaultMainPanel(Constants.ENTITY_CLASSES,
                 Constants.PRIMARY_CLASS_SELECTION,
+                valueSetterMapping,
                 storage,
                 amountMoneyCurrencyStorage,
                 amountMoneyExchangeRateRetriever,
@@ -596,6 +580,28 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private static String generateTitleSuffix() {
         String retValue = String.format("- %s %s", Constants.APP_NAME, Constants.APP_VERSION);
         return retValue;
+    }
+
+    public static Map<Class<? extends JComponent>, ValueSetter<?, ?>> generateValueSetterMapping(PersistenceStorage<Long> storage) {
+        Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping0 = new HashMap<>();
+        valueSetterMapping0.put(JTextField.class,
+                TextFieldSetter.getInstance());
+        valueSetterMapping0.put(JSpinner.class,
+                SpinnerSetter.getInstance());
+        valueSetterMapping0.put(LongIdPanel.class,
+                LongIdPanelSetter.getInstance());
+        valueSetterMapping0.put(StringAutoCompletePanel.class,
+                StringAutoCompletePanelSetter.getInstance());
+        valueSetterMapping0.put(AmountMoneyPanel.class,
+                AmountMoneyPanelSetter.getInstance());
+        valueSetterMapping0.put(UtilDatePicker.class,
+                UtilDatePickerSetter.getInstance());
+        valueSetterMapping0.put(EmbeddableListPanel.class,
+                EmbeddableListPanelSetter.getInstance());
+        valueSetterMapping0.put(QueryPanel.class,
+                new QueryPanelSetter(storage));
+        Map<Class<? extends JComponent>, ValueSetter<?,?>> valueSetterMapping = Collections.unmodifiableMap(valueSetterMapping0);
+        return valueSetterMapping;
     }
 
     public static String handleSearchScannerException(String text,
