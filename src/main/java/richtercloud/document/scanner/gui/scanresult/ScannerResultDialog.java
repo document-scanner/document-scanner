@@ -115,7 +115,7 @@ public class ScannerResultDialog extends JDialog {
      */
     public final static int SCAN_RESULT_ADD_MODE_SCAN_ORDER = 2;
     private float zoomLevel = 1.0f;
-    private float zoomMultiplicator = 0.3f;
+    private float zoomMultiplicator = 1.3f;
     private int initialWidth = 600;
     private int initialHeight = 400;
     /**
@@ -480,7 +480,7 @@ public class ScannerResultDialog extends JDialog {
             zoomInButton.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
                 try {
                     float oldZoomLevel = ScannerResultDialog.this.zoomLevel;
-                    ScannerResultDialog.this.zoomLevel = ScannerResultDialog.this.zoomLevel*(1+ScannerResultDialog.this.zoomMultiplicator);
+                    ScannerResultDialog.this.zoomLevel = ScannerResultDialog.this.zoomLevel*(ScannerResultDialog.this.zoomMultiplicator);
                     handleZoomChange(scanResultPane.getScanResultPanes(),
                             oldZoomLevel,
                             ScannerResultDialog.this.zoomLevel);
@@ -493,7 +493,7 @@ public class ScannerResultDialog extends JDialog {
             zoomOutButton.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
                 try {
                     float oldZoomLevel = zoomLevel;
-                    ScannerResultDialog.this.zoomLevel = ScannerResultDialog.this.zoomLevel*(1-ScannerResultDialog.this.zoomMultiplicator);
+                    ScannerResultDialog.this.zoomLevel = ScannerResultDialog.this.zoomLevel/(ScannerResultDialog.this.zoomMultiplicator);
                     handleZoomChange(scanResultPane.getScanResultPanes(),
                             oldZoomLevel,
                             ScannerResultDialog.this.zoomLevel);
