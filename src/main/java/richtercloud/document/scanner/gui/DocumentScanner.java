@@ -442,7 +442,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
 
         OCREngineConf oCREngineConf = documentScannerConf.getoCREngineConf();
         this.oCREngine = oCREngineFactory.create(oCREngineConf);
-        this.documentController = new DocumentController(issueHandler);
+        this.documentController = new DocumentController(issueHandler,
+                oCREngine);
 
         this.initComponents();
 

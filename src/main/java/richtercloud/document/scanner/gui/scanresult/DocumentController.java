@@ -49,6 +49,8 @@ import static richtercloud.document.scanner.gui.scanner.ScannerEditDialog.TOP_LE
 import static richtercloud.document.scanner.gui.scanner.ScannerEditDialog.TOP_LEFT_Y;
 import richtercloud.document.scanner.ifaces.DocumentAddException;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
+import richtercloud.document.scanner.ifaces.OCREngine;
+import richtercloud.document.scanner.ifaces.OCREngineConf;
 import richtercloud.message.handler.ExceptionMessage;
 import richtercloud.message.handler.IssueHandler;
 
@@ -123,9 +125,12 @@ public class DocumentController {
      */
     private final Map<String, SaneSession> addressSessionMap = new HashMap<>();
     private final IssueHandler issueHandler;
+    private final OCREngine<OCREngineConf> oCREngine;
 
-    public DocumentController(IssueHandler issueHandler) {
+    public DocumentController(IssueHandler issueHandler,
+            OCREngine<OCREngineConf> oCREngine) {
         this.issueHandler = issueHandler;
+        this.oCREngine = oCREngine;
     }
 
     public SaneDevice getScannerDevice(String scannerName,
@@ -249,7 +254,8 @@ public class DocumentController {
                 imageWrapperStorageDir,
                 pageCount,
                 issueHandler,
-                this.documentJobCount.incrementAndGet() //jobNumber
+                this.documentJobCount.incrementAndGet(), //jobNumber
+                oCREngine
         );
         this.documentJobs.add(retValue);
         return retValue;

@@ -20,10 +20,17 @@ import au.com.southsky.jfreesane.SaneStatus;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import org.apache.commons.collections4.OrderedMap;
+import org.apache.commons.collections4.map.LinkedMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.scanner.DocumentSource;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
+import richtercloud.document.scanner.ifaces.ImageWrapperException;
+import richtercloud.document.scanner.ifaces.OCREngine;
+import richtercloud.document.scanner.ifaces.OCREngineConf;
+import richtercloud.document.scanner.ifaces.OCREngineRecognitionException;
 import richtercloud.document.scanner.model.imagewrapper.CachingImageWrapper;
 import richtercloud.message.handler.ExceptionMessage;
 import richtercloud.message.handler.IssueHandler;
@@ -47,6 +54,7 @@ public class ScanJob extends DocumentJob implements Runnable {
     private final IssueHandler issueHandler;
     private final DocumentController documentController;
     private ScanJobFinishCallback finishCallback;
+    private final OCREngine<OCREngineConf> oCREngine;
 
     /**
      * Creates a new scan job. This is supposed to be called with a valid
@@ -66,7 +74,8 @@ public class ScanJob extends DocumentJob implements Runnable {
             File imageWrapperStorageDir,
             Integer pageCount,
             IssueHandler issueHandler,
-            int jobNumber) {
+            int jobNumber,
+            OCREngine<OCREngineConf> oCREngine) {
         super(false,
                 jobNumber);
         this.documentController = documentController;
@@ -75,10 +84,33 @@ public class ScanJob extends DocumentJob implements Runnable {
         this.imageWrapperStorageDir = imageWrapperStorageDir;
         this.pageCount = pageCount;
         this.issueHandler = issueHandler;
+        this.oCREngine = oCREngine;
     }
 
     public void setFinishCallback(ScanJobFinishCallback finishCallback) {
         this.finishCallback = finishCallback;
+    }
+
+    private class AsyncOCRThread extends Thread {
+        private final ImageWrapper imageWrapper;
+        private final OCREngine<OCREngineConf> oCREngine;
+
+        AsyncOCRThread(ImageWrapper imageWrapper,
+                OCREngine<OCREngineConf> oCREngine) {
+            this.imageWrapper = imageWrapper;
+            this.oCREngine = oCREngine;
+        }
+
+        @Override
+        public void run() {
+            try {
+                OrderedMap<ImageWrapper, InputStream> imageInputStreamMap = new LinkedMap<>();
+                imageInputStreamMap.put(imageWrapper, imageWrapper.getOriginalImageStream());
+                oCREngine.recognizeImageStreams(imageInputStreamMap);
+            } catch (ImageWrapperException | OCREngineRecognitionException ex) {
+                issueHandler.handle(new ExceptionMessage(ex));
+            }
+        }
     }
 
     @Override
@@ -99,6 +131,9 @@ public class ScanJob extends DocumentJob implements Runnable {
                         scannedImage,
                         issueHandler);
                 getImages().add(imageWrapper);
+                AsyncOCRThread asyncOCRThread = new AsyncOCRThread(imageWrapper,
+                        oCREngine);
+                asyncOCRThread.start();
             }else {
                 //ADF or duplex ADF
                 if(selectedDocumentSource == DocumentSource.ADF) {
@@ -114,6 +149,9 @@ public class ScanJob extends DocumentJob implements Runnable {
                                     scannedImage,
                                     issueHandler);
                             getImages().add(imageWrapper);
+                            AsyncOCRThread asyncOCRThread = new AsyncOCRThread(imageWrapper,
+                                    oCREngine);
+                            asyncOCRThread.start();
                         } catch (SaneException e) {
                             if (e.getStatus() == SaneStatus.STATUS_NO_DOCS) {
                                 // this is the out of paper condition that we expect
@@ -135,6 +173,9 @@ public class ScanJob extends DocumentJob implements Runnable {
                                     scannedImage,
                                     issueHandler);
                             getImages().add(imageWrapper);
+                            AsyncOCRThread asyncOCRThread = new AsyncOCRThread(imageWrapper,
+                                    oCREngine);
+                            asyncOCRThread.start();
                         } catch (SaneException e) {
                             if (e.getStatus() == SaneStatus.STATUS_NO_DOCS) {
                                 // this is the out of paper condition that we expect
