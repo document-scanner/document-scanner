@@ -1541,8 +1541,16 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private void handleException(Throwable ex,
             String title,
             String text) {
-        LOGGER.info("handling exception {}",
+        LOGGER.info("The following exception occured and should be handled by the user",
                 ex);
+        handleException0(ex,
+                title,
+                text);
+    }
+
+    private void handleException0(Throwable ex,
+            String title,
+            String text) {
         this.messageHandler.handle(new Message(String.format(text != null ? text : "The following exception occured: %s", ExceptionUtils.getRootCauseMessage(ex)),
                 JOptionPane.ERROR_MESSAGE,
                 title));
@@ -1551,7 +1559,9 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private void handleUnexpectedException(Throwable ex,
             String title,
             String text) {
-        handleException(ex,
+        LOGGER.error("The following unexpected exception occured which causes the application to shut down",
+                ex);
+        handleException0(ex,
                 title,
                 text);
         this.issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
