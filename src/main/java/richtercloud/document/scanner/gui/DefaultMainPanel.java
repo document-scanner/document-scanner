@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -60,6 +61,7 @@ import richtercloud.document.scanner.components.tag.TagStorage;
 import richtercloud.document.scanner.flexdock.MainPanelDockingManagerFlexdock;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.ifaces.DocumentAddException;
+import richtercloud.document.scanner.ifaces.DocumentItem;
 import richtercloud.document.scanner.ifaces.EntityPanel;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.ifaces.ImageWrapperException;
@@ -175,11 +177,12 @@ public class DefaultMainPanel extends MainPanel {
     private final Map<Class<?>, WarningHandler<?>> warningHandlers;
     private final MainPanelDockingManager mainPanelDockingManager;
     private final GroupLayout layout;
-    private int documentCount = 0;
+    private int documentItemCount = 0;
     private OCREngine oCREngine;
     private final FieldInitializer queryComponentFieldInitializer;
     private final QueryHistoryEntryStorage entryStorage;
     private final JPAFieldRetriever fieldRetriever;
+    private final LinkedHashMap<DocumentItem, OCRSelectComponent> documentItems = new LinkedHashMap<>();
 
     public DefaultMainPanel(Set<Class<?>> entityClasses,
             Class<?> primaryClassSelection,
@@ -271,12 +274,17 @@ public class DefaultMainPanel extends MainPanel {
     }
 
     @Override
-    public int getDocumentCount() {
-        return documentCount;
+    public int getDocumentItemCount() {
+        return documentItemCount;
     }
 
     @Override
-    public void exportActiveDocument(OutputStream out,
+    public LinkedHashMap<DocumentItem, OCRSelectComponent> getDocumentItems() {
+        return documentItems;
+    }
+
+    @Override
+    public void exportActiveDocumentItem(OutputStream out,
             int exportFormat) throws IOException,
             ImageWrapperException{
         if(exportFormat == EXPORT_FORMAT_PDF) {
@@ -322,102 +330,6 @@ public class DefaultMainPanel extends MainPanel {
     }
 
     /**
-     * In order to honour the fact that storing scan data (currently only
-     * performed with {@link ScanResult} annotation) is optional, check the
-     * determinants for storage of scan data and retrieve necessary data from
-     * those.
-     * @param entityToEdit the instance determining the initial state of
-     * components
-     */
-    @Override
-    public void addDocument(Object entityToEdit) throws DocumentAddException, IOException {
-        List<Field> entityClassFields = fieldRetriever.retrieveRelevantFields(entityToEdit.getClass());
-        Field entityToEditScanResultField = null;
-        for(Field entityClassField : entityClassFields) {
-            ScanResult scanResult = entityClassField.getAnnotation(ScanResult.class);
-            if(scanResult != null) {
-                if(entityToEditScanResultField != null) {
-                    throw new IllegalArgumentException(String.format("class %s "
-                            + "of entityToEdit contains more than one field "
-                            + "with annotation %s",
-                            entityToEdit.getClass(),
-                            ScanResult.class));
-                }
-                entityToEditScanResultField = entityClassField;
-            }
-        }
-        List<ImageWrapper> images = null;
-        if(entityToEditScanResultField != null) {
-            //restore OCR select component content from persisted data
-            Type entityToEditScanResultFieldType = entityToEditScanResultField.getGenericType();
-            if(!(entityToEditScanResultFieldType instanceof ParameterizedType)) {
-                throw new IllegalArgumentException(String.format("field %s "
-                        + "of class %s annotated with %s, but has no generic "
-                        + "type",
-                        entityToEditScanResultField.getName(),
-                        entityToEdit.getClass(),
-                        ScanResult.class));
-            }
-            ParameterizedType entityToEditScanResultFieldParameterizedType = (ParameterizedType) entityToEditScanResultFieldType;
-            if(!(entityToEditScanResultFieldParameterizedType.getRawType() instanceof Class)) {
-                throw new IllegalArgumentException(String.format("field %s of "
-                        + "class %s annotated with %s has no class as raw "
-                        + "type",
-                        entityToEditScanResultField.getName(),
-                        entityToEdit.getClass(),
-                        ScanResult.class));
-            }
-            if(entityToEditScanResultFieldParameterizedType.getActualTypeArguments().length != 1) {
-                throw new IllegalArgumentException(String.format("field %s of "
-                        + "class %s annotated with %s has more than one "
-                        + "generic type",
-                        entityToEditScanResultField.getName(),
-                        entityToEdit.getClass(),
-                        ScanResult.class));
-            }
-            if(!ImageWrapper.class.isAssignableFrom((Class<?>) entityToEditScanResultFieldParameterizedType.getActualTypeArguments()[0])) {
-                throw new IllegalArgumentException(String.format("field %s of "
-                        + "class %s annotated with %s has generic type which "
-                        + "is not a superclass of/assignable from %s",
-                        entityToEditScanResultField.getName(),
-                        entityToEdit.getClass(),
-                        ScanResult.class,
-                        ImageWrapper.class));
-            }
-            try {
-                //Querying the data of entityToEditScanResultField with a JPQL
-                //statement doesn't set the data on entityToEdit
-                DocumentScannerFieldInitializer scanDataFieldInitializer = new DocumentScannerFieldInitializer();
-                scanDataFieldInitializer.initialize(entityToEdit);
-                    //custom (de-)serialization in DefaultImageWrapper doesn't
-                    //guarantee that scanData is available if field is lazy
-                images = (List<ImageWrapper>) entityToEditScanResultField.get(entityToEdit);
-                if(images == null) {
-                    LOGGER.debug(String.format("scanData of instance of %s "
-                            + "is null, assuming that no data has been "
-                            + "persisted",
-                            entityToEdit.getClass()));
-                }
-            } catch (IllegalArgumentException | IllegalAccessException ex) {
-                throw new DocumentAddException(ex);
-            }
-        }
-        addDocument(images,
-                null, //documentFile
-                entityToEdit
-        );
-    }
-
-    @Override
-    public void addDocument (final List<ImageWrapper> images,
-            final File documentFile) throws DocumentAddException, IOException {
-        addDocument(images,
-                documentFile,
-                null //entityToEdit
-        );
-    }
-
-    /**
      *
      * @param images images to be transformed into a {@link OCRSelectPanelPanel}
      * or {@code null} indicating that no scan data was persisted when opening a
@@ -427,9 +339,84 @@ public class DefaultMainPanel extends MainPanel {
      * the {@link OCRSelectComponent} represents scan data).
      * @throws DocumentAddException
      */
-    public void addDocument (final List<ImageWrapper> images,
-            final File documentFile,
-            final Object entityToEdit) throws DocumentAddException, IOException {
+    @Override
+    public void addDocumentItem(DocumentItem documentItem) throws DocumentAddException, IOException {
+        List<ImageWrapper> images = documentItem.getImages();
+        final File documentFile = documentItem.getSelectedFile();
+        final Object entityToEdit = documentItem.getEntityToEdit();
+        if(entityToEdit != null) {
+            List<Field> entityClassFields = fieldRetriever.retrieveRelevantFields(entityToEdit.getClass());
+            Field entityToEditScanResultField = null;
+            for(Field entityClassField : entityClassFields) {
+                ScanResult scanResult = entityClassField.getAnnotation(ScanResult.class);
+                if(scanResult != null) {
+                    if(entityToEditScanResultField != null) {
+                        throw new IllegalArgumentException(String.format("class %s "
+                                + "of entityToEdit contains more than one field "
+                                + "with annotation %s",
+                                entityToEdit.getClass(),
+                                ScanResult.class));
+                    }
+                    entityToEditScanResultField = entityClassField;
+                }
+            }
+            if(entityToEditScanResultField != null) {
+                //restore OCR select component content from persisted data
+                Type entityToEditScanResultFieldType = entityToEditScanResultField.getGenericType();
+                if(!(entityToEditScanResultFieldType instanceof ParameterizedType)) {
+                    throw new IllegalArgumentException(String.format("field %s "
+                            + "of class %s annotated with %s, but has no generic "
+                            + "type",
+                            entityToEditScanResultField.getName(),
+                            entityToEdit.getClass(),
+                            ScanResult.class));
+                }
+                ParameterizedType entityToEditScanResultFieldParameterizedType = (ParameterizedType) entityToEditScanResultFieldType;
+                if(!(entityToEditScanResultFieldParameterizedType.getRawType() instanceof Class)) {
+                    throw new IllegalArgumentException(String.format("field %s of "
+                            + "class %s annotated with %s has no class as raw "
+                            + "type",
+                            entityToEditScanResultField.getName(),
+                            entityToEdit.getClass(),
+                            ScanResult.class));
+                }
+                if(entityToEditScanResultFieldParameterizedType.getActualTypeArguments().length != 1) {
+                    throw new IllegalArgumentException(String.format("field %s of "
+                            + "class %s annotated with %s has more than one "
+                            + "generic type",
+                            entityToEditScanResultField.getName(),
+                            entityToEdit.getClass(),
+                            ScanResult.class));
+                }
+                if(!ImageWrapper.class.isAssignableFrom((Class<?>) entityToEditScanResultFieldParameterizedType.getActualTypeArguments()[0])) {
+                    throw new IllegalArgumentException(String.format("field %s of "
+                            + "class %s annotated with %s has generic type which "
+                            + "is not a superclass of/assignable from %s",
+                            entityToEditScanResultField.getName(),
+                            entityToEdit.getClass(),
+                            ScanResult.class,
+                            ImageWrapper.class));
+                }
+                try {
+                    //Querying the data of entityToEditScanResultField with a JPQL
+                    //statement doesn't set the data on entityToEdit
+                    DocumentScannerFieldInitializer scanDataFieldInitializer = new DocumentScannerFieldInitializer();
+                    scanDataFieldInitializer.initialize(entityToEdit);
+                        //custom (de-)serialization in DefaultImageWrapper doesn't
+                        //guarantee that scanData is available if field is lazy
+                    images = (List<ImageWrapper>) entityToEditScanResultField.get(entityToEdit);
+                    if(images == null) {
+                        LOGGER.debug(String.format("scanData of instance of %s "
+                                + "is null, assuming that no data has been "
+                                + "persisted",
+                                entityToEdit.getClass()));
+                    }
+                } catch (IllegalArgumentException | IllegalAccessException ex) {
+                    throw new DocumentAddException(ex);
+                }
+            }
+            documentItem.setImages(images);
+        }
         Pair<OCRSelectComponent, EntityPanel> oCRSelectComponentPair = addDocumentRoutine(images,
                 documentFile,
                 entityToEdit,
@@ -437,6 +424,8 @@ public class DefaultMainPanel extends MainPanel {
         );
         addDocumentDone(oCRSelectComponentPair.getKey(),
                 oCRSelectComponentPair.getValue());
+        this.documentItems.put(documentItem,
+                oCRSelectComponentPair.getKey());
     }
 
     /**
@@ -462,13 +451,13 @@ public class DefaultMainPanel extends MainPanel {
                         //initial list of results has to be empty)
             );
         }
-        this.documentCount++;
+        this.documentItemCount++;
     }
 
     @Override
-    public void removeActiveDocument() {
+    public void removeActiveDocumentItem() {
         this.mainPanelDockingManager.removeDocument(this.getoCRSelectComponent());
-        this.documentCount--;
+        this.documentItemCount--;
     }
 
     /**

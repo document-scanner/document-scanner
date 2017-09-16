@@ -22,6 +22,7 @@ import javafx.geometry.Orientation;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.StackPane;
+import richtercloud.document.scanner.ifaces.DocumentItem;
 import richtercloud.document.scanner.ifaces.ImageWrapperException;
 
 /**
@@ -47,7 +48,7 @@ public class DocumentPane extends FlowPane {
             return;
         }
         DocumentViewPane newNode = new DocumentViewPane(topMostScanResultScaled,
-                scanResults.stream().map(p -> p.getImageWrapper()).collect(Collectors.toList()));
+                new DocumentItem(scanResults.stream().map(p -> p.getImageWrapper()).collect(Collectors.toList())));
         getChildren().add(newNode);
         documentNodes.add(newNode);
     }

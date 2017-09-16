@@ -79,11 +79,13 @@ import richtercloud.document.scanner.gui.scanresult.ScannerResultDialog;
 import richtercloud.document.scanner.gui.storageconf.StorageConfPanelCreationException;
 import richtercloud.document.scanner.gui.storageconf.StorageSelectionDialog;
 import richtercloud.document.scanner.ifaces.DocumentAddException;
+import richtercloud.document.scanner.ifaces.DocumentItem;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.ifaces.ImageWrapperException;
 import richtercloud.document.scanner.ifaces.MainPanel;
 import richtercloud.document.scanner.ifaces.OCREngine;
 import richtercloud.document.scanner.ifaces.OCREngineConf;
+import richtercloud.document.scanner.ifaces.OCRSelectComponent;
 import richtercloud.document.scanner.model.Company;
 import richtercloud.document.scanner.model.Document;
 import richtercloud.document.scanner.model.imagewrapper.CachingImageWrapper;
@@ -1058,8 +1060,9 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 LOGGER.debug("image retrieval has been canceled, discontinuing adding document");
                 return;
             }
-            addDocument(images,
-                    selectedFile);
+            addDocument(new DocumentItem(null, //entityToEdit
+                    images,
+                    selectedFile));
         } catch (DocumentAddException | InterruptedException | ExecutionException | IOException ex) {
             handleException(ex,
                     "Exception during adding of new document",
@@ -1151,7 +1154,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 documentController.addDocumentJob(images);
                 //always open dialog for pages from PDF because they don't take
                 //time to open
-                final List<List<ImageWrapper>> scannerResults = new LinkedList<>();
                 ScannerResultDialog scannerResultDialog = new ScannerResultDialog(this,
                         this.documentScannerConf.getPreferredScanResultPanelWidth(),
                         documentController,
@@ -1159,25 +1161,12 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         this.documentScannerConf.getImageWrapperStorageDir(),
                         javaFXDialogMessageHandler,
                         this, //openDocumentWaitDialogParent
+                        new LinkedList<>(mainPanel.getDocumentItems().keySet()),
                         this.documentScannerConf
                 );
                 scannerResultDialog.setLocationRelativeTo(this);
                 scannerResultDialog.setVisible(true);
-                if(this.documentScannerConf.isRememberPreferredScanResultPanelWidth()) {
-                    this.documentScannerConf.setPreferredScanResultPanelWidth(scannerResultDialog.getPanelWidth());
-                }
-                List<List<ImageWrapper>> dialogResult = scannerResultDialog.getSortedDocuments();
-                if(dialogResult == null) {
-                    //dialog canceled
-                    return;
-                }
-                scannerResults.addAll(scannerResultDialog.getSortedDocuments());
-                for(List<ImageWrapper> scannerResult : scannerResults) {
-                    addDocument(scannerResult,
-                            null //selectedFile
-                    );
-                }
-                //this.validate(); //not necessary
+                handleScannerResultDialogClosed(scannerResultDialog);
             } catch (DocumentAddException | InterruptedException | ExecutionException | IOException ex) {
                 handleException(ex,
                         "Exception during adding of new document",
@@ -1192,8 +1181,8 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
 
     @SuppressWarnings("PMD.UnusedFormalParameter")
     private void closeMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_closeMenuItemActionPerformed
-        this.mainPanel.removeActiveDocument();
-        if(this.mainPanel.getDocumentCount() == 0) {
+        this.mainPanel.removeActiveDocumentItem();
+        if(this.mainPanel.getDocumentItemCount() == 0) {
             this.closeMenuItem.setEnabled(false);
             this.exportMenuItem.setEnabled(false);
         }
@@ -1228,7 +1217,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
         assert selectedFile != null; //if dialog is canceled, method returns
         try {
-            this.mainPanel.exportActiveDocument(selectedFile,
+            this.mainPanel.exportActiveDocumentItem(selectedFile,
                     MainPanel.EXPORT_FORMAT_PDF);
         } catch (IOException | ImageWrapperException ex) {
             messageHandler.handle(new Message(ex,
@@ -1288,7 +1277,6 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private void scanResultsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_scanResultsMenuItemActionPerformed
         try {
             try {
-                final List<List<ImageWrapper>> scannerResults = new LinkedList<>();
                 ScannerResultDialog scannerResultDialog = new ScannerResultDialog(this,
                         this.documentScannerConf.getPreferredScanResultPanelWidth(),
                         documentController,
@@ -1296,24 +1284,12 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         this.documentScannerConf.getImageWrapperStorageDir(),
                         javaFXDialogMessageHandler,
                         this, //openDocumentWaitDialogParent
+                        new LinkedList<>(mainPanel.getDocumentItems().keySet()),
                         this.documentScannerConf
                 );
                 scannerResultDialog.setLocationRelativeTo(this);
                 scannerResultDialog.setVisible(true);
-                if(this.documentScannerConf.isRememberPreferredScanResultPanelWidth()) {
-                    this.documentScannerConf.setPreferredScanResultPanelWidth(scannerResultDialog.getPanelWidth());
-                }
-                List<List<ImageWrapper>> dialogResult = scannerResultDialog.getSortedDocuments();
-                if(dialogResult == null) {
-                    //dialog canceled
-                    return;
-                }
-                scannerResults.addAll(scannerResultDialog.getSortedDocuments());
-                for(List<ImageWrapper> scannerResult : scannerResults) {
-                    addDocument(scannerResult,
-                            null //selectedFile
-                    );
-                }
+                handleScannerResultDialogClosed(scannerResultDialog);
             } catch (IOException | DocumentAddException ex) {
                 messageHandler.handle(new ExceptionMessage(ex));
             }
@@ -1324,8 +1300,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
         }
     }//GEN-LAST:event_scanResultsMenuItemActionPerformed
 
-    private void addDocument(List<ImageWrapper> images,
-            File selectedFile) throws DocumentAddException, IOException {
+    private void addDocument(DocumentItem documentItem) throws DocumentAddException, IOException {
         //wait as long as possible
         if(amountMoneyExchangeRetrieverInitThread.isAlive()) {
             try {
@@ -1337,8 +1312,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 return;
             }
         }
-        this.mainPanel.addDocument(images,
-                selectedFile);
+        this.mainPanel.addDocumentItem(documentItem);
         closeMenuItem.setEnabled(true);
         exportMenuItem.setEnabled(true);
     }
@@ -1355,7 +1329,10 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 return;
             }
         }
-        this.mainPanel.addDocument(entityToEdit);
+        this.mainPanel.addDocumentItem(new DocumentItem(entityToEdit,
+                null, //images
+                null //selectedFile
+        ));
         closeMenuItem.setEnabled(true);
         exportMenuItem.setEnabled(true);
     }
@@ -1486,8 +1463,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                             return;
                         }
                         LOGGER.debug(String.format("scanned %d pages", imagesUnmodifiable.size()));
-                        final List<List<ImageWrapper>> scannerResults = new LinkedList<>();
-                        if(mainPanel.getDocumentCount() == 0) {
+                        if(mainPanel.getDocumentItemCount() == 0) {
                             //Only open dialog if there's no open document in order to
                             //avoid disturbing entering of data. The new scan is
                             //available in the dialog which can be opened manually.
@@ -1498,27 +1474,16 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                                     DocumentScanner.this.documentScannerConf.getImageWrapperStorageDir(),
                                     javaFXDialogMessageHandler,
                                     DocumentScanner.this, //openDocumentWaitDialogParent
+                                    new LinkedList<>(mainPanel.getDocumentItems().keySet()),
                                     DocumentScanner.this.documentScannerConf
                             );
                             scannerResultDialog.setLocationRelativeTo(DocumentScanner.this);
                             scannerResultDialog.setVisible(true);
-                            if(DocumentScanner.this.documentScannerConf.isRememberPreferredScanResultPanelWidth()) {
-                                DocumentScanner.this.documentScannerConf.setPreferredScanResultPanelWidth(scannerResultDialog.getPanelWidth());
-                            }
-                            List<List<ImageWrapper>> dialogResult = scannerResultDialog.getSortedDocuments();
-                            if(dialogResult == null) {
-                                //dialog canceled
-                                return;
-                            }
-                            scannerResults.addAll(dialogResult);
-                            for(List<ImageWrapper> scannerResult : scannerResults) {
-                                addDocument(scannerResult,
-                                        null //selectedFile
-                                );
-                            }
-                            DocumentScanner.this.validate();
+                            handleScannerResultDialogClosed(scannerResultDialog);
                         }
-                    }catch(DocumentAddException | IOException ex) {
+                    }catch(DocumentAddException
+                            | IOException
+                            | ImageWrapperException ex) {
                         messageHandler.handle(new Message(ex));
                     }
                 });
@@ -1580,6 +1545,38 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             //unexpected exception which the user has been informed about
             //- doesn't run shutdown hooks
         this.shutdownHook();
+    }
+
+    private void handleScannerResultDialogClosed(ScannerResultDialog scannerResultDialog) throws DocumentAddException,
+            IOException,
+            ImageWrapperException {
+        if(this.documentScannerConf.isRememberPreferredScanResultPanelWidth()) {
+            this.documentScannerConf.setPreferredScanResultPanelWidth(scannerResultDialog.getPanelWidth());
+        }
+        List<DocumentItem> dialogResult = scannerResultDialog.getSortedDocuments();
+        if(dialogResult == null) {
+            //dialog canceled
+            return;
+        }
+        for(DocumentItem scannerResult : scannerResultDialog.getSortedDocuments()) {
+            if(!mainPanel.getDocumentItems().keySet().contains(scannerResult)) {
+                addDocument(scannerResult);
+            }else {
+                OCRSelectComponent oCRSelectComponent = mainPanel.getDocumentItems().get(scannerResult);
+                assert oCRSelectComponent != null;
+                if(!scannerResult.getImages().equals(oCRSelectComponent.getoCRSelectPanelPanel().getoCRSelectPanels().stream()
+                                .map(panel -> panel.getImage())
+                                .collect(Collectors.toList()))) {
+                    oCRSelectComponent.getoCRSelectPanelPanel().getoCRSelectPanels().clear();
+                    for(ImageWrapper imageWrapper : scannerResult.getImages()) {
+                        oCRSelectComponent.getoCRSelectPanelPanel().getoCRSelectPanels().add(new DefaultOCRSelectPanel(imageWrapper,
+                                documentScannerConf.getPreferredOCRSelectPanelWidth(),
+                                issueHandler));
+                    }
+                }
+            }
+        }
+        //this.validate(); //not necessary
     }
 
     /**

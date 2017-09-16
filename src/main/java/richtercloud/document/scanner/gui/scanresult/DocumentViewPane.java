@@ -14,8 +14,6 @@
  */
 package richtercloud.document.scanner.gui.scanresult;
 
-import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 import javafx.geometry.Insets;
 import javafx.scene.image.Image;
@@ -23,6 +21,7 @@ import javafx.scene.image.WritableImage;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.Text;
+import richtercloud.document.scanner.ifaces.DocumentItem;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.ifaces.ImageWrapperException;
 
@@ -31,37 +30,35 @@ import richtercloud.document.scanner.ifaces.ImageWrapperException;
  * @author richter
  */
 public class DocumentViewPane extends ImageViewPane {
-    private final List<ImageWrapper> imageWrappers;
+    private final DocumentItem documentItem;
 
     public DocumentViewPane(int imageWidth,
             int imageHeight) {
         super(imageWidth,
                 imageHeight);
-        this.imageWrappers = new LinkedList<>();
+        this.documentItem = new DocumentItem();
     }
 
     public DocumentViewPane(WritableImage scanResultScaled,
-            ImageWrapper scanResult) throws ImageWrapperException {
+            DocumentItem documentItem) throws ImageWrapperException {
         super(scanResultScaled);
-        this.imageWrappers = new LinkedList<>(Arrays.asList(scanResult));
+        this.documentItem = documentItem;
     }
 
-    public DocumentViewPane(WritableImage topMostScanResultScaled,
-            List<ImageWrapper> scanResults) throws ImageWrapperException {
-        super(topMostScanResultScaled);
-        this.imageWrappers = scanResults;
+    public DocumentItem getDocumentItem() {
+        return documentItem;
     }
 
     public List<ImageWrapper> getImageWrappers() {
-        return imageWrappers;
+        return documentItem.getImages();
     }
 
     @Override
     protected ImageWrapper getTopMostImageWrapper() {
-        if(imageWrappers.isEmpty()) {
+        if(documentItem.getImages().isEmpty()) {
             return null;
         }
-        return imageWrappers.get(0);
+        return documentItem.getImages().get(0);
     }
 
     /**
@@ -70,7 +67,7 @@ public class DocumentViewPane extends ImageViewPane {
      */
     public void addScanResult(ImageWrapper scanResultImageView,
             int imageWidth) throws ImageWrapperException {
-        this.imageWrappers.add(scanResultImageView);
+        this.documentItem.getImages().add(scanResultImageView);
         Image newImage = scanResultImageView.getImagePreviewFX(imageWidth);
         if(newImage == null) {
             //cache has been shut down
@@ -81,8 +78,8 @@ public class DocumentViewPane extends ImageViewPane {
         getChildren().clear();
         getChildren().add(this.getImageView());
         StackPane.setMargin(this.getImageView(), new Insets(2, 2, 2, 2));
-        if (this.imageWrappers.size() > 1) {
-            Text numberText = new Text(String.valueOf(this.imageWrappers.size()));
+        if (this.documentItem.getImages().size() > 1) {
+            Text numberText = new Text(String.valueOf(this.documentItem.getImages().size()));
             getChildren().add(numberText);
         }
         this.setPadding(Insets.EMPTY);

@@ -26,6 +26,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.stream.Collectors;
@@ -67,6 +68,7 @@ import richtercloud.document.scanner.gui.DocumentScanner;
 import richtercloud.document.scanner.gui.Tools;
 import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.gui.scanner.DocumentSource;
+import richtercloud.document.scanner.ifaces.DocumentItem;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.ifaces.ImageWrapperException;
 import richtercloud.message.handler.ExceptionMessage;
@@ -139,10 +141,12 @@ public class ScannerResultDialog extends JDialog {
     private final JButton cancelButton = new JButton("Cancel");
     private final Button addImagesButton = new Button("Add to document");
     /**
-     * The result of the dialog. {@code null} indicates that the dialog has been
-     * canceled.
+     * The result of the dialog. This might include {@link DocumentItem}s which
+     * have already been added to the main panel (and thus edited) or new
+     * document items which ought to be added to the main panel. {@code null}
+     * indicates that the dialog has been canceled.
      */
-    private List<List<ImageWrapper>> sortedDocuments = null;
+    private List<DocumentItem> sortedDocuments = null;
     private final DocumentPane documentPane;
     private final ScrollPane documentPaneScrollPane;
     private final SplitPane splitPane;
@@ -163,6 +167,16 @@ public class ScannerResultDialog extends JDialog {
     private final DocumentController documentController;
     private Map<DocumentJob, List<ImageWrapper>> documentJobImageMapping = new HashMap<>();
     private Map<DocumentJob, DocumentJobToggleButton> documentJobToggleButtonMapping = new HashMap<>();
+    /**
+     * A reference to the applications MainPanel {@code documentSwitchingMap}
+     * which is used to load documents for manipulation of image data.
+     */
+    private final List<DocumentItem> documentItems;
+    /**
+     * The currently open {@link DocumentLoadDialog}. {@code null} indicates
+     * that no dialog is currently open.
+     */
+    private DocumentLoadDialog documentLoadDialog;
     private final DocumentScannerConf documentScannerConf;
 
     /**
@@ -178,6 +192,7 @@ public class ScannerResultDialog extends JDialog {
      * @param issueHandler
      * @param bugHandler
      * @param openDocumentWaitDialogParent
+     * @param documentItems the existing document items loaded in the main panel
      * @throws IOException
      */
     @SuppressWarnings("PMD.AvoidCatchingThrowable")
@@ -191,10 +206,15 @@ public class ScannerResultDialog extends JDialog {
             File imageWrapperStorageDir,
             JavaFXDialogIssueHandler issueHandler,
             Window openDocumentWaitDialogParent,
+            List<DocumentItem> documentItems,
             DocumentScannerConf documentScannerConf) throws IOException {
         super(owner,
                 ModalityType.APPLICATION_MODAL);
         this.openDocumentWaitDialogParent = openDocumentWaitDialogParent;
+        if(documentItems == null) {
+            throw new IllegalArgumentException("documentItems mustn't be null");
+        }
+        this.documentItems = documentItems;
         if(documentScannerConf == null) {
             throw new IllegalArgumentException("documentScannerConf mustn't be null");
         }
@@ -244,6 +264,7 @@ public class ScannerResultDialog extends JDialog {
                 //GridPane doesn't allow sufficient control over resizing
             leftPane.setPadding(new Insets(10));
             Button addDocumentButton = new Button("New document");
+            Button loadDocumentButton = new Button("Load opened document");
             leftPane.setCenter(documentPaneScrollPane);
             GridPane buttonPaneTop = new GridPane();
             GridPane buttonPaneLeft = new GridPane();
@@ -257,27 +278,54 @@ public class ScannerResultDialog extends JDialog {
             buttonPaneLeft.setHgap(5);
             buttonPaneLeft.setPadding(new Insets(5));
             buttonPaneLeft.add(addDocumentButton, 0, 0);
-            buttonPaneLeft.add(removeDocumentButton, 1, 0);
-            buttonPaneLeft.add(addImagesButton, 2, 0);
+            buttonPaneLeft.add(loadDocumentButton, 1, 0);
+            buttonPaneLeft.add(removeDocumentButton, 2, 0);
+            buttonPaneLeft.add(addImagesButton, 3, 0);
             leftPane.setBottom(buttonPaneLeft);
             addImagesButton.setDisable(true);
             addDocumentButton.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
                 try {
-                    DocumentViewPane addedDocument = addNewDocument(documentPane,
-                            panelWidth,
-                            panelHeight);
+                    DocumentViewPane newDocument = new DocumentViewPane(panelWidth,
+                            panelHeight
+                    );
+                    addNewDocument(documentPane,
+                            newDocument);
                     //always select the newly added document because chances are
                     //high that the user wants to proceed with the newly added
                     //document
-                    handleScanResultSelection(new LinkedList<>(Arrays.asList(addedDocument)),
+                    handleScanResultSelection(new LinkedList<>(Arrays.asList(newDocument)),
                             documentPane.getDocumentNodes(),
                             false //enableAddImagesButton
                     );
-                    documentPane.setSelectedDocument(addedDocument);
+                    documentPane.setSelectedDocument(newDocument);
                 }catch(Throwable ex) {
                     LOGGER.error("unexpected exception during adding of document",
                             ex);
                     issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+                }
+            });
+            loadDocumentButton.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
+                try {
+                    if(documentLoadDialog != null) {
+                        //the button has been clicked quickly more than once
+                        return;
+                    }
+                    documentLoadDialog = new DocumentLoadDialog(this.documentItems,
+                            panelWidth,
+                            issueHandler);
+                    Optional<DocumentViewPane> documentViewPane = documentLoadDialog.showAndWait();
+                    if(!documentViewPane.isPresent()) {
+                        //dialog canceled
+                        return;
+                    }
+                    addNewDocument(documentPane,
+                            documentViewPane.get());
+                }catch(Throwable ex) {
+                    LOGGER.error("unexpected exception during loading of document",
+                            ex);
+                    issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+                }finally {
+                    documentLoadDialog = null;
                 }
             });
             removeDocumentButton.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
@@ -320,11 +368,13 @@ public class ScannerResultDialog extends JDialog {
             addImagesButton.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
                 try {
                     if(documentPane.getChildrenUnmodifiable().isEmpty()) {
-                        DocumentViewPane addedDocument = addNewDocument(documentPane,
-                                panelWidth,
-                                panelHeight);
-                        documentPane.setSelectedDocument(addedDocument);
-                        addedDocument.setSelected(true);
+                        DocumentViewPane newDocument = new DocumentViewPane(panelWidth,
+                                panelHeight
+                        );
+                        addNewDocument(documentPane,
+                                newDocument);
+                        documentPane.setSelectedDocument(newDocument);
+                        newDocument.setSelected(true);
                     }
                     assert documentPane.getSelectedDocument() != null;
                     assert documentPane.containsDocumentNode(documentPane.getSelectedDocument());
@@ -737,7 +787,7 @@ public class ScannerResultDialog extends JDialog {
         this.openButton.addActionListener(event -> {
             try {
                 this.sortedDocuments = new LinkedList<>();
-                this.documentPane.getDocumentNodes().forEach((DocumentViewPane imageViewPane) -> this.sortedDocuments.add(imageViewPane.getImageWrappers()));
+                this.documentPane.getDocumentNodes().forEach((DocumentViewPane imageViewPane) -> this.sortedDocuments.add(imageViewPane.getDocumentItem()));
                 this.setVisible(false);
             }catch(Throwable ex) {
                 LOGGER.error("unexpected exception during opening of documents",
@@ -778,7 +828,7 @@ public class ScannerResultDialog extends JDialog {
         return panelWidth;
     }
 
-    public List<List<ImageWrapper>> getSortedDocuments() {
+    public List<DocumentItem> getSortedDocuments() {
         return sortedDocuments;
     }
 
@@ -852,21 +902,17 @@ public class ScannerResultDialog extends JDialog {
      * @return the added document image pane
      */
     @SuppressWarnings("PMD.AvoidCatchingThrowable")
-    private DocumentViewPane addNewDocument(DocumentPane documentPane,
-            int panelWidth,
-            int panelHeight) {
-        DocumentViewPane retValue = new DocumentViewPane(panelWidth,
-                panelHeight
-        );
-        retValue.addEventHandler(MouseEvent.MOUSE_CLICKED,
+    private void addNewDocument(DocumentPane documentPane,
+            DocumentViewPane documentViewPane) {
+        documentViewPane.addEventHandler(MouseEvent.MOUSE_CLICKED,
             event -> {
                 try {
-                    handleScanResultSelection(new LinkedList<>(Arrays.asList(retValue)),
+                    handleScanResultSelection(new LinkedList<>(Arrays.asList(documentViewPane)),
                             documentPane.getDocumentNodes(),
                             false //enableAddImagesButton (no need to enable if a
                                 //document is selected)
                     );
-                    documentPane.setSelectedDocument(retValue);
+                    documentPane.setSelectedDocument(documentViewPane);
                     removeDocumentButton.setDisable(false);
                         //as soon as a document is selected it can be removed
                 }catch(Throwable ex) {
@@ -877,7 +923,7 @@ public class ScannerResultDialog extends JDialog {
             });
             //if ImageViewPane is created with empty WritableImage, the listener
             //has to be added to the containing pane rather than the ImageView
-        documentPane.addDocumentNode(retValue);
+        documentPane.addDocumentNode(documentViewPane);
         //scroll
         //the following assertions make the life easier and there's no
         //assumption that they will change
@@ -892,7 +938,6 @@ public class ScannerResultDialog extends JDialog {
         documentPaneScrollPane.setVvalue(1.0);
             //KISS: the panel is always added at the end of documentPane, so
             //always scroll
-        return retValue;
     }
 
     private void handleDocumentJobToggleButtonPressed(DocumentJob documentJob,

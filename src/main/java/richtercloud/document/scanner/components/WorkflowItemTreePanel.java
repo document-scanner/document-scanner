@@ -40,6 +40,7 @@ import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.gui.DocumentScanner;
 import richtercloud.document.scanner.gui.EntityEditingDialog;
 import richtercloud.document.scanner.ifaces.DocumentAddException;
+import richtercloud.document.scanner.ifaces.DocumentItem;
 import richtercloud.document.scanner.ifaces.MainPanel;
 import richtercloud.document.scanner.model.WorkflowItem;
 import richtercloud.document.scanner.model.validator.WorkflowItemValidationException;
@@ -171,7 +172,10 @@ public class WorkflowItemTreePanel extends JPanel {
                             List<Object> selectedEntities = entityEditingDialog.getSelectedEntities();
                             for(Object selectedEntity : selectedEntities) {
                                 try {
-                                    WorkflowItemTreePanel.this.mainPanel.addDocument(selectedEntity);
+                                    WorkflowItemTreePanel.this.mainPanel.addDocumentItem(new DocumentItem(selectedEntity,
+                                            null, //images
+                                            null //selectedFile
+                                    ));
                                 } catch (DocumentAddException | IOException ex) {
                                     WorkflowItemTreePanel.this.issueHandler.handle(new Message(ex, JOptionPane.ERROR_MESSAGE));
                                 }
