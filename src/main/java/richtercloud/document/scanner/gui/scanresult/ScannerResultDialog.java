@@ -65,6 +65,7 @@ import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.gui.Constants;
 import richtercloud.document.scanner.gui.DocumentScanner;
 import richtercloud.document.scanner.gui.Tools;
+import richtercloud.document.scanner.gui.conf.DocumentScannerConf;
 import richtercloud.document.scanner.gui.scanner.DocumentSource;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.ifaces.ImageWrapperException;
@@ -162,6 +163,7 @@ public class ScannerResultDialog extends JDialog {
     private final DocumentController documentController;
     private Map<DocumentJob, List<ImageWrapper>> documentJobImageMapping = new HashMap<>();
     private Map<DocumentJob, DocumentJobToggleButton> documentJobToggleButtonMapping = new HashMap<>();
+    private final DocumentScannerConf documentScannerConf;
 
     /**
      *
@@ -188,10 +190,15 @@ public class ScannerResultDialog extends JDialog {
             SaneDevice scannerDevice,
             File imageWrapperStorageDir,
             JavaFXDialogIssueHandler issueHandler,
-            Window openDocumentWaitDialogParent) throws IOException {
+            Window openDocumentWaitDialogParent,
+            DocumentScannerConf documentScannerConf) throws IOException {
         super(owner,
                 ModalityType.APPLICATION_MODAL);
         this.openDocumentWaitDialogParent = openDocumentWaitDialogParent;
+        if(documentScannerConf == null) {
+            throw new IllegalArgumentException("documentScannerConf mustn't be null");
+        }
+        this.documentScannerConf = documentScannerConf;
         this.panelWidth = preferredScanResultPanelWidth;
         this.panelHeight = panelWidth * 297 / 210;
         this.scannerDevice = scannerDevice;
@@ -515,7 +522,9 @@ public class ScannerResultDialog extends JDialog {
                     }
                     Pair<DocumentSource, Integer> documentSourcePair = DocumentScanner.determineDocumentSource(this.documentController,
                             this.scannerDevice,
-                            this);
+                            this,
+                            this.documentScannerConf,
+                            issueHandler);
                     ScanJob scanJob = documentController.addScanJob(this.documentController,
                             this.scannerDevice,
                             documentSourcePair.getKey(),

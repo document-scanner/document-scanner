@@ -47,7 +47,6 @@ import static richtercloud.document.scanner.gui.scanner.ScannerEditDialog.MODE_O
 import static richtercloud.document.scanner.gui.scanner.ScannerEditDialog.RESOLUTION_OPTION_NAME;
 import static richtercloud.document.scanner.gui.scanner.ScannerEditDialog.TOP_LEFT_X;
 import static richtercloud.document.scanner.gui.scanner.ScannerEditDialog.TOP_LEFT_Y;
-import richtercloud.document.scanner.ifaces.DocumentAddException;
 import richtercloud.document.scanner.ifaces.ImageWrapper;
 import richtercloud.document.scanner.ifaces.OCREngine;
 import richtercloud.document.scanner.ifaces.OCREngineConf;
@@ -170,7 +169,11 @@ public class DocumentController {
 
     public void openScannerDevice(SaneDevice scannerDevice,
             long scannerOpenWaitTime,
-            TimeUnit scannerOpenWaitTimeUnit) throws DeviceOpeningAlreadyInProgressException, SaneException, IOException, DocumentAddException, InterruptedException, TimeoutException {
+            TimeUnit scannerOpenWaitTimeUnit) throws DeviceOpeningAlreadyInProgressException,
+            SaneException,
+            IOException,
+            InterruptedException,
+            TimeoutException {
         if(!scannerDevice.isOpen()) {
             if(deviceOpeningFutureMap.get(scannerDevice) != null) {
                 throw new DeviceOpeningAlreadyInProgressException(scannerDevice.getName());
@@ -202,8 +205,6 @@ public class DocumentController {
                     throw (IllegalArgumentException)ex.getCause();
                 }else if(ex.getCause() instanceof IllegalStateException) {
                     throw (IllegalStateException)ex.getCause();
-                }else if(ex.getCause() instanceof DocumentAddException) {
-                    throw (DocumentAddException)ex.getCause();
                 }
                 LOGGER.error("unexpected exception during opening of scanner device",
                         ex);

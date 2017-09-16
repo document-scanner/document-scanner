@@ -1156,9 +1156,10 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         this.documentScannerConf.getPreferredScanResultPanelWidth(),
                         documentController,
                         scannerDevice,
-                        documentScannerConf.getImageWrapperStorageDir(),
+                        this.documentScannerConf.getImageWrapperStorageDir(),
                         javaFXDialogMessageHandler,
-                        this //openDocumentWaitDialogParent
+                        this, //openDocumentWaitDialogParent
+                        this.documentScannerConf
                 );
                 scannerResultDialog.setLocationRelativeTo(this);
                 scannerResultDialog.setVisible(true);
@@ -1292,9 +1293,10 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                         this.documentScannerConf.getPreferredScanResultPanelWidth(),
                         documentController,
                         scannerDevice,
-                        documentScannerConf.getImageWrapperStorageDir(),
+                        this.documentScannerConf.getImageWrapperStorageDir(),
                         javaFXDialogMessageHandler,
-                        this //openDocumentWaitDialogParent
+                        this, //openDocumentWaitDialogParent
+                        this.documentScannerConf
                 );
                 scannerResultDialog.setLocationRelativeTo(this);
                 scannerResultDialog.setVisible(true);
@@ -1371,7 +1373,45 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
      */
     public static Pair<DocumentSource, Integer> determineDocumentSource(DocumentController documentController,
             SaneDevice scannerDevice,
-            Window dialogParent) throws IOException, DocumentSourceOptionMissingException, SaneException {
+            Window dialogParent,
+            DocumentScannerConf documentScannerConf,
+            IssueHandler issueHandler) throws IOException,
+            DocumentSourceOptionMissingException,
+            SaneException,
+            DocumentAddException {
+        try {
+            documentController.openScannerDevice(scannerDevice,
+                    documentScannerConf.getScannerOpenWaitTime(),
+                    documentScannerConf.getScannerOpenWaitTimeUnit());
+        }catch(DeviceOpeningAlreadyInProgressException ex) {
+            issueHandler.handle(new Message(String.format("The "
+                    + "opening of device '%s' is already in progress. "
+                    + "The opening might be in a loop/deadlock state "
+                    + "which could be fixed by de- and reconnecting "
+                    + "the device from your computer, restarting the "
+                    + "device, restarting %s or rebooting your "
+                    + "computer",
+                            documentScannerConf.getScannerName(),
+                            Constants.APP_NAME),
+                    JOptionPane.ERROR_MESSAGE,
+                    "Opening of scanner device already in progress"));
+            return null;
+        }catch(InterruptedException ex) {
+            LOGGER.error("Unexpected exception during scanning occured",
+                    ex);
+            issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
+        }catch(TimeoutException ex) {
+            issueHandler.handle(new Message(String.format("Opening "
+                    + "the scanner device '%s' timed out after %d %s, "
+                    + "can't proceed. Consider increasing the timeout "
+                    + "value in options",
+                            documentScannerConf.getScannerName(),
+                            documentScannerConf.getScannerOpenWaitTime(),
+                            documentScannerConf.getScannerOpenWaitTimeUnit()),
+                    JOptionPane.ERROR_MESSAGE,
+                    "Opening scanner device timed out"));
+            return null;
+        }
         if(scannerDevice.getOption(DOCUMENT_SOURCE_OPTION_NAME) == null) {
             //an exception is thrown in order to allow data to be reported
             //through BugHandler
@@ -1419,42 +1459,11 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private void scan() throws DocumentSourceOptionMissingException {
         assert this.scannerDevice != null;
         try {
-            try {
-                documentController.openScannerDevice(this.scannerDevice,
-                        this.documentScannerConf.getScannerOpenWaitTime(),
-                        this.documentScannerConf.getScannerOpenWaitTimeUnit());
-            }catch(DeviceOpeningAlreadyInProgressException ex) {
-                messageHandler.handle(new Message(String.format("The "
-                        + "opening of device '%s' is already in progress. "
-                        + "The opening might be in a loop/deadlock state "
-                        + "which could be fixed by de- and reconnecting "
-                        + "the device from your computer, restarting the "
-                        + "device, restarting %s or rebooting your "
-                        + "computer",
-                                this.documentScannerConf.getScannerName(),
-                                Constants.APP_NAME),
-                        JOptionPane.ERROR_MESSAGE,
-                        "Opening of scanner device already in progress"));
-                return;
-            }catch(InterruptedException ex) {
-                handleUnexpectedException(ex,
-                        "Exception during scanning",
-                        "An unexpected exception during scanning occured: %s");
-            }catch(TimeoutException ex) {
-                messageHandler.handle(new Message(String.format("Opening "
-                        + "the scanner device '%s' timed out after %d %s, "
-                        + "can't proceed. Consider increasing the timeout "
-                        + "value in options",
-                                this.documentScannerConf.getScannerName(),
-                                documentScannerConf.getScannerOpenWaitTime(),
-                                documentScannerConf.getScannerOpenWaitTimeUnit()),
-                        JOptionPane.ERROR_MESSAGE,
-                        "Opening scanner device timed out"));
-                return;
-            }
             Pair<DocumentSource, Integer> documentSourcePair = determineDocumentSource(this.documentController,
                     scannerDevice,
-                    this);
+                    this,
+                    this.documentScannerConf,
+                    this.issueHandler);
             if(documentSourcePair == null) {
                 //dialog in determineDocumentSource has been aborted
                 return;
@@ -1486,9 +1495,10 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                                     DocumentScanner.this.documentScannerConf.getPreferredScanResultPanelWidth(),
                                     documentController,
                                     scannerDevice,
-                                    documentScannerConf.getImageWrapperStorageDir(),
+                                    DocumentScanner.this.documentScannerConf.getImageWrapperStorageDir(),
                                     javaFXDialogMessageHandler,
-                                    DocumentScanner.this //openDocumentWaitDialogParent
+                                    DocumentScanner.this, //openDocumentWaitDialogParent
+                                    DocumentScanner.this.documentScannerConf
                             );
                             scannerResultDialog.setLocationRelativeTo(DocumentScanner.this);
                             scannerResultDialog.setVisible(true);
