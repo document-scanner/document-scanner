@@ -1192,6 +1192,7 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
     private void exportMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exportMenuItemActionPerformed
         JFileChooser chooser = new JFileChooser();
         chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        chooser.setApproveButtonText("Export");
         FileNameExtensionFilter filter = new FileNameExtensionFilter(
                 "PDF files", "pdf");
         chooser.setFileFilter(filter);
@@ -1202,6 +1203,10 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
             selectedFile = chooser.getSelectedFile();
             if (returnVal != JFileChooser.APPROVE_OPTION) {
                 return;
+            }
+            if(!selectedFile.getName().endsWith(".pdf")) {
+                selectedFile = new File(String.format("%s.pdf",
+                        selectedFile.getAbsolutePath()));
             }
             if(selectedFile.exists()) {
                 String answer = confirmMessageHandler.confirm(new Message(
