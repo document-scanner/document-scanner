@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javafx.scene.image.WritableImage;
@@ -40,7 +41,7 @@ import richtercloud.message.handler.IssueHandler;
  * they've been used in memeory.
  *
  * Currently this class manages its cache in static constants which is not too
- * elegant.
+ * elegant and should be changed to a MVC architecture one day.
  *
  * @author richter
  */
@@ -68,7 +69,6 @@ public class CachingImageWrapper extends DefaultImageWrapper {
         STREAM_CACHE = MANAGER.createCache("stream-cache",
                 streamConfig);
     }
-    private static Long cacheIdCounter = 0L;
     private static boolean shutdown = false;
 
     /**
@@ -94,6 +94,7 @@ public class CachingImageWrapper extends DefaultImageWrapper {
         }
     }
     private final long cacheId;
+    private final static AtomicInteger CACHE_ID_INTEGER = new AtomicInteger();
     /**
      * The lock for writing to and reading from the stream cache.
      */
@@ -113,10 +114,7 @@ public class CachingImageWrapper extends DefaultImageWrapper {
         super(storageDir,
                 image,
                 issueHandler);
-        synchronized(this) {
-            this.cacheId = cacheIdCounter;
-            cacheIdCounter += 1;
-        }
+        this.cacheId = CACHE_ID_INTEGER.incrementAndGet();
     }
 
     /**
