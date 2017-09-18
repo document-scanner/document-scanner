@@ -31,6 +31,8 @@ import javax.cache.configuration.FactoryBuilder;
 import javax.cache.configuration.MutableConfiguration;
 import javax.cache.expiry.AccessedExpiryPolicy;
 import javax.cache.expiry.Duration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import richtercloud.document.scanner.ifaces.ImageWrapperException;
 import richtercloud.message.handler.IssueHandler;
 
@@ -47,6 +49,8 @@ import richtercloud.message.handler.IssueHandler;
  */
 public class CachingImageWrapper extends DefaultImageWrapper {
     private static final long serialVersionUID = 1L;
+    private final static Logger LOGGER = LoggerFactory.getLogger(CachingImageWrapper.class);
+    private final static String SHUTDOWN_TEMPLATE = "returning null because shutdown has been requested";
     private final static CacheManager MANAGER =
                  Caching.getCachingProvider().getCacheManager();
     private final static Cache<Long, Map<Integer, BufferedImage>> CACHE;
@@ -115,6 +119,8 @@ public class CachingImageWrapper extends DefaultImageWrapper {
                 image,
                 issueHandler);
         this.cacheId = CACHE_ID_INTEGER.incrementAndGet();
+        LOGGER.trace(String.format("assigned cache id %d",
+                this.cacheId));
     }
 
     /**
@@ -130,21 +136,35 @@ public class CachingImageWrapper extends DefaultImageWrapper {
         PREVIEW_CACHE_LOCK.lock();
         try {
             if(shutdown) {
+                LOGGER.trace(SHUTDOWN_TEMPLATE);
                 return null;
             }
             Map<Integer, BufferedImage> wrapperCacheEntry = CACHE.get(cacheId);
             if(wrapperCacheEntry == null) {
                 wrapperCacheEntry = new HashMap<>();
                 CACHE.put(cacheId, wrapperCacheEntry);
+                LOGGER.trace(String.format("creating empty preview cache cache entry for id %d",
+                        cacheId));
+            }else {
+                LOGGER.trace(String.format("using preview cache entry for id %d",
+                        cacheId));
             }
             BufferedImage imagePreview = wrapperCacheEntry.get(width);
             if(imagePreview == null) {
                 imagePreview = super.getImagePreview(width);
                 if(imagePreview == null) {
                     //cache has been shut down
+                    LOGGER.trace(SHUTDOWN_TEMPLATE);
                     return null;
                 }
+                LOGGER.trace(String.format("storing Java FX preview cache entry for width %d id %d",
+                        width,
+                        cacheId));
                 wrapperCacheEntry.put(width, imagePreview);
+            }else {
+                LOGGER.trace(String.format("using preview cache entry for width %d id %d",
+                        width,
+                        cacheId));
             }
             return imagePreview;
         }finally {
@@ -157,20 +177,34 @@ public class CachingImageWrapper extends DefaultImageWrapper {
         PREVIEW_FX_CACHE_LOCK.lock();
         try {
             if(shutdown) {
+                LOGGER.trace(SHUTDOWN_TEMPLATE);
                 return null;
             }
             Map<Integer, WritableImage> wrapperCacheEntry = JAVAFX_CACHE.get(cacheId);
             if(wrapperCacheEntry == null) {
                 wrapperCacheEntry = new HashMap<>();
                 JAVAFX_CACHE.put(cacheId, wrapperCacheEntry);
+                LOGGER.trace(String.format("creating empty Java FX preview cache cache entry for id %d",
+                        cacheId));
+            }else {
+                LOGGER.trace(String.format("using Java FX preview cache entry for id %d",
+                        cacheId));
             }
             WritableImage imagePreview = wrapperCacheEntry.get(width);
             if(imagePreview == null) {
                 imagePreview = super.getImagePreviewFX(width);
                 if(imagePreview == null) {
+                    LOGGER.trace(SHUTDOWN_TEMPLATE);
                     return null;
                 }
+                LOGGER.trace(String.format("storing Java FX preview cache entry for width %d id %d",
+                        width,
+                        cacheId));
                 wrapperCacheEntry.put(width, imagePreview);
+            }else {
+                LOGGER.trace(String.format("using Java FX preview cache entry for width %d id %d",
+                        width,
+                        cacheId));
             }
             return imagePreview;
         }finally {
@@ -183,12 +217,18 @@ public class CachingImageWrapper extends DefaultImageWrapper {
         STREAM_CACHE_LOCK.lock();
         try {
             if(shutdown) {
+                LOGGER.trace(SHUTDOWN_TEMPLATE);
                 return null;
             }
             File streamSource = STREAM_CACHE.get(cacheId);
             if(streamSource == null) {
                 streamSource = super.getOriginalImageStream0(formatName);
                 STREAM_CACHE.put(cacheId, streamSource);
+                LOGGER.trace(String.format("storing orginal stream cache entry for id %d",
+                        cacheId));
+            }else {
+                LOGGER.trace(String.format("using orginal stream cache entry for id %d",
+                        cacheId));
             }
             return streamSource;
         }finally {
@@ -201,12 +241,15 @@ public class CachingImageWrapper extends DefaultImageWrapper {
         STREAM_CACHE_LOCK.lock();
         try {
             if(shutdown) {
+                LOGGER.trace("returning immediately because shutdown has been requested");
                 return;
             }
             super.setRotationDegrees(rotationDegrees);
             CACHE.remove(cacheId);
             JAVAFX_CACHE.remove(cacheId);
             STREAM_CACHE.remove(cacheId);
+            LOGGER.trace(String.format("clearing preview and stream caches after change of rotation for id %d",
+                    cacheId));
         }finally {
             STREAM_CACHE_LOCK.unlock();
         }
