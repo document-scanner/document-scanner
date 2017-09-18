@@ -86,6 +86,7 @@ import richtercloud.document.scanner.ifaces.MainPanel;
 import richtercloud.document.scanner.ifaces.OCREngine;
 import richtercloud.document.scanner.ifaces.OCREngineConf;
 import richtercloud.document.scanner.ifaces.OCRSelectComponent;
+import richtercloud.document.scanner.ifaces.OCRSelectPanel;
 import richtercloud.document.scanner.model.Company;
 import richtercloud.document.scanner.model.Document;
 import richtercloud.document.scanner.model.imagewrapper.CachingImageWrapper;
@@ -1572,12 +1573,17 @@ public class DocumentScanner extends javax.swing.JFrame implements Managed<Excep
                 if(!scannerResult.getImages().equals(oCRSelectComponent.getoCRSelectPanelPanel().getoCRSelectPanels().stream()
                                 .map(panel -> panel.getImage())
                                 .collect(Collectors.toList()))) {
-                    oCRSelectComponent.getoCRSelectPanelPanel().getoCRSelectPanels().clear();
+                    List<OCRSelectPanel> newOCRSelectPanels = new LinkedList<>();
+                        //create a new list and overwrite the property in order
+                        //to allow DefaultOCRSelectPanelPanel.getoCRSelectPanels
+                        //to remain unmodifiable
                     for(ImageWrapper imageWrapper : scannerResult.getImages()) {
-                        oCRSelectComponent.getoCRSelectPanelPanel().getoCRSelectPanels().add(new DefaultOCRSelectPanel(imageWrapper,
+                        newOCRSelectPanels.add(new DefaultOCRSelectPanel(imageWrapper,
                                 documentScannerConf.getPreferredOCRSelectPanelWidth(),
                                 issueHandler));
                     }
+                    oCRSelectComponent.getoCRSelectPanelPanel().updateoCRSelectPanels(newOCRSelectPanels);
+                    oCRSelectComponent.getoCRSelectPanelPanel().validate();
                 }
             }
         }

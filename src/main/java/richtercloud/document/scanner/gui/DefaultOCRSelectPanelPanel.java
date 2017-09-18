@@ -65,7 +65,7 @@ public class DefaultOCRSelectPanelPanel extends OCRSelectPanelPanel implements S
     internal implementation notes:
     - initialializing with empty list allows to have zero-argument constructor
     */
-    private final List<OCRSelectPanel> oCRSelectPanels = new LinkedList<>();
+    private List<OCRSelectPanel> oCRSelectPanels = new LinkedList<>();
     private OCRSelectPanel selectedPanel = null;
     private int maxUnitIncrement = 100;
     /**
@@ -86,6 +86,10 @@ public class DefaultOCRSelectPanelPanel extends OCRSelectPanelPanel implements S
         this.documentFile = documentFile;
         FlowLayout layout = new FlowLayout(FlowLayout.CENTER, 5, 5);
         this.setLayout(layout);
+        setupPanels(panels);
+    }
+
+    private void setupPanels(List<OCRSelectPanel> panels) {
         for(OCRSelectPanel panel : panels) {
             panel.addSelectionListener(new PanelSelectionListener(panel));
             this.oCRSelectPanels.add(panel);
@@ -128,6 +132,15 @@ public class DefaultOCRSelectPanelPanel extends OCRSelectPanelPanel implements S
     @Override
     public List<OCRSelectPanel> getoCRSelectPanels() {
         return Collections.unmodifiableList(this.oCRSelectPanels);
+    }
+
+    @Override
+    public void updateoCRSelectPanels(List<OCRSelectPanel> oCRSelectPanels) {
+        this.oCRSelectPanels = new LinkedList<>();
+            //overwrite with empty list in order to avoid
+            //ConcurrentModificationException in setupPanels
+        this.removeAll();
+        setupPanels(oCRSelectPanels);
     }
 
     /**
