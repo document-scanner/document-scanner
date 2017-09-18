@@ -12,17 +12,6 @@
     <logger name="richtercloud" level="INFO"/>
     <logger name="richtercloud.document.scanner.gui.DateFormatAutoOCRValueDetectionService" level="INFO"/><!--too much output-->
     <logger name="richtercloud.document.scanner.gui.FormatUtils" level="INFO"/>
-    <logger name="richtercloud.reflection.form.builder.jpa.storage.AbstractPersistenceStorage" level="TRACE"/>
-        <!-- irregularily (< 1% of build times) hangs at <pre>
-                03:55:26.386 [main] DEBUG r.r.f.b.jpa.panels.QueryComponent - running query asynchronously
-                03:55:26.389 [query-thread] DEBUG r.r.f.b.jpa.panels.QueryComponent - executing query 'SELECT e FROM EntityB e'
-                03:55:26.390 [query-thread] DEBUG r.r.f.b.j.s.AbstractPersistenceStorage - running query 'SELECT e FROM EntityB e'
-                <pre> -->
-    <logger name="richtercloud.reflection.form.builder.jpa.storage.PostgresqlAutoPersistenceStorage"
-            level="TRACE"/>
-        <!-- irregularily hangs at <pre>
-                16:23:36.912 [main] INFO  r.r.f.b.j.s.PostgresqlAutoPersistenceStorage - waiting for postgres process to terminate
-                </pre> -->
     <root level="INFO">
         <appender-ref ref="STDOUT" />
     </root>
