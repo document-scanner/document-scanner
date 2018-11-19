@@ -135,6 +135,9 @@ public abstract class AbstractFormatValueDetectionService<T> extends AbstractVal
             issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
             throw new ResultFetchingException(ex);
         }
+        if(isCanceled()) {
+            return null;
+        }
         return retValues;
     }
 

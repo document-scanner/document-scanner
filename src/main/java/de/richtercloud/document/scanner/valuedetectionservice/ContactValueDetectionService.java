@@ -54,6 +54,9 @@ public class ContactValueDetectionService extends AbstractValueDetectionService<
         );
         List<String> queue = new LinkedList<>();
         while(tokenizer.hasMoreTokens()) {
+            if(isCanceled()) {
+                return null;
+            }
             while(queue.size() < 3 && tokenizer.hasMoreTokens()) {
                 String nextToken = tokenizer.nextToken();
                 queue.add(nextToken);
@@ -133,6 +136,9 @@ public class ContactValueDetectionService extends AbstractValueDetectionService<
             }else {
                 queue.remove(0);
             }
+        }
+        if(isCanceled()) {
+            return null;
         }
         return retValue;
 

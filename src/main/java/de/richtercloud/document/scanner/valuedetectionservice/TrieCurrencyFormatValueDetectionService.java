@@ -103,6 +103,9 @@ public class TrieCurrencyFormatValueDetectionService extends AbstractValueDetect
         LOGGER.trace(String.format("suffixTree: %s", PrettyPrinter.prettyPrint(suffixTree)));
         ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         for(final Map.Entry<NumberFormat, Set<Locale>> currencyFormat : FormatUtils.getDisjointCurrencyFormatsEntySet()) {
+            if(isCanceled()) {
+                return null;
+            }
             Runnable thread = () -> {
                 Set<Pair<String, String>> currencyCodeSymbolPairs = new HashSet<>();
                 for(Locale locale : currencyFormat.getValue()) {
@@ -117,6 +120,9 @@ public class TrieCurrencyFormatValueDetectionService extends AbstractValueDetect
                     currencyCodeSymbolPairs.add(new ImmutablePair<>(currencyCode, currencySymbol));
                 }
                 for(Pair<String, String> currencyCodeSymbolPair : currencyCodeSymbolPairs) {
+                    if(isCanceled()) {
+                        return;
+                    }
                     String currencyCode = currencyCodeSymbolPair.getKey();
                     String currencySymbol = currencyCodeSymbolPair.getValue();
                     //- checking tokens.indexOf(currencyCode) isn't sufficient because
@@ -235,6 +241,9 @@ public class TrieCurrencyFormatValueDetectionService extends AbstractValueDetect
                     ex);
             issueHandler.handleUnexpectedException(new ExceptionMessage(ex));
             throw new RuntimeException(ex);
+        }
+        if(isCanceled()) {
+            return null;
         }
         return retValue;
     }
