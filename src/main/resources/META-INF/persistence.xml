@@ -37,26 +37,26 @@
       -->
     <!--<provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>-->
     <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
-    <class>richtercloud.document.scanner.model.APackage</class>
-    <class>richtercloud.document.scanner.model.Bill</class>
-    <class>richtercloud.document.scanner.model.Company</class>
-    <class>richtercloud.document.scanner.model.Document</class>
-    <class>richtercloud.document.scanner.model.EmailAddress</class>
-    <class>richtercloud.document.scanner.model.Employment</class>
-    <class>richtercloud.document.scanner.model.FinanceAccount</class>
-    <class>richtercloud.document.scanner.model.Leaflet</class>
-    <class>richtercloud.document.scanner.model.Location</class>
-    <class>richtercloud.document.scanner.model.Payment</class>
-    <class>richtercloud.document.scanner.model.Person</class>
-    <class>richtercloud.document.scanner.model.Shipping</class>
-    <class>richtercloud.document.scanner.model.TelephoneCall</class>
-    <class>richtercloud.document.scanner.model.TelephoneNumber</class>
-    <class>richtercloud.document.scanner.model.Transport</class>
-    <class>richtercloud.document.scanner.model.TransportTicket</class>
-    <class>richtercloud.document.scanner.model.Email</class>
-    <class>richtercloud.document.scanner.model.Withdrawal</class>
-    <class>richtercloud.document.scanner.model.Workflow</class>
-    <class>richtercloud.document.scanner.model.WorkflowItem</class>
+    <class>de.richtercloud.document.scanner.model.APackage</class>
+    <class>de.richtercloud.document.scanner.model.Bill</class>
+    <class>de.richtercloud.document.scanner.model.Company</class>
+    <class>de.richtercloud.document.scanner.model.Document</class>
+    <class>de.richtercloud.document.scanner.model.EmailAddress</class>
+    <class>de.richtercloud.document.scanner.model.Employment</class>
+    <class>de.richtercloud.document.scanner.model.FinanceAccount</class>
+    <class>de.richtercloud.document.scanner.model.Leaflet</class>
+    <class>de.richtercloud.document.scanner.model.Location</class>
+    <class>de.richtercloud.document.scanner.model.Payment</class>
+    <class>de.richtercloud.document.scanner.model.Person</class>
+    <class>de.richtercloud.document.scanner.model.Shipping</class>
+    <class>de.richtercloud.document.scanner.model.TelephoneCall</class>
+    <class>de.richtercloud.document.scanner.model.TelephoneNumber</class>
+    <class>de.richtercloud.document.scanner.model.Transport</class>
+    <class>de.richtercloud.document.scanner.model.TransportTicket</class>
+    <class>de.richtercloud.document.scanner.model.Email</class>
+    <class>de.richtercloud.document.scanner.model.Withdrawal</class>
+    <class>de.richtercloud.document.scanner.model.Workflow</class>
+    <class>de.richtercloud.document.scanner.model.WorkflowItem</class>
     <properties>
       <!--URL and driver is set programmtically-->
       <!--<property name="hibernate.cache.provider_class" value="org.hibernate.cache.NoCacheProvider"/>-->
@@ -68,7 +68,7 @@
       <!--setting eclipse.weaving to false<ref>http://www.eclipse.org/eclipselink/documentation/2.5/concepts/app_dev007.htm</ref>
             doesn't reduce memory usage with MySQL (and probably others
             neither)-->
-      <property name="eclipselink.session.customizer" value="richtercloud.document.scanner.model.DocumentScannerSessionCustomizer"/>
+      <property name="eclipselink.session.customizer" value="de.richtercloud.document.scanner.model.DocumentScannerSessionCustomizer"/>
       <property name="eclipselink.query-results-cache" value="True"/>
         <!--upper case for some reason<ref>http://www.eclipse.org/eclipselink/documentation/2.5/jpa/extensions/q_query-results-cache.htm</ref>-->
     </properties>

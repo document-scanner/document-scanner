@@ -11,8 +11,8 @@
 
     <logger name="richtercloud" level="INFO"/>
     <logger name="richtercloud.document.scanner.gui.DateFormatAutoOCRValueDetectionService" level="INFO"/><!--too much output-->
-    <logger name="richtercloud.document.scanner.gui.FormatUtils" level="INFO"/>
-    <logger name="richtercloud.document.scanner.model.imagewrapper.CachingImageWrapper"
+    <logger name="de.richtercloud.document.scanner.gui.FormatUtils" level="INFO"/>
+    <logger name="de.richtercloud.document.scanner.model.imagewrapper.CachingImageWrapper"
             level="TRACE"/>
     <root level="INFO">
         <appender-ref ref="STDOUT" />

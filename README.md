@@ -28,7 +28,7 @@ Build from source by
   * cloning [document-scanner-aggregator](https://github.com/document-scanner/document-scanner-aggregator) which lets you build all necessary dependencies and `document-scanner` itself without trouble with `git clone https://github.com/document-scanner/document-scanner-aggregator` and
   * running `mvn clean install` in the just cloned source root.
 
-You can then start the program with `java -cp "target/staging/lib/*:target/document-scanner-1.0-beta.jar" richtercloud.document.scanner.gui.DocumentScanner` or use the built packages for Debian-based systems, Mac OSX or the cross-platform installer which are in `target/` and `target/izpack-installer/` respectively after a successful build.
+You can then start the program with `java -cp "target/staging/lib/*:target/document-scanner-1.0-beta.jar" DocumentScanner` or use the built packages for Debian-based systems, Mac OSX or the cross-platform installer which are in `target/` and `target/izpack-installer/` respectively after a successful build.
 
 You should be able to open the project in any IDE that supports Maven, including NetBeans, which lets you build and run the application from source maybe more conveniently. The project uses Maven aggregator and parent projects.
 

@@ -5,7 +5,7 @@
     <skipIfNotSupported/>
     <shortcut
             name="document-scanner"
-            target="java -cp &quot;$INSTALL_PATH/document-scanner.jar:$INSTALL_PATH/lib/*&quot; richtercloud.document.scanner.gui.DocumentScanner"
+            target="java -cp &quot;$INSTALL_PATH/document-scanner.jar:$INSTALL_PATH/lib/*&quot; de.richtercloud.document.scanner.gui.DocumentScanner"
             description="Launch document-scanner"
             workingDirectory="$INSTALL_PATH"
             initialState="normal"

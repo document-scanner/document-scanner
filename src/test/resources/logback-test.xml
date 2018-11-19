@@ -8,7 +8,7 @@
     </encoder>
   </appender>
   <logger name="richtercloud.document.scanner.gui" level="DEBUG"/>
-  <logger name="richtercloud.document.scanner.gui.FormatUtils" level="INFO"/>
+  <logger name="de.richtercloud.document.scanner.gui.FormatUtils" level="INFO"/>
     <!-- avoid debugging of result of FormatUtils.getDisjoint... methods -->
   <root level="INFO">
     <appender-ref ref="STDOUT" />

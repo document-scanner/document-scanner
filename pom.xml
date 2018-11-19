@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>richtercloud</groupId>
+        <groupId>de.richtercloud</groupId>
         <artifactId>document-scanner-parent</artifactId>
         <version>1.0-beta4</version>
         <relativePath>..</relativePath>
@@ -56,17 +56,17 @@
     <dependencies>
         <!--document-scanner dependencies-->
         <dependency>
-            <groupId>richtercloud</groupId>
+            <groupId>de.richtercloud</groupId>
             <artifactId>document-scanner-ifaces</artifactId>
             <type>jar</type>
         </dependency>
         <dependency>
-            <groupId>richtercloud</groupId>
+            <groupId>de.richtercloud</groupId>
             <artifactId>document-scanner-flexdock</artifactId>
             <type>jar</type>
         </dependency>
         <dependency>
-            <groupId>richtercloud</groupId>
+            <groupId>de.richtercloud</groupId>
             <artifactId>reflection-form-builder-jpa</artifactId>
             <version>1.0-beta2</version>
             <type>jar</type>
@@ -251,7 +251,7 @@
             <type>jar</type>
         </dependency>
         <dependency>
-            <groupId>richtercloud</groupId>
+            <groupId>de.richtercloud</groupId>
             <artifactId>message-handler-raven-bug-handler</artifactId>
             <version>1.0-SNAPSHOT</version>
             <type>jar</type>
@@ -263,7 +263,7 @@
             <type>jar</type>
         </dependency>
         <dependency>
-            <groupId>richtercloud</groupId>
+            <groupId>de.richtercloud</groupId>
             <artifactId>jhbuild-java-wrapper-core</artifactId>
             <version>1.0-SNAPSHOT</version>
             <type>jar</type>
@@ -466,7 +466,7 @@
                 <artifactId>appbundle-maven-plugin</artifactId>
                 <version>1.2.0</version>
                 <configuration>
-                    <mainClass>richtercloud.document.scanner.gui.DocumentScanner</mainClass>
+                    <mainClass>de.richtercloud.document.scanner.gui.DocumentScanner</mainClass>
                     <generateDiskImageFile>true</generateDiskImageFile>
                         <!--Create dmg file-->
                 </configuration>
@@ -614,7 +614,7 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <excludedGroups>richtercloud.document.scanner.JavaFXGUITests</excludedGroups>
+                            <excludedGroups>JavaFXGUITests</excludedGroups>
                         </configuration>
                     </plugin>
                 </plugins>
